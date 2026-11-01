@@ -1,4 +1,4 @@
-import { Link, Navigate, Route, Routes } from "react-router-dom";
+import { Link, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { RequireAuth, useAuth } from "./auth";
 import { Dashboard } from "./pages/Dashboard";
 import { Editor } from "./pages/Editor";
@@ -6,6 +6,7 @@ import { Login } from "./pages/Login";
 
 export function App() {
   const { user, logout } = useAuth();
+  const wide = useLocation().pathname.startsWith("/resumes/");
 
   return (
     <>
@@ -23,7 +24,7 @@ export function App() {
         )}
       </header>
 
-      <main className="container">
+      <main className={wide ? "container wide" : "container"}>
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/login" element={<Login />} />

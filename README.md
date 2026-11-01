@@ -9,10 +9,13 @@ Online resume and portfolio builder. Users write their resume once, then export 
 npm workspaces monorepo:
 
 ```
-packages/schema   Shared resume and theme schemas (Zod), used by both API and web
-apps/api          REST API — Express + Prisma (PostgreSQL)
-apps/web          Web app — React + Vite
+packages/schema     Shared resume and theme schemas (Zod), used by both API and web
+packages/templates  Resume and portfolio templates as pure React components
+apps/api            REST API — Express + Prisma (PostgreSQL)
+apps/web            Web app — React + Vite (editor with live preview)
 ```
+
+Templates are pure components driven by a theme (colors, typography, spacing, section order) exposed as CSS variables. Layout adapts to the container width, so the editor preview can emulate mobile, and the same components can later render published sites on the server.
 
 The resume model has two validation levels built from one definition: a lenient **draft** schema accepted on autosave, and a strict schema required for export and publishing.
 
