@@ -1,16 +1,22 @@
-// Resume editor: form on one side, live template preview on the other, with debounced autosave.
+// Resume editor: section forms on one side, live template preview on the other, with debounced autosave.
 
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { defaultTheme, type Experience, type ResumeData, type Skill, type Theme } from "@rb/schema";
+import { defaultTheme, type ResumeData, type Theme } from "@rb/schema";
 import { DEFAULT_PORTFOLIO_TEMPLATE_ID, sampleResume } from "@rb/templates";
 import { ApiError, api, type FieldIssue } from "../api";
 import { Preview } from "../components/Preview";
 import { ThemePanel } from "../components/ThemePanel";
+import { BasicsForm } from "../components/editor/BasicsForm";
+import { CertificatesForm } from "../components/editor/CertificatesForm";
+import { CustomSectionsForm } from "../components/editor/CustomSectionsForm";
+import { EducationForm } from "../components/editor/EducationForm";
+import { ExperienceForm } from "../components/editor/ExperienceForm";
+import { LanguagesForm } from "../components/editor/LanguagesForm";
+import { ProjectsForm } from "../components/editor/ProjectsForm";
+import { SkillsForm } from "../components/editor/SkillsForm";
 
 type SaveState = "idle" | "pending" | "saving" | "saved" | "error";
-
-const newId = () => crypto.randomUUID();
 
 export function Editor() {
   const { id } = useParams<{ id: string }>();
@@ -93,37 +99,7 @@ export function Editor() {
   if (loadError) return <p className="error">{loadError}</p>;
   if (!data || !theme) return <p className="muted">در حال بارگذاری…</p>;
 
-  /* ───────────── Edit helpers ───────────── */
-  const isFa = data.locale === "fa";
-  const setBasics = (patch: Partial<ResumeData["basics"]>) =>
-    setData({ ...data, basics: { ...data.basics, ...patch } });
-
-  const setExperience = (index: number, patch: Partial<Experience>) =>
-    setData({
-      ...data,
-      experience: data.experience.map((x, i) => (i === index ? { ...x, ...patch } : x)),
-    });
-
-  const addExperience = () =>
-    setData({
-      ...data,
-      experience: [
-        ...data.experience,
-        { id: newId(), company: "", position: "", period: { start: "", current: false }, highlights: [] },
-      ],
-    });
-
-  const removeExperience = (index: number) =>
-    setData({ ...data, experience: data.experience.filter((_, i) => i !== index) });
-
-  const addSkill = (name: string) => {
-    const clean = name.trim();
-    if (!clean || data.skills.some((s) => s.name === clean)) return;
-    setData({ ...data, skills: [...data.skills, { id: newId(), name: clean } satisfies Skill] });
-  };
-
-  const removeSkill = (skillId: string) =>
-    setData({ ...data, skills: data.skills.filter((s) => s.id !== skillId) });
+  const set = <K extends keyof ResumeData>(key: K) => (value: ResumeData[K]) => setData({ ...data, [key]: value });
 
   const fillSample = () => {
     if (!confirm("همه‌ی اطلاعات این رزومه با یک نمونه‌ی کامل جایگزین شود؟")) return;
@@ -132,7 +108,7 @@ export function Editor() {
 
   /* ───────────── Render ───────────── */
   return (
-    <div className="stack" dir={isFa ? "rtl" : "ltr"}>
+    <div className="stack" dir={data.locale === "fa" ? "rtl" : "ltr"}>
       <div className="row gap wrap sticky-bar">
         <Link to="/dashboard" className="btn ghost">
           → بازگشت
@@ -176,108 +152,15 @@ export function Editor() {
 
       <div className="editor-layout" data-pane={mobilePane}>
         <div className="editor-form stack">
-          {/* Basics */}
-          <section className="card stack">
-            <h2>اطلاعات پایه</h2>
-            <div className="grid2">
-              <Field label="نام و نام خانوادگی *" value={data.basics.fullName} onChange={(v) => setBasics({ fullName: v })} max={80} />
-              <Field label="عنوان شغلی" value={data.basics.jobTitle ?? ""} onChange={(v) => setBasics({ jobTitle: v })} max={100} />
-              <Field label="ایمیل" value={data.basics.email ?? ""} onChange={(v) => setBasics({ email: v })} ltr type="email" max={200} />
-              <Field label="تلفن" value={data.basics.phone ?? ""} onChange={(v) => setBasics({ phone: v })} ltr max={20} />
-              <Field label="شهر" value={data.basics.location ?? ""} onChange={(v) => setBasics({ location: v })} max={100} />
-            </div>
-            <label className="field">
-              <span>درباره‌ی من</span>
-              <textarea
-                rows={4}
-                maxLength={1500}
-                value={data.basics.summary ?? ""}
-                onChange={(e) => setBasics({ summary: e.target.value })}
-              />
-            </label>
-          </section>
-
-          {/* Work experience */}
-          <section className="card stack">
-            <div className="row gap">
-              <h2 className="grow">سوابق کاری</h2>
-              <button className="btn ghost" onClick={addExperience} disabled={data.experience.length >= 30}>
-                + افزودن
-              </button>
-            </div>
-
-            {data.experience.length === 0 && <p className="muted">هنوز سابقه‌ای اضافه نشده.</p>}
-
-            {data.experience.map((x, i) => (
-              <div key={x.id} className="sub-card stack">
-                <div className="grid2">
-                  <Field label="شرکت *" value={x.company} onChange={(v) => setExperience(i, { company: v })} max={100} />
-                  <Field label="سمت *" value={x.position} onChange={(v) => setExperience(i, { position: v })} max={100} />
-                  <Field
-                    label="شروع *"
-                    type="month"
-                    ltr
-                    value={x.period.start}
-                    onChange={(v) => setExperience(i, { period: { ...x.period, start: v } })}
-                  />
-                  <Field
-                    label="پایان"
-                    type="month"
-                    ltr
-                    disabled={x.period.current}
-                    value={x.period.end ?? ""}
-                    onChange={(v) => setExperience(i, { period: { ...x.period, end: v || undefined } })}
-                  />
-                </div>
-                <label className="row gap">
-                  <input
-                    type="checkbox"
-                    checked={x.period.current}
-                    onChange={(e) =>
-                      setExperience(i, {
-                        period: { ...x.period, current: e.target.checked, end: e.target.checked ? undefined : x.period.end },
-                      })
-                    }
-                  />
-                  هنوز اینجا کار می‌کنم
-                </label>
-                <label className="field">
-                  <span>توضیحات</span>
-                  <textarea
-                    rows={3}
-                    maxLength={2000}
-                    value={x.description ?? ""}
-                    onChange={(e) => setExperience(i, { description: e.target.value })}
-                  />
-                </label>
-                <button className="btn danger ghost self-start" onClick={() => removeExperience(i)}>
-                  حذف این سابقه
-                </button>
-              </div>
-            ))}
-          </section>
-
-          {/* Skills */}
-          <section className="card stack">
-            <h2>مهارت‌ها</h2>
-            <SkillInput onAdd={addSkill} disabled={data.skills.length >= 60} />
-            <div className="chips">
-              {data.skills.map((s) => (
-                <span key={s.id} className="chip">
-                  {s.name}
-                  <button aria-label={`حذف ${s.name}`} onClick={() => removeSkill(s.id)}>
-                    ×
-                  </button>
-                </span>
-              ))}
-            </div>
-          </section>
-
+          <BasicsForm value={data.basics} onChange={set("basics")} />
+          <ExperienceForm value={data.experience} onChange={set("experience")} />
+          <EducationForm value={data.education} onChange={set("education")} />
+          <SkillsForm value={data.skills} onChange={set("skills")} />
+          <ProjectsForm value={data.projects} onChange={set("projects")} />
+          <LanguagesForm value={data.languages} onChange={set("languages")} />
+          <CertificatesForm value={data.certificates} onChange={set("certificates")} />
+          <CustomSectionsForm value={data.customSections} onChange={set("customSections")} />
           <ThemePanel theme={theme} onChange={setTheme} />
-
-          <p className="muted small">
-            فرم تحصیلات، پروژه‌ها، زبان‌ها و گواهینامه‌ها در گام بعد اضافه می‌شود. برای دیدن همه‌ی بخش‌های قالب، «پر کردن با نمونه» را بزنید.
-          </p>
         </div>
 
         <aside className="editor-preview">
@@ -289,56 +172,6 @@ export function Editor() {
 }
 
 /* ───────────── Components ───────────── */
-
-function Field(props: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  type?: string;
-  ltr?: boolean;
-  max?: number;
-  disabled?: boolean;
-}) {
-  return (
-    <label className="field">
-      <span>{props.label}</span>
-      <input
-        type={props.type ?? "text"}
-        className={props.ltr ? "ltr" : undefined}
-        value={props.value}
-        maxLength={props.max}
-        disabled={props.disabled}
-        onChange={(e) => props.onChange(e.target.value)}
-      />
-    </label>
-  );
-}
-
-function SkillInput({ onAdd, disabled }: { onAdd: (name: string) => void; disabled: boolean }) {
-  const [value, setValue] = useState("");
-  return (
-    <form
-      className="row gap"
-      onSubmit={(e) => {
-        e.preventDefault();
-        onAdd(value);
-        setValue("");
-      }}
-    >
-      <input
-        className="grow"
-        placeholder="مثلاً React، و Enter بزنید"
-        value={value}
-        maxLength={50}
-        onChange={(e) => setValue(e.target.value)}
-        disabled={disabled}
-      />
-      <button className="btn ghost" disabled={disabled || !value.trim()}>
-        افزودن
-      </button>
-    </form>
-  );
-}
 
 function SaveBadge({ state }: { state: SaveState }) {
   const text: Record<SaveState, string> = {
@@ -366,14 +199,36 @@ const SECTION_LABELS: Record<string, string> = {
 
 const FIELD_LABELS: Record<string, string> = {
   fullName: "نام و نام خانوادگی",
+  jobTitle: "عنوان شغلی",
   email: "ایمیل",
+  phone: "تلفن",
+  location: "محل",
+  avatarUrl: "لینک عکس",
+  summary: "درباره‌ی من",
+  links: "لینک",
+  label: "عنوان لینک",
   company: "شرکت",
   position: "سمت",
   start: "تاریخ شروع",
   end: "تاریخ پایان",
-  name: "نام",
-  title: "عنوان",
+  description: "توضیحات",
+  highlights: "دستاورد",
   institution: "مؤسسه",
+  degree: "مقطع",
+  field: "رشته",
+  grade: "معدل",
+  name: "نام",
+  category: "دسته",
+  level: "سطح",
+  title: "عنوان",
+  role: "نقش",
+  technologies: "تکنولوژی",
+  images: "تصویر",
+  repoUrl: "لینک سورس کد",
+  issuer: "صادرکننده",
+  date: "تاریخ",
+  subtitle: "زیرعنوان",
+  items: "آیتم",
   url: "لینک",
 };
 

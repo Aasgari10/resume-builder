@@ -459,3 +459,109 @@ select {
   opacity: 0.35;
   cursor: default;
 }
+
+/* ───────── Section forms ───────── */
+
+.section-card {
+  padding: 0;
+}
+.section-card > summary {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 1rem 1.25rem;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.section-card > summary::-webkit-details-marker {
+  display: none;
+}
+.section-card > summary::after {
+  content: "▾";
+  margin-inline-start: auto;
+  color: var(--muted);
+  transition: transform 0.15s;
+}
+.section-card:not([open]) > summary::after {
+  transform: rotate(90deg);
+}
+.section-card .count {
+  min-width: 1.6rem;
+  padding: 0 0.45rem;
+  border-radius: 999px;
+  background: var(--notice-bg);
+  color: var(--primary);
+  font-size: 0.8rem;
+  text-align: center;
+}
+.section-body {
+  padding: 0 1.25rem 1.25rem;
+}
+.sub-card.nested {
+  background: var(--bg);
+}
+.skill-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 2fr) minmax(0, 1.4fr) auto;
+  align-items: end;
+  gap: 0.5rem;
+}
+.skill-row:has(> :nth-child(3):last-child) {
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr) auto;
+}
+@media (max-width: 560px) {
+  .skill-row,
+  .skill-row:has(> :nth-child(3):last-child) {
+    grid-template-columns: 1fr 1fr;
+  }
+  .skill-row .item-controls {
+    grid-column: 1 / -1;
+  }
+}
+.item-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.icon-btn {
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  cursor: pointer;
+}
+.icon-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.small-btn {
+  padding: 0.35rem 0.75rem;
+}
+.tag-input {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.tag-input input {
+  flex: 1;
+  min-width: 8rem;
+  border: 0;
+  padding: 0.25rem;
+}
+.tag-input input:focus {
+  outline: none;
+}
+.tag-input:focus-within {
+  border-color: var(--primary);
+  outline: 2px solid color-mix(in srgb, var(--primary) 35%, transparent);
+}
+.field small {
+  font-size: 0.8rem;
+}
