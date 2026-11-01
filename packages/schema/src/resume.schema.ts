@@ -22,9 +22,15 @@ function buildResumeSchemas(strict: boolean) {
   const text = (min: number, max: number) =>
     strict ? z.string().min(min).max(max) : z.string().max(max);
 
-  // Validated URL in strict mode; any string in drafts while the user is typing.
+  // http(s) URL in strict mode; any string in drafts while the user is typing.
   const url = () =>
-    strict ? z.string().url().max(500) : z.string().max(500);
+    strict
+      ? z
+          .string()
+          .max(500)
+          .url()
+          .refine((v) => /^https?:\/\//i.test(v), "لینک باید با http:// یا https:// شروع شود")
+      : z.string().max(500);
 
   const optionalUrl = url().optional().or(z.literal(""));
 

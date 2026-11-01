@@ -1,9 +1,12 @@
-// Resume editor: basics, work experience and skills, with debounced autosave.
+// Resume editor: form on one side, live template preview on the other, with debounced autosave.
 
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import type { Experience, ResumeData, Skill } from "@rb/schema";
+import { defaultTheme, type Experience, type ResumeData, type Skill, type Theme } from "@rb/schema";
+import { DEFAULT_PORTFOLIO_TEMPLATE_ID, sampleResume } from "@rb/templates";
 import { ApiError, api, type FieldIssue } from "../api";
+import { Preview } from "../components/Preview";
+import { ThemePanel } from "../components/ThemePanel";
 
 type SaveState = "idle" | "pending" | "saving" | "saved" | "error";
 
@@ -18,6 +21,9 @@ export function Editor() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [issues, setIssues] = useState<FieldIssue[] | null>(null);
   const [checking, setChecking] = useState(false);
+  // Theme is preview-only for now; it will be persisted with the published site.
+  const [theme, setTheme] = useState<Theme | null>(null);
+  const [mobilePane, setMobilePane] = useState<"form" | "preview">("form");
 
   const skipNextSave = useRef(false); // the state update from the initial load is not a user edit
   const saveSeq = useRef(0); // only the latest save may update save status
@@ -31,6 +37,7 @@ export function Editor() {
         skipNextSave.current = true;
         setTitle(resume.title);
         setData(resume.data);
+        setTheme(defaultTheme(DEFAULT_PORTFOLIO_TEMPLATE_ID, resume.data.locale));
       })
       .catch((e) => setLoadError(e instanceof ApiError ? e.message : "خطا در بارگذاری"));
   }, [id]);
@@ -84,7 +91,7 @@ export function Editor() {
   }
 
   if (loadError) return <p className="error">{loadError}</p>;
-  if (!data) return <p className="muted">در حال بارگذاری…</p>;
+  if (!data || !theme) return <p className="muted">در حال بارگذاری…</p>;
 
   /* ───────────── Edit helpers ───────────── */
   const isFa = data.locale === "fa";
@@ -118,6 +125,11 @@ export function Editor() {
   const removeSkill = (skillId: string) =>
     setData({ ...data, skills: data.skills.filter((s) => s.id !== skillId) });
 
+  const fillSample = () => {
+    if (!confirm("همه‌ی اطلاعات این رزومه با یک نمونه‌ی کامل جایگزین شود؟")) return;
+    setData(sampleResume(data.locale));
+  };
+
   /* ───────────── Render ───────────── */
   return (
     <div className="stack" dir={isFa ? "rtl" : "ltr"}>
@@ -127,6 +139,9 @@ export function Editor() {
         </Link>
         <input className="grow title-input" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={80} />
         <SaveBadge state={saveState} />
+        <button className="btn ghost" onClick={fillSample}>
+          پر کردن با نمونه
+        </button>
         <button className="btn" onClick={checkPublish} disabled={checking}>
           {checking ? "در حال بررسی…" : "بررسی آمادگی انتشار"}
         </button>
@@ -150,106 +165,125 @@ export function Editor() {
           </div>
         ))}
 
-      {/* Basics */}
-      <section className="card stack">
-        <h2>اطلاعات پایه</h2>
-        <div className="grid2">
-          <Field label="نام و نام خانوادگی *" value={data.basics.fullName} onChange={(v) => setBasics({ fullName: v })} max={80} />
-          <Field label="عنوان شغلی" value={data.basics.jobTitle ?? ""} onChange={(v) => setBasics({ jobTitle: v })} max={100} />
-          <Field label="ایمیل" value={data.basics.email ?? ""} onChange={(v) => setBasics({ email: v })} ltr type="email" max={200} />
-          <Field label="تلفن" value={data.basics.phone ?? ""} onChange={(v) => setBasics({ phone: v })} ltr max={20} />
-          <Field label="شهر" value={data.basics.location ?? ""} onChange={(v) => setBasics({ location: v })} max={100} />
-        </div>
-        <label className="field">
-          <span>درباره‌ی من</span>
-          <textarea
-            rows={4}
-            maxLength={1500}
-            value={data.basics.summary ?? ""}
-            onChange={(e) => setBasics({ summary: e.target.value })}
-          />
-        </label>
-      </section>
+      <div className="pane-switch" role="tablist">
+        <button role="tab" aria-selected={mobilePane === "form"} onClick={() => setMobilePane("form")}>
+          ویرایش
+        </button>
+        <button role="tab" aria-selected={mobilePane === "preview"} onClick={() => setMobilePane("preview")}>
+          پیش‌نمایش
+        </button>
+      </div>
 
-      {/* Work experience */}
-      <section className="card stack">
-        <div className="row gap">
-          <h2 className="grow">سوابق کاری</h2>
-          <button className="btn ghost" onClick={addExperience} disabled={data.experience.length >= 30}>
-            + افزودن
-          </button>
-        </div>
-
-        {data.experience.length === 0 && <p className="muted">هنوز سابقه‌ای اضافه نشده.</p>}
-
-        {data.experience.map((x, i) => (
-          <div key={x.id} className="sub-card stack">
+      <div className="editor-layout" data-pane={mobilePane}>
+        <div className="editor-form stack">
+          {/* Basics */}
+          <section className="card stack">
+            <h2>اطلاعات پایه</h2>
             <div className="grid2">
-              <Field label="شرکت *" value={x.company} onChange={(v) => setExperience(i, { company: v })} max={100} />
-              <Field label="سمت *" value={x.position} onChange={(v) => setExperience(i, { position: v })} max={100} />
-              <Field
-                label="شروع *"
-                type="month"
-                ltr
-                value={x.period.start}
-                onChange={(v) => setExperience(i, { period: { ...x.period, start: v } })}
-              />
-              <Field
-                label="پایان"
-                type="month"
-                ltr
-                disabled={x.period.current}
-                value={x.period.end ?? ""}
-                onChange={(v) => setExperience(i, { period: { ...x.period, end: v || undefined } })}
-              />
+              <Field label="نام و نام خانوادگی *" value={data.basics.fullName} onChange={(v) => setBasics({ fullName: v })} max={80} />
+              <Field label="عنوان شغلی" value={data.basics.jobTitle ?? ""} onChange={(v) => setBasics({ jobTitle: v })} max={100} />
+              <Field label="ایمیل" value={data.basics.email ?? ""} onChange={(v) => setBasics({ email: v })} ltr type="email" max={200} />
+              <Field label="تلفن" value={data.basics.phone ?? ""} onChange={(v) => setBasics({ phone: v })} ltr max={20} />
+              <Field label="شهر" value={data.basics.location ?? ""} onChange={(v) => setBasics({ location: v })} max={100} />
             </div>
-            <label className="row gap">
-              <input
-                type="checkbox"
-                checked={x.period.current}
-                onChange={(e) =>
-                  setExperience(i, {
-                    period: { ...x.period, current: e.target.checked, end: e.target.checked ? undefined : x.period.end },
-                  })
-                }
-              />
-              هنوز اینجا کار می‌کنم
-            </label>
             <label className="field">
-              <span>توضیحات</span>
+              <span>درباره‌ی من</span>
               <textarea
-                rows={3}
-                maxLength={2000}
-                value={x.description ?? ""}
-                onChange={(e) => setExperience(i, { description: e.target.value })}
+                rows={4}
+                maxLength={1500}
+                value={data.basics.summary ?? ""}
+                onChange={(e) => setBasics({ summary: e.target.value })}
               />
             </label>
-            <button className="btn danger ghost self-start" onClick={() => removeExperience(i)}>
-              حذف این سابقه
-            </button>
-          </div>
-        ))}
-      </section>
+          </section>
 
-      {/* Skills */}
-      <section className="card stack">
-        <h2>مهارت‌ها</h2>
-        <SkillInput onAdd={addSkill} disabled={data.skills.length >= 60} />
-        <div className="chips">
-          {data.skills.map((s) => (
-            <span key={s.id} className="chip">
-              {s.name}
-              <button aria-label={`حذف ${s.name}`} onClick={() => removeSkill(s.id)}>
-                ×
+          {/* Work experience */}
+          <section className="card stack">
+            <div className="row gap">
+              <h2 className="grow">سوابق کاری</h2>
+              <button className="btn ghost" onClick={addExperience} disabled={data.experience.length >= 30}>
+                + افزودن
               </button>
-            </span>
-          ))}
-        </div>
-      </section>
+            </div>
 
-      <p className="muted small">
-        بخش‌های تحصیلات، پروژه‌ها، زبان‌ها و گواهینامه‌ها و پیش‌نمایش زنده در گام‌های بعد اضافه می‌شوند.
-      </p>
+            {data.experience.length === 0 && <p className="muted">هنوز سابقه‌ای اضافه نشده.</p>}
+
+            {data.experience.map((x, i) => (
+              <div key={x.id} className="sub-card stack">
+                <div className="grid2">
+                  <Field label="شرکت *" value={x.company} onChange={(v) => setExperience(i, { company: v })} max={100} />
+                  <Field label="سمت *" value={x.position} onChange={(v) => setExperience(i, { position: v })} max={100} />
+                  <Field
+                    label="شروع *"
+                    type="month"
+                    ltr
+                    value={x.period.start}
+                    onChange={(v) => setExperience(i, { period: { ...x.period, start: v } })}
+                  />
+                  <Field
+                    label="پایان"
+                    type="month"
+                    ltr
+                    disabled={x.period.current}
+                    value={x.period.end ?? ""}
+                    onChange={(v) => setExperience(i, { period: { ...x.period, end: v || undefined } })}
+                  />
+                </div>
+                <label className="row gap">
+                  <input
+                    type="checkbox"
+                    checked={x.period.current}
+                    onChange={(e) =>
+                      setExperience(i, {
+                        period: { ...x.period, current: e.target.checked, end: e.target.checked ? undefined : x.period.end },
+                      })
+                    }
+                  />
+                  هنوز اینجا کار می‌کنم
+                </label>
+                <label className="field">
+                  <span>توضیحات</span>
+                  <textarea
+                    rows={3}
+                    maxLength={2000}
+                    value={x.description ?? ""}
+                    onChange={(e) => setExperience(i, { description: e.target.value })}
+                  />
+                </label>
+                <button className="btn danger ghost self-start" onClick={() => removeExperience(i)}>
+                  حذف این سابقه
+                </button>
+              </div>
+            ))}
+          </section>
+
+          {/* Skills */}
+          <section className="card stack">
+            <h2>مهارت‌ها</h2>
+            <SkillInput onAdd={addSkill} disabled={data.skills.length >= 60} />
+            <div className="chips">
+              {data.skills.map((s) => (
+                <span key={s.id} className="chip">
+                  {s.name}
+                  <button aria-label={`حذف ${s.name}`} onClick={() => removeSkill(s.id)}>
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          </section>
+
+          <ThemePanel theme={theme} onChange={setTheme} />
+
+          <p className="muted small">
+            فرم تحصیلات، پروژه‌ها، زبان‌ها و گواهینامه‌ها در گام بعد اضافه می‌شود. برای دیدن همه‌ی بخش‌های قالب، «پر کردن با نمونه» را بزنید.
+          </p>
+        </div>
+
+        <aside className="editor-preview">
+          <Preview data={data} theme={theme} />
+        </aside>
+      </div>
     </div>
   );
 }
