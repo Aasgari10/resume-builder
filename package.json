@@ -1,0 +1,35 @@
+{
+  "name": "resume-builder",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:api": "npm run dev -w @rb/api",
+    "dev:web": "npm run dev -w @rb/web",
+    "build": "npm run build -w @rb/api && npm run build -w @rb/web",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test -w @rb/api",
+    "db:up": "docker compose up -d",
+    "db:generate": "npm run db:generate -w @rb/api",
+    "db:migrate": "npm run db:migrate -w @rb/api",
+    "db:seed": "npm run db:seed -w @rb/api",
+    "db:studio": "npm run db:studio -w @rb/api"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "allowScripts": {
+    "prisma@6.19.3": true,
+    "@prisma/client@6.19.3": true,
+    "@prisma/engines@6.19.3": true,
+    "esbuild@0.27.7": true,
+    "esbuild@0.28.2": true,
+    "esbuild@0.21.5": true
+  }
+}

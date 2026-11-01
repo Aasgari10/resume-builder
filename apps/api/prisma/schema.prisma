@@ -1,0 +1,232 @@
+// Database schema.
+// Tenancy: every user-owned row carries userId; queries are always scoped by it.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────── Enums ─────────────
+
+enum Role {
+  USER
+  ADMIN // platform operator
+}
+
+enum Locale {
+  fa
+  en
+}
+
+enum TemplateKind {
+  PDF // printable resume
+  PORTFOLIO // hosted portfolio website
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELED
+}
+
+enum OrderItemType {
+  TEMPLATE // premium template purchase (unlocks use and HTML download)
+  HOSTING // hosting subscription (planned)
+}
+
+enum TransactionStatus {
+  PENDING // created; user redirected to the payment gateway
+  SUCCESS // verified with the gateway
+  FAILED
+}
+
+enum PaymentScope {
+  PLATFORM // payment to the platform (template sales)
+  TENANT // payment to a customer through their own gateway (planned)
+}
+
+// ───────────── Users and auth ─────────────
+
+model User {
+  id        String   @id @default(cuid())
+  phone     String   @unique // login identifier (OTP)
+  name      String?
+  email     String?
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  resumes         Resume[]
+  sites           Site[]
+  orders          Order[]
+  purchases       TemplatePurchase[]
+  paymentGateways PaymentGateway[]
+  downloadTokens  DownloadToken[]
+}
+
+// One-time login code. Keyed by phone rather than User, since first-time users do not exist yet.
+model OtpCode {
+  id         String    @id @default(cuid())
+  phone      String
+  codeHash   String // HMAC of the code; the code itself is never stored
+  attempts   Int       @default(0) // failed verification attempts
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([phone, createdAt])
+}
+
+// ───────────── Resumes ─────────────
+
+model Resume {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String // user-facing label in the dashboard
+  locale    Locale   @default(fa) // mirrors data.locale
+  data      Json // resume content; validated by resumeDraftSchema on write
+  pdfTheme  Json? // themeSchema; settings of the last PDF export
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sites Site[]
+
+  @@index([userId])
+}
+
+// ───────────── Templates ─────────────
+
+model Template {
+  id           String       @id // readable slug, e.g. "minimal-portfolio"
+  name         String
+  kind         TemplateKind
+  isPremium    Boolean      @default(false)
+  price        Int          @default(0) // rials; 0 for free templates
+  previewImage String?
+  supports     Json? // theme options this template supports (e.g. colorMode)
+  isActive     Boolean      @default(true)
+  sortOrder    Int          @default(0)
+  createdAt    DateTime     @default(now())
+
+  sites      Site[]
+  purchases  TemplatePurchase[]
+  orderItems Order[]
+}
+
+// ───────────── Portfolio sites ─────────────
+
+model Site {
+  id           String    @id @default(cuid())
+  userId       String
+  resumeId     String
+  templateId   String
+  theme        Json // themeSchema
+  subdomain    String    @unique // <subdomain>.<platform domain>
+  customDomain String?   @unique // customer-owned domain (planned)
+  paymentLink  String? // external payment link shown as a button
+  isPublished  Boolean   @default(false)
+  publishedAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resume   Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  template Template @relation(fields: [templateId], references: [id])
+
+  downloadTokens DownloadToken[]
+
+  @@index([userId])
+}
+
+// ───────────── Template ownership ─────────────
+
+// Created when an order is paid. Download access is checked against this table only.
+model TemplatePurchase {
+  id         String   @id @default(cuid())
+  userId     String
+  templateId String
+  orderId    String   @unique
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  template Template @relation(fields: [templateId], references: [id])
+  order    Order    @relation(fields: [orderId], references: [id])
+
+  @@unique([userId, templateId]) // a template is purchased at most once per user
+}
+
+// ───────────── Orders and payments ─────────────
+
+model Order {
+  id         String        @id @default(cuid())
+  userId     String
+  itemType   OrderItemType
+  templateId String?
+  amount     Int // rials; copied from the template price at order time
+  status     OrderStatus   @default(PENDING)
+  createdAt  DateTime      @default(now())
+  paidAt     DateTime?
+
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  template     Template?         @relation(fields: [templateId], references: [id])
+  transactions Transaction[]
+  purchase     TemplatePurchase?
+
+  @@index([userId])
+}
+
+model Transaction {
+  id         String            @id @default(cuid())
+  orderId    String
+  scope      PaymentScope      @default(PLATFORM)
+  provider   String // zarinpal | zibal | idpay ...
+  authority  String            @unique // gateway reference; unique to prevent double verification
+  amount     Int // source of truth for verification, never the callback payload
+  status     TransactionStatus @default(PENDING)
+  refId      String? // bank reference after success
+  raw        Json? // raw gateway response, for debugging
+  createdAt  DateTime          @default(now())
+  verifiedAt DateTime?
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
+
+// Customer-owned payment gateway credentials (planned).
+model PaymentGateway {
+  id                  String   @id @default(cuid())
+  userId              String
+  provider            String
+  merchantIdEncrypted String // encrypted at rest
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
+}
+
+// ───────────── Downloads ─────────────
+
+// Single-use, expiring link for downloading a site as a standalone HTML file.
+model DownloadToken {
+  id        String    @id @default(cuid())
+  token     String    @unique // long random string
+  userId    String
+  siteId    String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
