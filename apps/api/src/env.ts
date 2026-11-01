@@ -21,4 +21,15 @@ export const env = {
   sessionSecret: sessionSecret(),
   // Outside production, return the OTP code in the API response so login works without SMS.
   otpDevEcho: !isProd && process.env.OTP_DEV_ECHO !== "false",
+  // Sites are served at <subdomain>.<rootDomain> when set (e.g. "example.ir", or "localhost" in development).
+  // They are always reachable at /s/<subdomain> as well.
+  rootDomain: process.env.ROOT_DOMAIN?.trim().toLowerCase() || undefined,
 };
+
+/** Public URL of a site on its own subdomain, or undefined when no root domain is configured. */
+export function siteUrl(subdomain: string): string | undefined {
+  if (!env.rootDomain) return undefined;
+  const protocol = env.isProd ? "https" : "http";
+  const port = env.isProd ? "" : `:${env.port}`;
+  return `${protocol}://${subdomain}.${env.rootDomain}${port}`;
+}

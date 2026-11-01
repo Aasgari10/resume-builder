@@ -1,6 +1,6 @@
 // Typed API client. The session cookie is httpOnly and sent automatically by the browser.
 
-import type { ResumeData } from "@rb/schema";
+import type { ResumeData, Theme } from "@rb/schema";
 
 export type FieldIssue = { path: string; message: string };
 
@@ -50,7 +50,30 @@ export type ResumeSummary = {
   updatedAt: string;
 };
 
-export type Resume = ResumeSummary & { data: ResumeData };
+export type Resume = ResumeSummary & { data: ResumeData; portfolioTheme: unknown };
+
+export type Site = {
+  subdomain: string;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  noindex: boolean;
+  isPublished: boolean;
+  publishedAt: string | null;
+  /** Path on the platform, e.g. /s/sara */
+  path: string;
+  /** Full subdomain URL when the server has a root domain configured. */
+  url: string | null;
+  hasUnpublishedChanges: boolean;
+};
+
+export type SiteSettings = {
+  subdomain: string;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  noindex?: boolean;
+};
+
+export type Availability = { available: true } | { available: false; reason: string; message: string };
 
 /* ───────────── Endpoints ───────────── */
 
@@ -66,9 +89,17 @@ export const api = {
   createResume: (title: string, locale: "fa" | "en") =>
     request<{ resume: Resume }>("POST", "/resumes", { title, locale }),
   getResume: (id: string) => request<{ resume: Resume }>("GET", `/resumes/${id}`),
-  updateResume: (id: string, patch: { title?: string; data?: ResumeData }) =>
+  updateResume: (id: string, patch: { title?: string; data?: ResumeData; portfolioTheme?: Theme }) =>
     request<{ resume: Resume }>("PATCH", `/resumes/${id}`, patch),
   deleteResume: (id: string) => request<void>("DELETE", `/resumes/${id}`),
   checkResume: (id: string) =>
     request<{ ok: true } | { ok: false; issues: FieldIssue[] }>("GET", `/resumes/${id}/check`),
+
+  getSite: (resumeId: string) => request<{ site: Site | null }>("GET", `/resumes/${resumeId}/site`),
+  checkSubdomain: (resumeId: string, subdomain: string) =>
+    request<Availability>("GET", `/resumes/${resumeId}/site/availability?subdomain=${encodeURIComponent(subdomain)}`),
+  saveSite: (resumeId: string, settings: SiteSettings) =>
+    request<{ site: Site }>("PUT", `/resumes/${resumeId}/site`, settings),
+  publishSite: (resumeId: string) => request<{ site: Site }>("POST", `/resumes/${resumeId}/site/publish`),
+  unpublishSite: (resumeId: string) => request<{ site: Site }>("POST", `/resumes/${resumeId}/site/unpublish`),
 };

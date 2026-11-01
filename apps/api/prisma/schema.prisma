@@ -89,13 +89,14 @@ model Resume {
   userId    String
   title     String // user-facing label in the dashboard
   locale    Locale   @default(fa) // mirrors data.locale
-  data      Json // resume content; validated by resumeDraftSchema on write
-  pdfTheme  Json? // themeSchema; settings of the last PDF export
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  data           Json // resume content; validated by resumeDraftSchema on write
+  portfolioTheme Json? // themeSchema; editor's working theme for the portfolio site
+  pdfTheme       Json? // themeSchema; settings of the last PDF export
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  sites Site[]
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  site Site?
 
   @@index([userId])
 }
@@ -121,19 +122,25 @@ model Template {
 
 // ───────────── Portfolio sites ─────────────
 
+// One site per resume. Public pages render the published snapshot, never the live draft,
+// so edits reach the site only when the user publishes again.
 model Site {
-  id           String    @id @default(cuid())
-  userId       String
-  resumeId     String
-  templateId   String
-  theme        Json // themeSchema
-  subdomain    String    @unique // <subdomain>.<platform domain>
-  customDomain String?   @unique // customer-owned domain (planned)
-  paymentLink  String? // external payment link shown as a button
-  isPublished  Boolean   @default(false)
-  publishedAt  DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id             String    @id @default(cuid())
+  userId         String
+  resumeId       String    @unique
+  templateId     String
+  subdomain      String    @unique // <subdomain>.<platform domain>
+  customDomain   String?   @unique // customer-owned domain (planned)
+  paymentLink    String? // external payment link shown as a button
+  seoTitle       String? // overrides the generated <title>
+  seoDescription String? // overrides the generated meta description
+  noindex        Boolean   @default(false) // asks search engines not to index the site
+  publishedData  Json? // resumeDataSchema snapshot taken at publish time
+  publishedTheme Json? // themeSchema snapshot taken at publish time
+  isPublished    Boolean   @default(false)
+  publishedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   resume   Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)

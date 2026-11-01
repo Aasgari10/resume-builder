@@ -1,3 +1,6 @@
+/** @jsxRuntime automatic @jsxImportSource react */
+// Pinned per file: this package is compiled by different tools (Vite, tsx, tsup), some of which
+// would otherwise fall back to the classic `React.createElement` transform.
 import type { CSSProperties, ReactNode } from "react";
 import { themeToCssVars, type ResumeData, type SectionConfig, type SectionKey, type Theme } from "@rb/schema";
 import { LABELS, formatNumber, formatPeriod, formatYearMonth, initials, linkLabel, safeUrl } from "../format";

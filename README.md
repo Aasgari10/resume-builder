@@ -87,6 +87,31 @@ Authentication uses a signed, httpOnly session cookie (`rb_session`, 30 days).
 
 Resumes owned by other users return 404, so their existence is not revealed.
 
+### Sites (authenticated)
+
+One site per resume. Publishing stores a snapshot of the resume and theme; the public page always renders the last snapshot, so later edits go live only when published again.
+
+| Method | Path | Body | Description |
+|---|---|---|---|
+| GET | `/api/resumes/:id/site` | — | Site settings and publish state (`hasUnpublishedChanges`), or `null` |
+| GET | `/api/resumes/:id/site/availability?subdomain=` | — | Live address check: format, reserved names, taken |
+| PUT | `/api/resumes/:id/site` | `{ subdomain, seoTitle?, seoDescription?, noindex? }` | Create or update settings |
+| POST | `/api/resumes/:id/site/publish` | — | Validate with the strict schema and publish a snapshot; `NOT_PUBLISHABLE` lists failing fields |
+| POST | `/api/resumes/:id/site/unpublish` | — | Take the site offline; settings are kept |
+
+`PATCH /api/resumes/:id` also accepts `portfolioTheme`, so the editor's appearance settings are saved with autosave.
+
+### Public sites
+
+| Path | Description |
+|---|---|
+| `GET /s/:subdomain` | Published site, server-rendered HTML |
+| `GET /` on `<subdomain>.<ROOT_DOMAIN>` | Same page on its own subdomain |
+
+Pages ship no JavaScript and are served with a strict Content Security Policy. Metadata is generated from the resume: title, description, Open Graph tags and schema.org `Person` JSON-LD, with optional user overrides and a `noindex` switch.
+
+In development, set `ROOT_DOMAIN="localhost"` and open `http://<subdomain>.localhost:4000`, or use `http://localhost:5173/s/<subdomain>`.
+
 ### Templates (public)
 
 | Method | Path | Description |

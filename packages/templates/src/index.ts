@@ -5,6 +5,7 @@ import type { TemplateDefinition } from "./types";
 export type { TemplateDefinition, TemplateProps } from "./types";
 export { sampleResume } from "./sample";
 export { formatPeriod, formatYearMonth, safeUrl } from "./format";
+export { buildSeo, truncate, type SeoMeta, type SeoOverrides } from "./seo";
 
 const minimalPortfolio: TemplateDefinition = {
   id: "minimal-portfolio",
