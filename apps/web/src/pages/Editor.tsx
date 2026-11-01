@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { defaultTheme, type ResumeData, type Theme } from "@rb/schema";
+import { defaultTheme, themeSchema, type ResumeData, type Theme } from "@rb/schema";
 import { DEFAULT_PORTFOLIO_TEMPLATE_ID, sampleResume } from "@rb/templates";
 import { ApiError, api, type FieldIssue } from "../api";
 import { Preview } from "../components/Preview";
+import { PublishPanel } from "../components/PublishPanel";
 import { ThemePanel } from "../components/ThemePanel";
 import { BasicsForm } from "../components/editor/BasicsForm";
 import { CertificatesForm } from "../components/editor/CertificatesForm";
@@ -27,8 +28,8 @@ export function Editor() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [issues, setIssues] = useState<FieldIssue[] | null>(null);
   const [checking, setChecking] = useState(false);
-  // Theme is preview-only for now; it will be persisted with the published site.
   const [theme, setTheme] = useState<Theme | null>(null);
+  const [savedVersion, setSavedVersion] = useState(0); // bumps after each successful save
   const [mobilePane, setMobilePane] = useState<"form" | "preview">("form");
 
   const skipNextSave = useRef(false); // the state update from the initial load is not a user edit
@@ -43,7 +44,8 @@ export function Editor() {
         skipNextSave.current = true;
         setTitle(resume.title);
         setData(resume.data);
-        setTheme(defaultTheme(DEFAULT_PORTFOLIO_TEMPLATE_ID, resume.data.locale));
+        const saved = themeSchema.safeParse(resume.portfolioTheme);
+        setTheme(saved.success ? saved.data : defaultTheme(DEFAULT_PORTFOLIO_TEMPLATE_ID, resume.data.locale));
       })
       .catch((e) => setLoadError(e instanceof ApiError ? e.message : "خطا در بارگذاری"));
   }, [id]);
@@ -60,17 +62,18 @@ export function Editor() {
     const timer = setTimeout(() => void save(), 800);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, title]);
+  }, [data, title, theme]);
 
   async function save(): Promise<boolean> {
-    if (!id || !data) return false;
+    if (!id || !data || !theme) return false;
     const seq = ++saveSeq.current;
     setSaveState("saving");
     try {
-      await api.updateResume(id, { title: title.trim() || "بدون عنوان", data });
+      await api.updateResume(id, { title: title.trim() || "بدون عنوان", data, portfolioTheme: theme });
       if (seq === saveSeq.current) {
         setSaveState("saved");
         setSaveError(null);
+        setSavedVersion((v) => v + 1);
       }
       return true;
     } catch (e) {
@@ -161,6 +164,7 @@ export function Editor() {
           <CertificatesForm value={data.certificates} onChange={set("certificates")} />
           <CustomSectionsForm value={data.customSections} onChange={set("customSections")} />
           <ThemePanel theme={theme} onChange={setTheme} />
+          <PublishPanel resumeId={id!} data={data} version={savedVersion} saveNow={save} onIssues={setIssues} />
         </div>
 
         <aside className="editor-preview">

@@ -565,3 +565,65 @@ select {
 .field small {
   font-size: 0.8rem;
 }
+
+/* ───────── Publish panel ───────── */
+
+.publish-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+}
+.badge {
+  padding: 0.1rem 0.6rem;
+  border-radius: 999px;
+  background: var(--warn-bg);
+  color: #8a5a00;
+  font-size: 0.8rem;
+}
+.address-input {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding-inline-start: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.address-input input {
+  border: 0;
+  padding-inline-start: 0;
+}
+.address-input input:focus {
+  outline: none;
+}
+.address-input:focus-within {
+  border-color: var(--primary);
+  outline: 2px solid color-mix(in srgb, var(--primary) 35%, transparent);
+}
+.seo-details > summary {
+  cursor: pointer;
+  color: var(--primary);
+  margin-bottom: 0.75rem;
+}
+.search-snippet {
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  font-family: Arial, Tahoma, sans-serif;
+}
+.snippet-address {
+  color: #1e7e46;
+  font-size: 0.8rem;
+}
+.snippet-title {
+  color: #1a0dab;
+  font-size: 1.05rem;
+  line-height: 1.4;
+}
+.snippet-description {
+  color: #4d5156;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}

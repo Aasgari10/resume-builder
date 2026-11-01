@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { checkPublishable, emptyResume, resumeDraftSchema } from "@rb/schema";
+import { checkPublishable, emptyResume, resumeDraftSchema, themeSchema } from "@rb/schema";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "../db";
 import { HttpError, asyncHandler, parseBody } from "../lib/http";
@@ -20,9 +20,10 @@ const updateBody = z
   .object({
     title: z.string().trim().min(1).max(80).optional(),
     data: resumeDraftSchema.optional(), // autosave uses lenient validation
+    portfolioTheme: themeSchema.optional(),
   })
-  .refine((b) => b.title !== undefined || b.data !== undefined, {
-    message: "حداقل یکی از title یا data لازم است",
+  .refine((b) => b.title !== undefined || b.data !== undefined || b.portfolioTheme !== undefined, {
+    message: "حداقل یکی از title، data یا portfolioTheme لازم است",
   });
 
 /**
@@ -81,7 +82,7 @@ resumesRouter.get(
   })
 );
 
-/** PATCH /api/resumes/:id  { title?, data? } — saves changes; called by editor autosave. */
+/** PATCH /api/resumes/:id  { title?, data?, portfolioTheme? } — saves changes; called by editor autosave. */
 resumesRouter.patch(
   "/:id",
   asyncHandler(async (req, res) => {
@@ -98,6 +99,9 @@ resumesRouter.patch(
               data: body.data as Prisma.InputJsonValue,
               locale: body.data.locale, // keep the column in sync with content
             }
+          : {}),
+        ...(body.portfolioTheme !== undefined
+          ? { portfolioTheme: body.portfolioTheme as Prisma.InputJsonValue }
           : {}),
       },
     });

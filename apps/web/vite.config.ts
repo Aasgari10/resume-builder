@@ -5,7 +5,11 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
-    // Forward API calls to the backend during development
-    proxy: { "/api": "http://localhost:4000" },
+    // Forward API calls, published sites and their assets to the backend during development
+    proxy: {
+      "/api": "http://localhost:4000",
+      "/s/": "http://localhost:4000",
+      "/_assets": "http://localhost:4000",
+    },
   },
 });

@@ -1,0 +1,80 @@
+// Public, unauthenticated rendering of published sites.
+// Reachable at /s/<subdomain>, and at <subdomain>.<ROOT_DOMAIN>/ when a root domain is configured.
+
+import { createRequire } from "node:module";
+import { dirname } from "node:path";
+import express, { Router, type Request, type Response } from "express";
+import { resumeDataSchema, themeSchema } from "@rb/schema";
+import { prisma } from "../db";
+import { env, siteUrl } from "../env";
+import { asyncHandler } from "../lib/http";
+import { subdomainFromHost, validateSubdomain } from "../lib/subdomain";
+import { FONT_ASSETS_PATH, SITE_CSP, renderNotFoundPage, renderSitePage } from "../render/sitePage";
+
+export const publicRouter = Router();
+
+// Vazirmatn font files and CSS from the @fontsource package, cached for a long time.
+const fontDir = dirname(createRequire(import.meta.url).resolve("@fontsource/vazirmatn/package.json"));
+publicRouter.use(FONT_ASSETS_PATH, express.static(fontDir, { maxAge: "30d", immutable: true, index: false }));
+
+function sendPage(res: Response, status: number, html: string) {
+  res
+    .status(status)
+    .set({
+      "Content-Type": "text/html; charset=utf-8",
+      "Content-Security-Policy": SITE_CSP,
+      "X-Content-Type-Options": "nosniff",
+      "Referrer-Policy": "strict-origin-when-cross-origin",
+      "Cache-Control": status === 200 ? "public, max-age=60" : "no-store",
+    })
+    .send(html);
+}
+
+async function renderSite(req: Request, res: Response, rawSubdomain: string) {
+  const check = validateSubdomain(rawSubdomain);
+  const site = check.ok
+    ? await prisma.site.findUnique({ where: { subdomain: check.value } })
+    : null;
+
+  if (!site || !site.isPublished) {
+    sendPage(res, 404, renderNotFoundPage());
+    return;
+  }
+
+  // Snapshots are validated at publish time; re-check defensively before rendering.
+  const data = resumeDataSchema.safeParse(site.publishedData);
+  const theme = themeSchema.safeParse(site.publishedTheme);
+  if (!data.success || !theme.success) {
+    console.error(`Invalid published snapshot for site ${site.subdomain}`);
+    sendPage(res, 500, renderNotFoundPage());
+    return;
+  }
+
+  const url = siteUrl(site.subdomain) ?? `${req.protocol}://${req.get("host")}/s/${site.subdomain}`;
+  const html = renderSitePage({
+    data: data.data,
+    theme: theme.data,
+    seo: { title: site.seoTitle, description: site.seoDescription, noindex: site.noindex },
+    url,
+  });
+  sendPage(res, 200, html);
+}
+
+/** GET /s/:subdomain — path-based access, used in development and as a fallback. */
+publicRouter.get(
+  "/s/:subdomain",
+  asyncHandler(async (req, res) => renderSite(req, res, req.params.subdomain!))
+);
+
+/** GET / on <subdomain>.<ROOT_DOMAIN> — host-based access for production subdomains. */
+publicRouter.get(
+  "/",
+  asyncHandler(async (req, res, next) => {
+    const subdomain = subdomainFromHost(req.headers.host, env.rootDomain);
+    if (!subdomain) {
+      next();
+      return;
+    }
+    await renderSite(req, res, subdomain);
+  })
+);
