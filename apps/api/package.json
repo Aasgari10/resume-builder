@@ -8,7 +8,7 @@
     "build": "tsup",
     "start": "node dist/index.js",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "tsx --test src/lib/lib.test.ts src/lib/subdomain.test.ts src/render/sitePage.test.tsx",
+    "test": "tsx --test src/lib/lib.test.ts src/lib/subdomain.test.ts src/render/sitePage.test.tsx src/render/templates.test.tsx",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",

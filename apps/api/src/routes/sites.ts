@@ -141,7 +141,9 @@ sitesRouter.post(
     }
 
     const theme = workingTheme(resume);
-    if (!TEMPLATES[theme.templateId]) throw new HttpError(400, "UNKNOWN_TEMPLATE", "قالب انتخاب‌شده معتبر نیست");
+    if (TEMPLATES[theme.templateId]?.kind !== "PORTFOLIO") {
+      throw new HttpError(400, "UNKNOWN_TEMPLATE", "قالب انتخاب‌شده معتبر نیست");
+    }
 
     const site = await prisma.site.update({
       where: { id: resume.site.id },

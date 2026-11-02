@@ -3,10 +3,28 @@ import { RequireAuth, useAuth } from "./auth";
 import { Dashboard } from "./pages/Dashboard";
 import { Editor } from "./pages/Editor";
 import { Login } from "./pages/Login";
+import { PrintResume } from "./pages/PrintResume";
 
 export function App() {
   const { user, logout } = useAuth();
-  const wide = useLocation().pathname.startsWith("/resumes/");
+  const { pathname } = useLocation();
+  const wide = pathname.startsWith("/resumes/");
+
+  // The print page renders without the app shell so only the resume reaches the PDF.
+  if (/^\/resumes\/[^/]+\/print$/.test(pathname)) {
+    return (
+      <Routes>
+        <Route
+          path="/resumes/:id/print"
+          element={
+            <RequireAuth>
+              <PrintResume />
+            </RequireAuth>
+          }
+        />
+      </Routes>
+    );
+  }
 
   return (
     <>
