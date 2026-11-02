@@ -104,6 +104,15 @@ export function Editor() {
 
   const set = <K extends keyof ResumeData>(key: K) => (value: ResumeData[K]) => setData({ ...data, [key]: value });
 
+  // Opens the window before awaiting the save, so popup blockers treat it as a direct user action.
+  const openPdf = async () => {
+    const win = window.open("", "_blank");
+    await save();
+    const url = `/resumes/${id}/print`;
+    if (win) win.location.href = url;
+    else window.location.href = url;
+  };
+
   const fillSample = () => {
     if (!confirm("همه‌ی اطلاعات این رزومه با یک نمونه‌ی کامل جایگزین شود؟")) return;
     setData(sampleResume(data.locale));
@@ -118,6 +127,9 @@ export function Editor() {
         </Link>
         <input className="grow title-input" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={80} />
         <SaveBadge state={saveState} />
+        <button className="btn ghost" onClick={openPdf}>
+          دانلود پی‌دی‌اف
+        </button>
         <button className="btn ghost" onClick={fillSample}>
           پر کردن با نمونه
         </button>

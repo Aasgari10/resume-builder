@@ -627,3 +627,26 @@ select {
   font-size: 0.85rem;
   line-height: 1.6;
 }
+
+/* ───────── Print page ───────── */
+
+.print-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  max-width: 210mm;
+  margin: 0 auto;
+  padding: 0.75rem 0;
+  background: var(--bg);
+}
+@media print {
+  .print-toolbar {
+    display: none;
+  }
+  body {
+    background: #fff;
+  }
+}
