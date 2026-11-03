@@ -129,6 +129,27 @@ Premium templates are sold through a gateway adapter (`apps/api/src/payments`). 
 
 Configuration: `APP_URL`, `PAYMENT_PROVIDER` (`fake` | `zarinpal`), `ZARINPAL_MERCHANT_ID`, `ZARINPAL_SANDBOX`. The fake gateway is refused in production.
 
+### Admin
+
+Available to users with the `ADMIN` role, which is checked against the database on every request. Other users get 404, so the API is not revealed.
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/admin/stats` | Revenue (total and last 30 days), users, resumes, published sites, pending and failed orders |
+| GET | `/api/admin/users?q=&page=` | Users with resume, site and purchase counts; search by phone or name |
+| GET | `/api/admin/orders?status=&page=` | Orders with buyer, template, amount and bank reference |
+| GET | `/api/admin/templates` | All templates with sales counts |
+| PATCH | `/api/admin/templates/:id` | `{ name?, price?, isPremium?, isActive?, sortOrder? }`; pending orders keep their original price |
+| GET | `/api/admin/sites?q=&page=` | Sites with owner and publish state; search by address or phone |
+| POST | `/api/admin/sites/:id/unpublish` | Take down a site |
+
+Grant or revoke the role from the command line (the user must have logged in once):
+
+```bash
+npm run admin:grant -w @rb/api -- 09121234567
+npm run admin:grant -w @rb/api -- 09121234567 --revoke
+```
+
 ### Templates (public)
 
 | Method | Path | Description |

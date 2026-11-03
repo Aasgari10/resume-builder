@@ -95,6 +95,76 @@ export type Order = {
   paidAt: string | null;
 };
 
+/* ───────────── Admin ───────────── */
+
+export type Paged<T> = { items: T[]; page: number; pageSize: number; total: number; pages: number };
+
+export type AdminStats = {
+  users: number;
+  newUsers7d: number;
+  resumes: number;
+  publishedSites: number;
+  paidOrders: number;
+  revenue: number;
+  paidOrders30d: number;
+  revenue30d: number;
+  pendingOrders: number;
+  failedOrders30d: number;
+};
+
+export type AdminUser = {
+  id: string;
+  phone: string;
+  name: string | null;
+  role: string;
+  createdAt: string;
+  resumes: number;
+  sites: number;
+  purchases: number;
+};
+
+export type AdminOrder = {
+  id: string;
+  status: Order["status"];
+  amount: number;
+  phone: string;
+  templateName: string | null;
+  provider: string | null;
+  refId: string | null;
+  createdAt: string;
+  paidAt: string | null;
+};
+
+export type AdminTemplate = {
+  id: string;
+  name: string;
+  kind: "PDF" | "PORTFOLIO";
+  isPremium: boolean;
+  price: number;
+  isActive: boolean;
+  sortOrder: number;
+  sales: number;
+  sites: number;
+};
+
+export type AdminTemplatePatch = Partial<Pick<AdminTemplate, "name" | "price" | "isPremium" | "isActive" | "sortOrder">>;
+
+export type AdminSite = {
+  id: string;
+  subdomain: string;
+  path: string;
+  url: string | null;
+  phone: string;
+  templateName: string;
+  isPublished: boolean;
+  publishedAt: string | null;
+};
+
+const qs = (params: Record<string, string | number | undefined>) => {
+  const entries = Object.entries(params).filter(([, v]) => v !== undefined && v !== "") as [string, string | number][];
+  return entries.length ? `?${new URLSearchParams(entries.map(([k, v]) => [k, String(v)]))}` : "";
+};
+
 export type Availability = { available: true } | { available: false; reason: string; message: string };
 
 /* ───────────── Endpoints ───────────── */
@@ -129,5 +199,15 @@ export const api = {
     request<{ templates: Template[] }>("GET", `/templates${kind ? `?kind=${kind}` : ""}`),
   createOrder: (templateId: string) =>
     request<{ orderId: string; paymentUrl: string }>("POST", "/orders", { templateId }),
+  admin: {
+    stats: () => request<{ stats: AdminStats }>("GET", "/admin/stats"),
+    users: (page: number, q?: string) => request<Paged<AdminUser>>("GET", `/admin/users${qs({ page, q })}`),
+    orders: (page: number, status?: string) => request<Paged<AdminOrder>>("GET", `/admin/orders${qs({ page, status })}`),
+    templates: () => request<{ templates: AdminTemplate[] }>("GET", "/admin/templates"),
+    updateTemplate: (id: string, patch: AdminTemplatePatch) =>
+      request<{ template: AdminTemplate }>("PATCH", `/admin/templates/${encodeURIComponent(id)}`, patch),
+    sites: (page: number, q?: string) => request<Paged<AdminSite>>("GET", `/admin/sites${qs({ page, q })}`),
+    unpublishSite: (id: string) => request<{ ok: true }>("POST", `/admin/sites/${encodeURIComponent(id)}/unpublish`),
+  },
   getOrder: (id: string) => request<{ order: Order }>("GET", `/orders/${encodeURIComponent(id)}`),
 };
