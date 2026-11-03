@@ -84,6 +84,8 @@ export const themeSchema = z.object({
   layout: layoutSchema,
   sections: sectionsSchema,
   display: displayOptionsSchema,
+  /** Template used for the printable resume (PDF); the default PDF template when missing. */
+  pdfTemplateId: z.string().min(1).max(50).optional(),
 });
 
 export type Theme = z.infer<typeof themeSchema>;
@@ -156,6 +158,53 @@ export const defaultTheme = (
   },
 });
 
+/* ───────────── Derived colors ───────────── */
+
+function channels(hex: string): [number, number, number] {
+  return [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)) as [number, number, number];
+}
+
+/** Relative luminance (WCAG) of a #RRGGBB color, 0 (black) to 1 (white). */
+export function luminance(hex: string): number {
+  const [r, g, b] = channels(hex).map((c) => {
+    const v = c / 255;
+    return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+  }) as [number, number, number];
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/** Blends two #RRGGBB colors; amount 0 returns `from`, 1 returns `to`. */
+export function mixHex(from: string, to: string, amount: number): string {
+  const a = channels(from);
+  const b = channels(to);
+  return `#${a.map((c, i) => Math.round(c + (b[i]! - c) * amount).toString(16).padStart(2, "0")).join("")}`.toUpperCase();
+}
+
+/** Readable text color on top of a background: white on dark colors, near-black on light ones. */
+export function onColor(background: string): string {
+  // Contrast with white vs. with #111827; pick the higher one.
+  const l = luminance(background);
+  const withWhite = 1.05 / (l + 0.05);
+  const withDark = (l + 0.05) / (luminance("#111827") + 0.05);
+  return withWhite >= withDark ? "#FFFFFF" : "#111827";
+}
+
+/** Swatches for the main color picker; only the primary color changes, backgrounds stay as they are. */
+export const PRIMARY_SWATCHES = [
+  { label: "سرمه‌ای", value: "#1E3A5F" },
+  { label: "آبی", value: "#1E5AA8" },
+  { label: "فیروزه‌ای", value: "#0E7C86" },
+  { label: "سبز", value: "#2F6B4F" },
+  { label: "زیتونی", value: "#5B7A3A" },
+  { label: "طلایی", value: "#B7832F" },
+  { label: "نارنجی", value: "#C2551F" },
+  { label: "زرشکی", value: "#7A2332" },
+  { label: "صورتی", value: "#B83B6A" },
+  { label: "بنفش", value: "#5B3E96" },
+  { label: "زغالی", value: "#2B2F36" },
+  { label: "مشکی", value: "#111111" },
+] as const;
+
 /* ───────────── CSS variables ───────────── */
 
 // Templates read styling only from these variables,
@@ -168,6 +217,11 @@ export function themeToCssVars(theme: Theme): Record<string, string> {
   const { colors, typography, layout } = theme;
   return {
     "--color-primary": colors.primary,
+    // Derived from the primary color, so templates stay readable for any choice.
+    "--color-on-primary": onColor(colors.primary),
+    "--color-primary-soft": mixHex(colors.primary, "#FFFFFF", 0.9),
+    "--color-primary-tint": mixHex(colors.primary, "#FFFFFF", 0.75),
+    "--color-primary-strong": mixHex(colors.primary, "#000000", 0.25),
     "--color-accent": colors.accent,
     "--color-bg": colors.background,
     "--color-surface": colors.surface,

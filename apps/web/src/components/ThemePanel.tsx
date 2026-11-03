@@ -1,4 +1,4 @@
-import { COLOR_PRESETS, type ColorPresetKey, type SectionKey, type Theme } from "@rb/schema";
+import { PRIMARY_SWATCHES, type SectionKey, type Theme } from "@rb/schema";
 
 const SECTION_LABELS: Record<SectionKey, string> = {
   experience: "سوابق کاری",
@@ -38,26 +38,22 @@ export function ThemePanel({ theme, onChange }: Props) {
       <h2>ظاهر</h2>
 
       <div className="field">
-        <span>پالت رنگ</span>
-        <div className="row gap wrap">
-          {(Object.keys(COLOR_PRESETS) as ColorPresetKey[]).map((key) => {
-            const preset = COLOR_PRESETS[key];
-            const active = preset.colors.primary === theme.colors.primary && preset.colors.accent === theme.colors.accent;
-            return (
-              <button
-                key={key}
-                type="button"
-                className="swatch"
-                aria-pressed={active}
-                onClick={() => set("colors", { ...preset.colors })}
-              >
-                <span style={{ background: preset.colors.primary }} />
-                <span style={{ background: preset.colors.accent }} />
-                {preset.label}
-              </button>
-            );
-          })}
+        <span>رنگ اصلی</span>
+        <div className="color-swatches">
+          {PRIMARY_SWATCHES.map((c) => (
+            <button
+              key={c.value}
+              type="button"
+              className="color-dot"
+              title={c.label}
+              aria-label={c.label}
+              aria-pressed={theme.colors.primary.toUpperCase() === c.value}
+              style={{ background: c.value }}
+              onClick={() => set("colors", { ...theme.colors, primary: c.value })}
+            />
+          ))}
         </div>
+        <small className="muted">فقط رنگ اصلی قالب عوض می‌شود؛ رنگ نوشته‌های روی آن خودکار خوانا می‌ماند.</small>
       </div>
 
       <div className="grid2">

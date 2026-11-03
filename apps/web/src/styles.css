@@ -870,3 +870,95 @@ select {
   background: currentColor;
   opacity: 0.6;
 }
+
+/* ───────────── Resume preview and template picker ───────────── */
+
+.scaled {
+  position: relative;
+  overflow: hidden;
+}
+.scaled-inner {
+  transform-origin: top right;
+}
+[dir="ltr"] .scaled-inner {
+  transform-origin: top left;
+}
+.scaled .k-page,
+.scaled .cr-root {
+  margin: 0;
+}
+.pdf-picker {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 4px 2px 10px;
+}
+.pdf-thumb {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  background: none;
+  font: inherit;
+  font-size: 0.8rem;
+  color: inherit;
+  cursor: pointer;
+}
+.pdf-thumb[aria-selected="true"] {
+  border-color: var(--primary, #1e5aa8);
+}
+.pdf-thumb-page {
+  width: 96px;
+  height: 136px;
+  overflow: hidden;
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.18);
+  background: #fff;
+  pointer-events: none;
+}
+
+/* ───────────── Main color swatches ───────────── */
+
+.color-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.color-dot {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px var(--border);
+  cursor: pointer;
+  padding: 0;
+}
+.color-dot[aria-pressed="true"] {
+  box-shadow: 0 0 0 2px currentColor;
+}
+
+/* ───────────── Avatar upload ───────────── */
+
+.avatar-field {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.avatar-preview {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: none;
+  overflow: hidden;
+  background: var(--border);
+}
+.avatar-preview .avatar-silhouette {
+  display: block;
+  width: 100%;
+  height: 100%;
+}

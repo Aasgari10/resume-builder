@@ -10,6 +10,7 @@ export default defineConfig({
       "/api": "http://localhost:4000",
       "/s/": "http://localhost:4000",
       "/_assets": "http://localhost:4000",
+      "/_uploads": "http://localhost:4000",
     },
   },
 });

@@ -15,6 +15,8 @@ apps/api            REST API — Express + Prisma (PostgreSQL)
 apps/web            Web app — React + Vite (editor with live preview)
 ```
 
+Printable resumes come in seven layouts (colored or tinted sidebar, banner, card, photo column, minimal, classic) built from a shared kit of sections. Users pick only a **main color**; text on it, light tints and darker shades are derived automatically, so backgrounds stay white and text stays readable.
+
 Templates are pure components driven by a theme (colors, typography, spacing, section order) exposed as CSS variables. Layout adapts to the container width, so the editor preview can emulate mobile, and the same components can later render published sites on the server.
 
 The resume model has two validation levels built from one definition: a lenient **draft** schema accepted on autosave, and a strict schema required for export and publishing.
@@ -164,6 +166,15 @@ Users restyle their site with a Persian sentence ("رسمی‌ترش کن"). The
 - Budgets are counted in real tokens reported by the provider (Tehran day), not in requests.
 - Each request is bounded: 300-character message, last 6 turns of history, capped reply length, and a per-minute limit.
 - Works with any OpenAI-compatible API (`AI_BASE_URL`, `AI_API_KEY`, `AI_MODEL`). Without a key, development uses a keyword-based fake model.
+
+### Uploads
+
+| Method | Path | Body | Description |
+|---|---|---|---|
+| POST | `/api/uploads/avatar` | `{ dataUrl }` | Profile photo; returns `{ url }` |
+| GET | `/_uploads/<file>` | — | Uploaded files, cached as immutable |
+
+The browser crops the photo to a square, resizes it to 512px and re-encodes it as JPEG (which also strips metadata). The server accepts JPEG, PNG or WebP detected from the file bytes, up to 600 KB and 50 files per user, and stores files in `UPLOAD_DIR`. Without a photo, templates show an initials avatar in the theme color.
 
 ### Templates (public)
 

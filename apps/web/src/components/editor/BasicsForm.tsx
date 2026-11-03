@@ -1,4 +1,5 @@
 import type { Basics } from "@rb/schema";
+import { AvatarField } from "./AvatarField";
 import { Field, ItemControls, Select, SectionCard, TextArea, Empty } from "./fields";
 import { LIMITS, move, newId, removeAt, replaceAt } from "./list";
 
@@ -47,16 +48,8 @@ export function BasicsForm({ value, onChange }: { value: Basics; onChange: (valu
           <Field label="ایمیل" type="email" ltr value={value.email ?? ""} onChange={(email) => set({ email })} max={200} />
           <Field label="تلفن" type="tel" ltr value={value.phone ?? ""} onChange={(phone) => set({ phone })} max={20} />
           <Field label="شهر" value={value.location ?? ""} onChange={(location) => set({ location })} max={100} />
-          <Field
-            label="لینک عکس پروفایل"
-            type="url"
-            ltr
-            placeholder="https://..."
-            value={value.avatarUrl ?? ""}
-            onChange={(avatarUrl) => set({ avatarUrl })}
-            max={500}
-          />
         </div>
+        <AvatarField value={value.avatarUrl ?? ""} onChange={(avatarUrl) => set({ avatarUrl })} />
         <TextArea
           label="درباره‌ی من"
           rows={4}

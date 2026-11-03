@@ -58,3 +58,12 @@ test("cookie: reads a value from the Cookie header", () => {
   assert.equal(readCookie(undefined, "rb_session"), null);
   assert.equal(readCookie("rb_session=%E0%A4%A", "rb_session"), null); // malformed encoding
 });
+
+test("uploads: detects image type from bytes, not from the declared type", async () => {
+  const { sniffImage } = await import("./image");
+  assert.equal(sniffImage(Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 0]))?.mime, "image/jpeg");
+  assert.equal(sniffImage(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0]))?.ext, "png");
+  assert.equal(sniffImage(Buffer.from("RIFF\0\0\0\0WEBPVP8 ", "latin1"))?.mime, "image/webp");
+  assert.equal(sniffImage(Buffer.from("<svg onload=alert(1)>")), null);
+  assert.equal(sniffImage(Buffer.from("GIF89a......")), null);
+});

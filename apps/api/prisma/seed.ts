@@ -5,8 +5,15 @@ import { PrismaClient, TemplateKind } from "@prisma/client";
 const prisma = new PrismaClient();
 
 const templates = [
-  { id: "classic-pdf", name: "کلاسیک", kind: TemplateKind.PDF, isPremium: false, price: 0, sortOrder: 1 },
-  { id: "modern-pdf", name: "مدرن", kind: TemplateKind.PDF, isPremium: false, price: 0, sortOrder: 2 },
+  { id: "sidebar-pdf", name: "ستون رنگی", kind: TemplateKind.PDF, isPremium: false, price: 0, sortOrder: 1 },
+  { id: "soft-pdf", name: "ستون روشن", kind: TemplateKind.PDF, isPremium: false, price: 0, sortOrder: 2 },
+  { id: "banner-pdf", name: "سربرگ", kind: TemplateKind.PDF, isPremium: false, price: 0, sortOrder: 3 },
+  { id: "card-pdf", name: "کارت", kind: TemplateKind.PDF, isPremium: false, price: 0, sortOrder: 4 },
+  { id: "column-pdf", name: "ستون عکس‌دار", kind: TemplateKind.PDF, isPremium: false, price: 0, sortOrder: 5 },
+  { id: "line-pdf", name: "خطی", kind: TemplateKind.PDF, isPremium: false, price: 0, sortOrder: 6 },
+  { id: "classic-pdf", name: "کلاسیک", kind: TemplateKind.PDF, isPremium: false, price: 0, sortOrder: 7 },
+  // Placeholder from the first seed; no code template exists for it.
+  { id: "modern-pdf", name: "مدرن", kind: TemplateKind.PDF, isPremium: false, price: 0, sortOrder: 99, isActive: false },
   {
     id: "minimal-portfolio",
     name: "مینیمال",

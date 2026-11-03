@@ -1,3 +1,5 @@
+import { resolve } from "node:path";
+
 // Loads apps/api/.env (Node 20.12+). Missing file is fine; system env vars are used instead.
 try {
   process.loadEnvFile();
@@ -54,6 +56,8 @@ function aiConfig(): AiConfig {
 
 export const env = {
   isProd,
+  // Directory for uploaded files (profile photos); mount it as a volume in production.
+  uploadDir: resolve(process.env.UPLOAD_DIR?.trim() || "uploads"),
   // Public origin of the web app; used for gateway callback and post-payment redirects.
   appUrl: (process.env.APP_URL?.trim() || "http://localhost:5173").replace(/\/+$/, ""),
   payment: paymentConfig(),

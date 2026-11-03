@@ -68,6 +68,7 @@ model User {
   paymentGateways PaymentGateway[]
   downloadTokens  DownloadToken[]
   aiUsages        AiUsage[]
+  uploads         Upload[]
 }
 
 // One-time login code. Keyed by phone rather than User, since first-time users do not exist yet.
@@ -266,4 +267,21 @@ model Setting {
   key       String   @id
   value     Json
   updatedAt DateTime @updatedAt
+}
+
+// ───────────── Uploads ─────────────
+
+// Files users upload (profile photos). Stored on disk; this table tracks ownership and quota.
+// Files are kept even if no longer referenced, since published snapshots may still point to them.
+model Upload {
+  id        String   @id @default(cuid())
+  userId    String
+  fileName  String   @unique // random name under UPLOAD_DIR
+  mimeType  String
+  size      Int // bytes
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

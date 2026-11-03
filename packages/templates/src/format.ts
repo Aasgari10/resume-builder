@@ -10,6 +10,8 @@ type LinkType = ResumeData["basics"]["links"][number]["type"];
 type Labels = {
   sections: Record<"experience" | "education" | "skills" | "projects" | "languages" | "certificates", string>;
   present: string;
+  contact: string;
+  profile: string;
   viewProject: string;
   sourceCode: string;
   verify: string;
@@ -29,6 +31,8 @@ export const LABELS: Record<Locale, Labels> = {
       certificates: "گواهینامه‌ها",
     },
     present: "تا کنون",
+    contact: "اطلاعات تماس",
+    profile: "درباره‌ی من",
     viewProject: "مشاهده",
     sourceCode: "سورس کد",
     verify: "تأیید",
@@ -60,6 +64,8 @@ export const LABELS: Record<Locale, Labels> = {
       certificates: "Certificates",
     },
     present: "Present",
+    contact: "Contact",
+    profile: "Profile",
     viewProject: "View",
     sourceCode: "Source",
     verify: "Verify",

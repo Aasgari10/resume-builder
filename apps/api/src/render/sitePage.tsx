@@ -4,6 +4,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import type { ResumeData, Theme } from "@rb/schema";
 import { buildSeo, getTemplate, type SeoOverrides } from "@rb/templates";
+import { env } from "../env";
 
 /** Escapes text for HTML element content and quoted attribute values. */
 export function escapeHtml(value: string): string {
@@ -36,7 +37,8 @@ export const SITE_CSP = [
   "script-src 'none'",
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self'",
-  "img-src https: data:",
+  // The app origin is listed so uploaded photos also load in development over plain HTTP.
+  `img-src https: data: ${new URL(env.appUrl).origin}`,
   "base-uri 'none'",
   "form-action 'none'",
   "frame-ancestors 'none'",
