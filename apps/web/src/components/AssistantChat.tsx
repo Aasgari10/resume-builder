@@ -2,7 +2,7 @@
 // and are saved by the editor's autosave; each change can be undone.
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import type { Theme } from "@rb/schema";
+import { defaultTheme, type Theme } from "@rb/schema";
 import { ApiError, api, type AssistantQuota, type AssistantTurn } from "../api";
 
 type Message = {
@@ -13,6 +13,8 @@ type Message = {
   before?: Theme;
   undone?: boolean;
   error?: boolean;
+  /** Created in the browser (e.g. reset); not sent to the model as history. */
+  local?: boolean;
 };
 
 const WELCOME =
@@ -53,7 +55,7 @@ export function AssistantChat({ theme, locale, onChange }: Props) {
     if (!message || busy || exhausted) return;
 
     // Successful turns only, so failed requests do not confuse the model.
-    const history: AssistantTurn[] = messages.filter((m) => !m.error).map((m) => ({ role: m.role, content: m.content }));
+    const history: AssistantTurn[] = messages.filter((m) => !m.error && !m.local).map((m) => ({ role: m.role, content: m.content }));
     const add = (m: Omit<Message, "id">) => setMessages((list) => [...list, { ...m, id: nextId.current++ }]);
 
     add({ role: "user", content: message });
@@ -79,6 +81,16 @@ export function AssistantChat({ theme, locale, onChange }: Props) {
     onChange(target.before);
     // Later changes were built on top of this one, so they are undone too.
     setMessages((list) => list.map((m) => (m.id >= id && m.before ? { ...m, undone: true } : m)));
+  }
+
+  // Exact defaults for the current template, without a model call; undoable like any other change.
+  function reset() {
+    const before = theme;
+    onChange(defaultTheme(theme.templateId, locale));
+    setMessages((list) => [
+      ...list,
+      { id: nextId.current++, role: "assistant", content: "ظاهر به حالت اولیه‌ی قالب برگشت.", before, local: true },
+    ]);
   }
 
   const submit = (e: FormEvent) => {
@@ -120,6 +132,12 @@ export function AssistantChat({ theme, locale, onChange }: Props) {
           ))}
         </div>
       )}
+
+      <div className="row gap">
+        <button type="button" className="link-btn small muted" disabled={busy} onClick={reset}>
+          بازگشت به ظاهر اولیه
+        </button>
+      </div>
 
       <form className="row gap assistant-form" onSubmit={submit}>
         <input

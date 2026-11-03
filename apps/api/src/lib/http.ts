@@ -1,5 +1,5 @@
 import type { NextFunction, Request, RequestHandler, Response } from "express";
-import type { ZodSchema } from "zod";
+import type { ZodTypeAny, output } from "zod";
 
 /** Client-facing error with an HTTP status and a machine-readable code. */
 export class HttpError extends Error {
@@ -20,8 +20,11 @@ export const asyncHandler =
     fn(req, res, next).catch(next);
   };
 
-/** Parses a request body with Zod; throws a 400 with per-field issues on failure. */
-export function parseBody<T>(schema: ZodSchema<T>, body: unknown): T {
+/**
+ * Parses a request body with Zod; throws a 400 with per-field issues on failure.
+ * Returns the schema's output type, so fields with defaults are never undefined.
+ */
+export function parseBody<S extends ZodTypeAny>(schema: S, body: unknown): output<S> {
   const result = schema.safeParse(body);
   if (!result.success) {
     throw new HttpError(
