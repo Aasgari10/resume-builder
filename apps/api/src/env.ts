@@ -47,7 +47,7 @@ function aiConfig(): AiConfig {
     const baseUrl = process.env.AI_BASE_URL?.trim().replace(/\/+$/, "");
     const model = process.env.AI_MODEL?.trim();
     if (!baseUrl || !model) throw new Error("AI_BASE_URL and AI_MODEL are required when AI_API_KEY is set");
-    return { provider: "openai", baseUrl, apiKey, model, jsonMode: process.env.AI_JSON_MODE !== "false" };
+    return { provider: "openai", baseUrl, apiKey, model, jsonMode: process.env.AI_JSON_MODE === "true" };
   }
   return isProd ? { provider: "disabled" } : { provider: "fake" };
 }

@@ -5,7 +5,7 @@ import { z } from "zod";
 import { themeSchema, type Theme } from "@rb/schema";
 import { chatModel } from "../ai";
 import { ModelError, type ChatMessage, type ChatResult } from "../ai/models";
-import { SYSTEM_PROMPT, themeContext } from "../ai/prompt";
+import { SYSTEM_PROMPT, userTurn } from "../ai/prompt";
 import { applyThemePatch, ensureReadable, parseAssistantReply } from "../ai/themePatch";
 import { prisma } from "../db";
 import { HttpError, asyncHandler, parseBody } from "../lib/http";
@@ -73,8 +73,12 @@ assistantRouter.post(
     // Only the last few turns are sent, so long conversations do not grow the cost.
     const messages: ChatMessage[] = [
       { role: "system", content: SYSTEM_PROMPT },
-      ...body.history.slice(-MAX_HISTORY),
-      { role: "user", content: `Current theme: ${themeContext(body.theme, body.locale)}\nRequest:\n${body.message}` },
+      // Earlier turns are marked as history so the model does not answer them again.
+      ...body.history.slice(-MAX_HISTORY).map((m) => ({
+        role: m.role,
+        content: m.role === "user" ? `(earlier request) ${m.content}` : JSON.stringify({ reply: m.content }),
+      })),
+      { role: "user", content: userTurn(body.theme, body.locale, body.message) },
     ];
 
     let result: ChatResult;

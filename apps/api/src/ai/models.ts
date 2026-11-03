@@ -1,5 +1,7 @@
 // Chat model clients: any OpenAI-compatible API, and a keyword-based fake for development.
 
+import { extractRequest } from "./prompt";
+
 export type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
 
 export type ChatResult = {
@@ -50,7 +52,7 @@ export function createOpenAiCompatible(options: {
             temperature: 0.4,
             ...(options.jsonMode ? { response_format: { type: "json_object" } } : {}),
           }),
-          signal: AbortSignal.timeout(options.timeoutMs ?? 30_000),
+          signal: AbortSignal.timeout(options.timeoutMs ?? 60_000),
         });
       } catch (e) {
         throw new ModelError(`AI provider unreachable: ${String(e)}`);
@@ -137,8 +139,7 @@ export function createFakeModel(): ChatModel {
     model: "fake-keywords",
     async complete(messages) {
       const last = [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
-      // The user's request is the last line of the final user message.
-      const request = last.split("\n").at(-1) ?? "";
+      const request = extractRequest(last);
       const rule = FAKE_RULES.find((r) => r.match.test(request));
       const content = JSON.stringify(
         rule
