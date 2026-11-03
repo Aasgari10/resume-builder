@@ -176,7 +176,7 @@ export function Editor() {
           <CertificatesForm value={data.certificates} onChange={set("certificates")} />
           <CustomSectionsForm value={data.customSections} onChange={set("customSections")} />
           <ThemePanel theme={theme} onChange={setTheme} />
-          <PublishPanel resumeId={id!} data={data} version={savedVersion} saveNow={save} onIssues={setIssues} />
+          <PublishPanel resumeId={id!} templateId={theme.templateId} data={data} version={savedVersion} saveNow={save} onIssues={setIssues} />
         </div>
 
         <aside className="editor-preview">

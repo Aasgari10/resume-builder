@@ -1,10 +1,11 @@
 import { Router } from "express";
 import { prisma } from "../db";
 import { asyncHandler } from "../lib/http";
+import { purchasedTemplateIds } from "../lib/ownership";
 
 export const templatesRouter = Router();
 
-/** GET /api/templates?kind=PDF|PORTFOLIO — active templates (public). */
+/** GET /api/templates?kind=PDF|PORTFOLIO — active templates (public); `owned` reflects the signed-in user. */
 templatesRouter.get(
   "/",
   asyncHandler(async (req, res) => {
@@ -21,6 +22,9 @@ templatesRouter.get(
       },
       orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
     });
-    res.json({ templates });
+    const purchased = req.userId ? await purchasedTemplateIds(req.userId) : new Set<string>();
+    res.json({
+      templates: templates.map((t) => ({ ...t, owned: !t.isPremium || t.price <= 0 || purchased.has(t.id) })),
+    });
   })
 );

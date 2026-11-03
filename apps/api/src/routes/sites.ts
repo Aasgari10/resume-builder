@@ -9,6 +9,7 @@ import { DEFAULT_PORTFOLIO_TEMPLATE_ID, TEMPLATES } from "@rb/templates";
 import { prisma } from "../db";
 import { siteUrl } from "../env";
 import { HttpError, asyncHandler, parseBody } from "../lib/http";
+import { canUseTemplate } from "../lib/ownership";
 import { validateSubdomain } from "../lib/subdomain";
 import { currentUserId, requireAuth } from "../middleware/auth";
 
@@ -143,6 +144,11 @@ sitesRouter.post(
     const theme = workingTheme(resume);
     if (TEMPLATES[theme.templateId]?.kind !== "PORTFOLIO") {
       throw new HttpError(400, "UNKNOWN_TEMPLATE", "قالب انتخاب‌شده معتبر نیست");
+    }
+    if (!(await canUseTemplate(resume.userId, theme.templateId))) {
+      throw new HttpError(402, "TEMPLATE_NOT_PURCHASED", "برای انتشار با این قالب، ابتدا آن را خریداری کنید", {
+        templateId: theme.templateId,
+      });
     }
 
     const site = await prisma.site.update({

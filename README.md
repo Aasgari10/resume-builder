@@ -112,6 +112,23 @@ Pages ship no JavaScript and are served with a strict Content Security Policy. M
 
 In development, set `ROOT_DOMAIN="localhost"` and open `http://<subdomain>.localhost:4000`, or use `http://localhost:5173/s/<subdomain>`.
 
+### Payments
+
+Premium templates are sold through a gateway adapter (`apps/api/src/payments`). Zarinpal is implemented; a local **fake** gateway is used in development so the full flow works without a merchant account.
+
+| Method | Path | Body | Description |
+|---|---|---|---|
+| POST | `/api/orders` | `{ templateId }` | Create a pending order at the template's current price and return the gateway `paymentUrl` |
+| GET | `/api/orders/:id` | — | Order status for the result page (own orders only) |
+| GET | `/api/payments/callback` | — | Gateway return URL: verifies server-to-server and redirects to `/payment/result` |
+
+- The amount sent for verification comes from the stored transaction, never from the callback.
+- Each gateway reference (`authority`) is unique, and the transition out of `PENDING` is a conditional update, so a repeated or concurrent callback cannot grant a purchase twice.
+- Publishing a site with a premium template requires a purchase (`402 TEMPLATE_NOT_PURCHASED`).
+- `GET /api/templates` includes `owned` for the signed-in user.
+
+Configuration: `APP_URL`, `PAYMENT_PROVIDER` (`fake` | `zarinpal`), `ZARINPAL_MERCHANT_ID`, `ZARINPAL_SANDBOX`. The fake gateway is refused in production.
+
 ### Templates (public)
 
 | Method | Path | Description |

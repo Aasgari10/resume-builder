@@ -650,3 +650,36 @@ select {
     background: #fff;
   }
 }
+
+/* ───────────── Payments ───────────── */
+
+.purchase-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.purchase-box .price {
+  font-weight: 700;
+  white-space: nowrap;
+}
+.payment-result {
+  align-items: center;
+  text-align: center;
+}
+.payment-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 28px;
+  color: #fff;
+}
+.payment-icon.ok {
+  background: #16a34a;
+}
+.payment-icon.fail {
+  background: #dc2626;
+}

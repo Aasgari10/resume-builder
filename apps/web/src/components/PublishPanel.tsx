@@ -3,13 +3,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ResumeData } from "@rb/schema";
 import { buildSeo } from "@rb/templates";
-import { ApiError, api, type Availability, type FieldIssue, type Site } from "../api";
+import { ApiError, api, type Availability, type FieldIssue, type Site, type Template } from "../api";
+import { formatToman, rememberReturnPath } from "../format";
 import { Checkbox, Field, SectionCard, TextArea } from "./editor/fields";
 
 const dateFormatter = new Intl.DateTimeFormat("fa-IR", { dateStyle: "medium", timeStyle: "short" });
 
 type Props = {
   resumeId: string;
+  /** Template selected in the theme panel; premium templates must be purchased before publishing. */
+  templateId: string;
   data: ResumeData;
   /** Increments after every successful autosave, so publish state can be refreshed. */
   version: number;
@@ -19,14 +22,15 @@ type Props = {
   onIssues: (issues: FieldIssue[]) => void;
 };
 
-export function PublishPanel({ resumeId, data, version, saveNow, onIssues }: Props) {
+export function PublishPanel({ resumeId, templateId, data, version, saveNow, onIssues }: Props) {
   const [site, setSite] = useState<Site | null | undefined>(undefined);
   const [subdomain, setSubdomain] = useState("");
   const [seoTitle, setSeoTitle] = useState("");
   const [seoDescription, setSeoDescription] = useState("");
   const [noindex, setNoindex] = useState(false);
   const [availability, setAvailability] = useState<Availability | "checking" | null>(null);
-  const [busy, setBusy] = useState<"save" | "publish" | "unpublish" | null>(null);
+  const [busy, setBusy] = useState<"save" | "publish" | "unpublish" | "buy" | null>(null);
+  const [templates, setTemplates] = useState<Template[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   // Responses older than the latest load or action are discarded, so a slow refresh
   // cannot overwrite the result of a publish that finished after it started.
@@ -50,6 +54,19 @@ export function PublishPanel({ resumeId, data, version, saveNow, onIssues }: Pro
       .catch((e) => setError(e instanceof ApiError ? e.message : "خطا در دریافت اطلاعات سایت"));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resumeId, version]);
+
+  /* Template prices and ownership; reloaded when the server reports a missing purchase. */
+  const loadTemplates = () =>
+    api
+      .listTemplates("PORTFOLIO")
+      .then(({ templates }) => setTemplates(templates))
+      .catch(() => setTemplates([]));
+  useEffect(() => {
+    void loadTemplates();
+  }, []);
+
+  const template = templates?.find((t) => t.id === templateId);
+  const needsPurchase = template !== undefined && !template.owned;
 
   /* Live address check, 400 ms after typing stops. */
   const normalized = subdomain.trim().toLowerCase();
@@ -88,7 +105,10 @@ export function PublishPanel({ resumeId, data, version, saveNow, onIssues }: Pro
       setSite(site);
       setAvailability(null);
     } catch (e) {
-      if (e instanceof ApiError && e.code === "NOT_PUBLISHABLE" && Array.isArray(e.details)) {
+      if (e instanceof ApiError && e.code === "TEMPLATE_NOT_PURCHASED") {
+        void loadTemplates();
+        setError(e.message);
+      } else if (e instanceof ApiError && e.code === "NOT_PUBLISHABLE" && Array.isArray(e.details)) {
         onIssues(e.details as FieldIssue[]);
         setError("رزومه هنوز کامل نیست؛ موارد مشخص‌شده در بالای صفحه را کامل کنید.");
       } else {
@@ -110,6 +130,23 @@ export function PublishPanel({ resumeId, data, version, saveNow, onIssues }: Pro
       if (settingsChanged) await api.saveSite(resumeId, { subdomain: normalized, seoTitle: seoTitle.trim() || null, seoDescription: seoDescription.trim() || null, noindex });
       return api.publishSite(resumeId);
     });
+
+  // Saves first, so nothing is lost while the user is on the gateway's page.
+  const buy = async () => {
+    if (!template) return;
+    setError(null);
+    setBusy("buy");
+    try {
+      if (!(await saveNow())) throw new ApiError(0, "SAVE_FAILED", "ذخیره‌ی تغییرات انجام نشد؛ دوباره تلاش کنید");
+      const { paymentUrl } = await api.createOrder(template.id);
+      rememberReturnPath(`/resumes/${resumeId}`);
+      window.location.href = paymentUrl;
+    } catch (e) {
+      if (e instanceof ApiError && e.code === "ALREADY_OWNED") void loadTemplates();
+      setError(e instanceof ApiError ? e.message : "خطای ناشناخته");
+      setBusy(null);
+    }
+  };
 
   const unpublish = () => {
     if (!confirm("سایت از دسترس عموم خارج شود؟ تنظیمات و آدرس حفظ می‌شوند.")) return;
@@ -182,6 +219,16 @@ export function PublishPanel({ resumeId, data, version, saveNow, onIssues }: Pro
             </div>
           </details>
 
+          {needsPurchase && template && (
+            <div className="notice purchase-box">
+              <div>
+                <strong>قالب «{template.name}» پولی است</strong>
+                <div className="muted small">با یک‌بار خرید، برای همیشه می‌توانید با آن سایت منتشر کنید.</div>
+              </div>
+              <span className="price">{formatToman(template.price)}</span>
+            </div>
+          )}
+
           {error && <p className="error">{error}</p>}
 
           <div className="row gap wrap">
@@ -190,14 +237,20 @@ export function PublishPanel({ resumeId, data, version, saveNow, onIssues }: Pro
                 {busy === "save" ? "در حال ذخیره…" : site ? "ذخیره‌ی تنظیمات" : "ثبت آدرس"}
               </button>
             )}
-            <button
-              type="button"
-              className="btn"
-              disabled={busy !== null || !normalized || (settingsChanged && !canSave) || (site?.isPublished && !site.hasUnpublishedChanges && !settingsChanged)}
-              onClick={publish}
-            >
-              {busy === "publish" ? "در حال انتشار…" : site?.isPublished ? "به‌روزرسانی سایت" : "انتشار سایت"}
-            </button>
+            {needsPurchase ? (
+              <button type="button" className="btn" disabled={busy !== null} onClick={buy}>
+                {busy === "buy" ? "در حال انتقال به درگاه…" : "خرید و فعال‌سازی قالب"}
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="btn"
+                disabled={busy !== null || !normalized || (settingsChanged && !canSave) || (site?.isPublished && !site.hasUnpublishedChanges && !settingsChanged)}
+                onClick={publish}
+              >
+                {busy === "publish" ? "در حال انتشار…" : site?.isPublished ? "به‌روزرسانی سایت" : "انتشار سایت"}
+              </button>
+            )}
             {site?.isPublished && (
               <button type="button" className="btn danger ghost" disabled={busy !== null} onClick={unpublish}>
                 {busy === "unpublish" ? "…" : "لغو انتشار"}
