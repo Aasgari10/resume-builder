@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import {
   ApiError,
   api,
+  type AdminAiUsage,
   type AdminOrder,
   type AdminSite,
   type AdminStats,
@@ -15,7 +16,7 @@ import {
 import { useAuth } from "../auth";
 import { formatToman } from "../format";
 
-type Tab = "overview" | "orders" | "users" | "templates" | "sites";
+type Tab = "overview" | "orders" | "users" | "templates" | "sites" | "ai";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "overview", label: "نمای کلی" },
@@ -23,6 +24,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "users", label: "کاربران" },
   { id: "templates", label: "قالب‌ها" },
   { id: "sites", label: "سایت‌ها" },
+  { id: "ai", label: "هوش مصنوعی" },
 ];
 
 const dateFormatter = new Intl.DateTimeFormat("fa-IR", { dateStyle: "medium", timeStyle: "short" });
@@ -51,6 +53,7 @@ export function Admin() {
       {tab === "users" && <Users />}
       {tab === "templates" && <Templates />}
       {tab === "sites" && <Sites />}
+      {tab === "ai" && <AiUsage />}
     </div>
   );
 }
@@ -413,6 +416,102 @@ function Sites() {
           <Pager page={page} pages={data.pages} onChange={setPage} />
         </>
       )}
+    </div>
+  );
+}
+
+/* ───────────── AI assistant ───────────── */
+
+const PROVIDER_LABEL: Record<AdminAiUsage["provider"], string> = {
+  openai: "متصل",
+  fake: "حالت آزمایشی (بدون کلید)",
+  disabled: "غیرفعال",
+};
+
+function AiUsage() {
+  const [usage, setUsage] = useState<AdminAiUsage | null>(null);
+  const [limit, setLimit] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    api.admin
+      .ai()
+      .then((u) => {
+        setUsage(u);
+        setLimit(String(u.dailyTokenLimit));
+      })
+      .catch((e) => setError(errorText(e)));
+  }, []);
+
+  if (error) return <p className="error">{error}</p>;
+  if (!usage) return <p className="muted">در حال بارگذاری…</p>;
+
+  const parsedLimit = Number(limit.replace(/[,٬\s]/g, ""));
+  const limitValid = Number.isInteger(parsedLimit) && parsedLimit >= 0;
+
+  async function saveLimit() {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const { settings } = await api.admin.updateSettings({ aiDailyTokenLimit: parsedLimit });
+      setUsage((u) => (u ? { ...u, dailyTokenLimit: settings.aiDailyTokenLimit } : u));
+      setMessage("ذخیره شد");
+    } catch (e) {
+      setMessage(errorText(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const cards = [
+    { label: "وضعیت", value: PROVIDER_LABEL[usage.provider], hint: usage.model ?? undefined },
+    { label: "مصرف امروز", value: `${fa(usage.today.tokens)} توکن`, hint: `${fa(usage.today.requests)} درخواست · ${fa(usage.today.users)} کاربر` },
+    { label: "مصرف ۳۰ روز اخیر", value: `${fa(usage.last30.tokens)} توکن`, hint: `${fa(usage.last30.requests)} درخواست` },
+  ];
+
+  return (
+    <div className="stack">
+      <div className="stat-grid">
+        {cards.map((c) => (
+          <div key={c.label} className="card stat-card">
+            <span className="muted small">{c.label}</span>
+            <strong>{c.value}</strong>
+            {c.hint && <span className="muted small ltr">{c.hint}</span>}
+          </div>
+        ))}
+      </div>
+
+      <div className="card stack">
+        <h3>سقف مصرف روزانه‌ی هر کاربر</h3>
+        <div className="row gap wrap">
+          <input className="ltr" inputMode="numeric" value={limit} onChange={(e) => setLimit(e.target.value)} />
+          <span className="muted small">توکن در روز</span>
+          <button
+            className="btn"
+            disabled={busy || !limitValid || parsedLimit === usage.dailyTokenLimit}
+            onClick={() => void saveLimit()}
+          >
+            {busy ? "…" : "ذخیره"}
+          </button>
+        </div>
+        <p className="muted small">هر درخواست معمولاً حدود ۱۰۰۰ تا ۲۰۰۰ توکن مصرف می‌کند. صفر یعنی دستیار برای همه خاموش است.</p>
+        {message && <p className="muted small">{message}</p>}
+      </div>
+
+      <div className="card stack">
+        <h3>پرمصرف‌ترین کاربران (۳۰ روز اخیر)</h3>
+        <Table head={["شماره", "توکن", "درخواست"]} empty="هنوز مصرفی ثبت نشده است.">
+          {usage.topUsers.map((u) => (
+            <tr key={u.phone}>
+              <td className="ltr">{u.phone}</td>
+              <td>{fa(u.tokens)}</td>
+              <td>{fa(u.requests)}</td>
+            </tr>
+          ))}
+        </Table>
+      </div>
     </div>
   );
 }

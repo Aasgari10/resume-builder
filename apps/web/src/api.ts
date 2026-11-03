@@ -165,6 +165,19 @@ const qs = (params: Record<string, string | number | undefined>) => {
   return entries.length ? `?${new URLSearchParams(entries.map(([k, v]) => [k, String(v)]))}` : "";
 };
 
+export type AssistantTurn = { role: "user" | "assistant"; content: string };
+export type AssistantQuota = { enabled: boolean; remainingPercent: number; demo: boolean };
+export type AssistantResponse = { reply: string; theme: Theme | null; remainingPercent: number };
+
+export type AdminAiUsage = {
+  provider: "openai" | "fake" | "disabled";
+  model: string | null;
+  dailyTokenLimit: number;
+  today: { tokens: number; requests: number; users: number };
+  last30: { tokens: number; requests: number };
+  topUsers: { phone: string; tokens: number; requests: number }[];
+};
+
 export type Availability = { available: true } | { available: false; reason: string; message: string };
 
 /* ───────────── Endpoints ───────────── */
@@ -207,7 +220,13 @@ export const api = {
     updateTemplate: (id: string, patch: AdminTemplatePatch) =>
       request<{ template: AdminTemplate }>("PATCH", `/admin/templates/${encodeURIComponent(id)}`, patch),
     sites: (page: number, q?: string) => request<Paged<AdminSite>>("GET", `/admin/sites${qs({ page, q })}`),
+    ai: () => request<AdminAiUsage>("GET", "/admin/ai"),
+    updateSettings: (patch: { aiDailyTokenLimit?: number }) =>
+      request<{ settings: { aiDailyTokenLimit: number } }>("PATCH", "/admin/settings", patch),
     unpublishSite: (id: string) => request<{ ok: true }>("POST", `/admin/sites/${encodeURIComponent(id)}/unpublish`),
   },
+  assistantQuota: () => request<AssistantQuota>("GET", "/assistant/quota"),
+  askAssistant: (body: { message: string; history: AssistantTurn[]; theme: Theme; locale: "fa" | "en" }) =>
+    request<AssistantResponse>("POST", "/assistant/theme", body),
   getOrder: (id: string) => request<{ order: Order }>("GET", `/orders/${encodeURIComponent(id)}`),
 };

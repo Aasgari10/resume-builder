@@ -34,11 +34,30 @@ function paymentConfig(): PaymentConfig {
   throw new Error(`Unknown PAYMENT_PROVIDER: ${provider}`);
 }
 
+type AiConfig =
+  | { provider: "openai"; baseUrl: string; apiKey: string; model: string; jsonMode: boolean }
+  | { provider: "fake" }
+  | { provider: "disabled" };
+
+// Any OpenAI-compatible chat completions API (DeepSeek, resellers, etc.).
+// Without a key, development uses a local fake model and production disables the assistant.
+function aiConfig(): AiConfig {
+  const apiKey = process.env.AI_API_KEY?.trim();
+  if (apiKey) {
+    const baseUrl = process.env.AI_BASE_URL?.trim().replace(/\/+$/, "");
+    const model = process.env.AI_MODEL?.trim();
+    if (!baseUrl || !model) throw new Error("AI_BASE_URL and AI_MODEL are required when AI_API_KEY is set");
+    return { provider: "openai", baseUrl, apiKey, model, jsonMode: process.env.AI_JSON_MODE !== "false" };
+  }
+  return isProd ? { provider: "disabled" } : { provider: "fake" };
+}
+
 export const env = {
   isProd,
   // Public origin of the web app; used for gateway callback and post-payment redirects.
   appUrl: (process.env.APP_URL?.trim() || "http://localhost:5173").replace(/\/+$/, ""),
   payment: paymentConfig(),
+  ai: aiConfig(),
   port: Number(process.env.PORT ?? 4000),
   sessionSecret: sessionSecret(),
   // Outside production, return the OTP code in the API response so login works without SMS.

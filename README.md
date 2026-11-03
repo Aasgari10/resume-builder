@@ -150,6 +150,21 @@ npm run admin:grant -w @rb/api -- 09121234567
 npm run admin:grant -w @rb/api -- 09121234567 --revoke
 ```
 
+### AI appearance assistant
+
+Users restyle their site with a Persian sentence ("رسمی‌ترش کن"). The model is not trained; it follows instructions and returns a JSON **theme patch** limited to colors, fonts, text size, spacing, corner radius, section order, visibility and headings. The patch is validated with Zod, cannot change the template or content, and text colors are corrected when contrast is too low (WCAG ratios).
+
+| Method | Path | Body | Description |
+|---|---|---|---|
+| GET | `/api/assistant/quota` | — | Whether the assistant is enabled and today's remaining budget (percent) |
+| POST | `/api/assistant/theme` | `{ message, history, theme, locale }` | Returns `{ reply, theme, remainingPercent }`; the theme is applied by the editor and saved by autosave |
+| GET | `/api/admin/ai` | — | Token usage today and over 30 days, top users |
+| PATCH | `/api/admin/settings` | `{ aiDailyTokenLimit }` | Per-user daily token budget |
+
+- Budgets are counted in real tokens reported by the provider (Tehran day), not in requests.
+- Each request is bounded: 300-character message, last 6 turns of history, capped reply length, and a per-minute limit.
+- Works with any OpenAI-compatible API (`AI_BASE_URL`, `AI_API_KEY`, `AI_MODEL`). Without a key, development uses a keyword-based fake model.
+
 ### Templates (public)
 
 | Method | Path | Description |

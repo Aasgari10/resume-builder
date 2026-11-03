@@ -67,6 +67,7 @@ model User {
   purchases       TemplatePurchase[]
   paymentGateways PaymentGateway[]
   downloadTokens  DownloadToken[]
+  aiUsages        AiUsage[]
 }
 
 // One-time login code. Keyed by phone rather than User, since first-time users do not exist yet.
@@ -236,4 +237,33 @@ model DownloadToken {
   site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+// ───────────── AI assistant ─────────────
+
+// One row per model call; daily budgets are enforced by summing totalTokens.
+model AiUsage {
+  id               String   @id @default(cuid())
+  userId           String
+  provider         String
+  model            String
+  promptTokens     Int
+  completionTokens Int
+  totalTokens      Int
+  ok               Boolean // false when the model reply could not be used
+  createdAt        DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
+}
+
+// ───────────── Platform settings ─────────────
+
+// Key-value settings editable from the admin panel; values are validated in code.
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
 }

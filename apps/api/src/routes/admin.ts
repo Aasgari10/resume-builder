@@ -5,9 +5,10 @@ import { Router } from "express";
 import { z } from "zod";
 import type { OrderStatus, Prisma } from "@prisma/client";
 import { prisma } from "../db";
-import { siteUrl } from "../env";
+import { env, siteUrl } from "../env";
 import { HttpError, asyncHandler, parseBody } from "../lib/http";
 import { toLatinDigits } from "../lib/phone";
+import { getSettings, settingsSchema, startOfTehranDay, updateSettings } from "../lib/settings";
 import { requireAdmin } from "../middleware/admin";
 
 export const adminRouter = Router();
@@ -246,5 +247,55 @@ adminRouter.post(
     const result = await prisma.site.updateMany({ where: { id: String(req.params.id) }, data: { isPublished: false } });
     if (result.count === 0) throw new HttpError(404, "NOT_FOUND", "سایت پیدا نشد");
     res.json({ ok: true });
+  })
+);
+
+/* ───────────── AI assistant ───────────── */
+
+/** GET /api/admin/ai — token usage today and over 30 days, top users, and the daily limit. */
+adminRouter.get(
+  "/ai",
+  asyncHandler(async (_req, res) => {
+    const today = startOfTehranDay();
+    const since30 = new Date(Date.now() - 30 * DAY_MS);
+
+    const [settings, todayUsage, monthUsage, todayUsers, top] = await Promise.all([
+      getSettings(),
+      prisma.aiUsage.aggregate({ where: { createdAt: { gte: today } }, _sum: { totalTokens: true }, _count: true }),
+      prisma.aiUsage.aggregate({ where: { createdAt: { gte: since30 } }, _sum: { totalTokens: true }, _count: true }),
+      prisma.aiUsage.groupBy({ by: ["userId"], where: { createdAt: { gte: today } } }),
+      prisma.aiUsage.groupBy({
+        by: ["userId"],
+        where: { createdAt: { gte: since30 } },
+        _sum: { totalTokens: true },
+        _count: { _all: true },
+        orderBy: { _sum: { totalTokens: "desc" } },
+        take: 10,
+      }),
+    ]);
+
+    const phones = await prisma.user.findMany({ where: { id: { in: top.map((t) => t.userId) } }, select: { id: true, phone: true } });
+
+    res.json({
+      provider: env.ai.provider,
+      model: env.ai.provider === "openai" ? env.ai.model : null,
+      dailyTokenLimit: settings.aiDailyTokenLimit,
+      today: { tokens: todayUsage._sum.totalTokens ?? 0, requests: todayUsage._count, users: todayUsers.length },
+      last30: { tokens: monthUsage._sum.totalTokens ?? 0, requests: monthUsage._count },
+      topUsers: top.map((t) => ({
+        phone: phones.find((p) => p.id === t.userId)?.phone ?? "—",
+        tokens: t._sum.totalTokens ?? 0,
+        requests: t._count._all,
+      })),
+    });
+  })
+);
+
+/** PATCH /api/admin/settings  { aiDailyTokenLimit? } */
+adminRouter.patch(
+  "/settings",
+  asyncHandler(async (req, res) => {
+    const patch = parseBody(settingsSchema.partial(), req.body);
+    res.json({ settings: await updateSettings(patch) });
   })
 );
