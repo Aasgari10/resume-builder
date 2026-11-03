@@ -790,3 +790,83 @@ select {
   gap: 6px;
   padding-bottom: 10px;
 }
+
+/* ───────────── AI assistant ───────────── */
+
+.assistant-head h2 {
+  margin: 0;
+}
+.assistant-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 4px;
+}
+.bubble {
+  max-width: 85%;
+  padding: 8px 12px;
+  border-radius: 14px;
+  line-height: 1.7;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+}
+.assistant-bubble {
+  align-self: flex-start;
+  background: var(--notice-bg);
+}
+.user-bubble {
+  align-self: flex-end;
+  background: var(--border);
+}
+.error-bubble {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+}
+.undo-note {
+  font-style: italic;
+}
+.chip {
+  border: 1px solid var(--border);
+  background: none;
+  border-radius: 999px;
+  padding: 4px 12px;
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: inherit;
+}
+.chip:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.quota {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.quota-bar {
+  flex: 0 0 120px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+}
+.quota-bar span {
+  display: block;
+  height: 100%;
+  background: currentColor;
+  opacity: 0.6;
+}

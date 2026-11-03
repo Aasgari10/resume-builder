@@ -7,6 +7,7 @@ import { DEFAULT_PORTFOLIO_TEMPLATE_ID, sampleResume } from "@rb/templates";
 import { ApiError, api, type FieldIssue } from "../api";
 import { Preview } from "../components/Preview";
 import { PublishPanel } from "../components/PublishPanel";
+import { AssistantChat } from "../components/AssistantChat";
 import { ThemePanel } from "../components/ThemePanel";
 import { BasicsForm } from "../components/editor/BasicsForm";
 import { CertificatesForm } from "../components/editor/CertificatesForm";
@@ -175,6 +176,7 @@ export function Editor() {
           <LanguagesForm value={data.languages} onChange={set("languages")} />
           <CertificatesForm value={data.certificates} onChange={set("certificates")} />
           <CustomSectionsForm value={data.customSections} onChange={set("customSections")} />
+          <AssistantChat theme={theme} locale={data.locale} onChange={setTheme} />
           <ThemePanel theme={theme} onChange={setTheme} />
           <PublishPanel resumeId={id!} templateId={theme.templateId} data={data} version={savedVersion} saveNow={save} onIssues={setIssues} />
         </div>

@@ -7,6 +7,7 @@ import { env } from "./env";
 import { HttpError, errorHandler } from "./lib/http";
 import { loadSession } from "./middleware/auth";
 import { adminRouter } from "./routes/admin";
+import { assistantRouter } from "./routes/assistant";
 import { authRouter } from "./routes/auth";
 import { ordersRouter } from "./routes/orders";
 import { paymentsRouter } from "./routes/payments";
@@ -43,6 +44,7 @@ app.use("/api/templates", templatesRouter);
 app.use("/api/orders", ordersRouter);
 app.use("/api/payments", paymentsRouter);
 app.use("/api/admin", adminRouter);
+app.use("/api/assistant", assistantRouter);
 
 // Unknown /api routes
 app.use("/api", (_req, _res, next) => {
@@ -67,5 +69,6 @@ app.listen(env.port, () => {
   console.log(`✅ API ready: http://localhost:${env.port}/api/health`);
   if (env.otpDevEcho) console.log("ℹ️  Dev mode: login codes are printed here and returned by the API");
   console.log(`💳 Payments: ${env.payment.provider}${env.payment.provider === "zarinpal" && env.payment.sandbox ? " (sandbox)" : ""}`);
+  console.log(`🤖 AI assistant: ${env.ai.provider === "openai" ? env.ai.model : env.ai.provider}`);
   if (env.rootDomain) console.log(`🌐 Sites: http://<subdomain>.${env.rootDomain}:${env.port}`);
 });
