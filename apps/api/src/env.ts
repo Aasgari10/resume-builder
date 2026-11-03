@@ -15,8 +15,30 @@ function sessionSecret(): string {
   return "dev-only-secret-do-not-use-in-production-0000";
 }
 
+type PaymentConfig =
+  | { provider: "zarinpal"; merchantId: string; sandbox: boolean }
+  | { provider: "fake" };
+
+// "fake" is a local stand-in gateway for development; production must use a real provider.
+function paymentConfig(): PaymentConfig {
+  const provider = process.env.PAYMENT_PROVIDER?.trim() || (isProd ? "zarinpal" : "fake");
+  if (provider === "fake") {
+    if (isProd) throw new Error("PAYMENT_PROVIDER=fake is not allowed in production");
+    return { provider };
+  }
+  if (provider === "zarinpal") {
+    const merchantId = process.env.ZARINPAL_MERCHANT_ID?.trim();
+    if (!merchantId) throw new Error("ZARINPAL_MERCHANT_ID is required when PAYMENT_PROVIDER=zarinpal");
+    return { provider, merchantId, sandbox: process.env.ZARINPAL_SANDBOX === "true" };
+  }
+  throw new Error(`Unknown PAYMENT_PROVIDER: ${provider}`);
+}
+
 export const env = {
   isProd,
+  // Public origin of the web app; used for gateway callback and post-payment redirects.
+  appUrl: (process.env.APP_URL?.trim() || "http://localhost:5173").replace(/\/+$/, ""),
+  payment: paymentConfig(),
   port: Number(process.env.PORT ?? 4000),
   sessionSecret: sessionSecret(),
   // Outside production, return the OTP code in the API response so login works without SMS.

@@ -3,6 +3,7 @@ import { RequireAuth, useAuth } from "./auth";
 import { Dashboard } from "./pages/Dashboard";
 import { Editor } from "./pages/Editor";
 import { Login } from "./pages/Login";
+import { PaymentResult } from "./pages/PaymentResult";
 import { PrintResume } from "./pages/PrintResume";
 
 export function App() {
@@ -59,6 +60,14 @@ export function App() {
             element={
               <RequireAuth>
                 <Editor />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/payment/result"
+            element={
+              <RequireAuth>
+                <PaymentResult />
               </RequireAuth>
             }
           />

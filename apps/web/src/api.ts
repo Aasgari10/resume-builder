@@ -73,6 +73,28 @@ export type SiteSettings = {
   noindex?: boolean;
 };
 
+export type Template = {
+  id: string;
+  name: string;
+  kind: "PDF" | "PORTFOLIO";
+  isPremium: boolean;
+  /** Rials. */
+  price: number;
+  previewImage: string | null;
+  /** Free, or purchased by the signed-in user. */
+  owned: boolean;
+};
+
+export type Order = {
+  id: string;
+  status: "PENDING" | "PAID" | "FAILED" | "CANCELED";
+  amount: number;
+  template: { id: string; name: string } | null;
+  refId: string | null;
+  createdAt: string;
+  paidAt: string | null;
+};
+
 export type Availability = { available: true } | { available: false; reason: string; message: string };
 
 /* ───────────── Endpoints ───────────── */
@@ -102,4 +124,10 @@ export const api = {
     request<{ site: Site }>("PUT", `/resumes/${resumeId}/site`, settings),
   publishSite: (resumeId: string) => request<{ site: Site }>("POST", `/resumes/${resumeId}/site/publish`),
   unpublishSite: (resumeId: string) => request<{ site: Site }>("POST", `/resumes/${resumeId}/site/unpublish`),
+
+  listTemplates: (kind?: "PDF" | "PORTFOLIO") =>
+    request<{ templates: Template[] }>("GET", `/templates${kind ? `?kind=${kind}` : ""}`),
+  createOrder: (templateId: string) =>
+    request<{ orderId: string; paymentUrl: string }>("POST", "/orders", { templateId }),
+  getOrder: (id: string) => request<{ order: Order }>("GET", `/orders/${encodeURIComponent(id)}`),
 };
