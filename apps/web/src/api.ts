@@ -225,6 +225,7 @@ export const api = {
       request<{ settings: { aiDailyTokenLimit: number } }>("PATCH", "/admin/settings", patch),
     unpublishSite: (id: string) => request<{ ok: true }>("POST", `/admin/sites/${encodeURIComponent(id)}/unpublish`),
   },
+  uploadAvatar: (dataUrl: string) => request<{ url: string }>("POST", "/uploads/avatar", { dataUrl }),
   assistantQuota: () => request<AssistantQuota>("GET", "/assistant/quota"),
   askAssistant: (body: { message: string; history: AssistantTurn[]; theme: Theme; locale: "fa" | "en" }) =>
     request<AssistantResponse>("POST", "/assistant/theme", body),

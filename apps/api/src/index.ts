@@ -15,6 +15,7 @@ import { publicRouter } from "./routes/public";
 import { resumesRouter } from "./routes/resumes";
 import { sitesRouter } from "./routes/sites";
 import { templatesRouter } from "./routes/templates";
+import { UPLOADS_PATH, uploadsRouter, uploadsStatic } from "./routes/uploads";
 
 const app = express();
 app.disable("x-powered-by");
@@ -22,6 +23,7 @@ app.set("trust proxy", 1); // behind a reverse proxy (Caddy/Nginx) in production
 
 // Public sites first: they are served by host or by /s/<subdomain> and need no session.
 app.use(publicRouter);
+app.use(UPLOADS_PATH, uploadsStatic);
 
 app.use(express.json({ limit: "1mb" }));
 app.use(loadSession);
@@ -45,6 +47,7 @@ app.use("/api/orders", ordersRouter);
 app.use("/api/payments", paymentsRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/assistant", assistantRouter);
+app.use("/api/uploads", uploadsRouter);
 
 // Unknown /api routes
 app.use("/api", (_req, _res, next) => {

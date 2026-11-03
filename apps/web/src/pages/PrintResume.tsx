@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { checkPublishable, defaultTheme, themeSchema, type ResumeData, type Theme } from "@rb/schema";
-import { DEFAULT_PDF_TEMPLATE_ID, getTemplate } from "@rb/templates";
+import { getPdfTemplate } from "@rb/templates";
 import { ApiError, api } from "../api";
 
 type State =
@@ -28,9 +28,8 @@ export function PrintResume() {
           return;
         }
         const saved = themeSchema.safeParse(resume.portfolioTheme);
-        const theme = saved.success
-          ? { ...saved.data, templateId: DEFAULT_PDF_TEMPLATE_ID }
-          : defaultTheme(DEFAULT_PDF_TEMPLATE_ID, check.data.locale);
+        const pdfId = getPdfTemplate(saved.success ? saved.data.pdfTemplateId : undefined).id;
+        const theme = saved.success ? { ...saved.data, templateId: pdfId } : defaultTheme(pdfId, check.data.locale);
         setState({ status: "ready", data: check.data, theme });
       })
       .catch((e) => setState({ status: "error", message: e instanceof ApiError ? e.message : "خطا در بارگذاری" }));
@@ -59,7 +58,7 @@ export function PrintResume() {
     );
   }
 
-  const { component: Template } = getTemplate(state.theme.templateId);
+  const { component: Template } = getPdfTemplate(state.theme.templateId);
   return (
     <>
       <div className="print-toolbar">

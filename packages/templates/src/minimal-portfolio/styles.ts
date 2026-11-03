@@ -50,6 +50,8 @@ export const styles = /* css */ `
   font-size: 2.2em;
   font-weight: 700;
 }
+.mp-avatar-empty { overflow: hidden; padding: 0; }
+.mp-avatar-empty .avatar-silhouette { display: block; width: 100%; height: 100%; }
 .mp-name {
   font-family: var(--font-heading);
   font-size: 2.1em;

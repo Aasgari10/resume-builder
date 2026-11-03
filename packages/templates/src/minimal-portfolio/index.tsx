@@ -3,7 +3,8 @@
 // would otherwise fall back to the classic `React.createElement` transform.
 import type { CSSProperties, ReactNode } from "react";
 import { themeToCssVars, type ResumeData, type SectionConfig, type SectionKey, type Theme } from "@rb/schema";
-import { LABELS, formatNumber, formatPeriod, formatYearMonth, initials, linkLabel, safeUrl } from "../format";
+import { Silhouette } from "../avatar";
+import { LABELS, formatNumber, formatPeriod, formatYearMonth, linkLabel, safeUrl } from "../format";
 import type { TemplateProps } from "../types";
 import { styles } from "./styles";
 
@@ -38,7 +39,8 @@ export function MinimalPortfolio({ data, theme }: TemplateProps) {
 
 function Hero({ ctx }: { ctx: Ctx }) {
   const { basics } = ctx.data;
-  const avatar = ctx.theme.display.showAvatar ? safeUrl(basics.avatarUrl) : undefined;
+  const { showAvatar } = ctx.theme.display;
+  const avatar = showAvatar ? safeUrl(basics.avatarUrl) : undefined;
   const links = basics.links.map((l) => ({ ...l, href: safeUrl(l.url) })).filter((l) => l.href);
 
   return (
@@ -46,9 +48,9 @@ function Hero({ ctx }: { ctx: Ctx }) {
       {avatar ? (
         <img className="mp-avatar" src={avatar} alt={basics.fullName} />
       ) : (
-        basics.fullName.trim() && (
-          <div className="mp-avatar" aria-hidden="true">
-            {initials(basics.fullName)}
+        showAvatar && (
+          <div className="mp-avatar mp-avatar-empty" aria-hidden="true">
+            <Silhouette />
           </div>
         )
       )}
