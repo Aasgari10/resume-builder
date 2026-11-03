@@ -1,5 +1,6 @@
 import { Link, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { RequireAuth, useAuth } from "./auth";
+import { Admin } from "./pages/Admin";
 import { Dashboard } from "./pages/Dashboard";
 import { Editor } from "./pages/Editor";
 import { Login } from "./pages/Login";
@@ -9,7 +10,7 @@ import { PrintResume } from "./pages/PrintResume";
 export function App() {
   const { user, logout } = useAuth();
   const { pathname } = useLocation();
-  const wide = pathname.startsWith("/resumes/");
+  const wide = pathname.startsWith("/resumes/") || pathname.startsWith("/admin");
 
   // The print page renders without the app shell so only the resume reaches the PDF.
   if (/^\/resumes\/[^/]+\/print$/.test(pathname)) {
@@ -35,6 +36,11 @@ export function App() {
         </Link>
         {user && (
           <div className="row gap">
+            {user.role === "ADMIN" && (
+              <Link to="/admin" className="btn ghost">
+                مدیریت
+              </Link>
+            )}
             <span className="muted ltr">{user.phone}</span>
             <button className="btn ghost" onClick={logout}>
               خروج
@@ -60,6 +66,14 @@ export function App() {
             element={
               <RequireAuth>
                 <Editor />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <RequireAuth>
+                <Admin />
               </RequireAuth>
             }
           />

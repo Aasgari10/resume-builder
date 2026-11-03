@@ -6,6 +6,7 @@ import { prisma } from "./db";
 import { env } from "./env";
 import { HttpError, errorHandler } from "./lib/http";
 import { loadSession } from "./middleware/auth";
+import { adminRouter } from "./routes/admin";
 import { authRouter } from "./routes/auth";
 import { ordersRouter } from "./routes/orders";
 import { paymentsRouter } from "./routes/payments";
@@ -41,6 +42,7 @@ app.use("/api/resumes", resumesRouter);
 app.use("/api/templates", templatesRouter);
 app.use("/api/orders", ordersRouter);
 app.use("/api/payments", paymentsRouter);
+app.use("/api/admin", adminRouter);
 
 // Unknown /api routes
 app.use("/api", (_req, _res, next) => {
