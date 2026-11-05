@@ -22,14 +22,18 @@ export const projectPath = (p: Project) => `/projects/${encodeURIComponent(p.id)
 
 /** Every page this content has, in menu order, plus one page per project. */
 export function vitrinePages(data: ResumeData): string[] {
+  const off = data.site?.hiddenPages ?? [];
   return [
     "/",
     ...(has.gallery(data) ? ["/gallery"] : []),
     "/about",
     ...(has.resume(data) ? ["/resume"] : []),
     ...projectsOf(data).map(projectPath),
-  ];
+  ].filter((p) => p === "/" || !off.includes(p));
 }
+
+/** Pages the user can switch off in the editor, with their menu names. */
+export const VITRINE_OPTIONAL_PAGES = ["/gallery", "/about", "/resume"] as const;
 
 const MENU: Record<string, { fa: string; en: string }> = {
   "/": { fa: "نمونه‌کارها", en: "Work" },
@@ -72,6 +76,14 @@ const TEXT = {
     notFound: "This page was not found.",
   },
 };
+
+/* ───────────── Click-to-edit markers ───────────── */
+
+// The editor preview reads these attributes to make a text or picture editable in place;
+// on a published site they are inert.
+type EditKind = "text" | "multiline" | "image";
+const ed = (path: string, kind: EditKind, label: string) => ({ "data-edit": path, "data-edit-kind": kind, "data-edit-label": label });
+const item = (list: string, id: string) => `${list}[${id}]`;
 
 /* ───────────── Template ───────────── */
 
@@ -125,7 +137,9 @@ function Header({ ctx, page, link, full }: { ctx: Ctx; page: string; link: Link;
     <header className={`vt-header${full ? "" : " compact"}`}>
       <div className="vt-bar">
         <PageLink to="/" link={link} className="vt-photo">
-          <Avatar ctx={ctx} />
+          <span {...ed("basics.avatarUrl", "image", "عکس پروفایل")}>
+            <Avatar ctx={ctx} />
+          </span>
         </PageLink>
         {menu.length > 1 && (
           <nav className="vt-nav">
@@ -137,15 +151,21 @@ function Header({ ctx, page, link, full }: { ctx: Ctx; page: string; link: Link;
           </nav>
         )}
       </div>
-      <h1 className="vt-name">{data.basics.fullName}</h1>
-      {tagline && <p className="vt-tagline">{tagline}</p>}
+      <h1 className="vt-name" {...ed("basics.fullName", "text", "نام")}>
+        {data.basics.fullName}
+      </h1>
+      {tagline && (
+        <p className="vt-tagline" {...ed("site.tagline", "multiline", "جمله‌ی زیر نام")}>
+          {tagline}
+        </p>
+      )}
       {full && (
         <div className="vt-actions">
-          <a className="vt-btn primary" href="#work">
+          <a className="vt-btn primary" href="#work" {...ed("site.ctaPrimary", "text", "متن دکمه‌ی اول")}>
             {data.site?.ctaPrimary?.trim() || t.work}
           </a>
           {email ? (
-            <a className="vt-btn" href={`mailto:${email}`}>
+            <a className="vt-btn" href={`mailto:${email}`} {...ed("site.ctaSecondary", "text", "متن دکمه‌ی دوم")}>
               {data.site?.ctaSecondary?.trim() || t.contact}
             </a>
           ) : (
@@ -160,10 +180,10 @@ function Header({ ctx, page, link, full }: { ctx: Ctx; page: string; link: Link;
 }
 
 /** Picture with a theme-colored fallback, so a card never looks broken. */
-function Picture({ src, alt, ratio }: { src?: string; alt: string; ratio?: string }) {
+function Picture({ src, alt, ratio, edit }: { src?: string; alt: string; ratio?: string; edit?: ReturnType<typeof ed> }) {
   const url = safeUrl(src);
   return (
-    <div className="vt-pic" style={ratio ? { aspectRatio: ratio } : undefined}>
+    <div className="vt-pic" style={ratio ? { aspectRatio: ratio } : undefined} {...edit}>
       {url ? <img src={url} alt={alt} loading="lazy" /> : <span aria-hidden="true">{alt.trim().charAt(0)}</span>}
     </div>
   );
@@ -176,10 +196,14 @@ function Work({ ctx, link }: { ctx: Ctx; link: Link }) {
     <section id="work" className="vt-work">
       {items.map((p) => (
         <PageLink key={p.id} to={projectPath(p)} link={link} className="vt-card">
-          <Picture src={p.images[0]} alt={p.title} ratio="4 / 3" />
+          <Picture src={p.images[0]} alt={p.title} ratio="4 / 3" edit={ed(`${item("projects", p.id)}.images.0`, "image", "تصویر پروژه")} />
           <div className="vt-card-meta">
-            <span className="vt-card-title">{p.title}</span>
-            <span className="vt-muted">{[p.role, p.period ? year(p.period.end || p.period.start, ctx) : ""].filter(Boolean).join(" · ")}</span>
+            <span className="vt-card-title" {...ed(`${item("projects", p.id)}.title`, "text", "عنوان پروژه")}>
+              {p.title}
+            </span>
+            <span className="vt-muted" {...ed(`${item("projects", p.id)}.role`, "text", "نقش من در پروژه")}>
+              {[p.role, p.period ? year(p.period.end || p.period.start, ctx) : ""].filter(Boolean).join(" · ")}
+            </span>
           </div>
         </PageLink>
       ))}
@@ -195,10 +219,10 @@ function Gallery({ data }: { data: ResumeData }) {
     <section className="vt-gallery">
       {items.map((g) => (
         <figure key={g.id} className="vt-shot">
-          <img src={safeUrl(g.image)} alt={g.title} loading="lazy" />
+          <img src={safeUrl(g.image)} alt={g.title} loading="lazy" {...ed(`${item("site.gallery", g.id)}.image`, "image", "تصویر گالری")} />
           {(g.title || g.description) && (
             <figcaption>
-              {g.title}
+              <span {...ed(`${item("site.gallery", g.id)}.title`, "text", "عنوان تصویر")}>{g.title}</span>
               {g.description && <small>{g.description}</small>}
             </figcaption>
           )}
@@ -219,17 +243,19 @@ function About({ ctx, link }: { ctx: Ctx; link: Link }) {
   return (
     <section className="vt-about">
       <figure className="vt-about-photo">
-        <Picture src={site?.aboutImage || data.basics.avatarUrl} alt={data.basics.fullName} ratio="4 / 5" />
-        {site?.aboutCaption && <figcaption>{site.aboutCaption}</figcaption>}
+        <Picture src={site?.aboutImage || data.basics.avatarUrl} alt={data.basics.fullName} ratio="4 / 5" edit={ed("site.aboutImage", "image", "عکس صفحه‌ی درباره‌ی من")} />
+        {site?.aboutCaption && <figcaption {...ed("site.aboutCaption", "text", "توضیح زیر عکس")}>{site.aboutCaption}</figcaption>}
       </figure>
       <div className="vt-about-text">
         <h2>
           {t.hi(firstName)}
-          {site?.aboutTitle && <span>{site.aboutTitle}</span>}
+          {site?.aboutTitle && <span {...ed("site.aboutTitle", "text", "عنوان درباره‌ی من")}>{site.aboutTitle}</span>}
         </h2>
-        {text.split(/\n\s*\n/).map((para, i) => (
-          <p key={i}>{para}</p>
-        ))}
+        <div className="vt-about-body" {...ed("site.aboutText", "multiline", "متن درباره‌ی من")}>
+          {text.split(/\n\s*\n/).map((para, i) => (
+            <p key={i}>{para}</p>
+          ))}
+        </div>
         {skills.length > 0 && (
           <ul className="k-tags">
             {skills.map((s) => (
@@ -266,6 +292,7 @@ function Resume({ ctx }: { ctx: Ctx }) {
               title={`${x.position}${t.at}${x.company}`}
               meta={[formatPeriod(x.period, data.locale, fmt), x.location]}
               text={x.description}
+              textEdit={ed(`${item("experience", x.id)}.description`, "multiline", "توضیح سابقه‌ی کاری")}
               bullets={x.highlights}
             />
           ))}
@@ -280,6 +307,7 @@ function Resume({ ctx }: { ctx: Ctx }) {
               title={[x.degree, x.field].filter(Boolean).join(" ") || x.institution}
               meta={[x.degree || x.field ? x.institution : "", formatPeriod(x.period, data.locale, fmt), x.grade]}
               text={x.description}
+              textEdit={ed(`${item("education", x.id)}.description`, "multiline", "توضیح تحصیلات")}
             />
           ))}
         </Timeline>
@@ -304,7 +332,23 @@ function Timeline({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-function Row({ badge, title, meta, text, bullets = [], url }: { badge: string; title: string; meta: (string | undefined)[]; text?: string; bullets?: string[]; url?: string }) {
+function Row({
+  badge,
+  title,
+  meta,
+  text,
+  textEdit,
+  bullets = [],
+  url,
+}: {
+  badge: string;
+  title: string;
+  meta: (string | undefined)[];
+  text?: string;
+  textEdit?: ReturnType<typeof ed>;
+  bullets?: string[];
+  url?: string;
+}) {
   const href = safeUrl(url);
   return (
     <article className="vt-row">
@@ -318,7 +362,11 @@ function Row({ badge, title, meta, text, bullets = [], url }: { badge: string; t
             <span key={i}>{m}</span>
           ))}
         </p>
-        {text && <p className="vt-row-text">{text}</p>}
+        {text && (
+          <p className="vt-row-text" {...textEdit}>
+            {text}
+          </p>
+        )}
         {bullets.some((b) => b.trim()) && (
           <ul className="k-bullets">
             {bullets.filter((b) => b.trim()).map((b, i) => (
@@ -347,12 +395,16 @@ function ProjectPage({ ctx, project: p, link }: { ctx: Ctx; project: Project; li
       <PageLink to="/" link={link} className="vt-back">
         {data.locale === "fa" ? "→" : "←"} {t.back}
       </PageLink>
-      <h2>{p.title}</h2>
+      <h2 {...ed(`${item("projects", p.id)}.title`, "text", "عنوان پروژه")}>{p.title}</h2>
       <p className="vt-muted vt-meta">
-        {p.role && <span>{p.role}</span>}
+        {p.role && <span {...ed(`${item("projects", p.id)}.role`, "text", "نقش من در پروژه")}>{p.role}</span>}
         {p.period && <span>{formatPeriod(p.period, data.locale, ctx.theme.display.dateFormat)}</span>}
       </p>
-      {p.description && <p className="vt-project-text">{p.description}</p>}
+      {p.description && (
+        <p className="vt-project-text" {...ed(`${item("projects", p.id)}.description`, "multiline", "توضیح پروژه")}>
+          {p.description}
+        </p>
+      )}
       {p.technologies.length > 0 && (
         <ul className="k-tags">
           {p.technologies.map((x) => (
@@ -376,7 +428,7 @@ function ProjectPage({ ctx, project: p, link }: { ctx: Ctx; project: Project; li
       )}
       <div className="vt-project-images">
         {(images.length ? images : [undefined]).map((src, i) => (
-          <Picture key={src ?? i} src={src} alt={p.title} ratio={src ? undefined : "16 / 9"} />
+          <Picture key={src ?? i} src={src} alt={p.title} ratio={src ? undefined : "16 / 9"} edit={ed(`${item("projects", p.id)}.images.${i}`, "image", "تصویر پروژه")} />
         ))}
       </div>
     </article>
@@ -396,12 +448,12 @@ function Footer({ ctx }: { ctx: Ctx }) {
       </div>
       <div className="vt-footer-contact">
         {email && (
-          <a href={`mailto:${email}`} dir="ltr">
+          <a href={`mailto:${email}`} dir="ltr" {...ed("basics.email", "text", "ایمیل")}>
             {email}
           </a>
         )}
         {phone && (
-          <a href={`tel:${phone.replace(/\s+/g, "")}`} dir="ltr">
+          <a href={`tel:${phone.replace(/\s+/g, "")}`} dir="ltr" {...ed("basics.phone", "text", "تلفن")}>
             {phone}
           </a>
         )}
@@ -468,6 +520,7 @@ const css = /* css */ `
 .vt-about-text { display: grid; gap: 16px; justify-items: start; }
 .vt-about-text h2 { display: grid; gap: 6px; font-family: var(--font-heading); font-size: 1.7em; font-weight: 700; line-height: 1.45; margin-bottom: 10px !important; }
 .vt-about-text h2 span { color: var(--color-muted); font-weight: 500; }
+.vt-about-body { display: grid; gap: 16px; }
 .vt-about-text p { color: var(--color-muted); line-height: 2; }
 
 /* Resume */

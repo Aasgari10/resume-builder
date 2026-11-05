@@ -1,4 +1,4 @@
-// Profile photo uploads. The browser crops and resizes the image and sends it as a data URL;
+// Image uploads (profile photo, project and gallery pictures). The browser resizes the image and sends it as a data URL;
 // the server checks the real file type from its bytes, enforces size and quota, and stores it on disk.
 
 import { randomUUID } from "node:crypto";
@@ -30,9 +30,12 @@ uploadsRouter.use(requireAuth);
 
 const body = z.object({ dataUrl: z.string().max(Math.ceil((MAX_BYTES * 4) / 3) + 100) });
 
-/** POST /api/uploads/avatar  { dataUrl } — returns { url } of the stored image. */
+/**
+ * POST /api/uploads/avatar | /api/uploads/image  { dataUrl } — returns { url } of the stored image.
+ * Both behave the same; the browser decides the crop (square for the avatar).
+ */
 uploadsRouter.post(
-  "/avatar",
+  ["/avatar", "/image"],
   asyncHandler(async (req, res) => {
     const userId = currentUserId(req);
     const { dataUrl } = parseBody(body, req.body);

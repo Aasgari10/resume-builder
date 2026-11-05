@@ -2,9 +2,11 @@
 // Reachable at /s/<subdomain>, and at <subdomain>.<ROOT_DOMAIN>/ when a root domain is configured.
 
 import { createRequire } from "node:module";
-import { dirname } from "node:path";
+import { existsSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import express, { Router, type Request, type Response } from "express";
-import { applyHiddenFields, resumeDataSchema, themeSchema } from "@rb/schema";
+import { SAMPLE_ASSETS_PATH, applyHiddenFields, resumeDataSchema, themeSchema } from "@rb/schema";
 import { getTemplate, resolvePage } from "@rb/templates";
 import { prisma } from "../db";
 import { env, siteUrl } from "../env";
@@ -17,6 +19,13 @@ export const publicRouter = Router();
 // Vazirmatn font files and CSS from the @fontsource package, cached for a long time.
 const fontDir = dirname(createRequire(import.meta.url).resolve("@fontsource/vazirmatn/package.json"));
 publicRouter.use(FONT_ASSETS_PATH, express.static(fontDir, { maxAge: "30d", immutable: true, index: false }));
+
+// Sample pictures shown in previews (and kept if the user publishes them). The folder sits next to
+// src/ in development and next to dist/ after the build, so both locations are checked.
+const here = dirname(fileURLToPath(import.meta.url));
+const sampleDir = [resolve(here, "../../assets/samples"), resolve(here, "../assets/samples")].find((d) => existsSync(d));
+if (sampleDir) publicRouter.use(SAMPLE_ASSETS_PATH, express.static(sampleDir, { maxAge: "7d", index: false }));
+else console.warn("Sample pictures folder (apps/api/assets/samples) not found; previews will show placeholders.");
 
 function sendPage(res: Response, status: number, html: string) {
   res

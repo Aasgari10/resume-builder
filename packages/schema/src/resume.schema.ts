@@ -12,6 +12,10 @@ import { z } from "zod";
 const YEAR_MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
 const YEAR_MONTH_OR_EMPTY = /^(\d{4}-(0[1-9]|1[0-2]))?$/;
 
+/** Sample pictures shipped with the app and served by the API (see SAMPLE_ASSETS_PATH in the API). */
+export const SAMPLE_ASSETS_PATH = "/_assets/samples/";
+export const isSampleAsset = (v: string) => /^\/_assets\/samples\/[a-z0-9-]+\.jpg$/.test(v);
+
 function buildResumeSchemas(strict: boolean) {
   /* ───────────── Primitives ───────────── */
 
@@ -22,14 +26,13 @@ function buildResumeSchemas(strict: boolean) {
   const text = (min: number, max: number) =>
     strict ? z.string().min(min).max(max) : z.string().max(max);
 
-  // http(s) URL in strict mode; any string in drafts while the user is typing.
+  // http(s) URL in strict mode (or one of our bundled sample pictures); any string in drafts while typing.
   const url = () =>
     strict
       ? z
           .string()
           .max(500)
-          .url()
-          .refine((v) => /^https?:\/\//i.test(v), "لینک باید با http:// یا https:// شروع شود")
+          .refine((v) => isSampleAsset(v) || (/^https?:\/\/\S+$/i.test(v) && z.string().url().safeParse(v).success), "لینک باید با http:// یا https:// شروع شود")
       : z.string().max(500);
 
   const optionalUrl = url().optional().or(z.literal(""));
@@ -186,6 +189,7 @@ function buildResumeSchemas(strict: boolean) {
     aboutImage: optionalUrl,
     aboutCaption: z.string().max(80).optional(),
     gallery: z.array(galleryItem).max(40).default([]),
+    hiddenPages: z.array(z.string().max(20)).max(10).optional(), // menu pages the user switched off, e.g. "/gallery"
   });
 
   /* ───────────── Full resume ───────────── */

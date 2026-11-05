@@ -237,6 +237,7 @@ export const api = {
   joinWaitlist: (product: WaitlistProduct, phone: string) =>
     request<{ ok: true }>("POST", "/waitlist", { product, phone }),
   uploadAvatar: (dataUrl: string) => request<{ url: string }>("POST", "/uploads/avatar", { dataUrl }),
+  uploadImage: (dataUrl: string) => request<{ url: string }>("POST", "/uploads/image", { dataUrl }),
   assistantQuota: () => request<AssistantQuota>("GET", "/assistant/quota"),
   askAssistant: (body: { message: string; history: AssistantTurn[]; theme: Theme; locale: "fa" | "en" }) =>
     request<AssistantResponse>("POST", "/assistant/theme", body),

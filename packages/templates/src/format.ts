@@ -1,4 +1,4 @@
-import type { ResumeData, Theme } from "@rb/schema";
+import { isSampleAsset, type ResumeData, type Theme } from "@rb/schema";
 
 type Locale = ResumeData["locale"];
 type DateFormat = Theme["display"]["dateFormat"];
@@ -164,7 +164,7 @@ export function formatPeriod(
  */
 export function safeUrl(url: string | undefined): string | undefined {
   const trimmed = url?.trim();
-  return trimmed && /^https?:\/\/\S+$/i.test(trimmed) ? trimmed : undefined;
+  return trimmed && (/^https?:\/\/\S+$/i.test(trimmed) || isSampleAsset(trimmed)) ? trimmed : undefined;
 }
 
 export function linkLabel(link: { type: LinkType; label?: string; url: string }, locale: Locale): string {
