@@ -4,22 +4,22 @@
 // halves (work style, about me), a colored band and a dark four-column footer: skill details,
 // skills list, projects and contact. Choosing a skill in the footer shows its description; this
 // works without JavaScript (hidden radio buttons + CSS), so it also works on published pages.
-// Every project also gets its own page. Texts and pictures carry data-edit markers for the editor.
+// Projects are plain links to the projects themselves. Texts and pictures carry data-edit markers.
 
 import { useId, type ReactNode } from "react";
-import type { Project, ResumeData } from "@rb/schema";
+import type { ResumeData } from "@rb/schema";
 import { WebPage, webCtx, type Ctx } from "./kit";
-import { formatPeriod, linkLabel, safeUrl } from "../format";
+import { linkLabel, safeUrl } from "../format";
 import { sampleImage, sampleResume } from "../sample";
 import type { TemplateProps } from "../types";
 
 /* ───────────── Pages ───────────── */
 
 const projectsOf = (d: ResumeData) => d.projects.filter((p) => p.title.trim());
-const projectPath = (p: Project) => `/projects/${encodeURIComponent(p.id)}`;
 
-export function asemanPages(data: ResumeData): string[] {
-  return ["/", ...projectsOf(data).map(projectPath)];
+/** One page: projects in the footer are links to the projects themselves, not inner pages. */
+export function asemanPages(): string[] {
+  return ["/"];
 }
 
 /* ───────────── Texts ───────────── */
@@ -40,10 +40,6 @@ const TEXT = {
     contactInfo: "راه‌های ارتباطی",
     phone: "تلفن",
     email: "ایمیل",
-    visit: "دیدن پروژه",
-    source: "کد پروژه",
-    back: "بازگشت به صفحه‌ی اصلی",
-    notFound: "این صفحه پیدا نشد.",
   },
   en: {
     intro: "Introduction",
@@ -60,10 +56,6 @@ const TEXT = {
     contactInfo: "Contact information",
     phone: "phone",
     email: "email",
-    visit: "Visit project",
-    source: "Source code",
-    back: "Back to main page",
-    notFound: "This page was not found.",
   },
 };
 
@@ -95,18 +87,9 @@ type View = { ctx: Ctx; link: Link; editing: boolean };
 export function AsemanPortfolio(props: TemplateProps) {
   const ctx = webCtx(props);
   const view: View = { ctx, link: props.link ?? ((p: string) => p), editing: Boolean(props.editing) };
-  const page = props.page ?? "/";
-  const project = page.startsWith("/projects/") ? projectsOf(ctx.data).find((p) => projectPath(p) === page) : undefined;
-
   return (
     <WebPage ctx={ctx} className="as" css={css}>
-      {page === "/" ? (
-        <Home {...view} />
-      ) : project ? (
-        <ProjectPage {...view} project={project} />
-      ) : (
-        <p className="as-empty">{TEXT[ctx.data.locale].notFound}</p>
-      )}
+      <Home {...view} />
     </WebPage>
   );
 }
@@ -275,14 +258,18 @@ function Footer({ ctx, link, editing }: View) {
         <div className="as-col">
           <h3>{t.myProjects}</h3>
           <ul className="as-list">
-            {projects.map((p) => (
-              <li key={p.id}>
-                <PageLink to={projectPath(p)} link={link}>
-                  {p.title}
-                  <Chevron />
-                </PageLink>
-              </li>
-            ))}
+            {projects.map((p) => {
+              const at = item("projects", p.id);
+              const href = safeUrl(p.url) ?? safeUrl(p.repoUrl);
+              return (
+                <li key={p.id}>
+                  <a href={href ?? "#"} target={href ? "_blank" : undefined} rel="noopener noreferrer" {...ed(`${at}.url`, "url", "لینک پروژه")}>
+                    <span {...ed(`${at}.title`, "text", "عنوان پروژه")}>{p.title}</span>
+                    <Chevron />
+                  </a>
+                </li>
+              );
+            })}
           </ul>
         </div>
 
@@ -358,66 +345,6 @@ function Icon({ name }: { name: string }) {
   );
 }
 
-function ProjectPage(view: View & { project: Project }) {
-  const { ctx, link, editing, project: p } = view;
-  const t = TEXT[ctx.data.locale];
-  const at = item("projects", p.id);
-  const visit = safeUrl(p.url);
-  const source = safeUrl(p.repoUrl);
-  const images = p.images.map((u) => safeUrl(u)).filter((u): u is string => Boolean(u));
-  return (
-    <>
-      <header className="as-mini">
-        <TopBar {...view} onDark />
-      </header>
-      <article className="as-project">
-        <PageLink to="/" link={link} className="as-back">
-          {ctx.data.locale === "fa" ? "→" : "←"} {t.back}
-        </PageLink>
-        <h1 {...ed(`${at}.title`, "text", "عنوان پروژه")}>{p.title}</h1>
-        <p className="as-meta">
-          <Opt value={p.role} editing={editing} edit={ed(`${at}.role`, "text", "نقش من")}>
-            <span {...ed(`${at}.role`, "text", "نقش من")}>{p.role}</span>
-          </Opt>
-          <Opt value={p.period?.start} editing={editing} edit={ed(`${at}.period`, "period", "تاریخ پروژه")}>
-            <span {...ed(`${at}.period`, "period", "تاریخ پروژه")}>{p.period && formatPeriod(p.period, ctx.data.locale, ctx.theme.display.dateFormat)}</span>
-          </Opt>
-        </p>
-        <Opt value={p.description} editing={editing} edit={ed(`${at}.description`, "multiline", "توضیح پروژه")}>
-          <p className="as-body" {...ed(`${at}.description`, "multiline", "توضیح پروژه")}>
-            {p.description}
-          </p>
-        </Opt>
-        <Opt value={p.technologies} editing={editing} edit={ed(`${at}.technologies`, "tags", "ابزارها")}>
-          <ul className="k-tags" {...ed(`${at}.technologies`, "tags", "ابزارها")}>
-            {p.technologies.map((x) => (
-              <li key={x}>{x}</li>
-            ))}
-          </ul>
-        </Opt>
-        <div className="as-actions">
-          <Opt value={visit} editing={editing} edit={ed(`${at}.url`, "url", "لینک پروژه")}>
-            <a className="as-btn primary" href={visit} target="_blank" rel="noopener noreferrer" {...ed(`${at}.url`, "url", "لینک پروژه")}>
-              {t.visit}
-            </a>
-          </Opt>
-          <Opt value={source} editing={editing} edit={ed(`${at}.repoUrl`, "url", "لینک کد پروژه")}>
-            <a className="as-btn" href={source} target="_blank" rel="noopener noreferrer" {...ed(`${at}.repoUrl`, "url", "لینک کد پروژه")}>
-              {t.source}
-            </a>
-          </Opt>
-        </div>
-        {(images.length ? images : [undefined]).map((src, i) => (
-          <div key={src ?? i} className="as-shot" {...ed(`${at}.images.${i}`, "image", "تصویر پروژه")}>
-            {src ? <img src={src} alt={p.title} loading="lazy" /> : <span aria-hidden="true">{p.title.charAt(0)}</span>}
-          </div>
-        ))}
-      </article>
-      <Footer {...view} />
-    </>
-  );
-}
-
 /* ───────────── Example content ───────────── */
 
 /** The template's own example persona and pictures, shown until the user adds their own. */
@@ -437,10 +364,50 @@ export function asemanSample(locale: ResumeData["locale"]): ResumeData {
         "سلام! من علی عسگری هستم، اهل کرمانشاه. از نوجوانی عاشق برنامه‌نویسی بودم و ساختن نرم‌افزار و حل مسئله‌های پیچیده با کد همیشه برایم جذاب بوده است.",
     },
     skills: [
-      { id: "as1", name: "جاوااسکریپت", description: "با جاوااسکریپت قابلیت‌های پیچیده‌ی وب را می‌سازم: کار با DOM، کدهای ناهمزمان و امکانات مدرن زبان، با تمرکز بر کد تمیز و سریع که در همه‌ی مرورگرها درست کار کند." },
-      { id: "as2", name: "تایپ‌اسکریپت", description: "با تایپ‌اسکریپت پروژه‌های بزرگ را امن‌تر و خواناتر می‌نویسم تا خطاها پیش از رسیدن به کاربر پیدا شوند." },
-      { id: "as3", name: "نکست‌جی‌اس", description: "سایت‌های سریع و سئوپسند با نکست‌جی‌اس می‌سازم؛ از صفحه‌های ساده تا فروشگاه‌های کامل." },
-      { id: "as4", name: "ری‌اکت", description: "رابط‌های کاربری تعاملی و قابل نگهداری با ری‌اکت و کامپوننت‌های قابل استفاده‌ی مجدد طراحی می‌کنم." },
+      {
+        id: "as1",
+        name: "جاوااسکریپت",
+        description:
+          "به‌عنوان یک توسعه‌دهنده‌ی جاوااسکریپت، از انعطاف این زبان برای ساختن قابلیت‌های پیچیده در اپلیکیشن‌های وب استفاده می‌کنم. کار با DOM، برنامه‌نویسی ناهمزمان با Promise و async/await و امکانات مدرن زبان، بخش هر روزه‌ی کار من است. با الگوهای درست طراحی، مسئله‌ها را خلاقانه حل می‌کنم و با شناخت دقیق از عملکرد مرورگرها، مطمئن می‌شوم برنامه‌ها روی همه‌ی مرورگرها و دستگاه‌ها روان و سریع اجرا شوند.",
+      },
+      {
+        id: "as2",
+        name: "تایپ‌اسکریپت",
+        description:
+          "تایپ‌اسکریپت به من کمک می‌کند پروژه‌های بزرگ را امن‌تر و خواناتر بنویسم. با تعریف دقیق نوع داده‌ها، خطاها پیش از رسیدن به کاربر پیدا می‌شوند و همکاری در تیم ساده‌تر می‌شود. در پروژه‌هایم از نوع‌های عمومی، رابط‌های دقیق و بررسی سخت‌گیرانه استفاده می‌کنم تا کد سال‌ها قابل نگهداری بماند و تغییر دادنش بی‌دردسر باشد.",
+      },
+      {
+        id: "as3",
+        name: "نکست‌جی‌اس",
+        description:
+          "با نکست‌جی‌اس سایت‌هایی می‌سازم که هم سریع‌اند و هم برای موتورهای جست‌وجو بهینه. از صفحه‌های ساده‌ی معرفی تا فروشگاه‌های کامل، با رندر سمت سرور، تولید صفحه‌های ایستا و بهینه‌سازی تصویرها کار می‌کنم تا کاربر در کمترین زمان محتوا را ببیند و سایت در نتایج گوگل جایگاه بهتری بگیرد.",
+      },
+      {
+        id: "as4",
+        name: "ری‌اکت",
+        description:
+          "رابط‌های کاربری تعاملی و قابل نگهداری را با ری‌اکت طراحی می‌کنم. کامپوننت‌های قابل استفاده‌ی مجدد، مدیریت درست وضعیت و توجه به دسترس‌پذیری، اصول ثابت کار من است. هدفم این است که کاربر بدون فکر کردن به ظاهر برنامه، کارش را راحت انجام دهد و تیم هم بتواند سریع قابلیت تازه اضافه کند.",
+      },
+      {
+        id: "as5",
+        name: "نود‌جی‌اس",
+        description:
+          "سمت سرور را با نود‌جی‌اس می‌نویسم: ساختن API، اتصال به پایگاه داده، احراز هویت کاربران و پردازش پرداخت. تمرکزم روی امنیت، سرعت پاسخ و کدی است که با بزرگ شدن تعداد کاربران هم پایدار بماند.",
+      },
+      {
+        id: "as6",
+        name: "طراحی رابط کاربری",
+        description:
+          "پیش از نوشتن کد، ساختار صفحه‌ها و مسیر کاربر را طراحی می‌کنم. با ابزارهایی مثل فیگما نمونه‌ی اولیه می‌سازم، با کاربران واقعی امتحانش می‌کنم و جزئیات را آن‌قدر اصلاح می‌کنم تا تجربه‌ای ساده و دلنشین به دست بیاید.",
+      },
+    ],
+    projects: [
+      { id: "ap1", title: "پنل مدیریت فروشگاه", url: "https://example.com/shop-admin", technologies: [], images: [] },
+      { id: "ap2", title: "کتابخانه‌ی کامپوننت", url: "https://example.com/components", technologies: [], images: [] },
+      { id: "ap3", title: "اپلیکیشن کشف موسیقی", url: "https://example.com/music", technologies: [], images: [] },
+      { id: "ap4", title: "سایت نمونه‌کار شخصی", url: "https://example.com/portfolio", technologies: [], images: [] },
+      { id: "ap5", title: "سامانه‌ی نوبت‌دهی آنلاین", url: "https://example.com/booking", technologies: [], images: [] },
+      { id: "ap6", title: "داشبورد گزارش فروش", url: "https://example.com/reports", technologies: [], images: [] },
     ],
     site: {
       ...base.site,
@@ -495,7 +462,7 @@ const css = /* css */ `
 
 /* Dark footer with four columns */
 .as-foot { background: var(--as-dark); color: #E8E6E1; padding: clamp(40px, 7cqi, 80px) clamp(20px, 5cqi, 64px); }
-.as-radio { position: absolute; opacity: 0; pointer-events: none; }
+.as-radio { display: none; }
 .as-cols { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 40px; }
 .as-col { display: grid; align-content: start; gap: 12px; font-size: .9em; }
 .as-col h3 { padding-bottom: 16px; margin-bottom: 8px; border-bottom: 1px solid rgb(255 255 255 / .35); font-size: 1.2em; font-weight: 400; color: #fff; }
@@ -516,17 +483,6 @@ const css = /* css */ `
 .as-line a { color: var(--color-primary-on-dark); }
 .as-note { color: #D8D6D0; font-size: .92em; }
 
-/* Project page */
-.as-project { display: grid; gap: 16px; justify-items: start; width: min(900px, 100% - 40px); margin: 0 auto; padding: 48px 0 72px; }
-.as-back { color: var(--color-muted); font-size: .9em; }
-.as-project h1 { font-size: clamp(1.6em, 4cqi, 2.2em); font-weight: 500; }
-.as-meta { display: flex; flex-wrap: wrap; gap: 6px 16px; color: var(--color-muted); font-size: .9em; }
-.as-actions { display: flex; flex-wrap: wrap; gap: 10px; }
-.as-btn { padding: 10px 20px; border: 1px solid var(--as-line); color: var(--color-text); font-size: .9em; }
-.as-btn.primary { background: var(--color-primary); border-color: var(--color-primary); color: var(--color-on-primary); }
-.as-shot { width: 100%; min-height: 200px; background: linear-gradient(160deg, var(--color-primary-soft), var(--color-primary-tint)); display: grid; place-items: center; }
-.as-shot img { display: block; width: 100%; height: auto; }
-.as-shot span { font-size: 3em; font-weight: 800; color: var(--color-primary-strong); opacity: .5; }
 
 .as-ghost { display: inline-flex; align-items: center; justify-content: center; min-width: 32px; padding: 2px 10px; border: 1px dashed currentColor; border-radius: 999px; font-size: .8em; opacity: .7; }
 

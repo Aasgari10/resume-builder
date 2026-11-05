@@ -125,7 +125,7 @@ function buildResumeSchemas(strict: boolean) {
     name: text(1, 50),
     level: z.number().int().min(1).max(5).optional(), // 1–5; templates may hide it
     category: z.string().max(50).optional(), // used for grouping
-    description: z.string().max(400).optional(), // website templates that explain each skill
+    description: z.string().max(800).optional(), // website templates that explain each skill
   });
 
   const project = z.object({

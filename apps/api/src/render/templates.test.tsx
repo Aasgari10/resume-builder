@@ -24,7 +24,7 @@ test("multi-page templates render every page and reject unknown ones", () => {
   for (const t of Object.values(TEMPLATES).filter((x) => x.pages)) {
     const data = sampleResume("fa");
     const pages = t.pages!(data);
-    assert.ok(pages[0] === "/" && pages.some((p) => p.startsWith("/projects/")));
+    assert.equal(pages[0], "/");
     for (const page of pages) {
       assert.equal(resolvePage(t, data, page + "/"), page);
       const html = renderToStaticMarkup(<t.component data={data} theme={defaultTheme(t.id, "fa")} page={page} link={(p) => `/s/x${p}`} />);

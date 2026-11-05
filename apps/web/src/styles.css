@@ -1072,3 +1072,12 @@ select {
 .ep-types button { padding: 4px 10px; border: 1px solid var(--border); border-radius: 999px; background: #fff; font: inherit; font-size: 0.82rem; cursor: pointer; }
 .ep-types button[aria-checked="true"] { border-color: #5b4bea; background: #f1effe; color: #4535d6; font-weight: 700; }
 .sp .btn.ghost[aria-pressed="true"] { border-color: #5b4bea; background: #f1effe; color: #4535d6; }
+
+/* The site editor fills the window below the top bar; only the site inside scrolls, so the page
+   never scrolls past the template into empty space. Phones keep normal page scrolling. */
+@media (min-width: 861px) {
+  #root:has(.site-editor) { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
+  #root:has(.site-editor) > main { flex: 1; min-height: 0; max-width: none; padding: 10px 12px; display: flex; flex-direction: column; }
+  .site-editor { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .site-editor .ws:not(.full) { flex: 1; height: auto; min-height: 0; }
+}
