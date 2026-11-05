@@ -29,6 +29,7 @@ const templates = [
   { id: "split-portfolio", name: "دوستونه", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 3 },
   { id: "bento-portfolio", name: "کارت‌ها", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 4 },
   { id: "vitrine-portfolio", name: "ویترین", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
+  { id: "aseman-portfolio", name: "آسمان", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
 ];
 
 async function main() {

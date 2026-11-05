@@ -15,7 +15,7 @@ const YEAR_MONTH_OR_EMPTY = /^(\d{4}-(0[1-9]|1[0-2]))?$/;
 /** Sample pictures shipped with the app and served by the API (see SAMPLE_ASSETS_PATH in the API). */
 export const SAMPLE_ASSETS_PATH = "/_assets/samples/";
 /** Bumped when the pictures change, so browsers fetch the new files instead of cached ones. */
-export const SAMPLE_ASSETS_VERSION = 4;
+export const SAMPLE_ASSETS_VERSION = 5;
 export const isSampleAsset = (v: string) => /^\/_assets\/samples\/[a-z0-9-]+\.jpg(\?v=\d+)?$/.test(v);
 
 function buildResumeSchemas(strict: boolean) {
@@ -125,6 +125,7 @@ function buildResumeSchemas(strict: boolean) {
     name: text(1, 50),
     level: z.number().int().min(1).max(5).optional(), // 1–5; templates may hide it
     category: z.string().max(50).optional(), // used for grouping
+    description: z.string().max(400).optional(), // website templates that explain each skill
   });
 
   const project = z.object({
@@ -194,6 +195,16 @@ function buildResumeSchemas(strict: boolean) {
     aboutCaption: z.string().max(80).optional(),
     gallery: z.array(galleryItem).max(40).default([]),
     hiddenPages: z.array(z.string().max(20)).max(10).optional(), // menu pages the user switched off, e.g. "/gallery"
+    // Extra texts and pictures used by some templates (e.g. "Aseman"); each template uses what it needs.
+    heroImage: optionalUrl,
+    accentImage: optionalUrl,
+    styleTitle: z.string().max(120).optional(),
+    styleText: z.string().max(3000).optional(),
+    contactTitle: z.string().max(120).optional(),
+    contactText: z.string().max(1000).optional(),
+    bandText: z.string().max(200).optional(),
+    address: z.string().max(200).optional(),
+    contactNote: z.string().max(500).optional(),
   });
 
   /* ───────────── Full resume ───────────── */

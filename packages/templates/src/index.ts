@@ -14,6 +14,7 @@ import { BentoPortfolio } from "./web/bento";
 import { SplitPortfolio } from "./web/split";
 import { StudioPortfolio } from "./web/studio";
 import { VitrinePortfolio, vitrinePages } from "./web/vitrine";
+import { AsemanPortfolio, asemanPages, asemanSample } from "./web/aseman";
 import type { ResumeData } from "@rb/schema";
 import type { TemplateDefinition, TemplateTag } from "./types";
 
@@ -69,6 +70,7 @@ const web = (id: string, name: string, component: TemplateDefinition["component"
 /** Website templates, in the order shown to users. */
 export const PORTFOLIO_TEMPLATES: readonly TemplateDefinition[] = [
   { ...web("vitrine-portfolio", "ویترین", VitrinePortfolio), pages: vitrinePages },
+  { ...web("aseman-portfolio", "آسمان", AsemanPortfolio), pages: asemanPages, sample: asemanSample },
   minimalPortfolio,
   web("studio-portfolio", "استودیو", StudioPortfolio),
   web("split-portfolio", "دوستونه", SplitPortfolio),

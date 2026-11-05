@@ -27,7 +27,9 @@ type Props = {
 };
 
 export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish, bar }: Props) {
-  const shown = withPlaceholders(raw);
+  const site = getTemplate(theme.templateId);
+  // Each template may bring its own example persona and pictures.
+  const shown = withPlaceholders(raw, site.sample?.(raw.locale));
   const data = applyHiddenFields(shown, theme.hiddenFields);
   const [editing, setEditing] = useState(true);
   const [full, setFull] = useState(false);
@@ -36,7 +38,6 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
   const [target, setTarget] = useState<EditTarget | null>(null);
   const [device, setDevice] = useState<Device>("desktop");
   const [requestedPage, setPage] = useState("/");
-  const site = getTemplate(theme.templateId);
   const pages = site.pages?.(data) ?? ["/"];
   const page = resolvePage(site, data, requestedPage) ?? "/";
 
@@ -54,7 +55,9 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
 
   // In edit mode a click on a marked text or picture opens its editor; links switch pages.
   const onFrameClick = (e: MouseEvent) => {
-    const marked = editing ? (e.target as Element).closest<HTMLElement>("[data-edit]") : null;
+    // The nearest marked element or link decides: a plain link inside an editable area still navigates.
+    const hit = editing ? (e.target as Element).closest<HTMLElement>("[data-edit], a") : null;
+    const marked = hit?.hasAttribute("data-edit") ? hit : null;
     if (marked) {
       e.preventDefault();
       const r = marked.getBoundingClientRect();

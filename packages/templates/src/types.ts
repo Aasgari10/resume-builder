@@ -28,4 +28,6 @@ export type TemplateDefinition = {
   tags?: readonly TemplateTag[];
   /** Multi-page website templates: every page path this content has. Single-page templates leave it out. */
   pages?: (data: ResumeData) => string[];
+  /** Own example content (persona, pictures) for previews; the shared sample resume otherwise. */
+  sample?: (locale: ResumeData["locale"]) => ResumeData;
 };

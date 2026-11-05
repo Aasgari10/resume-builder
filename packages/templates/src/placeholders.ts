@@ -6,8 +6,7 @@ import { sampleResume } from "./sample";
  * resume already looks like a finished one. Empty basics fields are filled one by one; a section
  * with no items gets the sample items. Never used for the downloaded PDF or a published site.
  */
-export function withPlaceholders(data: ResumeData): ResumeData {
-  const sample = sampleResume(data.locale);
+export function withPlaceholders(data: ResumeData, sample: ResumeData = sampleResume(data.locale)): ResumeData {
   const b = data.basics;
   const s = sample.basics;
   const pick = <T,>(value: T | undefined, fallback: T | undefined) =>
