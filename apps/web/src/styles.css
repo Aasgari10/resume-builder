@@ -986,3 +986,16 @@ select {
   grid-template-columns: 1.1fr 1.3fr 0.9fr;
   gap: 6px;
 }
+
+/* ───────── Color picker ───────── */
+.cp { display: grid; gap: 6px; }
+.cp-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.cp-dot { position: relative; width: 26px; height: 26px; padding: 0; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #DDDBE4; cursor: pointer; }
+.cp-dot[aria-checked="true"], .cp-custom.on { box-shadow: 0 0 0 2px #16151C; }
+.cp-custom { overflow: hidden; background: conic-gradient(#F43F5E, #F59E0B, #EAB308, #22C55E, #06B6D4, #3B82F6, #8B5CF6, #EC4899, #F43F5E); }
+.cp-custom i { position: absolute; inset: 4px; border-radius: 50%; border: 2px solid #fff; }
+.cp-custom input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: none; padding: 0; }
+.cp-code { width: 86px; height: 30px; padding: 0 8px; border: 1px solid #DDDBE4; border-radius: 8px; font: 13px ui-monospace, monospace; text-transform: uppercase; }
+.cp-hint { color: #8A6D1F; font-size: 12.5px; line-height: 1.7; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.preview-page { height: 34px; padding: 0 10px; border-radius: 10px; font: inherit; font-size: 13.5px; }

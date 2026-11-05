@@ -1,5 +1,6 @@
 import type { Language } from "@rb/schema";
 import { Empty, Field, ItemControls, SectionCard, Select } from "./fields";
+import { PH } from "./samples";
 import { Hideable } from "./Hideable";
 import { LIMITS, move, newId, removeAt, replaceAt } from "./list";
 
@@ -21,7 +22,7 @@ export function LanguagesForm({ value, onChange }: { value: Language[]; onChange
         const set = (patch: Partial<Language>) => onChange(replaceAt(value, i, patch));
         return (
           <div key={l.id} className="skill-row">
-            <Field label="زبان *" value={l.name} onChange={(name) => set({ name })} max={50} />
+            <Field label="زبان *" placeholder={PH.languages.name} value={l.name} onChange={(name) => set({ name })} max={50} />
             <Hideable k="languages.level">
               <Select label="سطح" value={l.level} options={LEVELS} onChange={(level) => set({ level })} />
             </Hideable>

@@ -4,7 +4,8 @@
 import { createRequire } from "node:module";
 import { dirname } from "node:path";
 import express, { Router, type Request, type Response } from "express";
-import { resumeDataSchema, themeSchema } from "@rb/schema";
+import { applyHiddenFields, resumeDataSchema, themeSchema } from "@rb/schema";
+import { getTemplate, resolvePage } from "@rb/templates";
 import { prisma } from "../db";
 import { env, siteUrl } from "../env";
 import { asyncHandler } from "../lib/http";
@@ -30,7 +31,11 @@ function sendPage(res: Response, status: number, html: string) {
     .send(html);
 }
 
-async function renderSite(req: Request, res: Response, rawSubdomain: string) {
+/**
+ * @param path page path inside the site ("/", "/about", ...)
+ * @param base prefix of every link on the page: "" on a subdomain, "/s/<subdomain>" for path-based access
+ */
+async function renderSite(req: Request, res: Response, rawSubdomain: string, path: string, base: string) {
   const check = validateSubdomain(rawSubdomain);
   const site = check.ok
     ? await prisma.site.findUnique({ where: { subdomain: check.value } })
@@ -50,31 +55,44 @@ async function renderSite(req: Request, res: Response, rawSubdomain: string) {
     return;
   }
 
+  // Single-page templates only have "/"; multi-page ones list their pages for this content.
+  const page = resolvePage(getTemplate(theme.data.templateId), applyHiddenFields(data.data, theme.data.hiddenFields), path);
+  if (!page) {
+    sendPage(res, 404, renderNotFoundPage());
+    return;
+  }
+
   const url = siteUrl(site.subdomain) ?? `${req.protocol}://${req.get("host")}/s/${site.subdomain}`;
   const html = renderSitePage({
     data: data.data,
     theme: theme.data,
     seo: { title: site.seoTitle, description: site.seoDescription, noindex: site.noindex },
     url,
+    page,
+    link: (p) => (p === "/" ? base || "/" : base + p),
   });
   sendPage(res, 200, html);
 }
 
-/** GET /s/:subdomain — path-based access, used in development and as a fallback. */
+/** GET /s/:subdomain and its inner pages — path-based access, used in development and as a fallback. */
 publicRouter.get(
-  "/s/:subdomain",
-  asyncHandler(async (req, res) => renderSite(req, res, req.params.subdomain!))
+  ["/s/:subdomain", "/s/:subdomain/*"],
+  asyncHandler(async (req, res) => {
+    const subdomain = req.params.subdomain!;
+    await renderSite(req, res, subdomain, "/" + ((req.params as Record<string, string>)[0] ?? ""), `/s/${encodeURIComponent(subdomain)}`);
+  })
 );
 
-/** GET / on <subdomain>.<ROOT_DOMAIN> — host-based access for production subdomains. */
+/** GET any page on <subdomain>.<ROOT_DOMAIN> — host-based access for production subdomains. */
 publicRouter.get(
-  "/",
+  "*",
   asyncHandler(async (req, res, next) => {
     const subdomain = subdomainFromHost(req.headers.host, env.rootDomain);
-    if (!subdomain) {
+    // Shared assets (/_assets, /_uploads) and the API keep their own routes on every host.
+    if (!subdomain || /^\/(_|api\/)/.test(req.path)) {
       next();
       return;
     }
-    await renderSite(req, res, subdomain);
+    await renderSite(req, res, subdomain, req.path, "");
   })
 );

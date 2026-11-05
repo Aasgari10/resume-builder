@@ -1,18 +1,14 @@
-import { useEffect, useState, type FormEvent } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { ApiError, api, type ResumeSummary } from "../api";
 
 const dateFormatter = new Intl.DateTimeFormat("fa-IR", { dateStyle: "medium", timeStyle: "short" });
 
 export function Dashboard() {
-  const navigate = useNavigate();
   const [params] = useSearchParams();
   const sitesOnly = Boolean(params.get("sites"));
   const [resumes, setResumes] = useState<ResumeSummary[] | null>(null);
-  const [title, setTitle] = useState("");
-  const [locale, setLocale] = useState<"fa" | "en">("fa");
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     api
@@ -20,19 +16,6 @@ export function Dashboard() {
       .then((r) => setResumes(r.resumes))
       .catch((e) => setError(e instanceof ApiError ? e.message : "خطا در دریافت لیست"));
   }, []);
-
-  async function create(e: FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setBusy(true);
-    try {
-      const r = await api.createResume(title, locale);
-      navigate(`/resumes/${r.resume.id}`);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "خطا در ساخت رزومه");
-      setBusy(false);
-    }
-  }
 
   async function remove(resume: ResumeSummary) {
     if (!confirm(`رزومه‌ی «${resume.title}» حذف شود؟`)) return;
@@ -49,27 +32,11 @@ export function Dashboard() {
       <h1>{sitesOnly ? "سایت‌های منتشرشده" : "رزومه‌های من"}</h1>
 
       {!sitesOnly && (
-      <form onSubmit={create} className="card row gap wrap">
-        <input
-          placeholder="عنوان رزومه، مثلاً «رزومه‌ی فرانت‌اند»"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          maxLength={80}
-          required
-          className="grow"
-        />
-        <select value={locale} onChange={(e) => setLocale(e.target.value as "fa" | "en")}>
-          <option value="fa">فارسی</option>
-          <option value="en">English</option>
-        </select>
-        <button className="btn" disabled={busy}>
-          + رزومه‌ی جدید
-        </button>
-      </form>
-      )}
-      {!sitesOnly && (
-        <p className="muted small">
-          یا از <Link to="/resume">گالری قالب‌ها</Link> یک قالب انتخاب کنید تا رزومه با همان قالب ساخته شود.
+        <p>
+          <Link to="/resume" className="btn">
+            + رزومه‌ی جدید
+          </Link>{" "}
+          <span className="muted small">یک قالب انتخاب کنید؛ رزومه بعد از اولین ذخیره در این فهرست می‌آید.</span>
         </p>
       )}
 

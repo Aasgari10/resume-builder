@@ -3,7 +3,7 @@
 
 import { renderToStaticMarkup } from "react-dom/server";
 import { applyHiddenFields, type ResumeData, type Theme } from "@rb/schema";
-import { buildSeo, getTemplate, type SeoOverrides } from "@rb/templates";
+import { buildSeo, getTemplate, type SeoOverrides, pageTitle } from "@rb/templates";
 import { env } from "../env";
 
 /** Escapes text for HTML element content and quoted attribute values. */
@@ -48,13 +48,22 @@ export function renderSitePage(input: {
   data: ResumeData;
   theme: Theme;
   seo: SeoOverrides;
+  /** Site address without a trailing slash; the page path is appended for the canonical link. */
   url?: string;
+  /** Page path from resolvePage ("/" by default). */
+  page?: string;
+  /** Turns a page path into an href (adds the /s/<subdomain> base in development). */
+  link?: (path: string) => string;
 }): string {
   const { component: Template } = getTemplate(input.theme.templateId);
+  const page = input.page ?? "/";
   // Switched-off fields are dropped before anything is rendered, including the SEO tags.
   const data = applyHiddenFields(input.data, input.theme.hiddenFields);
-  const seo = buildSeo(data, input.seo, input.url);
-  const body = renderToStaticMarkup(<Template data={data} theme={input.theme} />);
+  const url = input.url && page !== "/" ? input.url.replace(/\/$/, "") + page : input.url;
+  const seo = buildSeo(data, input.seo, url);
+  const inner = pageTitle(data, page);
+  if (inner) seo.title = `${inner} | ${seo.title}`;
+  const body = renderToStaticMarkup(<Template data={data} theme={input.theme} page={page} link={input.link} />);
   const ogLocale = seo.lang === "fa" ? "fa_IR" : "en_US";
 
   const head = [

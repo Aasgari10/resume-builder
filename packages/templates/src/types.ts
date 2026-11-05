@@ -9,6 +9,10 @@ import type { ResumeData, Theme } from "@rb/schema";
 export type TemplateProps = {
   data: ResumeData;
   theme: Theme;
+  /** Multi-page website templates: the path being shown ("/", "/about", "/projects/<id>"). */
+  page?: string;
+  /** Turns a page path into the href for this site (published sites live under a base path in development). */
+  link?: (path: string) => string;
 };
 
 /** Style tags used to filter the template gallery. */
@@ -20,4 +24,6 @@ export type TemplateDefinition = {
   kind: "PDF" | "PORTFOLIO";
   component: ComponentType<TemplateProps>;
   tags?: readonly TemplateTag[];
+  /** Multi-page website templates: every page path this content has. Single-page templates leave it out. */
+  pages?: (data: ResumeData) => string[];
 };

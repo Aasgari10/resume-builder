@@ -1,9 +1,9 @@
 // Resume editor: section forms on one side, live template preview on the other, with debounced autosave.
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { defaultTheme, themeSchema, type ResumeData, type Theme } from "@rb/schema";
-import { DEFAULT_PORTFOLIO_TEMPLATE_ID, sampleResume } from "@rb/templates";
+import type { ResumeData } from "@rb/schema";
+import { getTemplate, sampleResume } from "@rb/templates";
 import { ApiError, api, type FieldIssue } from "../api";
 import { Preview } from "../components/Preview";
 import { PublishPanel } from "../components/PublishPanel";
@@ -16,87 +16,33 @@ import { EducationForm } from "../components/editor/EducationForm";
 import { ExperienceForm } from "../components/editor/ExperienceForm";
 import { LanguagesForm } from "../components/editor/LanguagesForm";
 import { ProjectsForm } from "../components/editor/ProjectsForm";
+import { SiteContentForm } from "../components/editor/SiteContentForm";
 import { SkillsForm } from "../components/editor/SkillsForm";
-
-type SaveState = "idle" | "pending" | "saving" | "saved" | "error";
+import { SAVE_LABELS, useResumeDoc } from "../components/editor/useResumeDoc";
 
 export function Editor() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const initialView = searchParams.get("view") === "resume" ? "resume" : "site";
-  const [title, setTitle] = useState("");
-  const [data, setData] = useState<ResumeData | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [saveState, setSaveState] = useState<SaveState>("idle");
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const doc = useResumeDoc(id, (savedId) => `/resumes/${savedId}${initialView === "site" ? "?view=site" : ""}`);
+  const { isDraft, title, setTitle, data, setData, theme, setTheme, loadError, saveState, saveError, savedVersion, save } = doc;
   const [issues, setIssues] = useState<FieldIssue[] | null>(null);
   const [checking, setChecking] = useState(false);
-  const [theme, setTheme] = useState<Theme | null>(null);
-  const [savedVersion, setSavedVersion] = useState(0); // bumps after each successful save
+  const [checkError, setCheckError] = useState<string | null>(null);
   const [mobilePane, setMobilePane] = useState<"form" | "preview">("form");
 
-  const skipNextSave = useRef(false); // the state update from the initial load is not a user edit
-  const saveSeq = useRef(0); // only the latest save may update save status
-
-  /* ───────────── Load ───────────── */
-  useEffect(() => {
-    if (!id) return;
-    api
-      .getResume(id)
-      .then(({ resume }) => {
-        skipNextSave.current = true;
-        setTitle(resume.title);
-        setData(resume.data);
-        const saved = themeSchema.safeParse(resume.portfolioTheme);
-        setTheme(saved.success ? saved.data : defaultTheme(DEFAULT_PORTFOLIO_TEMPLATE_ID, resume.data.locale));
-      })
-      .catch((e) => setLoadError(e instanceof ApiError ? e.message : "خطا در بارگذاری"));
-  }, [id]);
-
-  /* ───────────── Autosave (800 ms after the last change) ───────────── */
-  useEffect(() => {
-    if (!id || !data) return;
-    if (skipNextSave.current) {
-      skipNextSave.current = false;
-      return;
-    }
-    setSaveState("pending");
-    setIssues(null); // previous check result is stale after an edit
-    const timer = setTimeout(() => void save(), 800);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, title, theme]);
-
-  async function save(): Promise<boolean> {
-    if (!id || !data || !theme) return false;
-    const seq = ++saveSeq.current;
-    setSaveState("saving");
-    try {
-      await api.updateResume(id, { title: title.trim() || "بدون عنوان", data, portfolioTheme: theme });
-      if (seq === saveSeq.current) {
-        setSaveState("saved");
-        setSaveError(null);
-        setSavedVersion((v) => v + 1);
-      }
-      return true;
-    } catch (e) {
-      if (seq === saveSeq.current) {
-        setSaveState("error");
-        setSaveError(describeError(e));
-      }
-      return false;
-    }
-  }
+  // A previous check result is stale after an edit.
+  useEffect(() => setIssues(null), [data]);
 
   async function checkPublish() {
-    if (!id) return;
     setChecking(true);
-    if (await save()) {
+    const savedId = await save();
+    if (savedId) {
       try {
-        const r = await api.checkResume(id);
+        const r = await api.checkResume(savedId);
         setIssues(r.ok ? [] : r.issues);
       } catch (e) {
-        setSaveError(describeError(e));
+        setCheckError(describeError(e));
       }
     }
     setChecking(false);
@@ -110,8 +56,9 @@ export function Editor() {
   // Opens the window before awaiting the save, so popup blockers treat it as a direct user action.
   const openPdf = async () => {
     const win = window.open("", "_blank");
-    await save();
-    const url = `/resumes/${id}/print`;
+    const savedId = await save();
+    if (!savedId) return win?.close();
+    const url = `/resumes/${savedId}/print`;
     if (win) win.location.href = url;
     else window.location.href = url;
   };
@@ -129,7 +76,12 @@ export function Editor() {
           → بازگشت
         </Link>
         <input className="grow title-input" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={80} />
-        <SaveBadge state={saveState} />
+        <span className={`save-badge ${saveState}`}>{SAVE_LABELS[saveState]}</span>
+        {isDraft && (
+          <button className="btn" onClick={() => void save()} disabled={saveState === "saving"}>
+            ذخیره در رزومه‌های من
+          </button>
+        )}
         <button className="btn ghost" onClick={openPdf}>
           دانلود پی‌دی‌اف
         </button>
@@ -141,7 +93,7 @@ export function Editor() {
         </button>
       </div>
 
-      {saveError && <p className="error">ذخیره نشد: {saveError}</p>}
+      {(saveError ?? checkError) && <p className="error">ذخیره نشد: {saveError ?? checkError}</p>}
 
       {issues !== null &&
         (issues.length === 0 ? (
@@ -178,9 +130,10 @@ export function Editor() {
           <LanguagesForm value={data.languages} onChange={set("languages")} />
           <CertificatesForm value={data.certificates} onChange={set("certificates")} />
           <CustomSectionsForm value={data.customSections} onChange={set("customSections")} />
+          {getTemplate(theme.templateId).pages && <SiteContentForm value={data.site} onChange={(site) => setData({ ...data, site })} />}
           <AssistantChat theme={theme} locale={data.locale} onChange={setTheme} />
           <ThemePanel theme={theme} onChange={setTheme} />
-          <PublishPanel resumeId={id!} templateId={theme.templateId} data={data} version={savedVersion} saveNow={save} onIssues={setIssues} />
+          {!isDraft && <PublishPanel resumeId={id!} templateId={theme.templateId} data={data} version={savedVersion} saveNow={async () => Boolean(await save())} onIssues={setIssues} />}
         </div>
 
         <aside className="editor-preview">
@@ -193,17 +146,6 @@ export function Editor() {
 
 /* ───────────── Components ───────────── */
 
-function SaveBadge({ state }: { state: SaveState }) {
-  const text: Record<SaveState, string> = {
-    idle: "",
-    pending: "تغییرات ذخیره نشده",
-    saving: "در حال ذخیره…",
-    saved: "✓ ذخیره شد",
-    error: "⚠ خطا در ذخیره",
-  };
-  return <span className={`save-badge ${state}`}>{text[state]}</span>;
-}
-
 /* ───────────── Field path labels ───────────── */
 
 const SECTION_LABELS: Record<string, string> = {
@@ -215,6 +157,7 @@ const SECTION_LABELS: Record<string, string> = {
   languages: "زبان",
   certificates: "گواهینامه",
   customSections: "بخش آزاد",
+  site: "محتوای سایت",
 };
 
 const FIELD_LABELS: Record<string, string> = {
@@ -250,6 +193,9 @@ const FIELD_LABELS: Record<string, string> = {
   subtitle: "زیرعنوان",
   items: "آیتم",
   url: "لینک",
+  gallery: "گالری",
+  image: "تصویر",
+  aboutImage: "عکس درباره‌ی من",
 };
 
 function pathLabel(path: string): string {

@@ -13,6 +13,8 @@ import { SoftResume } from "./pdf/soft";
 import { BentoPortfolio } from "./web/bento";
 import { SplitPortfolio } from "./web/split";
 import { StudioPortfolio } from "./web/studio";
+import { VitrinePortfolio, vitrinePages } from "./web/vitrine";
+import type { ResumeData } from "@rb/schema";
 import type { TemplateDefinition, TemplateTag } from "./types";
 
 export type { TemplateDefinition, TemplateProps, TemplateTag } from "./types";
@@ -66,6 +68,7 @@ const web = (id: string, name: string, component: TemplateDefinition["component"
 
 /** Website templates, in the order shown to users. */
 export const PORTFOLIO_TEMPLATES: readonly TemplateDefinition[] = [
+  { ...web("vitrine-portfolio", "ویترین", VitrinePortfolio), pages: vitrinePages },
   minimalPortfolio,
   web("studio-portfolio", "استودیو", StudioPortfolio),
   web("split-portfolio", "دوستونه", SplitPortfolio),
@@ -84,6 +87,40 @@ export const DEFAULT_PDF_TEMPLATE_ID = "sidebar-pdf";
 export function getPdfTemplate(id: string | undefined): TemplateDefinition {
   const found = id ? TEMPLATES[id] : undefined;
   return found?.kind === "PDF" ? found : TEMPLATES[DEFAULT_PDF_TEMPLATE_ID]!;
+}
+
+/** Normalizes a request path ("/about/" → "/about", "" → "/"). */
+export function normalizePagePath(path: string): string {
+  let clean = path;
+  try {
+    clean = decodeURIComponent(path);
+  } catch {
+    /* keep it as is */
+  }
+  clean = "/" + clean.split(/[?#]/)[0]!.replace(/^\/+|\/+$/g, "");
+  return clean;
+}
+
+/** The page to render for a path, or null when this template and content have no such page. */
+export function resolvePage(template: TemplateDefinition, data: ResumeData, path: string): string | null {
+  const page = normalizePagePath(path);
+  if (page === "/") return "/";
+  if (!template.pages) return null;
+  return template.pages(data).find((p) => normalizePagePath(p) === page) ?? null;
+}
+
+const PAGE_TITLES: Record<string, Record<ResumeData["locale"], string>> = {
+  "/gallery": { fa: "گالری", en: "Gallery" },
+  "/about": { fa: "درباره‌ی من", en: "About" },
+  "/resume": { fa: "رزومه", en: "Resume" },
+};
+
+/** Title of an inner page for the browser tab ("About", a project's name); empty for the home page. */
+export function pageTitle(data: ResumeData, page: string): string {
+  if (page.startsWith("/projects/")) {
+    return data.projects.find((p) => `/projects/${encodeURIComponent(p.id)}` === page)?.title ?? "";
+  }
+  return PAGE_TITLES[page]?.[data.locale] ?? "";
 }
 
 /** Looks up a template, falling back to the default portfolio template for unknown ids. */

@@ -47,3 +47,16 @@ test("escaping helpers", () => {
   assert.ok(!json.includes("<") && !json.includes(">"));
   assert.deepEqual(JSON.parse(json), { s: "</script><!--\u2028" });
 });
+
+test("page: inner pages of a multi-page site get their own title and canonical link", () => {
+  const html = renderSitePage({
+    data: sampleResume("fa"),
+    theme: defaultTheme("vitrine-portfolio", "fa"),
+    seo: {},
+    url: "https://sara.example.ir",
+    page: "/about",
+    link: (p) => p,
+  });
+  assert.ok(html.includes("<title>درباره‌ی من | "));
+  assert.ok(html.includes('rel="canonical" href="https://sara.example.ir/about"'));
+});
