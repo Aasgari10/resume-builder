@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { checkPublishable, defaultTheme, themeSchema, type ResumeData, type Theme } from "@rb/schema";
+import { applyHiddenFields, checkPublishable, defaultTheme, themeSchema, type ResumeData, type Theme } from "@rb/schema";
 import { getPdfTemplate } from "@rb/templates";
 import { ApiError, api } from "../api";
 
@@ -70,7 +70,7 @@ export function PrintResume() {
           ذخیره به پی‌دی‌اف
         </button>
       </div>
-      <Template data={state.data} theme={state.theme} />
+      <Template data={applyHiddenFields(state.data, state.theme.hiddenFields)} theme={state.theme} />
     </>
   );
 }

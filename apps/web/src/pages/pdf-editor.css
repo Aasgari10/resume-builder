@@ -50,15 +50,26 @@
 .pe-form { scroll-margin-top: calc(var(--pe-top) + 20px); min-width: 0; border-radius: 18px; background: var(--pe-card); border: 1px solid var(--pe-line); overflow: hidden; }
 .pe-form-body { padding: 8px 8px 0; }
 .pe-form-body .card { box-shadow: none; border: none; }
-.pe-form-foot { position: sticky; bottom: 0; display: flex; gap: 10px; padding: 14px 16px; border-top: 1px solid var(--pe-line); background: var(--pe-card); }
+.pe-form-body input, .pe-form-body textarea, .pe-form-body select { max-width: 100%; min-width: 0; }
+.pe-form-foot { position: sticky; bottom: 0; display: flex; flex-wrap: wrap; gap: 10px; padding: 14px 16px; border-top: 1px solid var(--pe-line); background: var(--pe-card); }
+.pe-form-foot .pe-btn { white-space: nowrap; }
 .pe-form-foot .primary { margin-inline-start: auto; }
 
 /* Preview: stays in place and fills the screen height; the page scrolls inside it */
 .pe-preview { position: sticky; top: calc(var(--pe-top) + 20px); height: calc(100vh - var(--pe-top) - 40px); }
 .pe-paper { height: 100%; overflow-y: auto; padding: 18px; border-radius: 18px; background: #E6E5EC; scrollbar-width: thin; }
 .pe-paper .k-page, .pe-paper .cr-root { margin: 0; }
-.pe-preview-bar { position: absolute; bottom: 18px; left: 18px; display: flex; gap: 8px; }
-.pe-preview-bar .pe-btn { box-shadow: 0 10px 24px -12px rgb(0 0 0 / .45); }
+
+/* Per-field on/off switch (Hideable). The switch sits at the top end of the field, next to its label. */
+.hideable { position: relative; }
+.hide-switch { position: absolute; top: 0; inset-inline-end: 0; z-index: 1; width: 30px; height: 17px; padding: 0; border: none; border-radius: 999px; background: var(--pe-accent, #5B4BEA); cursor: pointer; transition: background .2s; }
+.hide-switch i { position: absolute; top: 2px; inset-inline-start: 2px; width: 13px; height: 13px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgb(0 0 0 / .25); transition: inset-inline-start .2s; }
+.hideable:not(.off) .hide-switch i { inset-inline-start: 15px; }
+.hideable.off .hide-switch { background: #CFCDD8; }
+.hide-switch:focus-visible { outline: 2px solid var(--pe-accent, #5B4BEA); outline-offset: 2px; }
+.hideable-body .field > span:first-child { display: block; padding-inline-end: 38px; }
+.hideable.off .hideable-body { opacity: .4; pointer-events: none; user-select: none; }
+.hideable-note { display: block; margin-top: 4px; font-size: 12px; color: #8A8796; }
 
 /* Template popup */
 .pe-modal { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 24px; background: rgb(15 14 20 / .55); }

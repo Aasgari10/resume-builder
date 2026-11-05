@@ -13,9 +13,16 @@ export type Ctx = {
   data: ResumeData;
   theme: Theme;
   labels: (typeof LABELS)[ResumeData["locale"]];
+  /** True when the user switched this field off (theme.hiddenFields). */
+  isOff: (key: string) => boolean;
 };
 
-export const makeCtx = (data: ResumeData, theme: Theme): Ctx => ({ data, theme, labels: LABELS[data.locale] });
+export const makeCtx = (data: ResumeData, theme: Theme): Ctx => ({
+  data,
+  theme,
+  labels: LABELS[data.locale],
+  isOff: (key) => Boolean(theme.hiddenFields?.includes(key)),
+});
 
 /** URL without protocol, "www." or trailing slash, for printing as readable text. */
 export function displayUrl(url: string): string {
@@ -52,7 +59,7 @@ export function Page({ ctx, className, css, children }: { ctx: Ctx; className: s
 
 /** The user's photo, or a silhouette in the theme colors when there is none. Hidden when turned off. */
 export function Avatar({ ctx, className = "" }: { ctx: Ctx; className?: string }) {
-  if (!ctx.theme.display.showAvatar) return null;
+  if (!ctx.theme.display.showAvatar || ctx.isOff("basics.avatar")) return null;
   const { basics } = ctx.data;
   const src = safeUrl(basics.avatarUrl);
   return src ? (
@@ -139,7 +146,7 @@ export function personalLines({ data, labels }: Ctx): string[] {
   return [
     p.birthDate ? `${t.born}: ${digits(p.birthDate)}` : "",
     p.marital ? `${t.marital}: ${t.maritalValues[p.marital]}` : "",
-    p.military && p.gender !== "female" ? `${t.military}: ${t.militaryValues[p.military]}` : "",
+    p.military ? `${t.military}: ${t.militaryValues[p.military]}` : "",
   ].filter(Boolean);
 }
 
@@ -215,6 +222,22 @@ function Bullets({ items }: { items: string[] }) {
   );
 }
 
+/** Readable links under an item, separated by dots. */
+function LinkLine({ urls }: { urls: string[] }) {
+  return (
+    <p className="k-meta k-links">
+      {urls.map((u, i) => (
+        <span key={u}>
+          {i > 0 && " · "}
+          <a href={u} dir="ltr">
+            {displayUrl(u)}
+          </a>
+        </span>
+      ))}
+    </p>
+  );
+}
+
 const LANGUAGE_DOTS = { native: 5, fluent: 5, advanced: 4, intermediate: 3, basic: 2 } as const;
 
 function Dots({ value }: { value: number }) {
@@ -230,7 +253,7 @@ function Dots({ value }: { value: number }) {
 /** One resume section. "side" renders compact versions for narrow columns. */
 export function Section({ section, ctx, variant }: { section: SectionConfig; ctx: Ctx; variant: Variant }) {
   const { data, labels } = ctx;
-  const { dateFormat, showSkillLevel } = ctx.theme.display;
+  const { dateFormat } = ctx.theme.display;
   const title = (fallback: string) => section.customTitle?.trim() || fallback;
   const period = (p: Parameters<typeof formatPeriod>[0]) => formatPeriod(p, data.locale, dateFormat);
 
@@ -259,7 +282,7 @@ export function Section({ section, ctx, variant }: { section: SectionConfig; ctx
               sub={[x.degree || x.field ? x.institution : "", x.grade ?? ""].filter(Boolean).join("، ")}
               date={period(x.period)}
             >
-              {variant === "main" && x.description && <p className="k-desc">{x.description}</p>}
+              {x.description && <p className="k-desc">{x.description}</p>}
             </Item>
           ))}
         </Block>
@@ -268,29 +291,42 @@ export function Section({ section, ctx, variant }: { section: SectionConfig; ctx
     case "skills": {
       const skills = data.skills.filter((s) => s.name.trim());
       if (skills.length === 0) return null;
-      if (showSkillLevel && skills.some((s) => s.level)) {
-        return (
-          <Block title={title(labels.sections.skills)} icon="skills" variant={variant}>
-            <ul className="k-bars">
-              {skills.map((s) => (
-                <li key={s.id}>
-                  <span>{s.name}</span>
-                  <span className="k-bar">
-                    <i style={{ width: `${((s.level ?? 3) / 5) * 100}%` }} />
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </Block>
-        );
+      const bars = skills.some((s) => s.level);
+      // Grouped by category when the user set any; skills without one come first.
+      const groups = new Map<string, typeof skills>();
+      for (const s of skills) {
+        const key = s.category?.trim() ?? "";
+        groups.set(key, [...(groups.get(key) ?? []), s]);
       }
       return (
         <Block title={title(labels.sections.skills)} icon="skills" variant={variant}>
-          <ul className="k-tags">
-            {skills.map((s) => (
-              <li key={s.id}>{s.name}</li>
-            ))}
-          </ul>
+          {[...groups].map(([category, list]) => (
+            <div className="k-skill-group" key={category || "-"}>
+              {category && <div className="k-cat">{category}</div>}
+              {bars ? (
+                <ul className="k-bars">
+                  {list.map((s) => (
+                    <li key={s.id}>
+                      <span>{s.name}</span>
+                      {s.level ? (
+                        <span className="k-bar">
+                          <i style={{ width: `${(s.level / 5) * 100}%` }} />
+                        </span>
+                      ) : (
+                        <span />
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <ul className="k-tags">
+                  {list.map((s) => (
+                    <li key={s.id}>{s.name}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ))}
         </Block>
       );
     }
@@ -299,20 +335,19 @@ export function Section({ section, ctx, variant }: { section: SectionConfig; ctx
       return items.length === 0 ? null : (
         <Block title={title(labels.sections.projects)} icon="projects" variant={variant}>
           {items.map((p) => {
-            const url = safeUrl(p.url) ?? safeUrl(p.repoUrl);
+            const links = [safeUrl(p.url), safeUrl(p.repoUrl)].filter((u): u is string => Boolean(u));
+            const images = p.images.map((u) => safeUrl(u)).filter((u): u is string => Boolean(u));
             return (
               <Item key={p.id} title={p.title} sub={p.role} date={p.period ? period(p.period) : undefined}>
                 {p.description && <p className="k-desc">{p.description}</p>}
-                {(p.technologies.length > 0 || url) && (
-                  <p className="k-meta">
-                    {p.technologies.join("، ")}
-                    {p.technologies.length > 0 && url && " · "}
-                    {url && (
-                      <a href={url} dir="ltr">
-                        {displayUrl(url)}
-                      </a>
-                    )}
-                  </p>
+                {p.technologies.length > 0 && <p className="k-meta">{p.technologies.join("، ")}</p>}
+                {links.length > 0 && <LinkLine urls={links} />}
+                {images.length > 0 && (
+                  <div className="k-shots">
+                    {images.slice(0, 4).map((src) => (
+                      <img key={src} src={src} alt="" />
+                    ))}
+                  </div>
                 )}
               </Item>
             );
@@ -328,10 +363,12 @@ export function Section({ section, ctx, variant }: { section: SectionConfig; ctx
             {items.map((l) => (
               <li key={l.id}>
                 <span>{l.name}</span>
-                <span className="k-lang-level">
-                  {labels.languageLevels[l.level]}
-                  <Dots value={LANGUAGE_DOTS[l.level]} />
-                </span>
+                {!ctx.isOff("languages.level") && (
+                  <span className="k-lang-level">
+                    {labels.languageLevels[l.level]}
+                    <Dots value={LANGUAGE_DOTS[l.level]} />
+                  </span>
+                )}
               </li>
             ))}
           </ul>
@@ -343,7 +380,9 @@ export function Section({ section, ctx, variant }: { section: SectionConfig; ctx
       return items.length === 0 ? null : (
         <Block title={title(labels.sections.certificates)} icon="certificates" variant={variant}>
           {items.map((c) => (
-            <Item key={c.id} title={c.title} sub={c.issuer} date={formatYearMonth(c.date, data.locale, dateFormat)} />
+            <Item key={c.id} title={c.title} sub={c.issuer} date={formatYearMonth(c.date, data.locale, dateFormat)}>
+              {safeUrl(c.url) && <LinkLine urls={[safeUrl(c.url)!]} />}
+            </Item>
           ))}
         </Block>
       );
@@ -360,6 +399,7 @@ export function Section({ section, ctx, variant }: { section: SectionConfig; ctx
                   .map((i) => (
                     <Item key={i.id} title={i.title} sub={i.subtitle} date={formatYearMonth(i.date, data.locale, dateFormat)}>
                       {i.description && <p className="k-desc">{i.description}</p>}
+                      {safeUrl(i.url) && <LinkLine urls={[safeUrl(i.url)!]} />}
                     </Item>
                   ))}
               </Block>

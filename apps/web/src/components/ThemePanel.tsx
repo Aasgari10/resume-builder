@@ -98,14 +98,6 @@ export function ThemePanel({ theme, onChange }: Props) {
           </select>
         </label>
 
-        <label className="row gap">
-          <input
-            type="checkbox"
-            checked={theme.display.showSkillLevel}
-            onChange={(e) => set("display", { ...theme.display, showSkillLevel: e.target.checked })}
-          />
-          نمایش سطح مهارت‌ها
-        </label>
       </div>
 
       <div className="field">

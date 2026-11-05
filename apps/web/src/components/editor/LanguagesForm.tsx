@@ -1,5 +1,6 @@
 import type { Language } from "@rb/schema";
 import { Empty, Field, ItemControls, SectionCard, Select } from "./fields";
+import { Hideable } from "./Hideable";
 import { LIMITS, move, newId, removeAt, replaceAt } from "./list";
 
 const LEVELS: readonly { value: Language["level"]; label: string }[] = [
@@ -21,7 +22,9 @@ export function LanguagesForm({ value, onChange }: { value: Language[]; onChange
         return (
           <div key={l.id} className="skill-row">
             <Field label="زبان *" value={l.name} onChange={(name) => set({ name })} max={50} />
-            <Select label="سطح" value={l.level} options={LEVELS} onChange={(level) => set({ level })} />
+            <Hideable k="languages.level">
+              <Select label="سطح" value={l.level} options={LEVELS} onChange={(level) => set({ level })} />
+            </Hideable>
             <ItemControls
               index={i}
               count={value.length}

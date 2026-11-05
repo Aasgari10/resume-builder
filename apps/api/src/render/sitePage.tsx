@@ -2,7 +2,7 @@
 // The page ships no JavaScript: templates are pure components rendered to static markup.
 
 import { renderToStaticMarkup } from "react-dom/server";
-import type { ResumeData, Theme } from "@rb/schema";
+import { applyHiddenFields, type ResumeData, type Theme } from "@rb/schema";
 import { buildSeo, getTemplate, type SeoOverrides } from "@rb/templates";
 import { env } from "../env";
 
@@ -51,8 +51,10 @@ export function renderSitePage(input: {
   url?: string;
 }): string {
   const { component: Template } = getTemplate(input.theme.templateId);
-  const seo = buildSeo(input.data, input.seo, input.url);
-  const body = renderToStaticMarkup(<Template data={input.data} theme={input.theme} />);
+  // Switched-off fields are dropped before anything is rendered, including the SEO tags.
+  const data = applyHiddenFields(input.data, input.theme.hiddenFields);
+  const seo = buildSeo(data, input.seo, input.url);
+  const body = renderToStaticMarkup(<Template data={data} theme={input.theme} />);
   const ogLocale = seo.lang === "fa" ? "fa_IR" : "en_US";
 
   const head = [

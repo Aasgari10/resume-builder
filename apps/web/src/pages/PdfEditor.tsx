@@ -1,15 +1,16 @@
 // Step-by-step editor for the printable resume: section menu, one form at a time, and a large
 // live preview that stays in place while the form scrolls. Changes are saved automatically.
 
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
-import { PRIMARY_SWATCHES, defaultTheme, themeSchema, type ResumeData, type Theme } from "@rb/schema";
-import { DEFAULT_PORTFOLIO_TEMPLATE_ID, PDF_TEMPLATES, getPdfTemplate } from "@rb/templates";
+import { PRIMARY_SWATCHES, applyHiddenFields, defaultTheme, themeSchema, type ResumeData, type Theme } from "@rb/schema";
+import { DEFAULT_PORTFOLIO_TEMPLATE_ID, PDF_TEMPLATES, getPdfTemplate, withPlaceholders } from "@rb/templates";
 import { ApiError, api } from "../api";
 import { Scaled } from "../components/Scaled";
 import { BasicsInfoForm, LinksForm } from "../components/editor/BasicsForm";
 import { CertificatesForm } from "../components/editor/CertificatesForm";
 import { CustomSectionsForm } from "../components/editor/CustomSectionsForm";
+import { HiddenFieldsContext } from "../components/editor/Hideable";
 import { EducationForm } from "../components/editor/EducationForm";
 import { ExperienceForm } from "../components/editor/ExperienceForm";
 import { LanguagesForm } from "../components/editor/LanguagesForm";
@@ -72,6 +73,23 @@ export function PdfEditor() {
   const saveSeq = useRef(0);
   const formTop = useRef<HTMLDivElement>(null);
 
+  // What the preview shows: sample text where the user has not written yet, minus switched-off fields.
+  const previewData = useMemo(
+    () => (data && theme ? applyHiddenFields(withPlaceholders(data), theme.hiddenFields) : null),
+    [data, theme],
+  );
+  const hiddenFields = useMemo(
+    () =>
+      theme && {
+        isHidden: (key: string) => Boolean(theme.hiddenFields?.includes(key)),
+        toggle: (key: string) => {
+          const list = theme.hiddenFields ?? [];
+          setTheme({ ...theme, hiddenFields: list.includes(key) ? list.filter((k) => k !== key) : [...list, key] });
+        },
+      },
+    [theme],
+  );
+
   /* Load */
   useEffect(() => {
     if (!id) return;
@@ -130,7 +148,7 @@ export function PdfEditor() {
   };
 
   if (loadError) return <p className="pe-message error">{loadError}</p>;
-  if (!data || !theme) return <p className="pe-message muted">در حال بارگذاری…</p>;
+  if (!data || !theme || !previewData || !hiddenFields) return <p className="pe-message muted">در حال بارگذاری…</p>;
 
   const set: Setter = (key) => (value) => setData({ ...data, [key]: value });
   const pdf = getPdfTemplate(theme.pdfTemplateId);
@@ -186,7 +204,9 @@ export function PdfEditor() {
         </nav>
 
         <section className="pe-form" ref={formTop}>
-          <div className="pe-form-body">{current.render(data, set)}</div>
+          <HiddenFieldsContext.Provider value={hiddenFields}>
+            <div className="pe-form-body">{current.render(data, set)}</div>
+          </HiddenFieldsContext.Provider>
           {saveError && <p className="error">ذخیره نشد: {saveError}</p>}
           <footer className="pe-form-foot">
             <button type="button" className="pe-btn ghost" disabled={step === 0} onClick={() => go(step - 1)}>
@@ -194,7 +214,7 @@ export function PdfEditor() {
             </button>
             {step < STEPS.length - 1 ? (
               <button type="button" className="pe-btn" onClick={() => go(step + 1)}>
-                بعدی: {STEPS[step + 1]!.label}
+                بعدی
               </button>
             ) : (
               <button type="button" className="pe-btn" onClick={() => void download()}>
@@ -210,24 +230,15 @@ export function PdfEditor() {
         <aside className="pe-preview">
           <div className="pe-paper">
             <Scaled>
-              <pdf.component data={data} theme={{ ...theme, templateId: pdf.id }} />
+              <pdf.component data={previewData} theme={{ ...theme, templateId: pdf.id }} />
             </Scaled>
-          </div>
-          <div className="pe-preview-bar">
-            <button type="button" className="pe-btn primary" onClick={() => void download()}>
-              <Icon name="download" />
-              دریافت پی‌دی‌اف
-            </button>
-            <button type="button" className="pe-btn" onClick={() => setPicker(true)}>
-              قالب: {pdf.name}
-            </button>
           </div>
         </aside>
       </div>
 
       {picker && (
         <TemplatePicker
-          data={data}
+          data={previewData}
           theme={theme}
           currentId={pdf.id}
           onPick={(pdfTemplateId) => {

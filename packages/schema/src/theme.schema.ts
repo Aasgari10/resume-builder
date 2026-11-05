@@ -86,6 +86,8 @@ export const themeSchema = z.object({
   display: displayOptionsSchema,
   /** Template used for the printable resume (PDF); the default PDF template when missing. */
   pdfTemplateId: z.string().min(1).max(50).optional(),
+  /** Optional fields the user switched off (e.g. "experience.location"); see applyHiddenFields. */
+  hiddenFields: z.array(z.string().max(40)).max(60).optional(),
 });
 
 export type Theme = z.infer<typeof themeSchema>;

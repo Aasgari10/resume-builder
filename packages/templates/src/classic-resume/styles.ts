@@ -66,4 +66,9 @@ export const styles = /* css */ `
 @media print {
   .cr-root { width: auto; min-height: 0; margin: 0; }
 }
+.cr-header { position: relative; display: flow-root; }
+.cr-photo { float: inline-end; width: 84px; height: 84px; margin-inline-start: 16px; border-radius: 50%; object-fit: cover; }
+.cr-personal { margin-top: 4px; }
+.cr-shots { display: flex; gap: 6px; margin-top: 6px; }
+.cr-shots img { width: 72px; height: 48px; border-radius: 4px; object-fit: cover; }
 `;
