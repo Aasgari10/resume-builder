@@ -32,7 +32,7 @@ export function SidebarResume({ data, theme }: TemplateProps) {
         {hasContact(ctx) && (
           <section className="k-section k-side">
             <Heading icon="contact">{ctx.labels.contact}</Heading>
-            <ContactList ctx={ctx} />
+            <ContactList withPersonal ctx={ctx} />
           </section>
         )}
         <Sections list={side} ctx={ctx} variant="side" />

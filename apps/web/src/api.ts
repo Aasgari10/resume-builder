@@ -48,6 +48,7 @@ export type ResumeSummary = {
   locale: "fa" | "en";
   createdAt: string;
   updatedAt: string;
+  site?: { subdomain: string; isPublished: boolean; path: string; url: string | null } | null;
 };
 
 export type Resume = ResumeSummary & { data: ResumeData; portfolioTheme: unknown };

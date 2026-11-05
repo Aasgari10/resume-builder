@@ -35,7 +35,7 @@ export function CardResume({ data, theme }: TemplateProps) {
           {data.basics.summary && <p className="t-summary">{data.basics.summary}</p>}
           <Avatar ctx={ctx} className="t-photo" />
         </header>
-        {hasContact(ctx) && <ContactList ctx={ctx} />}
+        {hasContact(ctx) && <ContactList withPersonal ctx={ctx} />}
       </div>
       <div className="t-body">
         <main className="t-main">

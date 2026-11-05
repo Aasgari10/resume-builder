@@ -3,6 +3,7 @@ import { z } from "zod";
 import { checkPublishable, emptyResume, resumeDraftSchema, themeSchema } from "@rb/schema";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "../db";
+import { siteUrl } from "../env";
 import { HttpError, asyncHandler, parseBody } from "../lib/http";
 import { currentUserId, requireAuth } from "../middleware/auth";
 
@@ -42,10 +43,22 @@ resumesRouter.get(
   asyncHandler(async (req, res) => {
     const resumes = await prisma.resume.findMany({
       where: { userId: currentUserId(req) },
-      select: { id: true, title: true, locale: true, createdAt: true, updatedAt: true },
+      select: {
+        id: true,
+        title: true,
+        locale: true,
+        createdAt: true,
+        updatedAt: true,
+        site: { select: { subdomain: true, isPublished: true } },
+      },
       orderBy: { updatedAt: "desc" },
     });
-    res.json({ resumes });
+    res.json({
+      resumes: resumes.map(({ site, ...r }) => ({
+        ...r,
+        site: site ? { ...site, path: `/s/${site.subdomain}`, url: siteUrl(site.subdomain) ?? null } : null,
+      })),
+    });
   })
 );
 

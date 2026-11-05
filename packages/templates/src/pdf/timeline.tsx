@@ -51,7 +51,7 @@ export function TimelineResume({ data, theme }: TemplateProps) {
             <div className="t-card">
               <section className="k-section k-side">
                 <Heading icon="contact">{ctx.labels.contact}</Heading>
-                <ContactList ctx={ctx} />
+                <ContactList withPersonal ctx={ctx} />
               </section>
             </div>
           )}

@@ -41,7 +41,7 @@ export function NightResume({ data, theme }: TemplateProps) {
           <h1 className="t-name">{data.basics.fullName}</h1>
           {data.basics.jobTitle && <p className="t-role">{data.basics.jobTitle}</p>}
         </div>
-        {hasContact(ctx) && <ContactList ctx={ctx} />}
+        {hasContact(ctx) && <ContactList withPersonal ctx={ctx} />}
       </header>
       <div className="t-body">
         <main className="t-main">

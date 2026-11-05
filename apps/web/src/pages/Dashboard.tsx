@@ -1,11 +1,13 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ApiError, api, type ResumeSummary } from "../api";
 
 const dateFormatter = new Intl.DateTimeFormat("fa-IR", { dateStyle: "medium", timeStyle: "short" });
 
 export function Dashboard() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const sitesOnly = Boolean(params.get("sites"));
   const [resumes, setResumes] = useState<ResumeSummary[] | null>(null);
   const [title, setTitle] = useState("");
   const [locale, setLocale] = useState<"fa" | "en">("fa");
@@ -44,8 +46,9 @@ export function Dashboard() {
 
   return (
     <div className="stack">
-      <h1>رزومه‌های من</h1>
+      <h1>{sitesOnly ? "سایت‌های منتشرشده" : "رزومه‌های من"}</h1>
 
+      {!sitesOnly && (
       <form onSubmit={create} className="card row gap wrap">
         <input
           placeholder="عنوان رزومه، مثلاً «رزومه‌ی فرانت‌اند»"
@@ -63,16 +66,24 @@ export function Dashboard() {
           + رزومه‌ی جدید
         </button>
       </form>
+      )}
+      {!sitesOnly && (
+        <p className="muted small">
+          یا از <Link to="/resume">گالری قالب‌ها</Link> یک قالب انتخاب کنید تا رزومه با همان قالب ساخته شود.
+        </p>
+      )}
 
       {error && <p className="error">{error}</p>}
 
-      {resumes === null ? (
+      {(() => {
+        const list = sitesOnly ? resumes?.filter((r) => r.site?.isPublished) ?? null : resumes;
+        return list === null ? (
         <p className="muted">در حال بارگذاری…</p>
-      ) : resumes.length === 0 ? (
-        <p className="muted">هنوز رزومه‌ای نساخته‌اید.</p>
+      ) : list.length === 0 ? (
+        <p className="muted">{sitesOnly ? "هنوز سایتی منتشر نکرده‌اید." : "هنوز رزومه‌ای نساخته‌اید."}</p>
       ) : (
         <ul className="list">
-          {resumes.map((r) => (
+          {list.map((r) => (
             <li key={r.id} className="card row gap">
               <div className="grow">
                 <Link to={`/resumes/${r.id}`} className="title-link">
@@ -81,9 +92,17 @@ export function Dashboard() {
                 <div className="muted small">
                   {r.locale === "fa" ? "فارسی" : "English"} · آخرین ویرایش {dateFormatter.format(new Date(r.updatedAt))}
                 </div>
+                {r.site?.isPublished && (
+                  <a className="small ltr" href={r.site.url ?? r.site.path} target="_blank" rel="noopener noreferrer">
+                    {(r.site.url ?? r.site.path).replace(/^https?:\/\//, "")}
+                  </a>
+                )}
               </div>
+              <Link to={`/resumes/${r.id}/pdf`} className="btn ghost">
+                رزومه
+              </Link>
               <Link to={`/resumes/${r.id}`} className="btn ghost">
-                ویرایش
+                سایت
               </Link>
               <button className="btn danger ghost" onClick={() => remove(r)}>
                 حذف
@@ -91,7 +110,8 @@ export function Dashboard() {
             </li>
           ))}
         </ul>
-      )}
+      );
+      })()}
     </div>
   );
 }

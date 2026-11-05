@@ -11,9 +11,13 @@ export type TemplateProps = {
   theme: Theme;
 };
 
+/** Style tags used to filter the template gallery. */
+export type TemplateTag = "formal" | "creative" | "sidebar" | "dark" | "photo";
+
 export type TemplateDefinition = {
   id: string;
   name: string;
   kind: "PDF" | "PORTFOLIO";
   component: ComponentType<TemplateProps>;
+  tags?: readonly TemplateTag[];
 };

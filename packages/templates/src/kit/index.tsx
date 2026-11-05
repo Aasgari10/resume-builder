@@ -70,6 +70,7 @@ const ICONS = {
   phone: "M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z",
   mail: "M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm0 2v.4l8 5 8-5V7zm16 2.75-8 5-8-5V17h16z",
   pin: "M12 2a7 7 0 0 1 7 7c0 5.25-7 13-7 13S5 14.25 5 9a7 7 0 0 1 7-7zm0 4.5A2.5 2.5 0 1 0 12 11.5 2.5 2.5 0 0 0 12 6.5z",
+  info: "M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm-1 9v6h2v-6zm0-4v2h2V7z",
   link: "M10.6 13.4a1 1 0 0 0 1.4 0l4-4a3 3 0 0 0-4.24-4.24l-1.5 1.5 1.41 1.41 1.5-1.5a1 1 0 0 1 1.42 1.42l-4 4a1 1 0 0 0 0 1.41zm2.8-2.8a1 1 0 0 0-1.4 0l-4 4a3 3 0 1 0 4.24 4.24l1.5-1.5-1.41-1.41-1.5 1.5a1 1 0 1 1-1.42-1.42l4-4a1 1 0 0 0 0-1.41z",
 };
 
@@ -82,8 +83,9 @@ function Icon({ name }: { name: keyof typeof ICONS }) {
 }
 
 /** Email, phone, location and links, one per line with an icon. */
-export function ContactList({ ctx, className = "" }: { ctx: Ctx; className?: string }) {
+export function ContactList({ ctx, className = "", withPersonal = false }: { ctx: Ctx; className?: string; withPersonal?: boolean }) {
   const { basics } = ctx.data;
+  const personal = withPersonal ? personalLines(ctx) : [];
   const links = basics.links
     .map((l) => ({ url: safeUrl(l.url), label: linkLabel(l, ctx.data.locale) }))
     .filter((l): l is { url: string; label: string } => Boolean(l.url));
@@ -110,6 +112,12 @@ export function ContactList({ ctx, className = "" }: { ctx: Ctx; className?: str
           <span>{basics.location}</span>
         </li>
       )}
+      {personal.map((line) => (
+        <li key={line}>
+          <Icon name="info" />
+          <span>{line}</span>
+        </li>
+      ))}
       {links.map((l) => (
         <li key={l.url}>
           <Icon name="link" />
@@ -120,6 +128,19 @@ export function ContactList({ ctx, className = "" }: { ctx: Ctx; className?: str
       ))}
     </ul>
   );
+}
+
+/** Birth date, marital status and military service, for printed resumes. */
+export function personalLines({ data, labels }: Ctx): string[] {
+  const p = data.basics.personal;
+  if (!p) return [];
+  const t = labels.personal;
+  const digits = (v: string) => (data.locale === "fa" ? v.replace(/\d/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[Number(d)]!) : v);
+  return [
+    p.birthDate ? `${t.born}: ${digits(p.birthDate)}` : "",
+    p.marital ? `${t.marital}: ${t.maritalValues[p.marital]}` : "",
+    p.military && p.gender !== "female" ? `${t.military}: ${t.militaryValues[p.military]}` : "",
+  ].filter(Boolean);
 }
 
 /** True when there is anything to show in a contact block. */

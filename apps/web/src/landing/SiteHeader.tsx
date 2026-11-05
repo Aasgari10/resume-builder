@@ -30,7 +30,7 @@ export function SiteHeader() {
           <button type="button" className="login" onClick={() => void logout()}>
             خروج
           </button>
-          <Link className="signup" to="/dashboard">
+          <Link className="signup" to="/resume/mine">
             رزومه‌های من
           </Link>
         </>
