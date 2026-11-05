@@ -1,5 +1,6 @@
 import type { Skill } from "@rb/schema";
 import { Empty, Field, ItemControls, SectionCard, Select } from "./fields";
+import { Hideable } from "./Hideable";
 import { LIMITS, move, newId, removeAt, replaceAt } from "./list";
 
 const LEVELS = [
@@ -42,12 +43,14 @@ export function SkillsForm({ value, onChange }: { value: Skill[]; onChange: (val
                 onChange={(e) => set({ category: e.target.value })}
               />
             </label>
-            <Select<LevelOption>
-              label="سطح"
-              value={(s.level ? String(s.level) : "") as LevelOption}
-              options={LEVELS}
-              onChange={(v) => set({ level: v ? Number(v) : undefined })}
-            />
+            <Hideable k="skills.level">
+              <Select<LevelOption>
+                label="سطح"
+                value={(s.level ? String(s.level) : "") as LevelOption}
+                options={LEVELS}
+                onChange={(v) => set({ level: v ? Number(v) : undefined })}
+              />
+            </Hideable>
             <ItemControls
               index={i}
               count={value.length}

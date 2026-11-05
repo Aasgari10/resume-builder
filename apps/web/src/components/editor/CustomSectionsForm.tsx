@@ -1,5 +1,6 @@
 import type { CustomSection } from "@rb/schema";
 import { Empty, Field, ItemControls, SectionCard, TextArea } from "./fields";
+import { Hideable } from "./Hideable";
 import { LIMITS, move, newId, removeAt, replaceAt } from "./list";
 
 type Item = CustomSection["items"][number];
@@ -43,30 +44,38 @@ export function CustomSectionsForm({
                 <div key={item.id} className="sub-card nested stack">
                   <div className="grid2">
                     <Field label="عنوان *" value={item.title} onChange={(title) => setItem({ title })} max={150} />
-                    <Field label="زیرعنوان" value={item.subtitle ?? ""} onChange={(subtitle) => setItem({ subtitle })} max={150} />
-                    <Field
-                      label="تاریخ"
-                      type="month"
-                      ltr
-                      value={item.date ?? ""}
-                      onChange={(date) => setItem({ date: date || undefined })}
-                    />
-                    <Field
-                      label="لینک"
-                      type="url"
-                      ltr
-                      placeholder="https://..."
-                      value={item.url ?? ""}
-                      onChange={(url) => setItem({ url })}
-                      max={500}
-                    />
+                    <Hideable k="customSections.subtitle">
+                      <Field label="زیرعنوان" value={item.subtitle ?? ""} onChange={(subtitle) => setItem({ subtitle })} max={150} />
+                    </Hideable>
+                    <Hideable k="customSections.date">
+                      <Field
+                        label="تاریخ"
+                        type="month"
+                        ltr
+                        value={item.date ?? ""}
+                        onChange={(date) => setItem({ date: date || undefined })}
+                      />
+                    </Hideable>
+                    <Hideable k="customSections.url">
+                      <Field
+                        label="لینک"
+                        type="url"
+                        ltr
+                        placeholder="https://..."
+                        value={item.url ?? ""}
+                        onChange={(url) => setItem({ url })}
+                        max={500}
+                      />
+                    </Hideable>
                   </div>
-                  <TextArea
-                    label="توضیحات"
-                    max={1000}
-                    value={item.description ?? ""}
-                    onChange={(description) => setItem({ description })}
-                  />
+                  <Hideable k="customSections.description">
+                    <TextArea
+                      label="توضیحات"
+                      max={1000}
+                      value={item.description ?? ""}
+                      onChange={(description) => setItem({ description })}
+                    />
+                  </Hideable>
                   <ItemControls
                     index={ii}
                     count={section.items.length}

@@ -1,12 +1,11 @@
 /** @jsxRuntime automatic @jsxImportSource react */
 // Pinned per file: this package is compiled by different tools (Vite, tsx, tsup).
 import type { CSSProperties, ReactNode } from "react";
-import { themeToCssVars, type ResumeData, type SectionConfig, type Theme } from "@rb/schema";
-import { LABELS, formatPeriod, formatYearMonth, safeUrl } from "../format";
+import { themeToCssVars, type SectionConfig } from "@rb/schema";
+import { formatPeriod, formatYearMonth, safeUrl } from "../format";
 import type { TemplateProps } from "../types";
+import { makeCtx, personalLines, type Ctx } from "../kit";
 import { styles } from "./styles";
-
-type Ctx = { data: ResumeData; theme: Theme; labels: (typeof LABELS)[ResumeData["locale"]] };
 
 /** URL without protocol, "www." or trailing slash, for printing as readable text. */
 function displayUrl(url: string): string {
@@ -15,9 +14,10 @@ function displayUrl(url: string): string {
 
 /** Single-column A4 resume, designed for printing and saving as PDF. */
 export function ClassicResume({ data, theme }: TemplateProps) {
-  const ctx: Ctx = { data, theme, labels: LABELS[data.locale] };
+  const ctx = makeCtx(data, theme);
   const { basics } = data;
   const links = basics.links.map((l) => safeUrl(l.url)).filter((u): u is string => Boolean(u));
+  const photo = theme.display.showAvatar && !ctx.isOff("basics.avatar") ? safeUrl(basics.avatarUrl) : undefined;
 
   return (
     <div
@@ -28,6 +28,7 @@ export function ClassicResume({ data, theme }: TemplateProps) {
     >
       <style>{styles}</style>
       <header className="cr-header">
+        {photo && <img className="cr-photo" src={photo} alt={basics.fullName} />}
         <h1 className="cr-name">{basics.fullName}</h1>
         {basics.jobTitle && <p className="cr-title">{basics.jobTitle}</p>}
         <div className="cr-contact">
@@ -40,6 +41,13 @@ export function ClassicResume({ data, theme }: TemplateProps) {
             </a>
           ))}
         </div>
+        {personalLines(ctx).length > 0 && (
+          <div className="cr-contact cr-personal">
+            {personalLines(ctx).map((line) => (
+              <span key={line}>{line}</span>
+            ))}
+          </div>
+        )}
         {basics.summary && <p className="cr-summary">{basics.summary}</p>}
       </header>
 
@@ -105,7 +113,8 @@ function Section({ section, ctx }: { section: SectionConfig; ctx: Ctx }) {
       const groups = new Map<string, string[]>();
       for (const s of skills) {
         const key = s.category?.trim() || "";
-        groups.set(key, [...(groups.get(key) ?? []), s.name]);
+        const name = s.level ? `${s.name} (${"●".repeat(s.level)}${"○".repeat(5 - s.level)})` : s.name;
+        groups.set(key, [...(groups.get(key) ?? []), name]);
       }
       return (
         <Block title={title(labels.sections.skills)}>
@@ -123,16 +132,19 @@ function Section({ section, ctx }: { section: SectionConfig; ctx: Ctx }) {
       return items.length === 0 ? null : (
         <Block title={title(labels.sections.projects)}>
           {items.map((p) => {
-            const url = safeUrl(p.url) ?? safeUrl(p.repoUrl);
+            const urls = [safeUrl(p.url), safeUrl(p.repoUrl)].filter((u): u is string => Boolean(u));
+            const images = p.images.map((u) => safeUrl(u)).filter((u): u is string => Boolean(u));
             return (
               <Item key={p.id} title={p.title} sub={p.role} date={formatPeriod(p.period, data.locale, dateFormat)}>
                 {p.description && <p className="cr-desc">{p.description}</p>}
-                {(p.technologies.length > 0 || url) && (
-                  <p className="cr-tech">
-                    {p.technologies.join("، ")}
-                    {p.technologies.length > 0 && url && " · "}
-                    {url && <a href={url} dir="ltr">{displayUrl(url)}</a>}
-                  </p>
+                {p.technologies.length > 0 && <p className="cr-tech">{p.technologies.join("، ")}</p>}
+                <Links urls={urls} />
+                {images.length > 0 && (
+                  <div className="cr-shots">
+                    {images.slice(0, 4).map((src) => (
+                      <img key={src} src={src} alt="" />
+                    ))}
+                  </div>
                 )}
               </Item>
             );
@@ -147,7 +159,8 @@ function Section({ section, ctx }: { section: SectionConfig; ctx: Ctx }) {
           <ul className="cr-inline-list">
             {items.map((l) => (
               <li key={l.id}>
-                {l.name} <span className="cr-item-sub">({labels.languageLevels[l.level]})</span>
+                {l.name}
+                {!ctx.isOff("languages.level") && <span className="cr-item-sub"> ({labels.languageLevels[l.level]})</span>}
               </li>
             ))}
           </ul>
@@ -159,7 +172,9 @@ function Section({ section, ctx }: { section: SectionConfig; ctx: Ctx }) {
       return items.length === 0 ? null : (
         <Block title={title(labels.sections.certificates)}>
           {items.map((c) => (
-            <Item key={c.id} title={c.title} sub={c.issuer} date={formatYearMonth(c.date, data.locale, dateFormat)} />
+            <Item key={c.id} title={c.title} sub={c.issuer} date={formatYearMonth(c.date, data.locale, dateFormat)}>
+              <Links urls={[safeUrl(c.url)].filter((u): u is string => Boolean(u))} />
+            </Item>
           ))}
         </Block>
       );
@@ -176,6 +191,7 @@ function Section({ section, ctx }: { section: SectionConfig; ctx: Ctx }) {
                   .map((i) => (
                     <Item key={i.id} title={i.title} sub={i.subtitle} date={formatYearMonth(i.date, data.locale, dateFormat)}>
                       {i.description && <p className="cr-desc">{i.description}</p>}
+                      <Links urls={[safeUrl(i.url)].filter((u): u is string => Boolean(u))} />
                     </Item>
                   ))}
               </Block>
@@ -183,6 +199,21 @@ function Section({ section, ctx }: { section: SectionConfig; ctx: Ctx }) {
         </>
       );
   }
+}
+
+function Links({ urls }: { urls: string[] }) {
+  return urls.length === 0 ? null : (
+    <p className="cr-tech">
+      {urls.map((u, i) => (
+        <span key={u}>
+          {i > 0 && " · "}
+          <a href={u} dir="ltr">
+            {displayUrl(u)}
+          </a>
+        </span>
+      ))}
+    </p>
+  );
 }
 
 function Block({ title, children }: { title: string; children: ReactNode }) {

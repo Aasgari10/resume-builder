@@ -2,7 +2,7 @@
 // The resume page is rendered at its real A4 width and scaled down to fit the pane.
 
 import { memo, useState } from "react";
-import type { ResumeData, Theme } from "@rb/schema";
+import { applyHiddenFields, type ResumeData, type Theme } from "@rb/schema";
 import { PDF_TEMPLATES, PORTFOLIO_TEMPLATES, getPdfTemplate, getTemplate, type TemplateDefinition } from "@rb/templates";
 import { Scaled } from "./Scaled";
 
@@ -13,7 +13,8 @@ const MOBILE_WIDTH = 390;
 
 type Props = { data: ResumeData; theme: Theme; onThemeChange: (theme: Theme) => void; initialMode?: Mode };
 
-export function Preview({ data, theme, onThemeChange, initialMode = "site" }: Props) {
+export function Preview({ data: raw, theme, onThemeChange, initialMode = "site" }: Props) {
+  const data = applyHiddenFields(raw, theme.hiddenFields);
   const [mode, setMode] = useState<Mode>(initialMode);
   const [device, setDevice] = useState<Device>("desktop");
   const site = getTemplate(theme.templateId);

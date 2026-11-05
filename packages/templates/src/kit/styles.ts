@@ -61,6 +61,12 @@ export const kitStyles = /* css */ `
 .k-bar { display: block; height: 0.32rem; border-radius: 999px; background: color-mix(in srgb, currentColor 18%, transparent); overflow: hidden; }
 .k-bar i { display: block; height: 100%; border-radius: inherit; background: var(--color-primary); }
 
+.k-skill-group + .k-skill-group { margin-top: 0.55rem; }
+.k-cat { margin-bottom: 0.25rem; font-size: 0.86em; font-weight: 700; opacity: 0.75; }
+.k-links a { color: inherit; }
+.k-shots { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.35rem; }
+.k-shots img { width: 4.6rem; height: 3rem; border-radius: calc(var(--radius) * 0.6); object-fit: cover; box-shadow: 0 0 0 1px color-mix(in srgb, currentColor 14%, transparent); }
+
 /* Languages */
 .k-langs { display: grid; gap: 0.35rem; }
 .k-langs li { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Basics } from "@rb/schema";
 import { AvatarField } from "./AvatarField";
+import { Hideable } from "./Hideable";
 import { Field, ItemControls, Select, SectionCard, TextArea, Empty } from "./fields";
 import { LIMITS, move, newId, removeAt, replaceAt } from "./list";
 
@@ -132,25 +133,29 @@ export function BasicsInfoForm({ value, onChange }: Props) {
       <SectionCard title="اطلاعات پایه">
         <div className="grid2">
           <Field label="نام و نام خانوادگی *" value={value.fullName} onChange={(fullName) => set({ fullName })} max={80} />
-          <Field label="عنوان شغلی" value={value.jobTitle ?? ""} onChange={(jobTitle) => set({ jobTitle })} max={100} />
-          <Field label="ایمیل" type="email" ltr value={value.email ?? ""} onChange={(email) => set({ email })} max={200} />
-          <Field label="تلفن" type="tel" ltr value={value.phone ?? ""} onChange={(phone) => set({ phone })} max={20} />
-          <Field label="شهر" value={value.location ?? ""} onChange={(location) => set({ location })} max={100} />
+          <Hideable k="basics.jobTitle">
+            <Field label="عنوان شغلی" value={value.jobTitle ?? ""} onChange={(jobTitle) => set({ jobTitle })} max={100} />
+          </Hideable>
+          <Hideable k="basics.email">
+            <Field label="ایمیل" type="email" ltr value={value.email ?? ""} onChange={(email) => set({ email })} max={200} />
+          </Hideable>
+          <Hideable k="basics.phone">
+            <Field label="تلفن" type="tel" ltr value={value.phone ?? ""} onChange={(phone) => set({ phone })} max={20} />
+          </Hideable>
+          <Hideable k="basics.location">
+            <Field label="شهر" value={value.location ?? ""} onChange={(location) => set({ location })} max={100} />
+          </Hideable>
         </div>
-        <AvatarField value={value.avatarUrl ?? ""} onChange={(avatarUrl) => set({ avatarUrl })} />
+        <Hideable k="basics.avatar">
+          <AvatarField value={value.avatarUrl ?? ""} onChange={(avatarUrl) => set({ avatarUrl })} />
+        </Hideable>
         <details className="personal-details" open={Boolean(value.personal)}>
           <summary>اطلاعات تکمیلی (فقط در رزومه‌ی پی‌دی‌اف)</summary>
           <div className="grid2">
-            <BirthDate value={personal.birthDate ?? ""} onChange={(birthDate) => setPersonal({ birthDate })} />
-            <OptionalSelect
-              label="جنسیت"
-              value={personal.gender}
-              options={[
-                { value: "male", label: "مرد" },
-                { value: "female", label: "زن" },
-              ]}
-              onChange={(gender) => setPersonal({ gender, ...(gender === "female" ? { military: undefined } : {}) })}
-            />
+            <Hideable k="basics.birthDate">
+              <BirthDate value={personal.birthDate ?? ""} onChange={(birthDate) => setPersonal({ birthDate })} />
+            </Hideable>
+            <Hideable k="basics.marital">
             <OptionalSelect
               label="وضعیت تأهل"
               value={personal.marital}
@@ -160,7 +165,8 @@ export function BasicsInfoForm({ value, onChange }: Props) {
               ]}
               onChange={(marital) => setPersonal({ marital })}
             />
-            {personal.gender !== "female" && (
+            </Hideable>
+            <Hideable k="basics.military">
               <OptionalSelect
                 label="وضعیت سربازی"
                 value={personal.military}
@@ -173,9 +179,10 @@ export function BasicsInfoForm({ value, onChange }: Props) {
                 ]}
                 onChange={(military) => setPersonal({ military })}
               />
-            )}
+            </Hideable>
           </div>
         </details>
+        <Hideable k="basics.summary">
         <TextArea
           label="درباره‌ی من"
           rows={4}
@@ -183,6 +190,7 @@ export function BasicsInfoForm({ value, onChange }: Props) {
           value={value.summary ?? ""}
           onChange={(summary) => set({ summary })}
         />
+        </Hideable>
       </SectionCard>
     </>
   );

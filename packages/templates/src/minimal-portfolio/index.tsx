@@ -206,7 +206,7 @@ function Skills({ title, ctx }: { title: string; ctx: Ctx }) {
             {list.map((s) => (
               <li key={s.id} className="mp-skill">
                 {s.name}
-                {ctx.theme.display.showSkillLevel && s.level && <Dots value={s.level} />}
+                {s.level && <Dots value={s.level} />}
               </li>
             ))}
           </ul>

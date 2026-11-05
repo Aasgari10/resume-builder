@@ -17,6 +17,7 @@ import type { TemplateDefinition, TemplateTag } from "./types";
 
 export type { TemplateDefinition, TemplateProps, TemplateTag } from "./types";
 export { sampleResume } from "./sample";
+export { withPlaceholders } from "./placeholders";
 export { Silhouette } from "./avatar";
 export { formatPeriod, formatYearMonth, safeUrl } from "./format";
 export { buildSeo, truncate, type SeoMeta, type SeoOverrides } from "./seo";
