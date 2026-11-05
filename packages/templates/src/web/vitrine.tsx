@@ -1,12 +1,13 @@
 /** @jsxRuntime automatic @jsxImportSource react */
 // Pinned per file: this package is compiled by different tools (Vite, tsx, tsup).
-// "Vitrine": a calm, multi-page portfolio. Pages: work (home), gallery, about, resume and one page
-// per project. The header (photo, page menu, name and tagline) is shared; the home page shows it
-// in full with two buttons, inner pages in a compact form. Colors come from the theme.
+// "Vitrine": a calm, multi-page portfolio. Pages: work (home), certificates gallery, about, resume
+// and one page per project. The header (photo, page menu, name and tagline) is shared; the home
+// page shows it in full with two buttons, inner pages in a compact form. Colors come from the theme.
+// Every text and picture carries a data-edit marker so the editor can change it in place.
 
 import type { ReactNode } from "react";
 import type { Project, ResumeData } from "@rb/schema";
-import { Avatar, Links, WebPage, webCtx, type Ctx } from "./kit";
+import { Avatar, WebPage, webCtx, type Ctx } from "./kit";
 import { formatNumber, formatPeriod, formatYearMonth, safeUrl } from "../format";
 import { displayUrl } from "../kit";
 import type { TemplateProps } from "../types";
@@ -37,7 +38,7 @@ export const VITRINE_OPTIONAL_PAGES = ["/gallery", "/about", "/resume"] as const
 
 const MENU: Record<string, { fa: string; en: string }> = {
   "/": { fa: "نمونه‌کارها", en: "Work" },
-  "/gallery": { fa: "گالری", en: "Gallery" },
+  "/gallery": { fa: "مدارک", en: "Certificates" },
   "/about": { fa: "درباره‌ی من", en: "About" },
   "/resume": { fa: "رزومه", en: "Resume" },
 };
@@ -47,15 +48,12 @@ const TEXT = {
     work: "آخرین کارهایم",
     contact: "گفت‌وگو کنیم",
     hi: (name: string) => `سلام، من ${name} هستم.`,
-    contactTitle: "یک پروژه در ذهن دارید؟",
-    contactText: "خوشحال می‌شوم درباره‌اش صحبت کنیم.",
     back: "همه‌ی کارها",
     visit: "دیدن پروژه",
     source: "کد پروژه",
     experience: "سوابق کاری",
     education: "تحصیلات",
     certificates: "دوره‌ها و گواهینامه‌ها",
-    skills: "مهارت‌ها",
     at: " در ",
     notFound: "این صفحه پیدا نشد.",
   },
@@ -63,15 +61,12 @@ const TEXT = {
     work: "My latest work",
     contact: "Let's chat",
     hi: (name: string) => `Hi, I am ${name}.`,
-    contactTitle: "Have a project in mind?",
-    contactText: "I'd be happy to talk about it.",
     back: "All work",
     visit: "Visit project",
     source: "Source code",
     experience: "Experience",
     education: "Education",
     certificates: "Certificates",
-    skills: "Skills",
     at: " @ ",
     notFound: "This page was not found.",
   },
@@ -79,36 +74,51 @@ const TEXT = {
 
 /* ───────────── Click-to-edit markers ───────────── */
 
-// The editor preview reads these attributes to make a text or picture editable in place;
-// on a published site they are inert.
-type EditKind = "text" | "multiline" | "image";
-const ed = (path: string, kind: EditKind, label: string) => ({ "data-edit": path, "data-edit-kind": kind, "data-edit-label": label });
+// The editor preview reads these attributes to edit a value in place; on a published site they are inert.
+type EditKind = "text" | "multiline" | "image" | "url" | "period" | "month" | "lines" | "tags";
+type Edit = { "data-edit": string; "data-edit-kind": EditKind; "data-edit-label": string };
+const ed = (path: string, kind: EditKind, label: string): Edit => ({ "data-edit": path, "data-edit-kind": kind, "data-edit-label": label });
 const item = (list: string, id: string) => `${list}[${id}]`;
 
+/**
+ * An optional value: shown when filled; while editing, an empty one becomes a small "+ label"
+ * button so it can still be added. Published pages never show the button.
+ */
+function Opt({ value, editing, edit, children }: { value: unknown; editing: boolean; edit: Edit; children?: ReactNode }) {
+  const filled = Array.isArray(value) ? value.some((v) => String(v).trim()) : Boolean(String(value ?? "").trim());
+  if (filled) return <>{children}</>;
+  return editing ? (
+    <span className="vt-ghost" {...edit}>
+      + {edit["data-edit-label"]}
+    </span>
+  ) : null;
+}
+
 /* ───────────── Template ───────────── */
+
+type View = { ctx: Ctx; link: Link; editing: boolean };
 
 export function VitrinePortfolio(props: TemplateProps) {
   const ctx = webCtx(props);
   const { data } = props;
-  const link = props.link ?? ((p: string) => p);
+  const view: View = { ctx, link: props.link ?? ((p: string) => p), editing: Boolean(props.editing) };
   const page = props.page ?? "/";
   const t = TEXT[data.locale];
   const project = page.startsWith("/projects/") ? projectsOf(data).find((p) => projectPath(p) === page) : undefined;
 
   let body: ReactNode;
-  if (page === "/") body = <Work ctx={ctx} link={link} />;
-  else if (page === "/gallery") body = <Gallery data={data} />;
-  else if (page === "/about") body = <About ctx={ctx} link={link} />;
-  else if (page === "/resume") body = <Resume ctx={ctx} />;
-  else if (project) body = <ProjectPage ctx={ctx} project={project} link={link} />;
+  if (page === "/") body = <Work {...view} />;
+  else if (page === "/gallery") body = <Gallery {...view} />;
+  else if (page === "/about") body = <About {...view} />;
+  else if (page === "/resume") body = <Resume {...view} />;
+  else if (project) body = <ProjectPage {...view} project={project} />;
   else body = <p className="vt-empty">{t.notFound}</p>;
 
   return (
     <WebPage ctx={ctx} className="vt" css={css}>
       <div className="vt-wrap">
-        <Header ctx={ctx} page={page} link={link} full={page === "/"} />
+        <Header {...view} page={page} full={page === "/"} />
         <main className="vt-main">{body}</main>
-        <Footer ctx={ctx} />
       </div>
     </WebPage>
   );
@@ -125,13 +135,14 @@ function PageLink({ to, link, className, children, current }: { to: string; link
   );
 }
 
-function Header({ ctx, page, link, full }: { ctx: Ctx; page: string; link: Link; full: boolean }) {
+function Header({ ctx, link, editing, page, full }: View & { page: string; full: boolean }) {
   const { data } = ctx;
   const t = TEXT[data.locale];
-  const tagline = data.site?.tagline?.trim() || data.basics.jobTitle;
+  const b = data.basics;
+  const tagline = data.site?.tagline?.trim() || b.jobTitle;
   const menu = vitrinePages(data).filter((p) => MENU[p]);
   const active = page.startsWith("/projects/") ? "/" : page;
-  const email = data.basics.email?.trim();
+  const email = b.email?.trim();
 
   return (
     <header className={`vt-header${full ? "" : " compact"}`}>
@@ -141,6 +152,15 @@ function Header({ ctx, page, link, full }: { ctx: Ctx; page: string; link: Link;
             <Avatar ctx={ctx} />
           </span>
         </PageLink>
+        {/* Shown beside the photo on narrow screens, where the menu moves to its own row. */}
+        <div className="vt-bar-id">
+          <Opt value={b.jobTitle} editing={editing} edit={ed("basics.jobTitle", "text", "عنوان شغلی")}>
+            <b {...ed("basics.jobTitle", "text", "عنوان شغلی")}>{b.jobTitle}</b>
+          </Opt>
+          <Opt value={b.location} editing={editing} edit={ed("basics.location", "text", "شهر")}>
+            <span {...ed("basics.location", "text", "شهر")}>{b.location}</span>
+          </Opt>
+        </div>
         {menu.length > 1 && (
           <nav className="vt-nav">
             {menu.map((p) => (
@@ -152,26 +172,31 @@ function Header({ ctx, page, link, full }: { ctx: Ctx; page: string; link: Link;
         )}
       </div>
       <h1 className="vt-name" {...ed("basics.fullName", "text", "نام")}>
-        {data.basics.fullName}
+        {b.fullName}
       </h1>
-      {tagline && (
+      <Opt value={tagline} editing={editing} edit={ed("site.tagline", "multiline", "جمله‌ی زیر نام")}>
         <p className="vt-tagline" {...ed("site.tagline", "multiline", "جمله‌ی زیر نام")}>
           {tagline}
         </p>
-      )}
+      </Opt>
       {full && (
         <div className="vt-actions">
           <a className="vt-btn primary" href="#work" {...ed("site.ctaPrimary", "text", "متن دکمه‌ی اول")}>
             {data.site?.ctaPrimary?.trim() || t.work}
           </a>
-          {email ? (
-            <a className="vt-btn" href={`mailto:${email}`} {...ed("site.ctaSecondary", "text", "متن دکمه‌ی دوم")}>
+          {email || editing ? (
+            <a className="vt-btn" href={email ? `mailto:${email}` : "#"} {...ed("site.ctaSecondary", "text", "متن دکمه‌ی تماس")}>
               {data.site?.ctaSecondary?.trim() || t.contact}
             </a>
           ) : (
             <PageLink to="/about" link={link} className="vt-btn">
               {data.site?.ctaSecondary?.trim() || t.contact}
             </PageLink>
+          )}
+          {editing && (
+            <span className="vt-ghost" {...ed("basics.email", "text", "ایمیل برای دکمه‌ی تماس")}>
+              ✉ {email || "ایمیل"}
+            </span>
           )}
         </div>
       )}
@@ -180,7 +205,7 @@ function Header({ ctx, page, link, full }: { ctx: Ctx; page: string; link: Link;
 }
 
 /** Picture with a theme-colored fallback, so a card never looks broken. */
-function Picture({ src, alt, ratio, edit }: { src?: string; alt: string; ratio?: string; edit?: ReturnType<typeof ed> }) {
+function Picture({ src, alt, ratio, edit }: { src?: string; alt: string; ratio?: string; edit?: Edit }) {
   const url = safeUrl(src);
   return (
     <div className="vt-pic" style={ratio ? { aspectRatio: ratio } : undefined} {...edit}>
@@ -189,50 +214,63 @@ function Picture({ src, alt, ratio, edit }: { src?: string; alt: string; ratio?:
   );
 }
 
-function Work({ ctx, link }: { ctx: Ctx; link: Link }) {
+const year = (ym: string | undefined, ctx: Ctx) => (ym ? formatNumber(Number(ym.slice(0, 4)), ctx.data.locale).replace(/٬|,/g, "") : "");
+
+function Work({ ctx, link, editing }: View) {
   const items = projectsOf(ctx.data);
   if (items.length === 0) return null;
   return (
     <section id="work" className="vt-work">
-      {items.map((p) => (
-        <PageLink key={p.id} to={projectPath(p)} link={link} className="vt-card">
-          <Picture src={p.images[0]} alt={p.title} ratio="4 / 3" edit={ed(`${item("projects", p.id)}.images.0`, "image", "تصویر پروژه")} />
-          <div className="vt-card-meta">
-            <span className="vt-card-title" {...ed(`${item("projects", p.id)}.title`, "text", "عنوان پروژه")}>
-              {p.title}
-            </span>
-            <span className="vt-muted" {...ed(`${item("projects", p.id)}.role`, "text", "نقش من در پروژه")}>
-              {[p.role, p.period ? year(p.period.end || p.period.start, ctx) : ""].filter(Boolean).join(" · ")}
-            </span>
-          </div>
-        </PageLink>
-      ))}
+      {items.map((p) => {
+        const at = item("projects", p.id);
+        return (
+          <PageLink key={p.id} to={projectPath(p)} link={link} className="vt-card">
+            <Picture src={p.images[0]} alt={p.title} ratio="4 / 3" edit={ed(`${at}.images.0`, "image", "تصویر پروژه")} />
+            <div className="vt-card-meta">
+              <span className="vt-card-title" {...ed(`${at}.title`, "text", "عنوان پروژه")}>
+                {p.title}
+              </span>
+              <span className="vt-muted vt-card-sub">
+                <Opt value={p.role} editing={editing} edit={ed(`${at}.role`, "text", "نقش من")}>
+                  <span {...ed(`${at}.role`, "text", "نقش من")}>{p.role}</span>
+                </Opt>
+                <Opt value={p.period?.start} editing={editing} edit={ed(`${at}.period`, "period", "تاریخ پروژه")}>
+                  <span {...ed(`${at}.period`, "period", "تاریخ پروژه")}>{p.period ? year(p.period.end || p.period.start, ctx) : ""}</span>
+                </Opt>
+              </span>
+            </div>
+          </PageLink>
+        );
+      })}
     </section>
   );
 }
 
-const year = (ym: string | undefined, ctx: Ctx) => (ym ? formatNumber(Number(ym.slice(0, 4)), ctx.data.locale).replace(/٬|,/g, "") : "");
-
-function Gallery({ data }: { data: ResumeData }) {
-  const items = (data.site?.gallery ?? []).filter((g) => safeUrl(g.image));
+function Gallery({ ctx, editing }: View) {
+  const items = (ctx.data.site?.gallery ?? []).filter((g) => safeUrl(g.image));
   return (
     <section className="vt-gallery">
-      {items.map((g) => (
-        <figure key={g.id} className="vt-shot">
-          <img src={safeUrl(g.image)} alt={g.title} loading="lazy" {...ed(`${item("site.gallery", g.id)}.image`, "image", "تصویر گالری")} />
-          {(g.title || g.description) && (
+      {items.map((g) => {
+        const at = item("site.gallery", g.id);
+        return (
+          <figure key={g.id} className="vt-shot">
+            <img src={safeUrl(g.image)} alt={g.title} loading="lazy" {...ed(`${at}.image`, "image", "تصویر مدرک")} />
             <figcaption>
-              <span {...ed(`${item("site.gallery", g.id)}.title`, "text", "عنوان تصویر")}>{g.title}</span>
-              {g.description && <small>{g.description}</small>}
+              <Opt value={g.title} editing={editing} edit={ed(`${at}.title`, "text", "عنوان")}>
+                <span {...ed(`${at}.title`, "text", "عنوان")}>{g.title}</span>
+              </Opt>
+              <Opt value={g.description} editing={editing} edit={ed(`${at}.description`, "multiline", "توضیح کوتاه")}>
+                <small {...ed(`${at}.description`, "multiline", "توضیح کوتاه")}>{g.description}</small>
+              </Opt>
             </figcaption>
-          )}
-        </figure>
-      ))}
+          </figure>
+        );
+      })}
     </section>
   );
 }
 
-function About({ ctx, link }: { ctx: Ctx; link: Link }) {
+function About({ ctx, link, editing }: View) {
   const { data } = ctx;
   const t = TEXT[data.locale];
   const site = data.site;
@@ -244,27 +282,37 @@ function About({ ctx, link }: { ctx: Ctx; link: Link }) {
     <section className="vt-about">
       <figure className="vt-about-photo">
         <Picture src={site?.aboutImage || data.basics.avatarUrl} alt={data.basics.fullName} ratio="4 / 5" edit={ed("site.aboutImage", "image", "عکس صفحه‌ی درباره‌ی من")} />
-        {site?.aboutCaption && <figcaption {...ed("site.aboutCaption", "text", "توضیح زیر عکس")}>{site.aboutCaption}</figcaption>}
+        <Opt value={site?.aboutCaption} editing={editing} edit={ed("site.aboutCaption", "text", "توضیح زیر عکس")}>
+          <figcaption {...ed("site.aboutCaption", "text", "توضیح زیر عکس")}>{site?.aboutCaption}</figcaption>
+        </Opt>
       </figure>
       <div className="vt-about-text">
         <h2>
-          {t.hi(firstName)}
-          {site?.aboutTitle && <span {...ed("site.aboutTitle", "text", "عنوان درباره‌ی من")}>{site.aboutTitle}</span>}
+          <span className="vt-hi" {...ed("basics.fullName", "text", "نام")}>
+            {t.hi(firstName)}
+          </span>
+          <Opt value={site?.aboutTitle} editing={editing} edit={ed("site.aboutTitle", "text", "عنوان درباره‌ی من")}>
+            <span {...ed("site.aboutTitle", "text", "عنوان درباره‌ی من")}>{site?.aboutTitle}</span>
+          </Opt>
         </h2>
-        <div className="vt-about-body" {...ed("site.aboutText", "multiline", "متن درباره‌ی من")}>
-          {text.split(/\n\s*\n/).map((para, i) => (
-            <p key={i}>{para}</p>
-          ))}
-        </div>
+        <Opt value={text} editing={editing} edit={ed("site.aboutText", "multiline", "متن درباره‌ی من")}>
+          <div className="vt-about-body" {...ed("site.aboutText", "multiline", "متن درباره‌ی من")}>
+            {text.split(/\n\s*\n/).map((para, i) => (
+              <p key={i}>{para}</p>
+            ))}
+          </div>
+        </Opt>
         {skills.length > 0 && (
           <ul className="k-tags">
             {skills.map((s) => (
-              <li key={s.id}>{s.name}</li>
+              <li key={s.id} {...ed(`${item("skills", s.id)}.name`, "text", "مهارت")}>
+                {s.name}
+              </li>
             ))}
           </ul>
         )}
         {email ? (
-          <a className="vt-btn" href={`mailto:${email}`}>
+          <a className="vt-btn" href={`mailto:${email}`} {...ed("site.ctaSecondary", "text", "متن دکمه‌ی تماس")}>
             {site?.ctaSecondary?.trim() || t.contact}
           </a>
         ) : (
@@ -277,7 +325,7 @@ function About({ ctx, link }: { ctx: Ctx; link: Link }) {
   );
 }
 
-function Resume({ ctx }: { ctx: Ctx }) {
+function Resume({ ctx, editing }: View) {
   const { data } = ctx;
   const t = TEXT[data.locale];
   const fmt = ctx.theme.display.dateFormat;
@@ -285,38 +333,114 @@ function Resume({ ctx }: { ctx: Ctx }) {
     <div className="vt-resume">
       {data.experience.length > 0 && (
         <Timeline title={t.experience}>
-          {data.experience.map((x) => (
-            <Row
-              key={x.id}
-              badge={x.company}
-              title={`${x.position}${t.at}${x.company}`}
-              meta={[formatPeriod(x.period, data.locale, fmt), x.location]}
-              text={x.description}
-              textEdit={ed(`${item("experience", x.id)}.description`, "multiline", "توضیح سابقه‌ی کاری")}
-              bullets={x.highlights}
-            />
-          ))}
+          {data.experience.map((x) => {
+            const at = item("experience", x.id);
+            return (
+              <Row
+                key={x.id}
+                badge={x.company}
+                title={
+                  <>
+                    <span {...ed(`${at}.position`, "text", "سمت")}>{x.position}</span>
+                    {t.at}
+                    <span {...ed(`${at}.company`, "text", "شرکت")}>{x.company}</span>
+                  </>
+                }
+                meta={[
+                  <span key="p" {...ed(`${at}.period`, "period", "تاریخ شروع و پایان")}>
+                    {formatPeriod(x.period, data.locale, fmt)}
+                  </span>,
+                  <Opt key="l" value={x.location} editing={editing} edit={ed(`${at}.location`, "text", "محل")}>
+                    <span {...ed(`${at}.location`, "text", "محل")}>{x.location}</span>
+                  </Opt>,
+                ]}
+              >
+                <Opt value={x.description} editing={editing} edit={ed(`${at}.description`, "multiline", "توضیحات")}>
+                  <p className="vt-row-text" {...ed(`${at}.description`, "multiline", "توضیحات")}>
+                    {x.description}
+                  </p>
+                </Opt>
+                <Opt value={x.highlights} editing={editing} edit={ed(`${at}.highlights`, "lines", "دستاوردها")}>
+                  <ul className="k-bullets" {...ed(`${at}.highlights`, "lines", "دستاوردها")}>
+                    {x.highlights
+                      .filter((h) => h.trim())
+                      .map((h, i) => (
+                        <li key={i}>{h}</li>
+                      ))}
+                  </ul>
+                </Opt>
+              </Row>
+            );
+          })}
         </Timeline>
       )}
       {data.education.length > 0 && (
         <Timeline title={t.education}>
-          {data.education.map((x) => (
-            <Row
-              key={x.id}
-              badge={x.institution}
-              title={[x.degree, x.field].filter(Boolean).join(" ") || x.institution}
-              meta={[x.degree || x.field ? x.institution : "", formatPeriod(x.period, data.locale, fmt), x.grade]}
-              text={x.description}
-              textEdit={ed(`${item("education", x.id)}.description`, "multiline", "توضیح تحصیلات")}
-            />
-          ))}
+          {data.education.map((x) => {
+            const at = item("education", x.id);
+            return (
+              <Row
+                key={x.id}
+                badge={x.institution}
+                title={
+                  <>
+                    <Opt value={x.degree} editing={editing} edit={ed(`${at}.degree`, "text", "مقطع")}>
+                      <span {...ed(`${at}.degree`, "text", "مقطع")}>{x.degree}</span>{" "}
+                    </Opt>
+                    <Opt value={x.field} editing={editing} edit={ed(`${at}.field`, "text", "رشته")}>
+                      <span {...ed(`${at}.field`, "text", "رشته")}>{x.field}</span>
+                    </Opt>
+                  </>
+                }
+                meta={[
+                  <span key="i" {...ed(`${at}.institution`, "text", "دانشگاه یا مؤسسه")}>
+                    {x.institution}
+                  </span>,
+                  <span key="p" {...ed(`${at}.period`, "period", "تاریخ شروع و پایان")}>
+                    {formatPeriod(x.period, data.locale, fmt)}
+                  </span>,
+                  <Opt key="g" value={x.grade} editing={editing} edit={ed(`${at}.grade`, "text", "معدل")}>
+                    <span {...ed(`${at}.grade`, "text", "معدل")}>{x.grade}</span>
+                  </Opt>,
+                ]}
+              >
+                <Opt value={x.description} editing={editing} edit={ed(`${at}.description`, "multiline", "توضیحات")}>
+                  <p className="vt-row-text" {...ed(`${at}.description`, "multiline", "توضیحات")}>
+                    {x.description}
+                  </p>
+                </Opt>
+              </Row>
+            );
+          })}
         </Timeline>
       )}
       {data.certificates.length > 0 && (
         <Timeline title={t.certificates}>
-          {data.certificates.map((c) => (
-            <Row key={c.id} badge={c.issuer || c.title} title={c.title} meta={[c.issuer, formatYearMonth(c.date, data.locale, fmt)]} url={c.url} />
-          ))}
+          {data.certificates.map((c) => {
+            const at = item("certificates", c.id);
+            const href = safeUrl(c.url);
+            return (
+              <Row
+                key={c.id}
+                badge={c.issuer || c.title}
+                title={<span {...ed(`${at}.title`, "text", "عنوان دوره")}>{c.title}</span>}
+                meta={[
+                  <Opt key="i" value={c.issuer} editing={editing} edit={ed(`${at}.issuer`, "text", "صادرکننده")}>
+                    <span {...ed(`${at}.issuer`, "text", "صادرکننده")}>{c.issuer}</span>
+                  </Opt>,
+                  <Opt key="d" value={c.date} editing={editing} edit={ed(`${at}.date`, "month", "تاریخ")}>
+                    <span {...ed(`${at}.date`, "month", "تاریخ")}>{formatYearMonth(c.date, data.locale, fmt)}</span>
+                  </Opt>,
+                ]}
+              >
+                <Opt value={href} editing={editing} edit={ed(`${at}.url`, "url", "لینک تأیید")}>
+                  <a className="vt-link" href={href} dir="ltr" target="_blank" rel="noopener noreferrer" {...ed(`${at}.url`, "url", "لینک تأیید")}>
+                    {href && displayUrl(href)}
+                  </a>
+                </Opt>
+              </Row>
+            );
+          })}
         </Timeline>
       )}
     </div>
@@ -332,24 +456,7 @@ function Timeline({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-function Row({
-  badge,
-  title,
-  meta,
-  text,
-  textEdit,
-  bullets = [],
-  url,
-}: {
-  badge: string;
-  title: string;
-  meta: (string | undefined)[];
-  text?: string;
-  textEdit?: ReturnType<typeof ed>;
-  bullets?: string[];
-  url?: string;
-}) {
-  const href = safeUrl(url);
+function Row({ badge, title, meta, children }: { badge: string; title: ReactNode; meta: ReactNode[]; children?: ReactNode }) {
   return (
     <article className="vt-row">
       <span className="vt-badge" aria-hidden="true">
@@ -357,36 +464,17 @@ function Row({
       </span>
       <div>
         <h3>{title}</h3>
-        <p className="vt-muted vt-meta">
-          {meta.filter(Boolean).map((m, i) => (
-            <span key={i}>{m}</span>
-          ))}
-        </p>
-        {text && (
-          <p className="vt-row-text" {...textEdit}>
-            {text}
-          </p>
-        )}
-        {bullets.some((b) => b.trim()) && (
-          <ul className="k-bullets">
-            {bullets.filter((b) => b.trim()).map((b, i) => (
-              <li key={i}>{b}</li>
-            ))}
-          </ul>
-        )}
-        {href && (
-          <a className="vt-link" href={href} dir="ltr" target="_blank" rel="noopener noreferrer">
-            {displayUrl(href)}
-          </a>
-        )}
+        <p className="vt-muted vt-meta">{meta}</p>
+        {children}
       </div>
     </article>
   );
 }
 
-function ProjectPage({ ctx, project: p, link }: { ctx: Ctx; project: Project; link: Link }) {
+function ProjectPage({ ctx, link, editing, project: p }: View & { project: Project }) {
   const { data } = ctx;
   const t = TEXT[data.locale];
+  const at = item("projects", p.id);
   const visit = safeUrl(p.url);
   const source = safeUrl(p.repoUrl);
   const images = p.images.map((u) => safeUrl(u)).filter((u): u is string => Boolean(u));
@@ -395,74 +483,50 @@ function ProjectPage({ ctx, project: p, link }: { ctx: Ctx; project: Project; li
       <PageLink to="/" link={link} className="vt-back">
         {data.locale === "fa" ? "→" : "←"} {t.back}
       </PageLink>
-      <h2 {...ed(`${item("projects", p.id)}.title`, "text", "عنوان پروژه")}>{p.title}</h2>
+      <h2 {...ed(`${at}.title`, "text", "عنوان پروژه")}>{p.title}</h2>
       <p className="vt-muted vt-meta">
-        {p.role && <span {...ed(`${item("projects", p.id)}.role`, "text", "نقش من در پروژه")}>{p.role}</span>}
-        {p.period && <span>{formatPeriod(p.period, data.locale, ctx.theme.display.dateFormat)}</span>}
+        <Opt value={p.role} editing={editing} edit={ed(`${at}.role`, "text", "نقش من")}>
+          <span {...ed(`${at}.role`, "text", "نقش من")}>{p.role}</span>
+        </Opt>
+        <Opt value={p.period?.start} editing={editing} edit={ed(`${at}.period`, "period", "تاریخ پروژه")}>
+          <span {...ed(`${at}.period`, "period", "تاریخ پروژه")}>{p.period && formatPeriod(p.period, data.locale, ctx.theme.display.dateFormat)}</span>
+        </Opt>
       </p>
-      {p.description && (
-        <p className="vt-project-text" {...ed(`${item("projects", p.id)}.description`, "multiline", "توضیح پروژه")}>
+      <Opt value={p.description} editing={editing} edit={ed(`${at}.description`, "multiline", "توضیح پروژه")}>
+        <p className="vt-project-text" {...ed(`${at}.description`, "multiline", "توضیح پروژه")}>
           {p.description}
         </p>
-      )}
-      {p.technologies.length > 0 && (
-        <ul className="k-tags">
+      </Opt>
+      <Opt value={p.technologies} editing={editing} edit={ed(`${at}.technologies`, "tags", "ابزارها و تکنولوژی‌ها")}>
+        <ul className="k-tags" {...ed(`${at}.technologies`, "tags", "ابزارها و تکنولوژی‌ها")}>
           {p.technologies.map((x) => (
             <li key={x}>{x}</li>
           ))}
         </ul>
-      )}
-      {(visit || source) && (
-        <div className="vt-actions">
-          {visit && (
-            <a className="vt-btn primary" href={visit} target="_blank" rel="noopener noreferrer">
-              {t.visit}
-            </a>
-          )}
-          {source && (
-            <a className="vt-btn" href={source} target="_blank" rel="noopener noreferrer">
-              {t.source}
-            </a>
-          )}
-        </div>
-      )}
+      </Opt>
+      <div className="vt-actions">
+        <Opt value={visit} editing={editing} edit={ed(`${at}.url`, "url", "لینک پروژه")}>
+          <a className="vt-btn primary" href={visit} target="_blank" rel="noopener noreferrer" {...ed(`${at}.url`, "url", "لینک پروژه")}>
+            {t.visit}
+          </a>
+        </Opt>
+        <Opt value={source} editing={editing} edit={ed(`${at}.repoUrl`, "url", "لینک کد پروژه")}>
+          <a className="vt-btn" href={source} target="_blank" rel="noopener noreferrer" {...ed(`${at}.repoUrl`, "url", "لینک کد پروژه")}>
+            {t.source}
+          </a>
+        </Opt>
+      </div>
       <div className="vt-project-images">
         {(images.length ? images : [undefined]).map((src, i) => (
-          <Picture key={src ?? i} src={src} alt={p.title} ratio={src ? undefined : "16 / 9"} edit={ed(`${item("projects", p.id)}.images.${i}`, "image", "تصویر پروژه")} />
+          <Picture key={src ?? i} src={src} alt={p.title} ratio={src ? undefined : "16 / 9"} edit={ed(`${at}.images.${i}`, "image", "تصویر پروژه")} />
         ))}
+        {editing && images.length > 0 && images.length < 6 && (
+          <span className="vt-ghost" {...ed(`${at}.images.${images.length}`, "image", "تصویر دیگر")}>
+            + تصویر دیگر
+          </span>
+        )}
       </div>
     </article>
-  );
-}
-
-function Footer({ ctx }: { ctx: Ctx }) {
-  const { data } = ctx;
-  const t = TEXT[data.locale];
-  const email = data.basics.email?.trim();
-  const phone = data.basics.phone?.trim();
-  return (
-    <footer className="vt-footer">
-      <div>
-        <h2>{t.contactTitle}</h2>
-        <p className="vt-muted">{t.contactText}</p>
-      </div>
-      <div className="vt-footer-contact">
-        {email && (
-          <a href={`mailto:${email}`} dir="ltr" {...ed("basics.email", "text", "ایمیل")}>
-            {email}
-          </a>
-        )}
-        {phone && (
-          <a href={`tel:${phone.replace(/\s+/g, "")}`} dir="ltr" {...ed("basics.phone", "text", "تلفن")}>
-            {phone}
-          </a>
-        )}
-        <Links ctx={ctx} />
-      </div>
-      <p className="vt-copy vt-muted">
-        © {formatNumber(new Date().getFullYear(), data.locale).replace(/٬|,/g, "")} {data.basics.fullName}
-      </p>
-    </footer>
   );
 }
 
@@ -491,7 +555,14 @@ const css = /* css */ `
 .vt-btn { display: inline-flex; align-items: center; padding: 11px 20px; border-radius: 14px; background: var(--vt-soft); box-shadow: inset 0 0 0 1px var(--vt-line); color: var(--vt-ink); font-weight: 700; font-size: .95em; transition: transform .2s; }
 .vt-btn:hover { transform: translateY(-2px); }
 .vt-btn.primary { background: var(--color-primary); color: var(--color-on-primary); box-shadow: none; }
-.vt-main { margin-top: clamp(36px, 6cqi, 64px); }
+.vt-main { margin-top: clamp(36px, 6cqi, 64px); padding-bottom: clamp(40px, 7cqi, 90px); }
+.vt-bar-id { display: none; min-width: 0; line-height: 1.6; }
+.vt-bar-id b { display: block; font-size: .95em; }
+.vt-bar-id span { display: block; color: var(--color-muted); font-size: .85em; }
+.vt-ghost { display: inline-flex; align-items: center; margin: 2px 4px; padding: 2px 10px; border: 1px dashed currentColor; border-radius: 999px; color: var(--color-muted); font-size: .82em; font-weight: 500; opacity: .75; }
+.vt-card-sub { display: inline-flex; gap: 6px; }
+.vt-card-sub > span + span::before { content: "·"; margin-inline-end: 6px; }
+.vt-hi { display: block; }
 .vt-empty { padding: 60px 0; text-align: center; color: var(--color-muted); }
 
 /* Pictures */
@@ -543,21 +614,14 @@ const css = /* css */ `
 .vt-project .vt-actions { margin-top: 4px; }
 .vt-project-images { display: grid; gap: 22px; width: 100%; margin-top: 18px; }
 
-/* Footer */
-.vt-footer { display: grid; grid-template-columns: 1fr auto; gap: 18px 32px; align-items: center; margin-top: clamp(56px, 9cqi, 110px); padding-top: 32px; border-top: 1px solid var(--vt-line); }
-.vt-footer h2 { font-family: var(--font-heading); font-size: 1.45em; font-weight: 700; }
-.vt-footer-contact { display: grid; gap: 10px; justify-items: end; font-weight: 600; }
-.vt-footer-contact .w-links a { border-color: var(--vt-line); }
-.vt-copy { grid-column: 1 / -1; font-size: .85em; }
 
 @container (max-width: 760px) {
   .vt-bar { flex-wrap: wrap; }
   .vt-bar::after { display: none; }
+  .vt-bar-id { display: block; flex: 1; }
   .vt-nav { order: 3; width: 100%; margin-inline: 0; }
   .vt-work { grid-template-columns: 1fr; gap: 32px; }
   .vt-about { grid-template-columns: 1fr; }
-  .vt-footer { grid-template-columns: 1fr; }
-  .vt-footer-contact { justify-items: start; }
 }
 @media (prefers-reduced-motion: reduce) {
   .vt-pic img, .vt-btn { transition: none; }

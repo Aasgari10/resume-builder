@@ -1,26 +1,16 @@
-// Live preview: the portfolio site, or the printable resume with a template picker.
-// The resume page is rendered at its real A4 width and scaled down to fit the pane.
+// Site workspace: the live website with click-to-edit, page and device switches, and the side panel
+// (settings, assistant, publishing). "Show" turns the same workspace into a full-screen view.
+// Empty content is filled with sample text and pictures; publishing uses only the user's own content.
 
-import { memo, useEffect, useState, type MouseEvent } from "react";
+import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { applyHiddenFields, type ResumeData, type Theme } from "@rb/schema";
-import {
-  PDF_TEMPLATES,
-  PORTFOLIO_TEMPLATES,
-  getPdfTemplate,
-  getTemplate,
-  pageTitle,
-  resolvePage,
-  withPlaceholders,
-  type TemplateDefinition,
-} from "@rb/templates";
-import { Scaled } from "./Scaled";
+import { SITE_TEMPLATES, getTemplate, pageTitle, resolvePage, withPlaceholders } from "@rb/templates";
 import { EditPopover, type EditTarget } from "./site-edit/EditPopover";
-import { SitePanel } from "./site-edit/SitePanel";
+import { SitePanel, type PanelTab } from "./site-edit/SitePanel";
 import { getAt, isItemPath, removeItem, setAt } from "./site-edit/paths";
 
 type Device = "desktop" | "mobile";
-type Mode = "site" | "resume";
 
 const MOBILE_WIDTH = 390;
 
@@ -28,20 +18,21 @@ type Props = {
   data: ResumeData;
   theme: Theme;
   onThemeChange: (theme: Theme) => void;
-  /** When given, texts and pictures on the site can be edited by clicking them. */
-  onDataChange?: (data: ResumeData) => void;
-  initialMode?: Mode;
+  onDataChange: (data: ResumeData) => void;
+  /** Publishing controls for the panel's last tab. */
+  publish: ReactNode;
+  /** Shown at the start of the workspace bar (title, save state, …). */
+  bar?: ReactNode;
 };
 
-export function Preview({ data: raw, theme, onThemeChange, onDataChange, initialMode = "site" }: Props) {
-  // Sample text fills what is still empty, as in the resume editor; publishing uses only real content.
+export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish, bar }: Props) {
   const shown = withPlaceholders(raw);
   const data = applyHiddenFields(shown, theme.hiddenFields);
-  const [editing, setEditing] = useState(Boolean(onDataChange));
+  const [editing, setEditing] = useState(true);
   const [full, setFull] = useState(false);
   const [panel, setPanel] = useState(true);
+  const [tab, setTab] = useState<PanelTab>("settings");
   const [target, setTarget] = useState<EditTarget | null>(null);
-  const [mode, setMode] = useState<Mode>(initialMode);
   const [device, setDevice] = useState<Device>("desktop");
   const [requestedPage, setPage] = useState("/");
   const site = getTemplate(theme.templateId);
@@ -60,9 +51,9 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, initial
     };
   }, [full, target]);
 
-  // In edit mode a click on a marked text or picture opens its editor; otherwise links switch pages.
+  // In edit mode a click on a marked text or picture opens its editor; links switch pages.
   const onFrameClick = (e: MouseEvent) => {
-    const marked = editing && onDataChange ? (e.target as Element).closest<HTMLElement>("[data-edit]") : null;
+    const marked = editing ? (e.target as Element).closest<HTMLElement>("[data-edit]") : null;
     if (marked) {
       e.preventDefault();
       const r = marked.getBoundingClientRect();
@@ -74,41 +65,45 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, initial
       });
       return;
     }
-    followPageLink(e);
-  };
-
-  // Links between pages of a multi-page site switch the preview instead of leaving the editor.
-  const followPageLink = (e: MouseEvent) => {
+    // Buttons and links work as on the published site: pages switch here, "#" scrolls,
+    // and outside links (email, phone, other sites) open in a new tab so the editor stays open.
     const a = (e.target as Element).closest("a");
     if (!a) return;
     e.preventDefault();
-    const target = a.getAttribute("data-page");
-    if (target) setPage(target);
-    else if (a.getAttribute("href")?.startsWith("#")) document.getElementById(a.getAttribute("href")!.slice(1))?.scrollIntoView({ behavior: "smooth" });
-  };
-  const pdf = getPdfTemplate(theme.pdfTemplateId);
-
-  const pickSite = (id: string) => onThemeChange({ ...theme, templateId: id });
-
-  const pickPdf = (id: string) => {
-    onThemeChange({ ...theme, pdfTemplateId: id });
-    setMode("resume");
+    const to = a.getAttribute("data-page");
+    const href = a.getAttribute("href") ?? "";
+    if (to) setPage(to);
+    else if (href.startsWith("#")) document.getElementById(href.slice(1))?.scrollIntoView({ behavior: "smooth" });
+    else if (/^(https?:|mailto:|tel:)/i.test(href)) window.open(href, "_blank", "noopener,noreferrer");
   };
 
-  return (
-    <div className="preview">
-      <div className="preview-toolbar">
-        <div className="segmented" role="group" aria-label="نوع پیش‌نمایش">
-          <button aria-pressed={mode === "site"} onClick={() => setMode("site")}>
-            سایت
+  const openPanel = (next: PanelTab) => {
+    setTab(next);
+    setPanel(true);
+  };
+
+  const workspace = (
+    <div className={`ws${full ? " full" : ""}`} dir="rtl">
+      <div className="ws-bar">
+        {full ? (
+          <button type="button" className="btn small" onClick={() => setFull(false)}>
+            → بازگشت
           </button>
-          <button aria-pressed={mode === "resume"} onClick={() => setMode("resume")}>
-            رزومه‌ی پی‌دی‌اف
-          </button>
-        </div>
-        <span className="muted small grow">قالب {mode === "site" ? site.name : pdf.name}</span>
-        {mode === "site" && pages.length > 1 && (
-          <select className="preview-page" value={page} onChange={(e) => setPage(e.target.value)} aria-label="صفحه">
+        ) : (
+          bar
+        )}
+        <span className="ws-gap" />
+        {SITE_TEMPLATES.length > 1 && (
+          <select className="ws-select" value={site.id} onChange={(e) => onThemeChange({ ...theme, templateId: e.target.value })} aria-label="قالب">
+            {SITE_TEMPLATES.map((t) => (
+              <option key={t.id} value={t.id}>
+                قالب {t.name}
+              </option>
+            ))}
+          </select>
+        )}
+        {pages.length > 1 && (
+          <select className="ws-select" value={page} onChange={(e) => setPage(e.target.value)} aria-label="صفحه">
             {pages.map((p) => (
               <option key={p} value={p}>
                 {p === "/" ? "صفحه‌ی اصلی" : pageTitle(data, p) || p}
@@ -116,159 +111,94 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, initial
             ))}
           </select>
         )}
-        {mode === "site" && onDataChange && <EditToggle on={editing} onChange={setEditing} />}
-        {mode === "site" && (
+        <div className="segmented" role="group" aria-label="اندازه‌ی نمایش">
+          <button aria-pressed={device === "desktop"} onClick={() => setDevice("desktop")}>
+            دسکتاپ
+          </button>
+          <button aria-pressed={device === "mobile"} onClick={() => setDevice("mobile")}>
+            موبایل
+          </button>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={editing}
+          className={`ws-edit${editing ? " on" : ""}`}
+          title={editing ? "ویرایش روشن است: روی هر متن یا تصویر کلیک کنید. برای امتحان دکمه‌ها و لینک‌ها خاموشش کنید." : "ویرایش خاموش است: دکمه‌ها و لینک‌ها مثل سایت واقعی کار می‌کنند."}
+          onClick={() => setEditing(!editing)}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4z" />
+            <path d="M13.5 6.5l4 4" />
+          </svg>
+          {editing ? "ویرایش روشن" : "ویرایش خاموش"}
+          <i aria-hidden="true" />
+        </button>
+        <button type="button" className="btn small ghost" aria-pressed={panel && tab === "assistant"} onClick={() => (panel && tab === "assistant" ? setPanel(false) : openPanel("assistant"))}>
+          ✨ دستیار هوشمند
+        </button>
+        <button type="button" className="btn small ghost" aria-pressed={panel && tab !== "assistant"} onClick={() => (panel && tab !== "assistant" ? setPanel(false) : openPanel("settings"))}>
+          تنظیمات
+        </button>
+        {!full && (
           <button type="button" className="btn small" onClick={() => setFull(true)}>
             نمایش
           </button>
         )}
-        {mode === "site" && (
-          <div className="segmented" role="group" aria-label="اندازه‌ی نمایش">
-            <button aria-pressed={device === "desktop"} onClick={() => setDevice("desktop")}>
-              دسکتاپ
-            </button>
-            <button aria-pressed={device === "mobile"} onClick={() => setDevice("mobile")}>
-              موبایل
-            </button>
-          </div>
-        )}
       </div>
 
-      {mode === "site" ? (
-        <>
-        <div className="pdf-picker" role="listbox" aria-label="قالب سایت">
-          {PORTFOLIO_TEMPLATES.map((t) => (
-            <button key={t.id} role="option" aria-selected={t.id === site.id} className="pdf-thumb site-thumb" onClick={() => pickSite(t.id)}>
-              <div className="site-thumb-page" aria-hidden="true">
-                <Scaled width={128} base={1280}>
-                  <t.component data={data} theme={{ ...theme, templateId: t.id }} />
-                </Scaled>
-              </div>
-              <span>{t.name}</span>
-            </button>
-          ))}
-        </div>
-        <div className="preview-viewport">
-          <div className={`preview-frame${editing && onDataChange ? " editing" : ""}`} style={{ width: device === "mobile" ? MOBILE_WIDTH : "100%" }} onClick={onFrameClick}>
-            <site.component data={data} theme={theme} page={page} />
+      <div className="ws-body">
+        <div className="ws-view">
+          <div
+            className={`preview-frame${editing ? " editing" : ""}${device === "mobile" ? " mobile" : ""}`}
+            style={{ width: device === "mobile" ? MOBILE_WIDTH : "100%" }}
+            onClick={onFrameClick}
+          >
+            <site.component data={data} theme={theme} page={page} editing={editing} />
           </div>
         </div>
-        </>
-      ) : (
-        <>
-          <div className="pdf-picker" role="listbox" aria-label="قالب رزومه">
-            {PDF_TEMPLATES.map((t) => (
-              <button key={t.id} role="option" aria-selected={t.id === pdf.id} className="pdf-thumb" onClick={() => pickPdf(t.id)}>
-                <Thumb template={t} data={data} theme={theme} />
-                <span>{t.name}</span>
-              </button>
-            ))}
-          </div>
-          <div className="preview-viewport">
-            <Scaled>
-              <pdf.component data={data} theme={{ ...theme, templateId: pdf.id }} />
-            </Scaled>
-          </div>
-        </>
-      )}
-
-      {full &&
-        createPortal(
-          <div className="pv-full" dir="rtl">
-            <div className="pv-full-bar">
-              <button type="button" className="btn small" onClick={() => setFull(false)}>
-                → بازگشت به ویرایشگر
-              </button>
-              {pages.length > 1 && (
-                <select className="preview-page" value={page} onChange={(e) => setPage(e.target.value)} aria-label="صفحه">
-                  {pages.map((p) => (
-                    <option key={p} value={p}>
-                      {p === "/" ? "صفحه‌ی اصلی" : pageTitle(data, p) || p}
-                    </option>
-                  ))}
-                </select>
-              )}
-              <div className="segmented" role="group" aria-label="اندازه‌ی نمایش">
-                <button aria-pressed={device === "desktop"} onClick={() => setDevice("desktop")}>
-                  دسکتاپ
-                </button>
-                <button aria-pressed={device === "mobile"} onClick={() => setDevice("mobile")}>
-                  موبایل
-                </button>
-              </div>
-              {onDataChange && <EditToggle on={editing} onChange={setEditing} />}
-              {onDataChange && (
-                <button type="button" className="btn small ghost" aria-pressed={panel} onClick={() => setPanel(!panel)}>
-                  تنظیمات
-                </button>
-              )}
-            </div>
-            <div className="pv-full-body">
-              <div className="pv-full-view">
-                <div
-                  className={`preview-frame${editing && onDataChange ? " editing" : ""}${device === "mobile" ? " mobile" : ""}`}
-                  style={{ width: device === "mobile" ? MOBILE_WIDTH : "100%" }}
-                  onClick={onFrameClick}
-                >
-                  <site.component data={data} theme={theme} page={page} />
-                </div>
-              </div>
-              {onDataChange && panel && (
-                <SitePanel
-                  data={raw}
-                  theme={theme}
-                  multiPage={Boolean(site.pages)}
-                  onData={onDataChange}
-                  onTheme={onThemeChange}
-                  onClose={() => setPanel(false)}
-                />
-              )}
-            </div>
-          </div>,
-          document.body,
+        {panel && (
+          <SitePanel
+            tab={tab}
+            onTab={setTab}
+            data={raw}
+            theme={theme}
+            multiPage={Boolean(site.pages)}
+            onData={onDataChange}
+            onTheme={onThemeChange}
+            onClose={() => setPanel(false)}
+            publish={publish}
+          />
         )}
+      </div>
+    </div>
+  );
 
+  return (
+    <>
+      {full ? createPortal(workspace, document.body) : workspace}
       {target &&
-        onDataChange &&
         createPortal(
           <EditPopover
             key={target.path}
             target={target}
-            value={String(getAt(raw, target.path) ?? "")}
-            placeholder={String(getAt(shown, target.path) ?? "")}
+            value={getAt(raw, target.path)}
+            shown={getAt(shown, target.path)}
             canRemove={isItemPath(target.path)}
             onSave={(value) => {
-              onDataChange(setAt(raw, shown, target.path, value === "" && target.kind === "image" && /\.\d+$/.test(target.path) ? undefined : value));
+              // An emptied extra picture is removed rather than kept as an empty slot.
+              const drop = value === "" && target.kind === "image" && /\.\d+$/.test(target.path);
+              onDataChange(setAt(raw, shown, target.path, drop ? undefined : value));
               setTarget(null);
             }}
             onRemove={() => {
-              onDataChange(removeItem(raw, target.path));
+              onDataChange(removeItem(raw, shown, target.path));
               setTarget(null);
             }}
             onClose={() => setTarget(null)}
           />,
           document.body,
         )}
-    </div>
+    </>
   );
 }
-
-function EditToggle({ on, onChange }: { on: boolean; onChange: (on: boolean) => void }) {
-  return (
-    <label className="pv-edit-toggle" title="با کلیک روی متن‌ها و تصویرها، همان‌جا ویرایششان کنید">
-      <input type="checkbox" checked={on} onChange={(e) => onChange(e.target.checked)} />
-      ویرایش با کلیک
-    </label>
-  );
-}
-
-/** Small first-page preview of a template with the user's own content and colors. */
-const Thumb = memo(function Thumb({ template, data, theme }: { template: TemplateDefinition; data: ResumeData; theme: Theme }) {
-  return (
-    <div className="pdf-thumb-page" aria-hidden="true">
-      <Scaled width={96}>
-        <template.component data={data} theme={{ ...theme, templateId: template.id }} />
-      </Scaled>
-    </div>
-  );
-});

@@ -80,7 +80,10 @@ export const TEMPLATES: Readonly<Record<string, TemplateDefinition>> = Object.fr
   [...PORTFOLIO_TEMPLATES, ...PDF_TEMPLATES].map((t) => [t.id, t])
 );
 
-export const DEFAULT_PORTFOLIO_TEMPLATE_ID = minimalPortfolio.id;
+/** Website templates offered for new sites: those that support click-to-edit (multi-page ones). */
+export const SITE_TEMPLATES: readonly TemplateDefinition[] = PORTFOLIO_TEMPLATES.filter((t) => t.pages);
+
+export const DEFAULT_PORTFOLIO_TEMPLATE_ID = "vitrine-portfolio";
 export const DEFAULT_PDF_TEMPLATE_ID = "sidebar-pdf";
 
 /** The printable template with this id, or the default one. */

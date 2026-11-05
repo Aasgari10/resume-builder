@@ -1,26 +1,38 @@
-// Settings that are not visible on the page itself, for the full-screen site view: color, text size,
-// spacing, corners, which pages are shown, and adding projects or gallery pictures.
-// Every option is a fixed choice, so any combination still looks tidy on phones.
+// Side panel of the site editor, with three tabs:
+// - Settings: things not visible on the page itself (color, sizes, pages) and adding new items.
+//   Every option is a fixed choice, so any combination still looks tidy on phones.
+// - Assistant: the AI chat that changes the same settings from a written request.
+// - Publish: site address, search engine settings and publishing.
 
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import type { ResumeData, Theme } from "@rb/schema";
+import { AssistantChat } from "../AssistantChat";
 import { ColorPicker } from "../ColorPicker";
 import { newId } from "../editor/list";
 import { uploadPicture } from "./uploadImage";
 
+export type PanelTab = "settings" | "assistant" | "publish";
+
 const PAGES: { path: string; label: string }[] = [
-  { path: "/gallery", label: "گالری" },
+  { path: "/gallery", label: "مدارک" },
   { path: "/about", label: "درباره‌ی من" },
   { path: "/resume", label: "رزومه" },
 ];
 
+/** Current month as YYYY-MM, the start date of newly added items. */
+const thisMonth = () => new Date().toISOString().slice(0, 7);
+
 type Props = {
+  tab: PanelTab;
+  onTab: (tab: PanelTab) => void;
   data: ResumeData;
   theme: Theme;
   multiPage: boolean;
   onData: (data: ResumeData) => void;
   onTheme: (theme: Theme) => void;
   onClose: () => void;
+  /** Publishing controls; absent for a draft that has not been saved yet. */
+  publish: ReactNode;
 };
 
 function Choice<T extends string>({ label, value, options, onChange }: { label: string; value: T; options: [T, string][]; onChange: (v: T) => void }) {
@@ -38,12 +50,48 @@ function Choice<T extends string>({ label, value, options, onChange }: { label: 
   );
 }
 
-export function SitePanel({ data, theme, multiPage, onData, onTheme, onClose }: Props) {
+export function SitePanel({ tab, onTab, data, theme, multiPage, onData, onTheme, onClose, publish }: Props) {
+  return (
+    <aside className="sp" aria-label="پنل سایت">
+      <div className="sp-head">
+        <div className="sp-tabs" role="tablist">
+          {(
+            [
+              ["settings", "تنظیمات"],
+              ["assistant", "دستیار هوشمند"],
+              ["publish", "انتشار"],
+            ] as [PanelTab, string][]
+          ).map(([id, label]) => (
+            <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => onTab(id)}>
+              {label}
+            </button>
+          ))}
+        </div>
+        <button type="button" className="ep-x" onClick={onClose} aria-label="بستن پنل">
+          ×
+        </button>
+      </div>
+
+      {tab === "settings" && <Settings data={data} theme={theme} multiPage={multiPage} onData={onData} onTheme={onTheme} />}
+      {tab === "assistant" && (
+        <div className="sp-assistant">
+          <AssistantChat theme={theme} locale={data.locale} onChange={onTheme} />
+        </div>
+      )}
+      {tab === "publish" && <div className="sp-publish">{publish}</div>}
+    </aside>
+  );
+}
+
+function Settings({ data, theme, multiPage, onData, onTheme }: Pick<Props, "data" | "theme" | "multiPage" | "onData" | "onTheme">) {
   const site = data.site ?? { gallery: [] };
   const hidden = site.hiddenPages ?? [];
   const file = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const togglePage = (path: string) =>
+    onData({ ...data, site: { ...site, hiddenPages: hidden.includes(path) ? hidden.filter((p) => p !== path) : [...hidden, path] } });
 
   // A gallery item needs its picture, so the picture is chosen and uploaded first.
   async function addPicture(f: File) {
@@ -51,7 +99,7 @@ export function SitePanel({ data, theme, multiPage, onData, onTheme, onClose }: 
     setBusy(true);
     try {
       const image = await uploadPicture(f);
-      onData({ ...data, site: { ...site, gallery: [...site.gallery, { id: newId(), title: "تصویر جدید", image }] } });
+      onData({ ...data, site: { ...site, gallery: [...site.gallery, { id: newId(), title: "مدرک جدید", image }] } });
     } catch (e) {
       setError(e instanceof Error ? e.message : "آپلود انجام نشد");
     } finally {
@@ -60,18 +108,21 @@ export function SitePanel({ data, theme, multiPage, onData, onTheme, onClose }: 
     }
   }
 
-  const togglePage = (path: string) =>
-    onData({ ...data, site: { ...site, hiddenPages: hidden.includes(path) ? hidden.filter((p) => p !== path) : [...hidden, path] } });
+  const add = {
+    project: () => onData({ ...data, projects: [...data.projects, { id: newId(), title: "پروژه‌ی جدید", technologies: [], images: [] }] }),
+    experience: () =>
+      onData({
+        ...data,
+        experience: [...data.experience, { id: newId(), position: "سمت جدید", company: "نام شرکت", period: { start: thisMonth(), current: true }, highlights: [] }],
+      }),
+    education: () =>
+      onData({ ...data, education: [...data.education, { id: newId(), institution: "نام دانشگاه", degree: "کارشناسی", period: { start: thisMonth(), current: false } }] }),
+    certificate: () => onData({ ...data, certificates: [...data.certificates, { id: newId(), title: "دوره‌ی جدید" }] }),
+    skill: () => onData({ ...data, skills: [...data.skills, { id: newId(), name: "مهارت جدید" }] }),
+  };
 
   return (
-    <aside className="sp" aria-label="تنظیمات سایت">
-      <div className="sp-head">
-        <strong>تنظیمات سایت</strong>
-        <button type="button" className="ep-x" onClick={onClose} aria-label="بستن">
-          ×
-        </button>
-      </div>
-
+    <div className="sp-body">
       <section>
         <h3>رنگ اصلی</h3>
         <ColorPicker value={theme.colors.primary} onChange={(primary) => onTheme({ ...theme, colors: { ...theme.colors, primary } })} />
@@ -110,41 +161,56 @@ export function SitePanel({ data, theme, multiPage, onData, onTheme, onClose }: 
           ]}
           onChange={(radius) => onTheme({ ...theme, layout: { ...theme.layout, radius } })}
         />
+        <Choice
+          label="تاریخ‌ها"
+          value={theme.display.dateFormat}
+          options={[
+            ["jalali", "شمسی"],
+            ["gregorian", "میلادی"],
+          ]}
+          onChange={(dateFormat) => onTheme({ ...theme, display: { ...theme.display, dateFormat } })}
+        />
       </section>
 
       {multiPage && (
-        <>
-          <section>
-            <h3>صفحه‌ها</h3>
-            {PAGES.map((p) => (
-              <label key={p.path} className="sp-switch">
-                <input type="checkbox" checked={!hidden.includes(p.path)} onChange={() => togglePage(p.path)} />
-                {p.label}
-              </label>
-            ))}
-            <small className="muted">صفحه‌ای که محتوایی ندارد، خودش از منو حذف می‌شود.</small>
-          </section>
-
-          <section>
-            <h3>افزودن</h3>
-            <div className="sp-add">
-              <button
-                type="button"
-                className="btn ghost"
-                onClick={() => onData({ ...data, projects: [...data.projects, { id: newId(), title: "پروژه‌ی جدید", technologies: [], images: [] }] })}
-              >
-                + پروژه
-              </button>
-              <button type="button" className="btn ghost" disabled={busy} onClick={() => file.current?.click()}>
-                {busy ? "در حال آپلود…" : "+ تصویر گالری"}
-              </button>
-              <input ref={file} type="file" accept="image/*" hidden onChange={(e) => e.target.files?.[0] && void addPicture(e.target.files[0])} />
-            </div>
-            {error && <p className="error small">{error}</p>}
-            <small className="muted">بعد از افزودن، روی خود مورد در صفحه کلیک کنید تا متن یا تصویرش را عوض کنید.</small>
-          </section>
-        </>
+        <section>
+          <h3>صفحه‌ها</h3>
+          {PAGES.map((p) => (
+            <label key={p.path} className="sp-switch">
+              <input type="checkbox" checked={!hidden.includes(p.path)} onChange={() => togglePage(p.path)} />
+              {p.label}
+            </label>
+          ))}
+          <small className="muted">صفحه‌ای که محتوایی ندارد، خودش از منو حذف می‌شود.</small>
+        </section>
       )}
-    </aside>
+
+      <section>
+        <h3>افزودن</h3>
+        <div className="sp-add">
+          <button type="button" className="btn ghost small" onClick={add.project}>
+            + پروژه
+          </button>
+          <button type="button" className="btn ghost small" disabled={busy} onClick={() => file.current?.click()}>
+            {busy ? "در حال آپلود…" : "+ مدرک (تصویر)"}
+          </button>
+          <button type="button" className="btn ghost small" onClick={add.experience}>
+            + سابقه‌ی کاری
+          </button>
+          <button type="button" className="btn ghost small" onClick={add.education}>
+            + تحصیلات
+          </button>
+          <button type="button" className="btn ghost small" onClick={add.certificate}>
+            + دوره
+          </button>
+          <button type="button" className="btn ghost small" onClick={add.skill}>
+            + مهارت
+          </button>
+          <input ref={file} type="file" accept="image/*" hidden onChange={(e) => e.target.files?.[0] && void addPicture(e.target.files[0])} />
+        </div>
+        {error && <p className="error small">{error}</p>}
+        <small className="muted">بعد از افزودن، روی خود مورد در صفحه کلیک کنید تا متن، تاریخ یا تصویرش را عوض کنید. برای حذف هم روی آن کلیک کنید.</small>
+      </section>
+    </div>
   );
 }
