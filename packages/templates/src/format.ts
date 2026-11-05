@@ -12,6 +12,13 @@ type Labels = {
   present: string;
   contact: string;
   profile: string;
+  personal: {
+    born: string;
+    marital: string;
+    military: string;
+    maritalValues: Record<"single" | "married", string>;
+    militaryValues: Record<"done" | "exempt" | "serving" | "student" | "none", string>;
+  };
   viewProject: string;
   sourceCode: string;
   verify: string;
@@ -33,6 +40,13 @@ export const LABELS: Record<Locale, Labels> = {
     present: "تا کنون",
     contact: "اطلاعات تماس",
     profile: "درباره‌ی من",
+    personal: {
+      born: "متولد",
+      marital: "وضعیت تأهل",
+      military: "وضعیت سربازی",
+      maritalValues: { single: "مجرد", married: "متأهل" },
+      militaryValues: { done: "پایان خدمت", exempt: "معاف", serving: "در حال خدمت", student: "معافیت تحصیلی", none: "مشمول" },
+    },
     viewProject: "مشاهده",
     sourceCode: "سورس کد",
     verify: "تأیید",
@@ -66,6 +80,13 @@ export const LABELS: Record<Locale, Labels> = {
     present: "Present",
     contact: "Contact",
     profile: "Profile",
+    personal: {
+      born: "Born",
+      marital: "Marital status",
+      military: "Military service",
+      maritalValues: { single: "Single", married: "Married" },
+      militaryValues: { done: "Completed", exempt: "Exempt", serving: "Serving", student: "Student deferment", none: "Not completed" },
+    },
     viewProject: "View",
     sourceCode: "Source",
     verify: "Verify",

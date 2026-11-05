@@ -30,8 +30,8 @@ export function SoftResume({ data, theme }: TemplateProps) {
         <Avatar ctx={ctx} className="t-photo" />
         {hasContact(ctx) && (
           <section className="k-section k-side">
-            <Heading>{ctx.labels.contact}</Heading>
-            <ContactList ctx={ctx} />
+            <Heading icon="contact">{ctx.labels.contact}</Heading>
+            <ContactList withPersonal ctx={ctx} />
           </section>
         )}
         <Sections list={side} ctx={ctx} variant="side" />

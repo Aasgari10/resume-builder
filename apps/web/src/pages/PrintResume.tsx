@@ -51,7 +51,7 @@ export function PrintResume() {
     return (
       <div className="card narrow center">
         <p>رزومه هنوز برای خروجی کامل نیست ({state.count.toLocaleString("fa-IR")} مورد).</p>
-        <Link to={`/resumes/${id}`} className="btn">
+        <Link to={`/resumes/${id}/pdf`} className="btn">
           بازگشت به ویرایش
         </Link>
       </div>
@@ -62,7 +62,7 @@ export function PrintResume() {
   return (
     <>
       <div className="print-toolbar">
-        <Link to={`/resumes/${id}`} className="btn ghost">
+        <Link to={`/resumes/${id}/pdf`} className="btn ghost">
           → بازگشت
         </Link>
         <span className="muted small grow">در پنجره‌ی چاپ، مقصد را «Save as PDF» انتخاب کنید.</span>

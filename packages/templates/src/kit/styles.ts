@@ -38,6 +38,7 @@ export const kitStyles = /* css */ `
 
 /* Sections */
 .k-section { margin-top: calc(var(--k-space) * 1.15); }
+.k-h2-icon { display: none; width: 1.15em; height: 1.15em; flex: none; fill: currentColor; }
 .k-h2 { font-family: var(--font-heading); font-size: 1.12em; font-weight: 700; margin-bottom: calc(var(--k-space) * 0.55); }
 .k-item { break-inside: avoid; }
 .k-item + .k-item { margin-top: calc(var(--k-space) * 0.7); }

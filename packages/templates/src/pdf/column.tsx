@@ -38,8 +38,8 @@ export function ColumnResume({ data, theme }: TemplateProps) {
         <div className="t-side-body">
           {hasContact(ctx) && (
             <section className="k-section k-side">
-              <Heading>{ctx.labels.contact}</Heading>
-              <ContactList ctx={ctx} />
+              <Heading icon="contact">{ctx.labels.contact}</Heading>
+              <ContactList withPersonal ctx={ctx} />
             </section>
           )}
           <Sections list={side} ctx={ctx} variant="side" />

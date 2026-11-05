@@ -80,6 +80,16 @@ function buildResumeSchemas(strict: boolean) {
     location: z.string().max(100).optional(),
     summary: z.string().max(1500).optional(), // "about me" paragraph
     links: z.array(link).max(10).default([]),
+    // Details many Iranian employers expect on a printed resume. Shown on PDF templates only,
+    // never on the public website.
+    personal: z
+      .object({
+        birthDate: z.string().regex(/^\d{4}\/\d{2}\/\d{2}$/).optional().or(z.literal("")), // Jalali YYYY/MM/DD
+        gender: z.enum(["male", "female"]).optional(),
+        marital: z.enum(["single", "married"]).optional(),
+        military: z.enum(["done", "exempt", "serving", "student", "none"]).optional(),
+      })
+      .optional(),
   });
 
   /* ───────────── Sections ───────────── */

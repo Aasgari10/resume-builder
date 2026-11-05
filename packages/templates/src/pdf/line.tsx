@@ -34,7 +34,7 @@ export function LineResume({ data, theme }: TemplateProps) {
       </header>
       {hasContact(ctx) && (
         <div className="t-strip">
-          <ContactList ctx={ctx} />
+          <ContactList withPersonal ctx={ctx} />
         </div>
       )}
       <Summary ctx={ctx} />

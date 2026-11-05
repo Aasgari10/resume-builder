@@ -299,3 +299,20 @@ adminRouter.patch(
     res.json({ settings: await updateSettings(patch) });
   })
 );
+
+/* ───────────── Waitlist ───────────── */
+
+/** GET /api/admin/waitlist — sign-ups per product, and the latest entries. */
+adminRouter.get(
+  "/waitlist",
+  asyncHandler(async (_req, res) => {
+    const [counts, latest] = await Promise.all([
+      prisma.waitlistEntry.groupBy({ by: ["product"], _count: { _all: true } }),
+      prisma.waitlistEntry.findMany({ orderBy: { createdAt: "desc" }, take: 50 }),
+    ]);
+    res.json({
+      counts: counts.map((c) => ({ product: c.product, count: c._count._all })).sort((a, b) => b.count - a.count),
+      latest: latest.map((e) => ({ id: e.id, product: e.product, phone: e.phone, createdAt: e.createdAt })),
+    });
+  })
+);

@@ -1,7 +1,7 @@
 // Resume editor: section forms on one side, live template preview on the other, with debounced autosave.
 
 import { useEffect, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { defaultTheme, themeSchema, type ResumeData, type Theme } from "@rb/schema";
 import { DEFAULT_PORTFOLIO_TEMPLATE_ID, sampleResume } from "@rb/templates";
 import { ApiError, api, type FieldIssue } from "../api";
@@ -22,6 +22,8 @@ type SaveState = "idle" | "pending" | "saving" | "saved" | "error";
 
 export function Editor() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const initialView = searchParams.get("view") === "resume" ? "resume" : "site";
   const [title, setTitle] = useState("");
   const [data, setData] = useState<ResumeData | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -123,7 +125,7 @@ export function Editor() {
   return (
     <div className="stack" dir={data.locale === "fa" ? "rtl" : "ltr"}>
       <div className="row gap wrap sticky-bar">
-        <Link to="/dashboard" className="btn ghost">
+        <Link to="/resume/mine" className="btn ghost">
           → بازگشت
         </Link>
         <input className="grow title-input" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={80} />
@@ -182,7 +184,7 @@ export function Editor() {
         </div>
 
         <aside className="editor-preview">
-          <Preview data={data} theme={theme} onThemeChange={setTheme} />
+          <Preview data={data} theme={theme} onThemeChange={setTheme} initialMode={initialView} />
         </aside>
       </div>
     </div>

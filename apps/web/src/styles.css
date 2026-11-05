@@ -962,3 +962,27 @@ select {
   width: 100%;
   height: 100%;
 }
+
+.site-thumb-page {
+  width: 128px;
+  height: 84px;
+  overflow: hidden;
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.18);
+  background: #fff;
+  pointer-events: none;
+}
+
+.personal-details {
+  margin-top: 4px;
+}
+.personal-details > summary {
+  cursor: pointer;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.birth-date {
+  display: grid;
+  grid-template-columns: 1.1fr 1.3fr 0.9fr;
+  gap: 6px;
+}

@@ -10,6 +10,7 @@ const SAMPLE_FA: ResumeData = {
   locale: "fa",
   basics: {
     fullName: "سارا محمدی",
+    personal: { birthDate: "1372/06/15", gender: "female", marital: "single" },
     jobTitle: "توسعه‌دهنده‌ی فرانت‌اند",
     email: "sara@example.com",
     phone: "0912 000 0000",

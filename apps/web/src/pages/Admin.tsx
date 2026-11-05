@@ -10,13 +10,14 @@ import {
   type AdminSite,
   type AdminStats,
   type AdminTemplate,
+  type AdminWaitlist,
   type AdminUser,
   type Paged,
 } from "../api";
 import { useAuth } from "../auth";
 import { formatToman } from "../format";
 
-type Tab = "overview" | "orders" | "users" | "templates" | "sites" | "ai";
+type Tab = "overview" | "orders" | "users" | "templates" | "sites" | "ai" | "waitlist";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "overview", label: "نمای کلی" },
@@ -25,6 +26,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "templates", label: "قالب‌ها" },
   { id: "sites", label: "سایت‌ها" },
   { id: "ai", label: "هوش مصنوعی" },
+  { id: "waitlist", label: "صف انتظار" },
 ];
 
 const dateFormatter = new Intl.DateTimeFormat("fa-IR", { dateStyle: "medium", timeStyle: "short" });
@@ -54,6 +56,7 @@ export function Admin() {
       {tab === "templates" && <Templates />}
       {tab === "sites" && <Sites />}
       {tab === "ai" && <AiUsage />}
+      {tab === "waitlist" && <Waitlist />}
     </div>
   );
 }
@@ -508,6 +511,61 @@ function AiUsage() {
               <td className="ltr">{u.phone}</td>
               <td>{fa(u.tokens)}</td>
               <td>{fa(u.requests)}</td>
+            </tr>
+          ))}
+        </Table>
+      </div>
+    </div>
+  );
+}
+
+/* ───────────── Waitlist ───────────── */
+
+const PRODUCT_LABELS: Record<string, string> = {
+  site: "سایت‌ساز",
+  shop: "فروشگاه‌ساز",
+  salon: "آرایشگاه",
+  clinic: "مطب",
+  cafe: "کافه و رستوران",
+  business: "کسب‌وکارها",
+  pricing: "قیمت‌ها",
+  consult: "درخواست مشاوره",
+};
+
+/** Interest in upcoming products; the counts show which builder to make next. */
+function Waitlist() {
+  const [data, setData] = useState<AdminWaitlist | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    api.admin
+      .waitlist()
+      .then(setData)
+      .catch((e) => setError(errorText(e)));
+  }, []);
+
+  if (error) return <p className="error">{error}</p>;
+  if (!data) return <p className="muted">در حال بارگذاری…</p>;
+
+  return (
+    <div className="stack">
+      <div className="stat-grid">
+        {data.counts.length === 0 && <p className="muted">هنوز کسی ثبت‌نام نکرده است.</p>}
+        {data.counts.map((c) => (
+          <div key={c.product} className="card stat-card">
+            <span className="muted small">{PRODUCT_LABELS[c.product] ?? c.product}</span>
+            <strong>{fa(c.count)} نفر</strong>
+          </div>
+        ))}
+      </div>
+      <div className="card stack">
+        <h3>آخرین ثبت‌نام‌ها</h3>
+        <Table head={["تاریخ", "شماره", "محصول"]} empty="هنوز موردی نیست.">
+          {data.latest.map((e) => (
+            <tr key={e.id}>
+              <td>{formatDate(e.createdAt)}</td>
+              <td className="ltr">{e.phone}</td>
+              <td>{PRODUCT_LABELS[e.product] ?? e.product}</td>
             </tr>
           ))}
         </Table>

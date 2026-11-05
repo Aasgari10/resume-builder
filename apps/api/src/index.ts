@@ -16,6 +16,7 @@ import { resumesRouter } from "./routes/resumes";
 import { sitesRouter } from "./routes/sites";
 import { templatesRouter } from "./routes/templates";
 import { UPLOADS_PATH, uploadsRouter, uploadsStatic } from "./routes/uploads";
+import { waitlistRouter } from "./routes/waitlist";
 
 const app = express();
 app.disable("x-powered-by");
@@ -48,6 +49,7 @@ app.use("/api/payments", paymentsRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/assistant", assistantRouter);
 app.use("/api/uploads", uploadsRouter);
+app.use("/api/waitlist", waitlistRouter);
 
 // Unknown /api routes
 app.use("/api", (_req, _res, next) => {

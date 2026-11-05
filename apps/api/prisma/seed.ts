@@ -10,8 +10,11 @@ const templates = [
   { id: "banner-pdf", name: "سربرگ", kind: TemplateKind.PDF, isPremium: false, price: 0, sortOrder: 3 },
   { id: "card-pdf", name: "کارت", kind: TemplateKind.PDF, isPremium: false, price: 0, sortOrder: 4 },
   { id: "column-pdf", name: "ستون عکس‌دار", kind: TemplateKind.PDF, isPremium: false, price: 0, sortOrder: 5 },
-  { id: "line-pdf", name: "خطی", kind: TemplateKind.PDF, isPremium: false, price: 0, sortOrder: 6 },
-  { id: "classic-pdf", name: "کلاسیک", kind: TemplateKind.PDF, isPremium: false, price: 0, sortOrder: 7 },
+  { id: "timeline-pdf", name: "مسیر", kind: TemplateKind.PDF, isPremium: false, price: 0, sortOrder: 6 },
+  { id: "diagonal-pdf", name: "مورب", kind: TemplateKind.PDF, isPremium: false, price: 0, sortOrder: 7 },
+  { id: "night-pdf", name: "شب", kind: TemplateKind.PDF, isPremium: false, price: 0, sortOrder: 8 },
+  { id: "line-pdf", name: "خطی", kind: TemplateKind.PDF, isPremium: false, price: 0, sortOrder: 9 },
+  { id: "classic-pdf", name: "کلاسیک", kind: TemplateKind.PDF, isPremium: false, price: 0, sortOrder: 10 },
   // Placeholder from the first seed; no code template exists for it.
   { id: "modern-pdf", name: "مدرن", kind: TemplateKind.PDF, isPremium: false, price: 0, sortOrder: 99, isActive: false },
   {
@@ -22,6 +25,9 @@ const templates = [
     price: 2_000_000, // in rials; placeholder price
     sortOrder: 1,
   },
+  { id: "studio-portfolio", name: "استودیو", kind: TemplateKind.PORTFOLIO, isPremium: true, price: 2_000_000, sortOrder: 2 },
+  { id: "split-portfolio", name: "دوستونه", kind: TemplateKind.PORTFOLIO, isPremium: true, price: 2_000_000, sortOrder: 3 },
+  { id: "bento-portfolio", name: "کارت‌ها", kind: TemplateKind.PORTFOLIO, isPremium: true, price: 2_000_000, sortOrder: 4 },
 ];
 
 async function main() {

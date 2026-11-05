@@ -1,0 +1,112 @@
+/* Resume section: side menu on the right (RTL) and content on the left. Scoped under .hub. */
+
+.hub {
+  --hub-bg: #FFFFFF;
+  --hub-side: #FFFFFF;
+  --hub-line: #ECEBF0;
+  --hub-ink: #15141A;
+  --hub-muted: #6E6C78;
+  --hub-hover: #F3F2F6;
+  display: grid;
+  grid-template-columns: 272px 1fr;
+  min-height: 100vh;
+  background: var(--hub-bg);
+  color: var(--hub-ink);
+  font-family: Vazirmatn, Tahoma, sans-serif;
+}
+.hub *, .hub *::before, .hub *::after { box-sizing: border-box; }
+
+/* ───── Side menu ───── */
+.hub-side {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  padding: 24px 16px;
+  border-inline-end: 1px solid var(--hub-line);
+  background: var(--hub-side);
+  display: flex;
+  flex-direction: column;
+}
+.hub-brand { display: flex; align-items: center; gap: 10px; margin: 0 8px 26px; font-size: 20px; font-weight: 800; color: inherit; text-decoration: none; }
+.hub-logo { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; background: var(--hub-ink); color: #fff; font-size: 16px; }
+.hub-label { margin: 18px 12px 8px; font-size: 12px; font-weight: 600; letter-spacing: .08em; color: #9A98A4; }
+.hub-nav { display: grid; gap: 2px; padding-bottom: 14px; border-bottom: 1px solid var(--hub-line); }
+.hub-nav a, .hub-nav button, .hub-nav .disabled {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px; border-radius: 12px; border: none; background: none;
+  color: var(--hub-ink); font: inherit; font-size: 15px; text-align: start; text-decoration: none; cursor: pointer;
+}
+.hub-nav a:hover, .hub-nav button:hover { background: var(--hub-hover); }
+.hub-nav a.active { background: var(--hub-hover); font-weight: 700; box-shadow: inset 0 0 0 1px var(--hub-line); }
+.hub-nav .disabled { color: #A9A7B2; cursor: default; }
+.hub-icon { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.hub-count { margin-inline-start: auto; padding: 1px 8px; border-radius: 8px; background: var(--hub-hover); font-size: 12.5px; color: var(--hub-muted); }
+.hub-soon { margin-inline-start: auto; padding: 1px 8px; border-radius: 8px; border: 1px solid var(--hub-line); font-size: 11px; }
+.hub-bottom { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--hub-line); border-bottom: none; }
+.hub-phone { margin-inline-start: auto; font-size: 12px; color: var(--hub-muted); }
+.hub-menu-toggle, .hub-backdrop { display: none; }
+
+.hub-main { min-width: 0; padding: 40px 48px 60px; }
+/* Pages from the app (resume list, new resume) reuse the app's own components inside the hub. */
+.hub-main > .stack, .hub-main > p { max-width: 900px; }
+
+/* ───── Galleries ───── */
+.gallery-top { padding-bottom: 30px; border-bottom: 1px solid var(--hub-line); }
+.gallery-top h1 { margin: 6px 0 12px; font-size: 46px; line-height: 1.3; font-weight: 800; letter-spacing: -.5px; }
+.gallery-top p { margin: 0; max-width: 40em; font-size: 17px; line-height: 1.9; color: var(--hub-muted); }
+.gallery-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 30px; }
+.g-search { display: flex; align-items: center; gap: 8px; padding: 0 14px; height: 46px; border-radius: 12px; background: var(--hub-hover); color: var(--hub-muted); }
+.g-search input { width: 160px; border: none; background: none; font: inherit; font-size: 15px; outline: none; color: var(--hub-ink); }
+.g-sep { width: 1px; height: 26px; background: var(--hub-line); }
+.g-select { height: 46px; padding: 0 14px; border: none; border-radius: 12px; background: var(--hub-hover); font: inherit; font-size: 15px; color: var(--hub-ink); }
+
+.gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 40px 32px; padding-top: 36px; }
+.g-card { display: grid; gap: 12px; padding: 0; border: none; background: none; text-align: start; font: inherit; color: inherit; cursor: pointer; }
+.g-card:focus-visible { outline: none; }
+.g-art { position: relative; height: 380px; overflow: hidden; border-radius: 16px; background: #EFEEF3; transition: transform .3s ease, box-shadow .3s ease; }
+.g-card:hover .g-art, .g-card:focus-visible .g-art { transform: translateY(-6px); box-shadow: 0 22px 40px -22px rgb(20 20 40 / .45); }
+.g-card:focus-visible .g-art { outline: 3px solid var(--hub-ink); outline-offset: 2px; }
+.g-pdf { position: absolute; inset: 20px 20px 0; overflow: hidden; border-radius: 6px 6px 0 0; box-shadow: 0 10px 30px -12px rgb(0 0 0 / .35); background: #fff; }
+.g-pdf .scaled, .s-view .scaled { pointer-events: none; }
+/* On hover the page scrolls to its end (frame height: 380 - 20). */
+.g-card:hover .g-pdf-scroll, .g-card:focus-visible .g-pdf-scroll { animation: g-scroll-pdf 6s ease-in-out .3s infinite alternate; }
+@keyframes g-scroll-pdf { from { transform: translateY(0); } to { transform: translateY(calc(-100% + 360px)); } }
+.g-hint { position: absolute; bottom: 16px; inset-inline: 0; margin: auto; width: max-content; padding: 8px 16px; border-radius: 999px; background: rgb(21 20 26 / .88); color: #fff; font-size: 13.5px; font-weight: 600; opacity: 0; transform: translateY(6px); transition: opacity .25s, transform .25s; z-index: 2; }
+.g-card:hover .g-hint, .g-card:focus-visible .g-hint { opacity: 1; transform: none; }
+.g-meta { display: flex; align-items: center; gap: 10px; }
+.g-badge { width: 30px; height: 30px; flex: none; border-radius: 9px; box-shadow: inset 0 0 0 2px rgb(255 255 255 / .6); }
+.g-name { font-size: 17px; font-weight: 700; }
+.g-tags { margin-inline-start: auto; font-size: 12.5px; color: var(--hub-muted); }
+.gallery-empty { padding-top: 40px; }
+.gallery-foot { margin-top: 40px; }
+
+/* Website cards: a browser window around the live site */
+.site-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 44px 32px; padding-top: 36px; }
+.s-window { position: relative; overflow: hidden; border-radius: 14px; background: #fff; box-shadow: 0 0 0 1px var(--hub-line), 0 18px 40px -26px rgb(20 20 40 / .5); transition: transform .3s ease, box-shadow .3s ease; }
+.s-card:hover .s-window, .s-card:focus-visible .s-window { transform: translateY(-6px); box-shadow: 0 0 0 1px var(--hub-line), 0 26px 50px -24px rgb(20 20 40 / .55); }
+.s-bar { display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; background: #F3F2F6; border-bottom: 1px solid var(--hub-line); }
+.s-bar i { width: 10px; height: 10px; border-radius: 50%; background: #D9D7DF; }
+.s-bar span { margin: auto; padding: 2px 14px; border-radius: 8px; background: #fff; font-size: 12px; color: var(--hub-muted); }
+.s-view { height: 300px; overflow: hidden; }
+.s-card:hover .s-scroll, .s-card:focus-visible .s-scroll { animation: s-scroll 10s ease-in-out .3s infinite alternate; }
+@keyframes s-scroll { from { transform: translateY(0); } to { transform: translateY(calc(-100% + 300px)); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .g-card:hover .g-pdf-scroll, .s-card:hover .s-scroll { animation: none; }
+  .g-card:hover .g-art, .s-card:hover .s-window { transform: none; }
+}
+
+@media (max-width: 860px) {
+  .hub { grid-template-columns: 1fr; }
+  .hub-side { position: fixed; inset-block: 0; inset-inline-start: 0; z-index: 30; width: 280px; transform: translateX(100%); transition: transform .25s; box-shadow: 0 0 40px rgb(0 0 0 / .2); }
+  .hub[dir="rtl"] .hub-side { transform: translateX(100%); }
+  .hub-side.open { transform: none !important; }
+  .hub-backdrop { display: block; position: fixed; inset: 0; z-index: 20; background: rgb(0 0 0 / .3); }
+  .hub-menu-toggle { display: inline-flex; align-items: center; gap: 8px; position: sticky; top: 10px; z-index: 10; margin: 12px 16px 0; padding: 9px 14px; border: 1px solid var(--hub-line); border-radius: 12px; background: #fff; font: inherit; font-size: 14px; cursor: pointer; width: max-content; }
+  .hub-main { padding: 20px 16px 50px; }
+  .gallery-top h1 { font-size: 32px; }
+  .gallery-grid, .site-grid { grid-template-columns: 1fr; }
+  /* No hover on touch screens: the tap chooses the template. */
+  .g-art { height: 440px; }
+}

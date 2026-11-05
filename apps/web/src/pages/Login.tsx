@@ -7,7 +7,7 @@ export function Login() {
   const { user, setUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const redirectTo = (location.state as { from?: string } | null)?.from ?? "/dashboard";
+  const redirectTo = (location.state as { from?: string } | null)?.from ?? "/resume/mine";
 
   const [step, setStep] = useState<"phone" | "code">("phone");
   const [phone, setPhone] = useState("");
