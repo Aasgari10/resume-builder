@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Basics } from "@rb/schema";
 import { AvatarField } from "./AvatarField";
+import { PH } from "./samples";
 import { Hideable } from "./Hideable";
 import { Field, ItemControls, Select, SectionCard, TextArea, Empty } from "./fields";
 import { LIMITS, move, newId, removeAt, replaceAt } from "./list";
@@ -132,18 +133,18 @@ export function BasicsInfoForm({ value, onChange }: Props) {
     <>
       <SectionCard title="اطلاعات پایه">
         <div className="grid2">
-          <Field label="نام و نام خانوادگی *" value={value.fullName} onChange={(fullName) => set({ fullName })} max={80} />
+          <Field label="نام و نام خانوادگی *" placeholder={PH.basics.fullName} value={value.fullName} onChange={(fullName) => set({ fullName })} max={80} />
           <Hideable k="basics.jobTitle">
-            <Field label="عنوان شغلی" value={value.jobTitle ?? ""} onChange={(jobTitle) => set({ jobTitle })} max={100} />
+            <Field label="عنوان شغلی" placeholder={PH.basics.jobTitle} value={value.jobTitle ?? ""} onChange={(jobTitle) => set({ jobTitle })} max={100} />
           </Hideable>
           <Hideable k="basics.email">
-            <Field label="ایمیل" type="email" ltr value={value.email ?? ""} onChange={(email) => set({ email })} max={200} />
+            <Field label="ایمیل" type="email" ltr placeholder={PH.basics.email} value={value.email ?? ""} onChange={(email) => set({ email })} max={200} />
           </Hideable>
           <Hideable k="basics.phone">
-            <Field label="تلفن" type="tel" ltr value={value.phone ?? ""} onChange={(phone) => set({ phone })} max={20} />
+            <Field label="تلفن" type="tel" ltr placeholder={PH.basics.phone} value={value.phone ?? ""} onChange={(phone) => set({ phone })} max={20} />
           </Hideable>
           <Hideable k="basics.location">
-            <Field label="شهر" value={value.location ?? ""} onChange={(location) => set({ location })} max={100} />
+            <Field label="شهر" placeholder={PH.basics.location} value={value.location ?? ""} onChange={(location) => set({ location })} max={100} />
           </Hideable>
         </div>
         <Hideable k="basics.avatar">
@@ -187,6 +188,7 @@ export function BasicsInfoForm({ value, onChange }: Props) {
           label="درباره‌ی من"
           rows={4}
           max={1500}
+          placeholder={PH.basics.summary}
           value={value.summary ?? ""}
           onChange={(summary) => set({ summary })}
         />
@@ -221,7 +223,7 @@ export function LinksForm({ value, onChange }: Props) {
                 label="آدرس *"
                 type="url"
                 ltr
-                placeholder="https://..."
+                placeholder={PH.basics.link}
                 value={link.url}
                 onChange={(url) => {
                   // Auto-select the type unless the user picked one that no longer matches a detection.

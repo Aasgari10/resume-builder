@@ -1,5 +1,6 @@
 import type { Project } from "@rb/schema";
 import { Empty, Field, ItemControls, SectionCard, TagInput, TextArea } from "./fields";
+import { PH } from "./samples";
 import { Hideable } from "./Hideable";
 import { LIMITS, move, newId, removeAt, replaceAt } from "./list";
 
@@ -14,16 +15,16 @@ export function ProjectsForm({ value, onChange }: { value: Project[]; onChange: 
         return (
           <div key={p.id} className="sub-card stack">
             <div className="grid2">
-              <Field label="عنوان پروژه *" value={p.title} onChange={(title) => set({ title })} max={100} />
+              <Field label="عنوان پروژه *" placeholder={PH.projects.title} value={p.title} onChange={(title) => set({ title })} max={100} />
               <Hideable k="projects.role">
-                <Field label="نقش من" value={p.role ?? ""} onChange={(role) => set({ role })} max={100} />
+                <Field label="نقش من" placeholder={PH.projects.role} value={p.role ?? ""} onChange={(role) => set({ role })} max={100} />
               </Hideable>
               <Hideable k="projects.url">
                 <Field
                   label="لینک پروژه"
                   type="url"
                   ltr
-                  placeholder="https://..."
+                  placeholder={PH.projects.url}
                   value={p.url ?? ""}
                   onChange={(url) => set({ url })}
                   max={500}
@@ -34,7 +35,7 @@ export function ProjectsForm({ value, onChange }: { value: Project[]; onChange: 
                   label="لینک سورس کد"
                   type="url"
                   ltr
-                  placeholder="https://github.com/..."
+                  placeholder={PH.projects.repoUrl}
                   value={p.repoUrl ?? ""}
                   onChange={(repoUrl) => set({ repoUrl })}
                   max={500}
@@ -53,12 +54,12 @@ export function ProjectsForm({ value, onChange }: { value: Project[]; onChange: 
               </Hideable>
             </div>
             <Hideable k="projects.description">
-              <TextArea label="توضیحات" max={2000} value={p.description ?? ""} onChange={(description) => set({ description })} />
+              <TextArea label="توضیحات" placeholder={PH.projects.description} max={2000} value={p.description ?? ""} onChange={(description) => set({ description })} />
             </Hideable>
             <Hideable k="projects.technologies">
               <TagInput
                 label="تکنولوژی‌ها"
-                placeholder="مثلاً React و Enter"
+                placeholder={PH.projects.technologies}
                 values={p.technologies}
                 onChange={(technologies) => set({ technologies })}
                 max={LIMITS.technologies}

@@ -54,6 +54,7 @@ const SAMPLE_FA: ResumeData = {
       field: "مهندسی کامپیوتر",
       period: { start: "2015-09", end: "2019-07", current: false },
       grade: "۱۷٫۲",
+      description: "پروژه‌ی پایانی: سامانه‌ی رزرو آنلاین با React و Node.js",
     },
   ],
   skills: [
@@ -90,13 +91,22 @@ const SAMPLE_FA: ResumeData = {
     { id: "lg2", name: "انگلیسی", level: "advanced" },
   ],
   certificates: [
-    { id: "c1", title: "Meta Front-End Developer", issuer: "Coursera", date: "2021-05" },
+    { id: "c1", title: "Meta Front-End Developer", issuer: "Coursera", date: "2021-05", url: "https://coursera.org/verify/example" },
   ],
   customSections: [
     {
       id: "cs1",
       title: "افتخارات",
-      items: [{ id: "ci1", title: "رتبه‌ی اول هکاتون فناوری", subtitle: "تهران", date: "2023-11" }],
+      items: [
+        {
+          id: "ci1",
+          title: "رتبه‌ی اول هکاتون فناوری",
+          subtitle: "تهران",
+          date: "2023-11",
+          description: "طراحی و ساخت نمونه‌ی اولیه‌ی اپلیکیشن در ۴۸ ساعت",
+          url: "https://example.com/hackathon",
+        },
+      ],
     },
   ],
 };
