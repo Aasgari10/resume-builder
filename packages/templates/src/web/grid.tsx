@@ -18,6 +18,7 @@ import type { TemplateProps } from "../types";
 export const GRID_OPTIONAL_PAGES = [
   { path: "/about", label: "درباره‌ی من" },
   { path: "/credentials", label: "سوابق" },
+  { path: "/gallery", label: "مدارک" },
   { path: "/works", label: "نمونه‌کارها" },
   { path: "/services", label: "خدمات" },
   { path: "/contact", label: "تماس" },
@@ -36,7 +37,9 @@ export const GRID_BLOCKS = [
 
 export function gridPages(data: ResumeData): string[] {
   const off = data.site?.hiddenPages ?? [];
-  return ["/", ...GRID_OPTIONAL_PAGES.map((p) => p.path).filter((p) => !off.includes(p))];
+  // The certificates page exists only when there is at least one picture to show.
+  const hasGallery = Boolean(data.site?.gallery.some((g) => safeUrl(g.image)));
+  return ["/", ...GRID_OPTIONAL_PAGES.map((p) => p.path).filter((p) => !off.includes(p) && (p !== "/gallery" || hasGallery))];
 }
 
 const TEXT = {
@@ -49,6 +52,8 @@ const TEXT = {
     projects: "پروژه‌ها",
     gallery: "مدارک",
     certificates: "گواهی‌ها",
+    myCerts: "مدارک من",
+    addCert: "افزودن مدرک",
     specialization: "تخصص",
     services: "خدماتی که ارائه می‌دهم",
     stayWithMe: "همراه من باشید",
@@ -89,6 +94,8 @@ const TEXT = {
     projects: "Projects",
     gallery: "Gallery",
     certificates: "Certificates",
+    myCerts: "My certificates",
+    addCert: "Add certificate",
     specialization: "Specialization",
     services: "Services offering",
     stayWithMe: "Stay with me",
@@ -124,7 +131,7 @@ const TEXT = {
 
 /* ───────────── Click-to-edit markers ───────────── */
 
-type EditKind = "text" | "multiline" | "image" | "url" | "period" | "month" | "lines" | "tags" | "newlink";
+type EditKind = "text" | "multiline" | "image" | "url" | "period" | "month" | "lines" | "tags" | "newlink" | "newimage";
 type Edit = { "data-edit": string; "data-edit-kind": EditKind; "data-edit-label": string };
 const ed = (path: string, kind: EditKind, label: string): Edit => ({ "data-edit": path, "data-edit-kind": kind, "data-edit-label": label });
 const item = (list: string, id: string) => `${list}[${id}]`;
@@ -156,6 +163,7 @@ export function GridPortfolio(props: TemplateProps) {
   if (!pages.includes(page)) body = <p className="gx-empty">{view.t.notFound}</p>;
   else if (page === "/about") body = <About {...view} />;
   else if (page === "/credentials") body = <Credentials {...view} />;
+  else if (page === "/gallery") body = <Gallery {...view} />;
   else if (page === "/works") body = <Works {...view} />;
   else if (page === "/services") body = <Services {...view} />;
   else if (page === "/contact") body = <Contact {...view} />;
@@ -254,13 +262,24 @@ function Go() {
   );
 }
 
+/** Twelve-ray star beside page titles (still, not spinning). */
 function Burst() {
   return (
-    <svg className="gx-burst" viewBox="0 0 40 40" aria-hidden="true">
-      {Array.from({ length: 12 }, (_, i) => (
-        <path key={i} d="M20 20 L20 2" transform={`rotate(${i * 30} 20 20)`} />
-      ))}
+    <svg className="gx-burst" viewBox="0 0 8 8" aria-hidden="true">
+      <path d="M3.80051 0.605637C3.81936 0.359319 4.18049 0.359319 4.19934 0.605637L4.3137 2.09993C4.32812 2.28827 4.57153 2.35349 4.67819 2.19759L5.52437 0.960678C5.66385 0.756786 5.9766 0.937351 5.86977 1.16009L5.22166 2.51136C5.13997 2.68168 5.31817 2.85988 5.48849 2.77819L6.83976 2.13008C7.0625 2.02325 7.24307 2.336 7.03917 2.47548L5.80226 3.32166C5.64636 3.42832 5.71158 3.67174 5.89992 3.68615L7.39421 3.80051C7.64053 3.81936 7.64053 4.18049 7.39421 4.19934L5.89993 4.3137C5.71158 4.32812 5.64636 4.57153 5.80226 4.67819L7.03917 5.52437C7.24307 5.66385 7.0625 5.9766 6.83976 5.86977L5.48849 5.22166C5.31817 5.13997 5.13997 5.31817 5.22166 5.48849L5.86977 6.83976C5.9766 7.0625 5.66385 7.24307 5.52437 7.03917L4.67819 5.80226C4.57153 5.64636 4.32812 5.71158 4.3137 5.89992L4.19934 7.39421C4.18049 7.64053 3.81936 7.64053 3.80051 7.39421L3.68615 5.89993C3.67174 5.71158 3.42832 5.64636 3.32166 5.80226L2.47548 7.03917C2.336 7.24307 2.02325 7.0625 2.13008 6.83976L2.77819 5.48849C2.85988 5.31817 2.68168 5.13997 2.51137 5.22166L1.16009 5.86977C0.937352 5.9766 0.756785 5.66385 0.960677 5.52437L2.19759 4.67819C2.35349 4.57153 2.28827 4.32812 2.09993 4.3137L0.605637 4.19934C0.359319 4.18049 0.359319 3.81936 0.605637 3.80051L2.09993 3.68615C2.28827 3.67174 2.35349 3.42832 2.19759 3.32166L0.960678 2.47548C0.756786 2.336 0.937351 2.02325 1.16009 2.13008L2.51136 2.77819C2.68168 2.85988 2.85988 2.68168 2.77819 2.51137L2.13008 1.16009C2.02325 0.937352 2.336 0.756785 2.47548 0.960677L3.32166 2.19759C3.42832 2.35349 3.67174 2.28827 3.68615 2.09993L3.80051 0.605637Z" />
     </svg>
+  );
+}
+
+/** A thin line hanging from the top of a card with a four-point star at its end. */
+function Hang() {
+  return (
+    <span className="gx-hang" aria-hidden="true">
+      <svg viewBox="0 0 56 140">
+        <path d="M28 0V84" />
+        <path d="M28 84c1.6 13 7 18.6 20 20-13 1.4-18.4 7-20 20-1.6-13-7-18.6-20-20 13-1.4 18.4-7 20-20z" />
+      </svg>
+    </span>
   );
 }
 
@@ -350,7 +369,7 @@ function Together({ view, i }: { view: View; i: number }) {
   return (
     <Card className="gx-together" i={i}>
       <To view={view} to="/contact" className="gx-fill">
-        <span className="gx-hang" aria-hidden="true" />
+        <Hang />
         <h2>
           {view.t.lets}
           <br />
@@ -453,7 +472,7 @@ function Home(view: View) {
 
       {shown(view, "gallery") && (
         <Card className="gx-small" i={4}>
-          <To view={view} to="/credentials" className="gx-fill">
+          <To view={view} to="/gallery" className="gx-fill">
             <div className="gx-thumb">{firstShot && <img src={firstShot} alt="" className="gx-cover" />}</div>
             <Label small={t.certificates} title={t.gallery} />
             <Go />
@@ -517,7 +536,7 @@ function About(view: View) {
         <div className="gx-stack">
           <Title>{t.summary}</Title>
           <Card className="gx-summary" i={1}>
-            <span className="gx-hang" aria-hidden="true" />
+            <Hang />
             <h2 {...ed("basics.fullName", "text", "نام")}>{data.basics.fullName}</h2>
             <Opt value={text} editing={editing} edit={ed("site.aboutText", "multiline", "متن درباره‌ی من")}>
               <div className="gx-text" {...ed("site.aboutText", "multiline", "متن درباره‌ی من")}>
@@ -678,33 +697,80 @@ function Credentials(view: View) {
 function Works(view: View) {
   const { ctx, editing, t } = view;
   const items = ctx.data.projects.filter((p) => p.title.trim());
+  // Like the reference: one column of alternating short and tall cards beside the title and a
+  // two-column grid; every column ends on the same line.
+  const side = items.filter((_, k) => k % 3 === 0);
+  const rest = items.filter((_, k) => k % 3 !== 0);
+  const card = (p: (typeof items)[number], k: number) => {
+    const at = item("projects", p.id);
+    const href = safeUrl(p.url) ?? safeUrl(p.repoUrl);
+    const img = safeUrl(p.images[0]);
+    return (
+      <Card key={p.id} className="gx-project" i={k}>
+        <a href={href ?? "#"} target={href && !isDummyUrl(href) ? "_blank" : undefined} rel="noopener noreferrer" className="gx-fill">
+          <div className="gx-shot" {...ed(`${at}.images.0`, "image", "تصویر پروژه")}>
+            {img ? <img src={img} alt={p.title} loading="lazy" /> : <span>{p.title.charAt(0)}</span>}
+          </div>
+          <div className="gx-label">
+            <Opt value={p.role} editing={editing} edit={ed(`${at}.role`, "text", "دسته")}>
+              <small {...ed(`${at}.role`, "text", "دسته")}>{p.role}</small>
+            </Opt>
+            <strong {...ed(`${at}.title`, "text", "عنوان پروژه")}>{p.title}</strong>
+          </div>
+          <span className="gx-go-edit" {...ed(`${at}.url`, "url", "لینک پروژه")}>
+            <Go />
+          </span>
+        </a>
+      </Card>
+    );
+  };
   return (
     <div className="gx-works">
-      <Title>{t.allProjects}</Title>
-      <div className="gx-masonry">
-        {items.map((p, k) => {
-          const at = item("projects", p.id);
-          const href = safeUrl(p.url) ?? safeUrl(p.repoUrl);
-          const img = safeUrl(p.images[0]);
+      <div className="gx-col">{side.map((p, k) => card(p, k * 2))}</div>
+      <div className="gx-col">
+        <Title>{t.allProjects}</Title>
+        <div className="gx-pairs">{rest.map((p, k) => card(p, k + 1))}</div>
+      </div>
+    </div>
+  );
+}
+
+/* ───────────── Certificates ───────────── */
+
+function Gallery(view: View) {
+  const { ctx, editing, t } = view;
+  const items = (ctx.data.site?.gallery ?? []).filter((g) => safeUrl(g.image));
+  return (
+    <div className="gx-stack">
+      <Title>{t.myCerts}</Title>
+      <div className="gx-certs">
+        {items.map((g, k) => {
+          const at = item("site.gallery", g.id);
+          const src = safeUrl(g.image)!;
           return (
-            <Card key={p.id} className={`gx-project${k === 0 ? " first" : ""}`} i={k}>
-              <a href={href ?? "#"} target={href && !isDummyUrl(href) ? "_blank" : undefined} rel="noopener noreferrer" className="gx-fill">
-                <div className="gx-shot" {...ed(`${at}.images.0`, "image", "تصویر پروژه")}>
-                  {img ? <img src={img} alt={p.title} loading="lazy" /> : <span>{p.title.charAt(0)}</span>}
+            <Card key={g.id} className="gx-cert" i={k}>
+              <a href={src} target="_blank" rel="noopener noreferrer" className="gx-fill">
+                {/* The certificate sits on a dark mat, so any paper colour or shape looks at home. */}
+                <div className="gx-mat" {...ed(`${at}.image`, "image", "تصویر مدرک")}>
+                  <img src={src} alt={g.title} loading="lazy" />
                 </div>
                 <div className="gx-label">
-                  <Opt value={p.role} editing={editing} edit={ed(`${at}.role`, "text", "دسته")}>
-                    <small {...ed(`${at}.role`, "text", "دسته")}>{p.role}</small>
+                  <Opt value={g.description} editing={editing} edit={ed(`${at}.description`, "text", "صادرکننده یا توضیح")}>
+                    <small {...ed(`${at}.description`, "text", "صادرکننده یا توضیح")}>{g.description}</small>
                   </Opt>
-                  <strong {...ed(`${at}.title`, "text", "عنوان پروژه")}>{p.title}</strong>
+                  <strong {...ed(`${at}.title`, "text", "عنوان مدرک")}>{g.title}</strong>
                 </div>
-                <span className="gx-go-edit" {...ed(`${at}.url`, "url", "لینک پروژه")}>
-                  <Go />
-                </span>
+                <Go />
               </a>
             </Card>
           );
         })}
+        {editing && (
+          <div className="gx-card gx-cert gx-add" {...ed("site.gallery", "newimage", t.addCert)}>
+            <span>+</span>
+            {t.addCert}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -803,7 +869,7 @@ function Contact(view: View) {
         <Socials ctx={ctx} editing={editing} />
       </div>
       <Card className="gx-form" i={0}>
-        <span className="gx-hang" aria-hidden="true" />
+        <Hang />
         <h2>
           {t.lets} <em>{t.together}</em>
         </h2>
@@ -897,19 +963,26 @@ const css = /* css */ `
 .gx-foot nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 28px; }
 .gx-foot p { margin: 0; }
 
-/* Cards: soft gradient, inner glow, smooth entrance */
+/* Cards: soft gradient, inner glow, and a smooth "grow in" entrance.
+   On load every card grows from a smaller size one after another (gx-pop). Where the browser
+   supports scroll-linked animation, cards further down also grow in as they scroll into view
+   (gx-view). The two use different properties (scale/opacity and transform/filter), so they add
+   up instead of replacing each other: cards already on screen are not held back by the second. */
 .gx-card { position: relative; border-radius: 26px; padding: clamp(16px, 2.4cqi, 28px); background: linear-gradient(140deg, var(--gx-card2), var(--gx-card) 60%); box-shadow: inset 0 1px 0 rgb(255 255 255 / .04), 0 20px 40px -30px #000;
-  animation: gx-in .8s cubic-bezier(.2, .7, .2, 1) both; animation-delay: calc(var(--i, 0) * 80ms); transition: transform .35s ease, box-shadow .35s ease; }
-.gx-card:hover { transform: translateY(-4px); box-shadow: inset 0 1px 0 rgb(255 255 255 / .06), 0 26px 50px -28px #000; }
-@keyframes gx-in { from { opacity: 0; transform: translateY(26px) scale(.98); } to { opacity: 1; transform: none; } }
+  transform-origin: 50% 70%;
+  animation: gx-pop .9s cubic-bezier(.22, 1.2, .36, 1) calc(var(--i, 0) * 90ms) both;
+  transition: translate .35s ease, box-shadow .35s ease; }
+.gx-card:hover { translate: 0 -4px; box-shadow: inset 0 1px 0 rgb(255 255 255 / .06), 0 26px 50px -28px #000; }
+@keyframes gx-pop { from { opacity: 0; scale: .82; } to { opacity: 1; scale: 1; } }
+@keyframes gx-view { from { filter: opacity(0) blur(6px); transform: scale(.86) translateY(40px); } to { filter: none; transform: none; } }
 @supports (animation-timeline: view()) {
-  .gx-card { animation-timeline: view(); animation-range: entry 0% entry 40%; animation-delay: 0s; }
+  .gx-card { animation: gx-pop .9s cubic-bezier(.22, 1.2, .36, 1) calc(var(--i, 0) * 90ms) both, gx-view linear both; animation-timeline: auto, view(); animation-range: normal, entry 0% entry 80%; }
 }
 .gx-fill { display: grid; height: 100%; gap: 14px; position: relative; }
 .gx-label { display: grid; gap: 4px; align-self: end; }
 .gx-label small { color: var(--gx-mute); font-size: .74em; letter-spacing: .04em; }
 .gx-label strong { font-size: 1.15em; font-weight: 600; }
-.gx-go { position: absolute; inset-block-end: 0; inset-inline-end: 0; width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid rgb(255 255 255 / .25); border-radius: 50%; transition: transform .4s ease, border-color .3s, background .3s; }
+.gx-go { position: absolute; inset-block-end: 0; inset-inline-end: 0; width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid rgb(255 255 255 / .25); border-radius: 50%; transition: transform .4s ease, border-color .3s, background .3s; }
 .gx-go svg { width: 16px; height: 16px; fill: currentColor; }
 .gx-card:hover .gx-go { transform: rotate(90deg); border-color: #fff; background: rgb(255 255 255 / .06); }
 .gx-go-edit { position: absolute; inset-block-end: 0; inset-inline-end: 0; width: 40px; height: 40px; }
@@ -943,8 +1016,10 @@ const css = /* css */ `
 .gx-thumb img.gx-cover { width: 100%; height: 120px; max-height: none; object-fit: cover; border-radius: 14px; }
 .gx-card:hover .gx-thumb img { transform: scale(1.05); }
 .gx-inset { background: rgb(0 0 0 / .2); box-shadow: inset 0 0 0 1px var(--gx-line); padding: 14px; }
-.gx-icons { display: flex; justify-content: space-around; align-items: center; min-height: 110px; }
-.gx-icons span { display: grid; place-items: center; }
+.gx-icons { display: flex; justify-content: space-around; align-items: center; min-height: 120px; }
+.gx-icons span { display: grid; place-items: center; transition: transform .3s ease; }
+.gx-card:hover .gx-icons span { transform: translateY(-3px); }
+.gx-icons .gx-ico { width: clamp(40px, 5cqi, 56px); height: clamp(40px, 5cqi, 56px); stroke-width: 1.5; }
 .gx-ico { width: 30px; height: 30px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
 .gx-socials { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
 .gx-socials a, .gx-socials .gx-ghost { width: 54px; height: 54px; display: grid; place-items: center; border-radius: 50%; background: rgb(255 255 255 / .05); box-shadow: inset 0 0 0 1px var(--gx-line); transition: background .2s, transform .2s; }
@@ -955,18 +1030,22 @@ const css = /* css */ `
 .gx-stats small { color: var(--gx-mute); font-size: .74em; line-height: 1.6; }
 .gx-together h2, .gx-form h2 { font-size: clamp(1.8em, 4cqi, 2.6em); font-weight: 500; line-height: 1.35; align-self: end; }
 .gx-together em, .gx-form em { font-style: normal; color: var(--gx-accent); }
-.gx-together .gx-fill { min-height: 170px; }
-.gx-hang { position: absolute; top: calc(-1 * clamp(16px, 2.4cqi, 28px)); inset-inline-start: 18px; width: 1px; height: 46px; background: rgb(255 255 255 / .35); }
-.gx-hang::after { content: ""; position: absolute; bottom: -9px; left: -7px; width: 15px; height: 15px; background: rgb(255 255 255 / .55); clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); }
+.gx-together .gx-fill { min-height: 230px; }
+.gx-together h2 { padding-top: 90px; }
+.gx-form h2 { padding-top: 100px; }
+.gx-fill > .gx-hang { top: calc(-1 * clamp(16px, 2.4cqi, 28px)); }
+/* Hanging star: from the top edge of the card, like the reference. */
+.gx-hang { position: absolute; top: 0; inset-inline-start: clamp(24px, 4cqi, 46px); width: 56px; height: 124px; pointer-events: none; transform-origin: 50% 0; animation: gx-sway 6s ease-in-out infinite; }
+.gx-hang svg { width: 100%; height: 100%; fill: none; stroke: #7A7A82; stroke-width: 1.6; stroke-linejoin: round; }
+@keyframes gx-sway { 0%, 100% { rotate: -2deg; } 50% { rotate: 2deg; } }
 
 /* Inner pages */
 .gx-stack { display: grid; gap: 18px; align-content: start; }
-.gx-title { display: flex; align-items: center; justify-content: center; gap: 14px; font-size: clamp(2em, 6cqi, 3.6em); font-weight: 800; line-height: 1.2; text-align: center; animation: gx-in .8s cubic-bezier(.2, .7, .2, 1) both; }
-.gx-burst { width: .7em; height: .7em; flex: none; stroke: #9C9CA3; stroke-width: 2.4; stroke-linecap: round; animation: gx-spin 14s linear infinite; }
-@keyframes gx-spin { to { transform: rotate(360deg); } }
+.gx-title { display: flex; align-items: center; justify-content: center; gap: 14px; font-size: clamp(2em, 6cqi, 3.6em); font-weight: 800; line-height: 1.2; text-align: center; animation: gx-pop .9s cubic-bezier(.22, 1.2, .36, 1) both; }
+.gx-burst { width: .62em; height: .62em; flex: none; fill: #A1A1A8; }
 .gx-split { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); gap: 18px; }
 .gx-photo-card .gx-photo { width: 100%; }
-.gx-summary { padding-top: 60px; }
+.gx-summary { padding-top: 130px; }
 .gx-summary h2 { font-size: 1.6em; font-weight: 500; margin-bottom: 10px; }
 .gx-text { display: grid; gap: 12px; color: #C9C9CE; font-size: .92em; line-height: 2; }
 .gx-two { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
@@ -993,16 +1072,33 @@ const css = /* css */ `
 .gx-cv-body { display: grid; gap: 40px; }
 .gx-skills { display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; }
 
-.gx-works .gx-title { margin-bottom: 18px; }
-.gx-masonry { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
-.gx-project { padding: 12px 12px 18px; }
-.gx-project .gx-fill { gap: 16px; }
-.gx-shot { position: relative; aspect-ratio: 6 / 5; border-radius: 18px; overflow: hidden; background: linear-gradient(140deg, var(--color-primary-tint), var(--color-primary)); }
-.gx-project.first .gx-shot { aspect-ratio: 6 / 5; }
+.gx-works { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 18px; align-items: stretch; }
+.gx-col { display: flex; flex-direction: column; gap: 18px; }
+.gx-works .gx-title { margin: 6px 0 4px; }
+.gx-pairs { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; flex: 1; }
+.gx-project { padding: 14px 14px 22px; display: flex; flex-direction: column; }
+.gx-project .gx-fill { flex: 1; grid-template-rows: 1fr auto; gap: 18px; }
+.gx-shot { position: relative; min-height: 0; aspect-ratio: 7 / 6; border-radius: 18px; overflow: hidden; background: linear-gradient(140deg, var(--color-primary-tint), var(--color-primary)); }
+/* Side column: cards alternate short and tall, and the last one stretches to the bottom line. */
+.gx-col:first-child .gx-project:nth-child(even) .gx-shot { aspect-ratio: 6 / 7; }
+.gx-col:first-child .gx-project:last-child { flex: 1; }
+.gx-col:first-child .gx-project:last-child .gx-shot { aspect-ratio: auto; min-height: 240px; }
 .gx-shot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .6s ease; }
 .gx-card:hover .gx-shot img { transform: scale(1.05); }
 .gx-shot span { position: absolute; inset: 0; display: grid; place-items: center; font-size: 3em; font-weight: 800; color: #fff; }
 .gx-project .gx-label { padding-inline: 8px; padding-inline-end: 56px; }
+
+/* Certificates: each one on a dark mat inside a card, so any paper colour fits the site. */
+.gx-certs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.gx-cert { padding: 14px 14px 22px; }
+.gx-cert .gx-fill { gap: 18px; }
+.gx-mat { aspect-ratio: 4 / 3; display: flex; align-items: center; justify-content: center; padding: 18px; border-radius: 18px; background: radial-gradient(120% 90% at 50% 0%, #2A2A2F, #141416); box-shadow: inset 0 0 0 1px var(--gx-line); overflow: hidden; }
+.gx-mat img { display: block; min-width: 0; min-height: 0; max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 6px; box-shadow: 0 18px 30px -12px rgb(0 0 0 / .8); transform: rotate(-1.2deg); transition: transform .5s ease; }
+.gx-cert:nth-child(even) .gx-mat img { transform: rotate(1.2deg); }
+.gx-card.gx-cert:hover .gx-mat img { transform: rotate(0) scale(1.04); }
+.gx-cert .gx-label { padding-inline: 8px; padding-inline-end: 60px; }
+.gx-add { display: grid; place-items: center; align-content: center; gap: 10px; min-height: 260px; color: var(--gx-mute); border: 1px dashed rgb(255 255 255 / .2); background: transparent; cursor: pointer; }
+.gx-add span { font-size: 2.4em; line-height: 1; }
 
 .gx-offer { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: 18px; }
 .gx-offer-list { display: grid; align-content: space-around; gap: 30px; padding: 40px; }
@@ -1031,19 +1127,21 @@ const css = /* css */ `
   .gx-grid > * { grid-column: 1 / -1 !important; }
   .gx-split, .gx-cv, .gx-offer, .gx-contact { grid-template-columns: 1fr; }
   .gx-cv aside { position: static; }
-  .gx-masonry { grid-template-columns: 1fr 1fr; }
+  .gx-works { grid-template-columns: 1fr; }
+  .gx-works .gx-col:first-child { order: 2; }
+  .gx-certs { grid-template-columns: 1fr 1fr; }
   .gx-row3 { grid-template-columns: 1fr; }
 }
 @container (max-width: 600px) {
   .gx-head { flex-wrap: wrap; }
   .gx-nav { order: 3; width: 100%; justify-content: space-between; }
   .gx-row { grid-template-columns: 1fr; padding-bottom: 54px; }
-  .gx-pair, .gx-two, .gx-masonry, .gx-offer-grid, .gx-skills { grid-template-columns: 1fr; }
+  .gx-pair, .gx-two, .gx-pairs, .gx-certs, .gx-offer-grid, .gx-skills { grid-template-columns: 1fr; }
   .gx-stats { grid-template-columns: repeat(3, 1fr); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .gx-card, .gx-title { animation: none; }
-  .gx-track, .gx-burst { animation: none; }
-  .gx-card:hover, .gx-card:hover .gx-go { transform: none; }
+  .gx-card, .gx-title, .gx-hang, .gx-track { animation: none; }
+  .gx-card:hover { translate: none; }
+  .gx-card:hover .gx-go { transform: none; }
 }
 `;

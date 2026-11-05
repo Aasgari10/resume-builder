@@ -214,6 +214,13 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
                 setTarget(null);
                 return;
               }
+              if (target.kind === "newimage") {
+                // A new certificate picture joins the user's own gallery (sample pictures are replaced).
+                const site = raw.site ?? { gallery: [] };
+                onDataChange({ ...raw, site: { ...site, gallery: [...site.gallery, { id: newId(), title: "مدرک جدید", image: String(value) }] } });
+                setTarget(null);
+                return;
+              }
               // An emptied extra picture is removed rather than kept as an empty slot.
               const drop = value === "" && target.kind === "image" && /\.\d+$/.test(target.path);
               const empty = value === "" || value === undefined || (Array.isArray(value) && value.length === 0);

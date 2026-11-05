@@ -6,7 +6,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as Rea
 import { ApiError } from "../../api";
 import { uploadPicture } from "./uploadImage";
 
-export type EditKind = "text" | "multiline" | "image" | "url" | "period" | "month" | "lines" | "tags" | "newlink";
+export type EditKind = "text" | "multiline" | "image" | "url" | "period" | "month" | "lines" | "tags" | "newlink" | "newimage";
 
 /** Ways to be reached that can be added from the page, in menu order. */
 const LINK_TYPES: { value: string; label: string; hint: string }[] = [
@@ -146,6 +146,16 @@ export function EditPopover({ target, value, shown, canRemove, canClear, onSave,
         </button>
       </div>
 
+      {kind === "newimage" && (
+        <>
+          <button type="button" className="btn" disabled={busy} onClick={() => file.current?.click()}>
+            {busy ? "در حال آپلود…" : "انتخاب تصویر"}
+          </button>
+          <input ref={file} type="file" accept="image/*" hidden onChange={(e) => e.target.files?.[0] && void upload(e.target.files[0])} />
+          <small className="muted">بعد از آپلود، روی عنوان مدرک کلیک کنید تا اسمش را بنویسید.</small>
+        </>
+      )}
+
       {kind === "image" && (
         <>
           {typeof value === "string" && value && <img className="ep-thumb" src={value} alt="" />}
@@ -223,7 +233,7 @@ export function EditPopover({ target, value, shown, canRemove, canClear, onSave,
         </div>
       )}
 
-      {kind !== "image" && (
+      {kind !== "image" && kind !== "newimage" && (
         <>
           {value === undefined && hint && kind !== "newlink" && <small className="muted">متن کم‌رنگ نمونه است؛ تا چیزی ننویسید، در سایت منتشرشده نمی‌آید.</small>}
           <div className="ep-actions">
