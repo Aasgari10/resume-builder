@@ -133,19 +133,11 @@ function Section({ section, ctx }: { section: SectionConfig; ctx: Ctx }) {
         <Block title={title(labels.sections.projects)}>
           {items.map((p) => {
             const urls = [safeUrl(p.url), safeUrl(p.repoUrl)].filter((u): u is string => Boolean(u));
-            const images = p.images.map((u) => safeUrl(u)).filter((u): u is string => Boolean(u));
             return (
               <Item key={p.id} title={p.title} sub={p.role} date={formatPeriod(p.period, data.locale, dateFormat)}>
                 {p.description && <p className="cr-desc">{p.description}</p>}
                 {p.technologies.length > 0 && <p className="cr-tech">{p.technologies.join("، ")}</p>}
                 <Links urls={urls} />
-                {images.length > 0 && (
-                  <div className="cr-shots">
-                    {images.slice(0, 4).map((src) => (
-                      <img key={src} src={src} alt="" />
-                    ))}
-                  </div>
-                )}
               </Item>
             );
           })}
