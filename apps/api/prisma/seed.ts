@@ -21,14 +21,14 @@ const templates = [
     id: "minimal-portfolio",
     name: "مینیمال",
     kind: TemplateKind.PORTFOLIO,
-    isPremium: true,
-    price: 2_000_000, // in rials; placeholder price
+    isPremium: false,
+    price: 0, // everything is free for now; prices are set later in the admin panel
     sortOrder: 1,
   },
-  { id: "studio-portfolio", name: "استودیو", kind: TemplateKind.PORTFOLIO, isPremium: true, price: 2_000_000, sortOrder: 2 },
-  { id: "split-portfolio", name: "دوستونه", kind: TemplateKind.PORTFOLIO, isPremium: true, price: 2_000_000, sortOrder: 3 },
-  { id: "bento-portfolio", name: "کارت‌ها", kind: TemplateKind.PORTFOLIO, isPremium: true, price: 2_000_000, sortOrder: 4 },
-  { id: "vitrine-portfolio", name: "ویترین", kind: TemplateKind.PORTFOLIO, isPremium: true, price: 2_000_000, sortOrder: 0 },
+  { id: "studio-portfolio", name: "استودیو", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 2 },
+  { id: "split-portfolio", name: "دوستونه", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 3 },
+  { id: "bento-portfolio", name: "کارت‌ها", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 4 },
+  { id: "vitrine-portfolio", name: "ویترین", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
 ];
 
 async function main() {

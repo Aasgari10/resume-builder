@@ -56,14 +56,18 @@ export function setAt(data: ResumeData, shown: ResumeData, path: string, value: 
   return write(data, shown, 0) as ResumeData;
 }
 
-/** Removes the array item a path points into ("projects[p1].title" removes project p1). */
-export function removeItem(data: ResumeData, path: string): ResumeData {
+/**
+ * Removes the array item a path points into ("projects[p1].title" removes project p1).
+ * When the list on screen is still the sample list, the other sample items become the user's own.
+ */
+export function removeItem(data: ResumeData, shown: ResumeData, path: string): ResumeData {
   const m = /^(.*)\[([^\]]+)\]/.exec(path);
   if (!m) return data;
   const [, listPath, id] = m;
-  const list = getAt(data, listPath!);
+  const own = getAt(data, listPath!);
+  const list = Array.isArray(own) && own.some((x: any) => x?.id === id) ? own : getAt(shown, listPath!);
   if (!Array.isArray(list)) return data;
-  return setAt(data, data, listPath!, list.filter((x: any) => x?.id !== id));
+  return setAt(data, shown, listPath!, structuredClone(list.filter((x: any) => x?.id !== id)));
 }
 
 /** True when the path points into an array item, so the item can be deleted. */
