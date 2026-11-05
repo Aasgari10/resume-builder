@@ -63,7 +63,11 @@ export function renderSitePage(input: {
   const seo = buildSeo(data, input.seo, url);
   const inner = pageTitle(data, page);
   if (inner) seo.title = `${inner} | ${seo.title}`;
-  const body = renderToStaticMarkup(<Template data={data} theme={input.theme} page={page} link={input.link} />);
+  // Project rule: placeholder links (example.com) on a published page lead to the top of the page.
+  const body = renderToStaticMarkup(<Template data={data} theme={input.theme} page={page} link={input.link} />).replace(
+    /href="https?:\/\/([\w-]+\.)*example\.(com|ir|org)(\/[^"]*)?"( target="_blank")?/gi,
+    'href="#"',
+  );
   const ogLocale = seo.lang === "fa" ? "fa_IR" : "en_US";
 
   const head = [

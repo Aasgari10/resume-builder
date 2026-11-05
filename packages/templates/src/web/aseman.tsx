@@ -7,9 +7,9 @@
 // Projects are plain links to the projects themselves. Texts and pictures carry data-edit markers.
 
 import { useId, type ReactNode } from "react";
-import type { ResumeData } from "@rb/schema";
+import { luminance, type ResumeData } from "@rb/schema";
 import { WebPage, webCtx, type Ctx } from "./kit";
-import { linkLabel, safeUrl } from "../format";
+import { formatPeriod, linkLabel, safeUrl } from "../format";
 import { sampleImage, sampleResume } from "../sample";
 import type { TemplateProps } from "../types";
 
@@ -29,9 +29,9 @@ const TEXT = {
     intro: "معرفی",
     skills: "مهارت‌ها",
     home: "صفحه‌ی اصلی",
-    styleTitle: "سبک کار من چه ویژگی‌هایی دارد؟",
-    contactTitle: "راه ارتباط با من",
-    contactText: "اگر دوست دارید با هم همکاری کنیم، راه‌های ارتباط با من را پایین همین صفحه پیدا می‌کنید.",
+    experience: "سوابق کاری",
+    education: "تحصیلات",
+    at: "در",
     description: "توضیحات",
     mySkills: "مهارت‌های من",
     myProjects: "پروژه‌های من",
@@ -45,9 +45,9 @@ const TEXT = {
     intro: "Introduction",
     skills: "My skills",
     home: "Main page",
-    styleTitle: "What are the characteristics of my work style?",
-    contactTitle: "How to contact me",
-    contactText: "If you would like to work together, you can find my contact details at the bottom of this page.",
+    experience: "Experience",
+    education: "Education",
+    at: "@",
     description: "Description",
     mySkills: "My skills",
     myProjects: "My projects",
@@ -61,7 +61,7 @@ const TEXT = {
 
 /* ───────────── Click-to-edit markers ───────────── */
 
-type EditKind = "text" | "multiline" | "image" | "url" | "period" | "tags" | "newlink";
+type EditKind = "text" | "multiline" | "image" | "url" | "period" | "lines" | "tags" | "newlink";
 type Edit = { "data-edit": string; "data-edit-kind": EditKind; "data-edit-label": string };
 const ed = (path: string, kind: EditKind, label: string): Edit => ({ "data-edit": path, "data-edit-kind": kind, "data-edit-label": label });
 const item = (list: string, id: string) => `${list}[${id}]`;
@@ -84,6 +84,14 @@ const paragraphs = (text: string) => text.split(/\n\s*\n|\n/).filter((p) => p.tr
 type Link = (path: string) => string;
 type View = { ctx: Ctx; link: Link; editing: boolean };
 
+/** Sections the user can switch off in the editor. */
+export const ASEMAN_BLOCKS = [
+  { key: "intro", label: "بخش درباره‌ی من" },
+  { key: "resume", label: "بخش رزومه" },
+  { key: "band", label: "نوار رنگی" },
+  { key: "footer", label: "پایین صفحه (مهارت‌ها، پروژه‌ها، تماس)" },
+] as const;
+
 export function AsemanPortfolio(props: TemplateProps) {
   const ctx = webCtx(props);
   const view: View = { ctx, link: props.link ?? ((p: string) => p), editing: Boolean(props.editing) };
@@ -104,14 +112,15 @@ function PageLink({ to, link, className, children, edit }: { to: string; link: L
 
 function TopBar({ ctx, link, onDark }: View & { onDark: boolean }) {
   const t = TEXT[ctx.data.locale];
+  const off = ctx.data.site?.hiddenBlocks ?? [];
   return (
     <div className={`as-top${onDark ? " on-dark" : ""}`}>
       <PageLink to="/" link={link} className="as-brand">
         <span {...ed("basics.fullName", "text", "نام")}>{ctx.data.basics.fullName}</span>
       </PageLink>
       <nav className="as-nav">
-        <a href="#intro">{t.intro}</a>
-        <a href="#skills">{t.skills}</a>
+        {!off.includes("intro") && <a href="#intro">{t.intro}</a>}
+        {!off.includes("footer") && <a href="#skills">{t.skills}</a>}
         <PageLink to="/" link={link}>
           {t.home}
         </PageLink>
@@ -128,8 +137,9 @@ function Home(view: View) {
   const site = data.site;
   const hero = safeUrl(site?.heroImage);
   const tagline = site?.tagline?.trim() || b.jobTitle || "";
-  const styleText = site?.styleText?.trim() || "";
   const aboutText = site?.aboutText?.trim() || b.summary?.trim() || "";
+  const off = site?.hiddenBlocks ?? [];
+  const on = (key: string) => !off.includes(key);
 
   return (
     <>
@@ -140,25 +150,8 @@ function Home(view: View) {
         </div>
       </header>
 
+      {on("intro") && (
       <section className="as-half" id="intro">
-        <div className="as-text">
-          <h2 {...ed("site.styleTitle", "text", "عنوان بخش سبک کار")}>{site?.styleTitle?.trim() || t.styleTitle}</h2>
-          <Opt value={styleText} editing={editing} edit={ed("site.styleText", "multiline", "متن سبک کار")}>
-            <div className="as-body" {...ed("site.styleText", "multiline", "متن سبک کار")}>
-              {paragraphs(styleText).map((p, i) => (
-                <p key={i}>{p}</p>
-              ))}
-            </div>
-          </Opt>
-          <h2 {...ed("site.contactTitle", "text", "عنوان بخش ارتباط")}>{site?.contactTitle?.trim() || t.contactTitle}</h2>
-          <p className="as-body" {...ed("site.contactText", "multiline", "متن بخش ارتباط")}>
-            {site?.contactText?.trim() || t.contactText}
-          </p>
-        </div>
-        <Picture src={site?.accentImage} edit={ed("site.accentImage", "image", "تصویر کنار متن")} />
-      </section>
-
-      <section className="as-half flip">
         <Picture src={site?.aboutImage || b.avatarUrl} edit={ed("site.aboutImage", "image", "عکس من")} />
         <div className="as-text">
           <h2 className="as-name" {...ed("basics.fullName", "text", "نام")}>
@@ -178,16 +171,93 @@ function Home(view: View) {
           </Opt>
         </div>
       </section>
+      )}
 
-      <div className="as-band">
+      {on("resume") && (
+      <section className="as-half" id="resume">
+        <Resume {...view} />
+        <Picture src={site?.accentImage} edit={ed("site.accentImage", "image", "تصویر کنار رزومه")} />
+      </section>
+      )}
+
+      {on("band") && (
+      <div className="as-band" style={{ color: luminance(ctx.theme.colors.primary) > 0.55 ? "#1F1E24" : "#FFFFFF" }}>
         <span {...ed("basics.jobTitle", "text", "عنوان شغلی")}>{b.jobTitle}</span>
         <Opt value={site?.bandText} editing={editing} edit={ed("site.bandText", "text", "جمله‌ی نوار رنگی")}>
           <span {...ed("site.bandText", "text", "جمله‌ی نوار رنگی")}>{site?.bandText}</span>
         </Opt>
       </div>
+      )}
 
-      <Footer {...view} />
+      {on("footer") && <Footer {...view} />}
     </>
+  );
+}
+
+/** Work history and education beside the second picture, in the template's quiet style. */
+function Resume({ ctx, editing }: View) {
+  const { data } = ctx;
+  const t = TEXT[data.locale];
+  const fmt = ctx.theme.display.dateFormat;
+  return (
+    <div className="as-text as-resume">
+      {data.experience.length > 0 && <h2>{t.experience}</h2>}
+      {data.experience.map((x) => {
+        const at = item("experience", x.id);
+        return (
+          <article key={x.id} className="as-entry">
+            <h3>
+              <span {...ed(`${at}.position`, "text", "سمت")}>{x.position}</span>
+              <small>{t.at}</small>
+              <span {...ed(`${at}.company`, "text", "شرکت")}>{x.company}</span>
+            </h3>
+            <p className="as-meta">
+              <span {...ed(`${at}.period`, "period", "تاریخ شروع و پایان")}>{formatPeriod(x.period, data.locale, fmt)}</span>
+              <Opt value={x.location} editing={editing} edit={ed(`${at}.location`, "text", "شهر")}>
+                <span {...ed(`${at}.location`, "text", "شهر")}>{x.location}</span>
+              </Opt>
+            </p>
+            <Opt value={x.description} editing={editing} edit={ed(`${at}.description`, "multiline", "توضیحات")}>
+              <p className="as-entry-text" {...ed(`${at}.description`, "multiline", "توضیحات")}>
+                {x.description}
+              </p>
+            </Opt>
+            <Opt value={x.highlights} editing={editing} edit={ed(`${at}.highlights`, "lines", "دستاوردها")}>
+              <ul className="as-points" {...ed(`${at}.highlights`, "lines", "دستاوردها")}>
+                {x.highlights
+                  .filter((h) => h.trim())
+                  .map((h, i) => (
+                    <li key={i}>{h}</li>
+                  ))}
+              </ul>
+            </Opt>
+          </article>
+        );
+      })}
+      {data.education.length > 0 && <h2>{t.education}</h2>}
+      {data.education.map((x) => {
+        const at = item("education", x.id);
+        return (
+          <article key={x.id} className="as-entry">
+            <h3>
+              <Opt value={x.degree} editing={editing} edit={ed(`${at}.degree`, "text", "مقطع")}>
+                <span {...ed(`${at}.degree`, "text", "مقطع")}>{x.degree}</span>{" "}
+              </Opt>
+              <Opt value={x.field} editing={editing} edit={ed(`${at}.field`, "text", "رشته")}>
+                <span {...ed(`${at}.field`, "text", "رشته")}>{x.field}</span>
+              </Opt>
+            </h3>
+            <p className="as-meta">
+              <span {...ed(`${at}.institution`, "text", "دانشگاه یا مؤسسه")}>{x.institution}</span>
+              <span {...ed(`${at}.period`, "period", "تاریخ شروع و پایان")}>{formatPeriod(x.period, data.locale, fmt)}</span>
+              <Opt value={x.grade} editing={editing} edit={ed(`${at}.grade`, "text", "معدل")}>
+                <span {...ed(`${at}.grade`, "text", "معدل")}>{x.grade}</span>
+              </Opt>
+            </p>
+          </article>
+        );
+      })}
+    </div>
   );
 }
 
@@ -416,11 +486,9 @@ export function asemanSample(locale: ResumeData["locale"]): ResumeData {
       heroImage: sampleImage("sky"),
       accentImage: sampleImage("canyon"),
       aboutImage: sampleImage("ali"),
-      styleText:
-        "پشتکار قلب زندگی شخصی و حرفه‌ای من است. همین به من انگیزه می‌دهد که حتی در سختی‌ها هم با تعهد کامل دنبال هدف‌هایم بروم.\n\nعلاقه به برنامه‌نویسی باعث می‌شود همیشه یاد بگیرم و مسئله‌های پیچیده را حل کنم. از ساختن راه‌حل‌های خلاقانه و امتحان فناوری‌های تازه لذت می‌برم.\n\nبا حس مسئولیت و تجربه‌ای که دارم، خیالتان از پروژه راحت باشد؛ کیفیت و دقت در جزئیات برایم اولویت است.",
       aboutText:
-        "سلام! من علی عسگری هستم، اهل کرمانشاه. از نوجوانی عاشق برنامه‌نویسی بودم و ایده‌ی ساختن نرم‌افزار و حل مسئله‌های پیچیده با کد همیشه برایم جذاب بوده است.\n\nخوشبختانه الان در همان حوزه‌ای کار می‌کنم که دوستش دارم و هر پروژه تجربه‌ی تازه‌ای به من اضافه می‌کند.\n\nخلاصه‌ی مهارت‌هایم را پایین همین صفحه می‌بینید و پروژه‌هایم را هم با جزئیات می‌توانید مرور کنید. از اینکه وقت گذاشتید ممنونم و منتظر همکاری با شما هستم!",
-      bandText: "متخصص ساخت اپلیکیشن‌های وب با جاوااسکریپت",
+        "سلام! من علی عسگری هستم، اهل کرمانشاه. از نوجوانی عاشق برنامه‌نویسی بودم و ایده‌ی ساختن نرم‌افزار و حل مسئله‌های پیچیده با کد همیشه برایم جذاب بوده است.\n\nکارم را با ساختن سایت‌های ساده برای دوستان و کسب‌وکارهای کوچک شهرم شروع کردم و کم‌کم سراغ پروژه‌های بزرگ‌تر و پیچیده‌تر رفتم؛ از پنل‌های مدیریتی گرفته تا اپلیکیشن‌هایی که هر روز هزاران نفر از آن‌ها استفاده می‌کنند.\n\nخوشبختانه الان در همان حوزه‌ای کار می‌کنم که دوستش دارم و هر پروژه تجربه‌ی تازه‌ای به من اضافه می‌کند. برایم مهم است که محصول نهایی هم سریع و قابل اعتماد باشد و هم کار کردن با آن برای کاربر لذت‌بخش باشد.\n\nخلاصه‌ی مهارت‌هایم را پایین همین صفحه می‌بینید و پروژه‌هایم را هم می‌توانید مرور کنید. از اینکه وقت گذاشتید ممنونم و منتظر همکاری با شما هستم!",
+      bandText: "متخصص طراحی و توسعه‌ی اپلیکیشن‌های وب با جاوااسکریپت",
       address: "کرمانشاه، خیابان نمونه، کوچه‌ی نمونه، پلاک ۱۰",
       contactNote: "لطفاً در ساعت کاری تماس بگیرید. ایمیل‌ها هر روز ساعت ۸ صبح بررسی می‌شوند. ممنون که وقت گذاشتید!",
     },
@@ -447,8 +515,7 @@ const css = /* css */ `
 
 /* Picture and text halves; pictures run edge to edge */
 .as-half { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-.as-half.flip { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-.as-text { display: grid; align-content: center; gap: 18px; padding: clamp(32px, 6cqi, 72px); }
+.as-text { display: grid; align-content: start; gap: 18px; padding: clamp(32px, 6cqi, 72px); }
 .as-text h2 { padding-bottom: 14px; border-bottom: 1.5px solid var(--as-line); font-size: 1.1em; font-weight: 500; }
 .as-text h2 + .as-body { margin-top: 4px; }
 .as-body { display: grid; gap: 14px; color: var(--color-muted); font-size: .93em; line-height: 2.1; }
@@ -457,8 +524,22 @@ const css = /* css */ `
 .as-pic { position: relative; min-height: clamp(320px, 45cqi, 620px); background: linear-gradient(160deg, var(--color-primary-soft), var(--color-primary-tint)); overflow: hidden; }
 .as-pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 
+/* Resume beside the second picture */
+.as-resume { gap: 14px; }
+.as-resume h2 + .as-entry { margin-top: 4px; }
+.as-entry { display: grid; gap: 6px; padding-bottom: 16px; border-bottom: 1px solid color-mix(in srgb, var(--color-primary) 35%, transparent); }
+.as-entry:last-of-type { border-bottom: none; }
+.as-entry h3 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; font-size: .98em; font-weight: 500; }
+.as-entry h3 small { color: var(--color-muted); font-size: .85em; }
+.as-meta { display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--color-muted); font-size: .82em; font-style: italic; }
+.as-meta > span + span::before { content: "·"; margin-inline-end: 14px; font-style: normal; }
+.as-entry-text { color: var(--color-muted); font-size: .9em; line-height: 2; }
+.as-points { margin: 0; padding-inline-start: 18px; list-style: disc; color: var(--color-muted); font-size: .88em; line-height: 1.9; }
+.as-points li::marker { color: var(--color-primary); }
+
 /* Colored band */
-.as-band { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 48px; padding: 22px 20px; background: var(--color-primary); color: var(--color-on-primary); font-size: .85em; font-weight: 500; text-align: center; }
+.as-band { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px clamp(28px, 6cqi, 64px); padding: 18px 20px; background: var(--color-primary); font-size: .8em; font-weight: 600; word-spacing: .15em; text-align: center; }
+.as[dir="ltr"] .as-band { text-transform: uppercase; letter-spacing: .08em; word-spacing: normal; }
 
 /* Dark footer with four columns */
 .as-foot { background: var(--as-dark); color: #E8E6E1; padding: clamp(40px, 7cqi, 80px) clamp(20px, 5cqi, 64px); }
@@ -491,9 +572,8 @@ const css = /* css */ `
 }
 @container (max-width: 640px) {
   .as-top { flex-direction: column; align-items: flex-start; }
-  .as-half, .as-half.flip { grid-template-columns: 1fr; }
-  .as-half.flip .as-pic { order: -1; }
-  .as-half:not(.flip) .as-pic { order: -1; }
+  .as-half { grid-template-columns: 1fr; }
+  .as-half .as-pic { order: -1; }
   .as-cols { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) { .as-list svg { transition: none; } }

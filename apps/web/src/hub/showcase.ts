@@ -18,6 +18,7 @@ export const SHOWCASE_COLORS: Record<string, string> = {
   "bento-portfolio": "#5B3E96",
   "vitrine-portfolio": "#2B2F36",
   "aseman-portfolio": "#A8916A",
+  "grid-portfolio": "#5B6CF0",
 };
 
 export const showcaseColor = (id: string) => SHOWCASE_COLORS[id] ?? "#1E3A5F";

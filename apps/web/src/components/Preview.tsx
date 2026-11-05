@@ -5,7 +5,7 @@
 import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { applyHiddenFields, type ResumeData, type Theme } from "@rb/schema";
-import { SITE_TEMPLATES, getTemplate, pageTitle, resolvePage, withPlaceholders } from "@rb/templates";
+import { SITE_TEMPLATES, getTemplate, isDummyUrl, pageTitle, resolvePage, withPlaceholders } from "@rb/templates";
 import { newId } from "./editor/list";
 import { EditPopover, type EditTarget } from "./site-edit/EditPopover";
 import { SitePanel, type PanelTab } from "./site-edit/SitePanel";
@@ -14,6 +14,20 @@ import { getAt, isItemPath, removeItem, setAt } from "./site-edit/paths";
 type Device = "desktop" | "mobile";
 
 const MOBILE_WIDTH = 390;
+
+/** Fields that must keep a value: the name, and the main title of every item. */
+const REQUIRED = /^basics\.fullName$|\.(title|position|company|institution|name|period)$/;
+/** Templates show these fields in place of an empty one, so clearing one clears its stand-in too. */
+const STAND_IN: Record<string, string> = { "site.aboutText": "basics.summary", "site.aboutImage": "basics.avatarUrl", "site.address": "basics.location" };
+
+/** Remembers (or forgets) that a top-level field was emptied on purpose, so no sample fills it. */
+function markCleared(data: ResumeData, path: string, empty: boolean): ResumeData {
+  if (path.includes("[")) return data; // fields of items are never filled with samples one by one
+  const paths = [path, ...(STAND_IN[path] ? [STAND_IN[path]!] : [])];
+  const now = (data.site?.clearedFields ?? []).filter((p) => !paths.includes(p));
+  const clearedFields = empty ? [...now, ...paths] : now;
+  return { ...data, site: { gallery: [], ...data.site, clearedFields } };
+}
 
 type Props = {
   data: ResumeData;
@@ -77,6 +91,8 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
     const to = a.getAttribute("data-page");
     const href = a.getAttribute("href") ?? "";
     if (to) setPage(to);
+    // Project rule: a placeholder link ("#", example.com) takes the visitor to the top of the page.
+    else if (isDummyUrl(href)) a.closest(".ws-view")?.scrollTo({ top: 0, behavior: "smooth" });
     else if (href.startsWith("#")) document.getElementById(href.slice(1))?.scrollIntoView({ behavior: "smooth" });
     else if (/^(https?:|mailto:|tel:)/i.test(href)) window.open(href, "_blank", "noopener,noreferrer");
   };
@@ -167,7 +183,7 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
             onTab={setTab}
             data={raw}
             theme={theme}
-            multiPage={Boolean(site.pages)}
+            template={site}
             onData={onDataChange}
             onTheme={onThemeChange}
             onClose={() => setPanel(false)}
@@ -189,6 +205,7 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
             value={getAt(raw, target.path)}
             shown={getAt(shown, target.path)}
             canRemove={isItemPath(target.path)}
+            canClear={!REQUIRED.test(target.path)}
             onSave={(value) => {
               if (target.kind === "newlink") {
                 // A new way to be reached is added to the user's own links (sample links are replaced).
@@ -199,7 +216,8 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
               }
               // An emptied extra picture is removed rather than kept as an empty slot.
               const drop = value === "" && target.kind === "image" && /\.\d+$/.test(target.path);
-              onDataChange(setAt(raw, shown, target.path, drop ? undefined : value));
+              const empty = value === "" || value === undefined || (Array.isArray(value) && value.length === 0);
+              onDataChange(markCleared(setAt(raw, shown, target.path, drop ? undefined : value), target.path, empty));
               setTarget(null);
             }}
             onRemove={() => {

@@ -34,7 +34,11 @@ export function vitrinePages(data: ResumeData): string[] {
 }
 
 /** Pages the user can switch off in the editor, with their menu names. */
-export const VITRINE_OPTIONAL_PAGES = ["/gallery", "/about", "/resume"] as const;
+export const VITRINE_OPTIONAL_PAGES = [
+  { path: "/gallery", label: "مدارک" },
+  { path: "/about", label: "درباره‌ی من" },
+  { path: "/resume", label: "رزومه" },
+] as const;
 
 const MENU: Record<string, { fa: string; en: string }> = {
   "/": { fa: "نمونه‌کارها", en: "Work" },

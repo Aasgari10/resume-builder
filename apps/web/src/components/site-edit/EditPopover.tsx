@@ -57,6 +57,8 @@ type Props = {
   /** What the preview shows there now, used as a hint. */
   shown: unknown;
   canRemove: boolean;
+  /** Whether this field may be left empty (the name, titles and dates of items are required). */
+  canClear: boolean;
   onSave: (value: unknown) => void;
   onRemove: () => void;
   onClose: () => void;
@@ -67,7 +69,7 @@ const YM = /^\d{4}-(0[1-9]|1[0-2])$/;
 
 const asText = (v: unknown) => (Array.isArray(v) ? v.join("\n") : typeof v === "string" ? v : "");
 
-export function EditPopover({ target, value, shown, canRemove, onSave, onRemove, onClose }: Props) {
+export function EditPopover({ target, value, shown, canRemove, canClear, onSave, onRemove, onClose }: Props) {
   const { kind } = target;
   const [text, setText] = useState(kind === "tags" && Array.isArray(value) ? value.join("، ") : asText(value));
   const initialPeriod = (value ?? shown) as Period | undefined;
@@ -156,7 +158,7 @@ export function EditPopover({ target, value, shown, canRemove, onSave, onRemove,
             <input className="ltr" dir="ltr" value={text} placeholder="https://..." onChange={(e) => setText(e.target.value)} onKeyDown={onEnter} />
           </label>
           <div className="ep-actions">
-            {Boolean(value) && (
+            {canClear && Boolean(value || shown) && (
               <button type="button" className="btn ghost danger" onClick={() => onSave("")}>
                 حذف تصویر
               </button>
@@ -225,6 +227,11 @@ export function EditPopover({ target, value, shown, canRemove, onSave, onRemove,
         <>
           {value === undefined && hint && kind !== "newlink" && <small className="muted">متن کم‌رنگ نمونه است؛ تا چیزی ننویسید، در سایت منتشرشده نمی‌آید.</small>}
           <div className="ep-actions">
+            {canClear && kind !== "newlink" && Boolean(asText(value) || hint) && (
+              <button type="button" className="btn ghost danger" onClick={() => onSave(kind === "lines" || kind === "tags" ? [] : "")} title="این بخش در سایت نمایش داده نمی‌شود">
+                پاک کردن
+              </button>
+            )}
             <button type="button" className="btn" onClick={save}>
               ثبت
             </button>

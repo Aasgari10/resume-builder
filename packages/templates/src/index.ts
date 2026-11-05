@@ -14,13 +14,16 @@ import { BentoPortfolio } from "./web/bento";
 import { SplitPortfolio } from "./web/split";
 import { StudioPortfolio } from "./web/studio";
 import { VitrinePortfolio, vitrinePages } from "./web/vitrine";
-import { AsemanPortfolio, asemanPages, asemanSample } from "./web/aseman";
+import { AsemanPortfolio, ASEMAN_BLOCKS, asemanPages, asemanSample } from "./web/aseman";
+import { GRID_BLOCKS, GRID_OPTIONAL_PAGES, GridPortfolio, gridPages, gridSample } from "./web/grid";
+import { VITRINE_OPTIONAL_PAGES } from "./web/vitrine";
 import type { ResumeData } from "@rb/schema";
 import type { TemplateDefinition, TemplateTag } from "./types";
 
 export type { TemplateDefinition, TemplateProps, TemplateTag } from "./types";
 export { sampleResume } from "./sample";
 export { withPlaceholders } from "./placeholders";
+export { isDummyUrl } from "./format";
 export { Silhouette } from "./avatar";
 export { formatPeriod, formatYearMonth, safeUrl } from "./format";
 export { buildSeo, truncate, type SeoMeta, type SeoOverrides } from "./seo";
@@ -69,8 +72,9 @@ const web = (id: string, name: string, component: TemplateDefinition["component"
 
 /** Website templates, in the order shown to users. */
 export const PORTFOLIO_TEMPLATES: readonly TemplateDefinition[] = [
-  { ...web("vitrine-portfolio", "ویترین", VitrinePortfolio), pages: vitrinePages },
-  { ...web("aseman-portfolio", "آسمان", AsemanPortfolio), pages: asemanPages, sample: asemanSample },
+  { ...web("vitrine-portfolio", "ویترین", VitrinePortfolio), pages: vitrinePages, optionalPages: VITRINE_OPTIONAL_PAGES },
+  { ...web("aseman-portfolio", "آسمان", AsemanPortfolio), pages: asemanPages, sample: asemanSample, blocks: ASEMAN_BLOCKS },
+  { ...web("grid-portfolio", "گرید", GridPortfolio), pages: gridPages, sample: gridSample, optionalPages: GRID_OPTIONAL_PAGES, blocks: GRID_BLOCKS },
   minimalPortfolio,
   web("studio-portfolio", "استودیو", StudioPortfolio),
   web("split-portfolio", "دوستونه", SplitPortfolio),
@@ -118,6 +122,10 @@ const PAGE_TITLES: Record<string, Record<ResumeData["locale"], string>> = {
   "/gallery": { fa: "گالری", en: "Gallery" },
   "/about": { fa: "درباره‌ی من", en: "About" },
   "/resume": { fa: "رزومه", en: "Resume" },
+  "/credentials": { fa: "سوابق", en: "Credentials" },
+  "/works": { fa: "نمونه‌کارها", en: "Works" },
+  "/services": { fa: "خدمات", en: "Services" },
+  "/contact": { fa: "تماس", en: "Contact" },
 };
 
 /** Title of an inner page for the browser tab ("About", a project's name); empty for the home page. */

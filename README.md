@@ -191,3 +191,9 @@ The browser crops the photo to a square, resizes it to 512px and re-encodes it a
 ## CI
 
 GitHub Actions runs on every push to `main` and on pull requests: install, Prisma generate, migrations against a throwaway PostgreSQL, typecheck, tests and build.
+
+## Conventions
+
+- Placeholder links (`#`, `example.com`, `example.ir`) always take the visitor to the top of the page:
+  in the editor preview (`Preview.tsx`) and on published sites (`renderSitePage`). Templates never invent
+  other dummy targets.

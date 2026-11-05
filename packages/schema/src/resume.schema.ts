@@ -15,8 +15,8 @@ const YEAR_MONTH_OR_EMPTY = /^(\d{4}-(0[1-9]|1[0-2]))?$/;
 /** Sample pictures shipped with the app and served by the API (see SAMPLE_ASSETS_PATH in the API). */
 export const SAMPLE_ASSETS_PATH = "/_assets/samples/";
 /** Bumped when the pictures change, so browsers fetch the new files instead of cached ones. */
-export const SAMPLE_ASSETS_VERSION = 5;
-export const isSampleAsset = (v: string) => /^\/_assets\/samples\/[a-z0-9-]+\.jpg(\?v=\d+)?$/.test(v);
+export const SAMPLE_ASSETS_VERSION = 6;
+export const isSampleAsset = (v: string) => /^\/_assets\/samples\/[a-z0-9-]+\.(jpg|png)(\?v=\d+)?$/.test(v);
 
 function buildResumeSchemas(strict: boolean) {
   /* ───────────── Primitives ───────────── */
@@ -195,6 +195,9 @@ function buildResumeSchemas(strict: boolean) {
     aboutCaption: z.string().max(80).optional(),
     gallery: z.array(galleryItem).max(40).default([]),
     hiddenPages: z.array(z.string().max(20)).max(10).optional(), // menu pages the user switched off, e.g. "/gallery"
+    hiddenBlocks: z.array(z.string().max(30)).max(30).optional(), // template sections the user switched off
+    clearedFields: z.array(z.string().max(40)).max(60).optional(), // fields emptied on purpose: the preview shows no sample there
+    signatureImage: optionalUrl,
     // Extra texts and pictures used by some templates (e.g. "Aseman"); each template uses what it needs.
     heroImage: optionalUrl,
     accentImage: optionalUrl,
