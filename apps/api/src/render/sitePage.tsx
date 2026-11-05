@@ -38,7 +38,7 @@ export const SITE_CSP = [
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self'",
   // The app origin is listed so uploaded photos also load in development over plain HTTP.
-  `img-src https: data: ${new URL(env.appUrl).origin}`,
+  `img-src 'self' https: data: ${new URL(env.appUrl).origin}`,
   "base-uri 'none'",
   "form-action 'none'",
   "frame-ancestors 'none'",

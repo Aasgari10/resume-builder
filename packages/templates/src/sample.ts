@@ -1,7 +1,7 @@
-import type { ResumeData } from "@rb/schema";
+import { SAMPLE_ASSETS_PATH, type ResumeData } from "@rb/schema";
 
-/** Free stock photo (Lorem Picsum, Unsplash license); the seed keeps the same picture every time. */
-const img = (seed: string, w: number, h: number) => `https://picsum.photos/seed/${seed}/${w}/${h}`;
+/** Sample picture bundled with the app (apps/api/assets/samples), so previews work without outside sites. */
+const img = (name: string) => `${SAMPLE_ASSETS_PATH}${name}.jpg`;
 
 /** Complete example resumes for previews and template development. Valid against resumeDataSchema. */
 export function sampleResume(locale: ResumeData["locale"]): ResumeData {
@@ -78,7 +78,7 @@ const SAMPLE_FA: ResumeData = {
       description: "داشبورد مدیریت سفارش‌ها و موجودی با گزارش‌های لحظه‌ای.",
       technologies: ["React", "TypeScript", "TanStack Query"],
       url: "https://example.com/dashboard",
-      images: [img("rb-dashboard", 1200, 900), img("rb-dashboard-2", 1200, 900)],
+      images: [img("project-dashboard"), img("project-dashboard-2")],
       period: { start: "2025-02", current: false, end: "2025-09" },
     },
     {
@@ -88,7 +88,7 @@ const SAMPLE_FA: ResumeData = {
       description: "مجموعه‌ی کامپوننت‌های قابل استفاده‌ی مجدد با پشتیبانی کامل از راست‌به‌چپ.",
       technologies: ["React", "Storybook", "CSS Modules"],
       repoUrl: "https://github.com/example/ui",
-      images: [img("rb-components", 1200, 900)],
+      images: [img("project-components")],
       period: { start: "2024-05", current: false, end: "2024-12" },
     },
     {
@@ -97,7 +97,7 @@ const SAMPLE_FA: ResumeData = {
       role: "پروژه‌ی شخصی",
       description: "پیشنهاد آهنگ بر اساس حال‌وهوای کاربر، با رابط ساده و سریع.",
       technologies: ["Next.js", "Web Audio"],
-      images: [img("rb-music", 1200, 900)],
+      images: [img("project-music")],
       period: { start: "2024-01", current: false, end: "2024-03" },
     },
     {
@@ -106,7 +106,7 @@ const SAMPLE_FA: ResumeData = {
       role: "طراحی و توسعه",
       description: "سایت چندصفحه‌ای سبک و سریع برای معرفی کارها.",
       technologies: ["Astro", "CSS"],
-      images: [img("rb-portfolio", 1200, 900)],
+      images: [img("project-portfolio")],
       period: { start: "2023-08", current: false, end: "2023-10" },
     },
   ],
@@ -140,18 +140,18 @@ const SAMPLE_FA: ResumeData = {
     aboutTitle: "توسعه‌دهنده‌ای که سادگی را از پیچیدگی بیرون می‌کشد",
     aboutText:
       "در تهران زندگی می‌کنم و روی محصولات وبی کار می‌کنم که باید هم ساده باشند و هم قابل اعتماد. بیشتر کارهایم پنل‌های مدیریتی و ابزارهای داخلی شرکت‌هاست؛ جایی که وضوح از تزئین مهم‌تر است.\n\nکارم را با طراحی سایت‌های شرکتی شروع کردم و کم‌کم سراغ سیستم‌های پیچیده‌تر رفتم. همین مسیر طرز فکرم را ساخت: اول ساختار، بعد ظاهر.\n\nبیرون از کار، عکاسی می‌کنم و پروژه‌های کوچک شخصی می‌سازم تا ایده‌های تازه را آزادانه امتحان کنم.",
-    aboutImage: img("rb-about", 900, 1100),
+    aboutImage: img("about"),
     aboutCaption: "یک روز آفتابی در تهران",
     gallery: [
-      { id: "g1", title: "بازی با تایپوگرافی", image: img("rb-g1", 800, 600) },
-      { id: "g2", title: "آزمایش با رنگ", image: img("rb-g2", 800, 1000) },
-      { id: "g3", title: "طراحی دیجیتال", image: img("rb-g3", 800, 800) },
-      { id: "g4", title: "مجموعه‌ی گل‌ها", image: img("rb-g4", 800, 1050) },
-      { id: "g5", title: "حال‌وهوا و بافت", image: img("rb-g5", 800, 700) },
-      { id: "g6", title: "فرم‌های انتزاعی", image: img("rb-g6", 800, 1000) },
-      { id: "g7", title: "شکل و سیستم رنگ", image: img("rb-g7", 800, 900) },
-      { id: "g8", title: "عکاسی خیابانی", image: img("rb-g8", 800, 600) },
-      { id: "g9", title: "طرح‌های اولیه", image: img("rb-g9", 800, 1000) },
+      { id: "g1", title: "بازی با تایپوگرافی", image: img("gallery-1") },
+      { id: "g2", title: "آزمایش با رنگ", image: img("gallery-2") },
+      { id: "g3", title: "طراحی دیجیتال", image: img("gallery-3") },
+      { id: "g4", title: "مجموعه‌ی گل‌ها", image: img("gallery-4") },
+      { id: "g5", title: "حال‌وهوا و بافت", image: img("gallery-5") },
+      { id: "g6", title: "فرم‌های انتزاعی", image: img("gallery-6") },
+      { id: "g7", title: "شکل و سیستم رنگ", image: img("gallery-7") },
+      { id: "g8", title: "عکاسی خیابانی", image: img("gallery-8") },
+      { id: "g9", title: "طرح‌های اولیه", image: img("gallery-9") },
     ],
   },
 };

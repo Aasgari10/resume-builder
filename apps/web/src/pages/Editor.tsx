@@ -137,7 +137,7 @@ export function Editor() {
         </div>
 
         <aside className="editor-preview">
-          <Preview data={data} theme={theme} onThemeChange={setTheme} initialMode={initialView} />
+          <Preview data={data} theme={theme} onThemeChange={setTheme} onDataChange={setData} initialMode={initialView} />
         </aside>
       </div>
     </div>
