@@ -130,19 +130,41 @@ export const hasContact = ({ data: { basics } }: Ctx) =>
 
 type Variant = "main" | "side";
 
-/** Section heading; templates style .k-h2 (and may wrap it with decorations via CSS). */
-export function Heading({ children }: { children: ReactNode }) {
+const SECTION_ICONS = {
+  experience: "M10 3h4a2 2 0 0 1 2 2v1h3a2 2 0 0 1 2 2v3H3V8a2 2 0 0 1 2-2h3V5a2 2 0 0 1 2-2zm0 3h4V5h-4zM3 13h7v1a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-1h7v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z",
+  education: "M12 3 1 9l11 6 9-4.9V17h2V9zM5 13.2v3.6L12 21l7-4.2v-3.6L12 17z",
+  skills: "M12 2.5l2.9 6.2 6.6.6-5 4.5 1.5 6.6L12 17l-6 3.4 1.5-6.6-5-4.5 6.6-.6z",
+  projects: "M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z",
+  languages: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 2c.9 1.2 1.6 2.5 2 4h-4c.4-1.5 1.1-2.8 2-4zM4.3 14a8 8 0 0 1 0-4h3.4a16 16 0 0 0 0 4zm.8 2h3c.3 1.3.8 2.5 1.4 3.6A8 8 0 0 1 5.1 16zm3-8h-3a8 8 0 0 1 4.3-3.6C7.9 5.5 7.4 6.7 8.1 8zM12 20c-.9-1.2-1.6-2.5-2-4h4c-.4 1.5-1.1 2.8-2 4zm2.3-6H9.7a14 14 0 0 1 0-4h4.6a14 14 0 0 1 0 4zm.3 5.6c.6-1.1 1.1-2.3 1.4-3.6h3a8 8 0 0 1-4.4 3.6zm1.7-5.6a16 16 0 0 0 0-4h3.4a8 8 0 0 1 0 4zM16 8c-.3-1.3-.8-2.5-1.4-3.6A8 8 0 0 1 18.9 8z",
+  certificates: "M12 2a6 6 0 0 1 3.5 10.87V22L12 20l-3.5 2v-9.13A6 6 0 0 1 12 2zm0 2a4 4 0 1 0 0 8 4 4 0 0 0 0-8z",
+  customSections: "M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z",
+  profile: "M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9zm0 2c-4.4 0-8 2.2-8 5v2h16v-2c0-2.8-3.6-5-8-5z",
+  contact: "M3 5h18a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zm5 3.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM5 15.5h6c0-1.4-1.3-2.5-3-2.5s-3 1.1-3 2.5zM13 9v1.5h6V9zm0 3v1.5h4V12z",
+} as const;
+
+export type SectionIcon = keyof typeof SECTION_ICONS;
+
+/**
+ * Section heading with an icon. The icon is hidden by default (.k-h2-icon);
+ * templates that want icons show and style it.
+ */
+export function Heading({ children, icon }: { children: ReactNode; icon?: SectionIcon }) {
   return (
     <h2 className="k-h2">
+      {icon && (
+        <svg className="k-h2-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d={SECTION_ICONS[icon]} />
+        </svg>
+      )}
       <span>{children}</span>
     </h2>
   );
 }
 
-function Block({ title, children, variant }: { title: string; children: ReactNode; variant: Variant }) {
+function Block({ title, icon, children, variant }: { title: string; icon: SectionIcon; children: ReactNode; variant: Variant }) {
   return (
-    <section className={`k-section k-${variant}`}>
-      <Heading>{title}</Heading>
+    <section className={`k-section k-${variant} k-section-${icon}`}>
+      <Heading icon={icon}>{title}</Heading>
       {children}
     </section>
   );
@@ -195,7 +217,7 @@ export function Section({ section, ctx, variant }: { section: SectionConfig; ctx
     case "experience": {
       const items = data.experience.filter((x) => x.position || x.company);
       return items.length === 0 ? null : (
-        <Block title={title(labels.sections.experience)} variant={variant}>
+        <Block title={title(labels.sections.experience)} icon="experience" variant={variant}>
           {items.map((x) => (
             <Item key={x.id} title={x.position} sub={[x.company, x.location].filter(Boolean).join("، ")} date={period(x.period)}>
               {x.description && <p className="k-desc">{x.description}</p>}
@@ -208,7 +230,7 @@ export function Section({ section, ctx, variant }: { section: SectionConfig; ctx
     case "education": {
       const items = data.education.filter((x) => x.institution);
       return items.length === 0 ? null : (
-        <Block title={title(labels.sections.education)} variant={variant}>
+        <Block title={title(labels.sections.education)} icon="education" variant={variant}>
           {items.map((x) => (
             <Item
               key={x.id}
@@ -227,7 +249,7 @@ export function Section({ section, ctx, variant }: { section: SectionConfig; ctx
       if (skills.length === 0) return null;
       if (showSkillLevel && skills.some((s) => s.level)) {
         return (
-          <Block title={title(labels.sections.skills)} variant={variant}>
+          <Block title={title(labels.sections.skills)} icon="skills" variant={variant}>
             <ul className="k-bars">
               {skills.map((s) => (
                 <li key={s.id}>
@@ -242,7 +264,7 @@ export function Section({ section, ctx, variant }: { section: SectionConfig; ctx
         );
       }
       return (
-        <Block title={title(labels.sections.skills)} variant={variant}>
+        <Block title={title(labels.sections.skills)} icon="skills" variant={variant}>
           <ul className="k-tags">
             {skills.map((s) => (
               <li key={s.id}>{s.name}</li>
@@ -254,7 +276,7 @@ export function Section({ section, ctx, variant }: { section: SectionConfig; ctx
     case "projects": {
       const items = data.projects.filter((p) => p.title);
       return items.length === 0 ? null : (
-        <Block title={title(labels.sections.projects)} variant={variant}>
+        <Block title={title(labels.sections.projects)} icon="projects" variant={variant}>
           {items.map((p) => {
             const url = safeUrl(p.url) ?? safeUrl(p.repoUrl);
             return (
@@ -280,7 +302,7 @@ export function Section({ section, ctx, variant }: { section: SectionConfig; ctx
     case "languages": {
       const items = data.languages.filter((l) => l.name);
       return items.length === 0 ? null : (
-        <Block title={title(labels.sections.languages)} variant={variant}>
+        <Block title={title(labels.sections.languages)} icon="languages" variant={variant}>
           <ul className="k-langs">
             {items.map((l) => (
               <li key={l.id}>
@@ -298,7 +320,7 @@ export function Section({ section, ctx, variant }: { section: SectionConfig; ctx
     case "certificates": {
       const items = data.certificates.filter((c) => c.title);
       return items.length === 0 ? null : (
-        <Block title={title(labels.sections.certificates)} variant={variant}>
+        <Block title={title(labels.sections.certificates)} icon="certificates" variant={variant}>
           {items.map((c) => (
             <Item key={c.id} title={c.title} sub={c.issuer} date={formatYearMonth(c.date, data.locale, dateFormat)} />
           ))}
@@ -311,7 +333,7 @@ export function Section({ section, ctx, variant }: { section: SectionConfig; ctx
           {data.customSections
             .filter((s) => s.title && s.items.some((i) => i.title))
             .map((s) => (
-              <Block key={s.id} title={s.title} variant={variant}>
+              <Block key={s.id} title={s.title} icon="customSections" variant={variant}>
                 {s.items
                   .filter((i) => i.title)
                   .map((i) => (
@@ -341,7 +363,7 @@ export function Sections({ list, ctx, variant }: { list: SectionConfig[]; ctx: C
 export function Summary({ ctx, variant = "main" }: { ctx: Ctx; variant?: Variant }) {
   const { summary } = ctx.data.basics;
   return summary ? (
-    <Block title={ctx.labels.profile} variant={variant}>
+    <Block title={ctx.labels.profile} icon="profile" variant={variant}>
       <p className="k-summary">{summary}</p>
     </Block>
   ) : null;

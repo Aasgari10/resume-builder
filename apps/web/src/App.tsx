@@ -1,5 +1,7 @@
 import { Link, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { RequireAuth, useAuth } from "./auth";
+import { ComingSoon } from "./landing/ComingSoon";
+import { Landing } from "./landing/Landing";
 import { Admin } from "./pages/Admin";
 import { Dashboard } from "./pages/Dashboard";
 import { Editor } from "./pages/Editor";
@@ -28,6 +30,16 @@ export function App() {
     );
   }
 
+  // Public marketing pages have their own header and full-width layout.
+  if (pathname === "/" || pathname.startsWith("/soon/")) {
+    return (
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/soon/:product" element={<ComingSoon />} />
+      </Routes>
+    );
+  }
+
   return (
     <>
       <header className="topbar">
@@ -51,7 +63,7 @@ export function App() {
 
       <main className={wide ? "container wide" : "container"}>
         <Routes>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/resume" element={<Navigate to="/dashboard" replace />} />
           <Route path="/login" element={<Login />} />
           <Route
             path="/dashboard"

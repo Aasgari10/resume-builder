@@ -3,6 +3,9 @@ import { ClassicResume } from "./classic-resume";
 import { MinimalPortfolio } from "./minimal-portfolio";
 import { BannerResume } from "./pdf/banner";
 import { CardResume } from "./pdf/card";
+import { DiagonalResume } from "./pdf/diagonal";
+import { NightResume } from "./pdf/night";
+import { TimelineResume } from "./pdf/timeline";
 import { ColumnResume } from "./pdf/column";
 import { LineResume } from "./pdf/line";
 import { SidebarResume } from "./pdf/sidebar";
@@ -43,6 +46,9 @@ export const PDF_TEMPLATES: readonly TemplateDefinition[] = [
   pdf("banner-pdf", "سربرگ", BannerResume),
   pdf("card-pdf", "کارت", CardResume),
   pdf("column-pdf", "ستون عکس‌دار", ColumnResume),
+  pdf("timeline-pdf", "مسیر", TimelineResume),
+  pdf("diagonal-pdf", "مورب", DiagonalResume),
+  pdf("night-pdf", "شب", NightResume),
   pdf("line-pdf", "خطی", LineResume),
   classicResume,
 ];

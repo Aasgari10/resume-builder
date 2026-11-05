@@ -189,6 +189,26 @@ export function onColor(background: string): string {
   return withWhite >= withDark ? "#FFFFFF" : "#111827";
 }
 
+/** WCAG contrast ratio between two #RRGGBB colors (1 to 21). */
+export function contrast(a: string, b: string): number {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x) as [number, number];
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+/** Lightens or darkens `color` just enough to reach `min` contrast on `background`. */
+export function readableOn(color: string, background: string, min = 4.5): string {
+  if (contrast(color, background) >= min) return color.toUpperCase();
+  const target = luminance(background) < 0.4 ? "#FFFFFF" : "#000000";
+  for (let step = 1; step <= 20; step++) {
+    const candidate = mixHex(color, target, step / 20);
+    if (contrast(candidate, background) >= min) return candidate;
+  }
+  return target;
+}
+
+/** Page color of dark templates; the primary color is adjusted to stay readable on it. */
+export const DARK_PAGE = "#2C2E33";
+
 /** Swatches for the main color picker; only the primary color changes, backgrounds stay as they are. */
 export const PRIMARY_SWATCHES = [
   { label: "سرمه‌ای", value: "#1E3A5F" },
@@ -222,6 +242,7 @@ export function themeToCssVars(theme: Theme): Record<string, string> {
     "--color-primary-soft": mixHex(colors.primary, "#FFFFFF", 0.9),
     "--color-primary-tint": mixHex(colors.primary, "#FFFFFF", 0.75),
     "--color-primary-strong": mixHex(colors.primary, "#000000", 0.25),
+    "--color-primary-on-dark": readableOn(colors.primary, DARK_PAGE, 4.5),
     "--color-accent": colors.accent,
     "--color-bg": colors.background,
     "--color-surface": colors.surface,

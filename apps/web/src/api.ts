@@ -178,6 +178,13 @@ export type AdminAiUsage = {
   topUsers: { phone: string; tokens: number; requests: number }[];
 };
 
+export type WaitlistProduct = "site" | "shop" | "salon" | "clinic" | "cafe" | "business" | "pricing" | "consult";
+
+export type AdminWaitlist = {
+  counts: { product: string; count: number }[];
+  latest: { id: string; product: string; phone: string; createdAt: string }[];
+};
+
 export type Availability = { available: true } | { available: false; reason: string; message: string };
 
 /* ───────────── Endpoints ───────────── */
@@ -221,10 +228,13 @@ export const api = {
       request<{ template: AdminTemplate }>("PATCH", `/admin/templates/${encodeURIComponent(id)}`, patch),
     sites: (page: number, q?: string) => request<Paged<AdminSite>>("GET", `/admin/sites${qs({ page, q })}`),
     ai: () => request<AdminAiUsage>("GET", "/admin/ai"),
+    waitlist: () => request<AdminWaitlist>("GET", "/admin/waitlist"),
     updateSettings: (patch: { aiDailyTokenLimit?: number }) =>
       request<{ settings: { aiDailyTokenLimit: number } }>("PATCH", "/admin/settings", patch),
     unpublishSite: (id: string) => request<{ ok: true }>("POST", `/admin/sites/${encodeURIComponent(id)}/unpublish`),
   },
+  joinWaitlist: (product: WaitlistProduct, phone: string) =>
+    request<{ ok: true }>("POST", "/waitlist", { product, phone }),
   uploadAvatar: (dataUrl: string) => request<{ url: string }>("POST", "/uploads/avatar", { dataUrl }),
   assistantQuota: () => request<AssistantQuota>("GET", "/assistant/quota"),
   askAssistant: (body: { message: string; history: AssistantTurn[]; theme: Theme; locale: "fa" | "en" }) =>

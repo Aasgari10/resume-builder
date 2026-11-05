@@ -285,3 +285,16 @@ model Upload {
 
   @@index([userId])
 }
+
+// ───────────── Waitlist ─────────────
+
+// Visitors asking to be notified when a product launches, or to be called for a consultation.
+model WaitlistEntry {
+  id        String   @id @default(cuid())
+  product   String // e.g. "salon", "shop", "consult"
+  phone     String
+  createdAt DateTime @default(now())
+
+  @@unique([product, phone])
+  @@index([product, createdAt])
+}

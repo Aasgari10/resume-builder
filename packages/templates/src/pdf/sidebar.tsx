@@ -31,7 +31,7 @@ export function SidebarResume({ data, theme }: TemplateProps) {
         <Avatar ctx={ctx} className="t-photo" />
         {hasContact(ctx) && (
           <section className="k-section k-side">
-            <Heading>{ctx.labels.contact}</Heading>
+            <Heading icon="contact">{ctx.labels.contact}</Heading>
             <ContactList ctx={ctx} />
           </section>
         )}
