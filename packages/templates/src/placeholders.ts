@@ -24,6 +24,7 @@ export function withPlaceholders(data: ResumeData): ResumeData {
       phone: pick(b.phone, s.phone),
       location: pick(b.location, s.location),
       summary: pick(b.summary, s.summary),
+      avatarUrl: pick(b.avatarUrl, s.avatarUrl),
       links: b.links.some((l) => l.url.trim()) ? b.links : s.links,
       personal: {
         ...b.personal,

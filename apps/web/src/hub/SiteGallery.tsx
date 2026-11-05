@@ -4,7 +4,7 @@
 import { memo, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { ResumeData } from "@rb/schema";
-import { PORTFOLIO_TEMPLATES, sampleResume, type TemplateDefinition } from "@rb/templates";
+import { SITE_TEMPLATES, sampleResume, type TemplateDefinition } from "@rb/templates";
 import { Scaled } from "../components/Scaled";
 import { themeFor } from "./Gallery";
 import { showcaseColor } from "./showcase";
@@ -20,12 +20,12 @@ export function SiteGallery() {
   return (
     <div className="gallery">
       <section className="gallery-top">
-        <h1>{fa(PORTFOLIO_TEMPLATES.length)} قالب سایت شخصی</h1>
+        <h1>{fa(SITE_TEMPLATES.length)} قالب سایت شخصی</h1>
         <p>رزومه‌تان را به یک سایت واقعی روی آدرس اختصاصی تبدیل کنید؛ با سئوی خودکار و نمایش درست روی موبایل. روی کارت‌ها بروید تا سایت را ببینید.</p>
       </section>
 
       <section className="site-grid">
-        {PORTFOLIO_TEMPLATES.map((t) => (
+        {SITE_TEMPLATES.map((t) => (
           <button key={t.id} type="button" className="g-card s-card" onClick={() => use(t)}>
             <div className="s-window">
               <div className="s-bar">

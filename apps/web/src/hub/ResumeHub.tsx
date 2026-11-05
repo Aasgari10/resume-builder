@@ -3,7 +3,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, NavLink, useLocation, useSearchParams } from "react-router-dom";
-import { PDF_TEMPLATES, PORTFOLIO_TEMPLATES } from "@rb/templates";
+import { PDF_TEMPLATES, SITE_TEMPLATES } from "@rb/templates";
 import { useAuth } from "../auth";
 import "./hub.css";
 import { Icon, type IconName } from "./Icons";
@@ -60,7 +60,7 @@ export function ResumeHub({ children }: { children: ReactNode }) {
           <NavLink to="/resume/sites" end>
             <Icon name="globe" />
             قالب‌های سایت
-            <span className="hub-count">{fa(PORTFOLIO_TEMPLATES.length)}</span>
+            <span className="hub-count">{fa(SITE_TEMPLATES.length)}</span>
           </NavLink>
           <NavLink to="/resume/mine" end>
             <Icon name="file" />

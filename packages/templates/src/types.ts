@@ -13,6 +13,8 @@ export type TemplateProps = {
   page?: string;
   /** Turns a page path into the href for this site (published sites live under a base path in development). */
   link?: (path: string) => string;
+  /** Editor preview with click-to-edit on: empty optional fields show a small "+ add" button. */
+  editing?: boolean;
 };
 
 /** Style tags used to filter the template gallery. */
