@@ -28,6 +28,7 @@ const templates = [
   { id: "studio-portfolio", name: "استودیو", kind: TemplateKind.PORTFOLIO, isPremium: true, price: 2_000_000, sortOrder: 2 },
   { id: "split-portfolio", name: "دوستونه", kind: TemplateKind.PORTFOLIO, isPremium: true, price: 2_000_000, sortOrder: 3 },
   { id: "bento-portfolio", name: "کارت‌ها", kind: TemplateKind.PORTFOLIO, isPremium: true, price: 2_000_000, sortOrder: 4 },
+  { id: "vitrine-portfolio", name: "ویترین", kind: TemplateKind.PORTFOLIO, isPremium: true, price: 2_000_000, sortOrder: 0 },
 ];
 
 async function main() {

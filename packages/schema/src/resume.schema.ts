@@ -167,6 +167,27 @@ function buildResumeSchemas(strict: boolean) {
       .default([]),
   });
 
+  /* ───────────── Website-only content ───────────── */
+
+  // Text and pictures that only multi-page website templates show (the PDF ignores them).
+  const galleryItem = z.object({
+    id,
+    title: z.string().max(100),
+    image: url(),
+    description: z.string().max(500).optional(),
+  });
+
+  const site = z.object({
+    tagline: z.string().max(200).optional(), // one or two lines under the name; the summary is used when empty
+    ctaPrimary: z.string().max(30).optional(), // hero button to the work
+    ctaSecondary: z.string().max(30).optional(), // hero button to contact
+    aboutTitle: z.string().max(120).optional(),
+    aboutText: z.string().max(4000).optional(),
+    aboutImage: optionalUrl,
+    aboutCaption: z.string().max(80).optional(),
+    gallery: z.array(galleryItem).max(40).default([]),
+  });
+
   /* ───────────── Full resume ───────────── */
 
   const resume = z.object({
@@ -180,6 +201,7 @@ function buildResumeSchemas(strict: boolean) {
     languages: z.array(language).max(10).default([]),
     certificates: z.array(certificate).max(30).default([]),
     customSections: z.array(customSection).max(5).default([]),
+    site: site.optional(),
   });
 
   return {
@@ -193,6 +215,8 @@ function buildResumeSchemas(strict: boolean) {
     language,
     certificate,
     customSection,
+    site,
+    galleryItem,
   };
 }
 
@@ -217,6 +241,7 @@ export const projectSchema = strictSchemas.project;
 export const languageSchema = strictSchemas.language;
 export const certificateSchema = strictSchemas.certificate;
 export const customSectionSchema = strictSchemas.customSection;
+export const siteContentSchema = draftSchemas.site;
 
 /* ───────────── Types ───────────── */
 
@@ -230,6 +255,8 @@ export type Project = z.infer<typeof projectSchema>;
 export type Language = z.infer<typeof languageSchema>;
 export type Certificate = z.infer<typeof certificateSchema>;
 export type CustomSection = z.infer<typeof customSectionSchema>;
+export type SiteContent = z.infer<typeof siteContentSchema>;
+export type GalleryItem = SiteContent["gallery"][number];
 
 // Sections that can be reordered or hidden via the theme.
 export const SECTION_KEYS = [

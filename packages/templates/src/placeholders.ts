@@ -37,6 +37,11 @@ export function withPlaceholders(data: ResumeData): ResumeData {
     projects: keep(data.projects, (x) => Boolean(x.title), sample.projects),
     languages: keep(data.languages, (x) => Boolean(x.name), sample.languages),
     certificates: keep(data.certificates, (x) => Boolean(x.title), sample.certificates),
+    site: {
+      ...sample.site,
+      ...Object.fromEntries(Object.entries(data.site ?? {}).filter(([, v]) => (typeof v === "string" ? v.trim() : v))),
+      gallery: keep(data.site?.gallery ?? [], (x) => Boolean(x.image.trim()), sample.site?.gallery ?? []),
+    },
     customSections: keep(data.customSections, (x) => Boolean(x.title && x.items.some((i) => i.title)), sample.customSections),
   };
 }

@@ -3,14 +3,15 @@
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
-import { PRIMARY_SWATCHES, applyHiddenFields, defaultTheme, themeSchema, type ResumeData, type Theme } from "@rb/schema";
-import { DEFAULT_PORTFOLIO_TEMPLATE_ID, PDF_TEMPLATES, getPdfTemplate, withPlaceholders } from "@rb/templates";
-import { ApiError, api } from "../api";
+import { applyHiddenFields, type ResumeData, type Theme } from "@rb/schema";
+import { PDF_TEMPLATES, getPdfTemplate, withPlaceholders } from "@rb/templates";
+import { ColorPicker } from "../components/ColorPicker";
 import { Scaled } from "../components/Scaled";
 import { BasicsInfoForm, LinksForm } from "../components/editor/BasicsForm";
 import { CertificatesForm } from "../components/editor/CertificatesForm";
 import { CustomSectionsForm } from "../components/editor/CustomSectionsForm";
 import { HiddenFieldsContext } from "../components/editor/Hideable";
+import { SAVE_LABELS, useResumeDoc } from "../components/editor/useResumeDoc";
 import { EducationForm } from "../components/editor/EducationForm";
 import { ExperienceForm } from "../components/editor/ExperienceForm";
 import { LanguagesForm } from "../components/editor/LanguagesForm";
@@ -19,7 +20,6 @@ import { SkillsForm } from "../components/editor/SkillsForm";
 import { Icon, type IconName } from "../hub/Icons";
 import "./pdf-editor.css";
 
-type SaveState = "idle" | "pending" | "saving" | "saved" | "error";
 type Setter = <K extends keyof ResumeData>(key: K) => (value: ResumeData[K]) => void;
 
 type Step = { key: string; label: string; icon: IconName; done: (d: ResumeData) => boolean; render: (d: ResumeData, set: Setter) => ReactNode };
@@ -61,16 +61,10 @@ const fa = (n: number) => n.toLocaleString("fa-IR");
 
 export function PdfEditor() {
   const { id } = useParams<{ id: string }>();
-  const [title, setTitle] = useState("");
-  const [data, setData] = useState<ResumeData | null>(null);
-  const [theme, setTheme] = useState<Theme | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [saveState, setSaveState] = useState<SaveState>("idle");
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const doc = useResumeDoc(id, (savedId) => `/resumes/${savedId}/pdf`);
+  const { isDraft, title, setTitle, data, setData, theme, setTheme, loadError, saveState, saveError, save } = doc;
   const [step, setStep] = useState(0);
   const [picker, setPicker] = useState(false);
-  const skipNextSave = useRef(false);
-  const saveSeq = useRef(0);
   const formTop = useRef<HTMLDivElement>(null);
 
   // What the preview shows: sample text where the user has not written yet, minus switched-off fields.
@@ -90,59 +84,12 @@ export function PdfEditor() {
     [theme],
   );
 
-  /* Load */
-  useEffect(() => {
-    if (!id) return;
-    api
-      .getResume(id)
-      .then(({ resume }) => {
-        skipNextSave.current = true;
-        setTitle(resume.title);
-        setData(resume.data);
-        const saved = themeSchema.safeParse(resume.portfolioTheme);
-        setTheme(saved.success ? saved.data : defaultTheme(DEFAULT_PORTFOLIO_TEMPLATE_ID, resume.data.locale));
-      })
-      .catch((e) => setLoadError(e instanceof ApiError ? e.message : "خطا در بارگذاری"));
-  }, [id]);
-
-  /* Autosave, 800 ms after the last change */
-  useEffect(() => {
-    if (!id || !data) return;
-    if (skipNextSave.current) {
-      skipNextSave.current = false;
-      return;
-    }
-    setSaveState("pending");
-    const timer = setTimeout(() => void save(), 800);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, title, theme]);
-
-  async function save(): Promise<boolean> {
-    if (!id || !data || !theme) return false;
-    const seq = ++saveSeq.current;
-    setSaveState("saving");
-    try {
-      await api.updateResume(id, { title: title.trim() || "بدون عنوان", data, portfolioTheme: theme });
-      if (seq === saveSeq.current) {
-        setSaveState("saved");
-        setSaveError(null);
-      }
-      return true;
-    } catch (e) {
-      if (seq === saveSeq.current) {
-        setSaveState("error");
-        setSaveError(e instanceof ApiError ? e.message : "خطای ناشناخته");
-      }
-      return false;
-    }
-  }
-
   // Opens the window first so popup blockers treat it as a direct user action.
   const download = async () => {
     const win = window.open("", "_blank");
-    await save();
-    const url = `/resumes/${id}/print`;
+    const savedId = await save();
+    if (!savedId) return win?.close();
+    const url = `/resumes/${savedId}/print`;
     if (win) win.location.href = url;
     else window.location.href = url;
   };
@@ -168,7 +115,7 @@ export function PdfEditor() {
         </Link>
         <input className="pe-title" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={80} aria-label="عنوان رزومه" />
         <span className={`pe-save ${saveState}`}>
-          {{ idle: "", pending: "تغییرات ذخیره نشده", saving: "در حال ذخیره…", saved: "✓ ذخیره شد", error: "⚠ خطا در ذخیره" }[saveState]}
+          {SAVE_LABELS[saveState]}
         </span>
         <div className="pe-actions">
           <span className="pe-ring" style={{ "--p": progress } as CSSProperties} title="میزان تکمیل رزومه">
@@ -182,13 +129,11 @@ export function PdfEditor() {
             <Icon name="download" />
             دریافت
           </button>
-          <button type="button" className="pe-btn" disabled title="به‌زودی">
-            <Icon name="scan" />
-            تحلیل
-          </button>
-          <Link to={`/resumes/${id}`} className="pe-btn ghost">
-            نسخه‌ی سایت
-          </Link>
+          {!isDraft && (
+            <Link to={`/resumes/${id}`} className="pe-btn ghost">
+              نسخه‌ی سایت
+            </Link>
+          )}
         </div>
       </header>
 
@@ -222,7 +167,7 @@ export function PdfEditor() {
               </button>
             )}
             <button type="button" className="pe-btn primary" disabled={saveState === "saving"} onClick={() => void save()}>
-              ذخیره‌ی تغییرات
+              {isDraft ? "ذخیره در رزومه‌های من" : "ذخیره‌ی تغییرات"}
             </button>
           </footer>
         </section>
@@ -284,19 +229,8 @@ function TemplatePicker({
       <div className="pe-modal-box" onClick={(e) => e.stopPropagation()}>
         <div className="pe-modal-head">
           <h2>انتخاب قالب</h2>
-          <div className="pe-colors" role="radiogroup" aria-label="رنگ اصلی">
-            {PRIMARY_SWATCHES.map((c) => (
-              <button
-                key={c.value}
-                type="button"
-                role="radio"
-                aria-checked={theme.colors.primary.toUpperCase() === c.value}
-                title={c.label}
-                aria-label={c.label}
-                style={{ background: c.value }}
-                onClick={() => onColor(c.value)}
-              />
-            ))}
+          <div className="pe-colors">
+            <ColorPicker value={theme.colors.primary} onChange={onColor} forPrint />
           </div>
           <button type="button" className="pe-close" onClick={onClose} aria-label="بستن">
             <Icon name="close" />

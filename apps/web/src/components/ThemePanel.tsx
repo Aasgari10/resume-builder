@@ -1,4 +1,5 @@
-import { PRIMARY_SWATCHES, type SectionKey, type Theme } from "@rb/schema";
+import type { SectionKey, Theme } from "@rb/schema";
+import { ColorPicker } from "./ColorPicker";
 
 const SECTION_LABELS: Record<SectionKey, string> = {
   experience: "سوابق کاری",
@@ -39,25 +40,11 @@ export function ThemePanel({ theme, onChange }: Props) {
 
       <div className="field">
         <span>رنگ اصلی</span>
-        <div className="color-swatches">
-          {PRIMARY_SWATCHES.map((c) => (
-            <button
-              key={c.value}
-              type="button"
-              className="color-dot"
-              title={c.label}
-              aria-label={c.label}
-              aria-pressed={theme.colors.primary.toUpperCase() === c.value}
-              style={{ background: c.value }}
-              onClick={() => set("colors", { ...theme.colors, primary: c.value })}
-            />
-          ))}
-        </div>
+        <ColorPicker value={theme.colors.primary} onChange={(primary) => set("colors", { ...theme.colors, primary })} />
         <small className="muted">فقط رنگ اصلی قالب عوض می‌شود؛ رنگ نوشته‌های روی آن خودکار خوانا می‌ماند.</small>
       </div>
 
       <div className="grid2">
-        <ColorField label="رنگ اصلی" value={theme.colors.primary} onChange={(v) => set("colors", { ...theme.colors, primary: v })} />
         <ColorField label="رنگ تأکید" value={theme.colors.accent} onChange={(v) => set("colors", { ...theme.colors, accent: v })} />
 
         <label className="field">

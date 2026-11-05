@@ -57,4 +57,13 @@ export const PH = {
     description: first(S.customSections.flatMap((x) => x.items), (x) => x.description),
     url: first(S.customSections.flatMap((x) => x.items), (x) => x.url),
   },
+  site: {
+    tagline: S.site?.tagline ?? "",
+    ctaPrimary: S.site?.ctaPrimary ?? "",
+    ctaSecondary: S.site?.ctaSecondary ?? "",
+    aboutTitle: S.site?.aboutTitle ?? "",
+    aboutText: S.site?.aboutText ?? "",
+    aboutCaption: S.site?.aboutCaption ?? "",
+    galleryTitle: S.site?.gallery[0]?.title ?? "",
+  },
 };

@@ -1,9 +1,18 @@
 // Live preview: the portfolio site, or the printable resume with a template picker.
 // The resume page is rendered at its real A4 width and scaled down to fit the pane.
 
-import { memo, useState } from "react";
+import { memo, useState, type MouseEvent } from "react";
 import { applyHiddenFields, type ResumeData, type Theme } from "@rb/schema";
-import { PDF_TEMPLATES, PORTFOLIO_TEMPLATES, getPdfTemplate, getTemplate, type TemplateDefinition } from "@rb/templates";
+import {
+  PDF_TEMPLATES,
+  PORTFOLIO_TEMPLATES,
+  getPdfTemplate,
+  getTemplate,
+  pageTitle,
+  resolvePage,
+  withPlaceholders,
+  type TemplateDefinition,
+} from "@rb/templates";
 import { Scaled } from "./Scaled";
 
 type Device = "desktop" | "mobile";
@@ -14,10 +23,24 @@ const MOBILE_WIDTH = 390;
 type Props = { data: ResumeData; theme: Theme; onThemeChange: (theme: Theme) => void; initialMode?: Mode };
 
 export function Preview({ data: raw, theme, onThemeChange, initialMode = "site" }: Props) {
-  const data = applyHiddenFields(raw, theme.hiddenFields);
+  // Sample text fills what is still empty, as in the resume editor; publishing uses only real content.
+  const data = applyHiddenFields(withPlaceholders(raw), theme.hiddenFields);
   const [mode, setMode] = useState<Mode>(initialMode);
   const [device, setDevice] = useState<Device>("desktop");
+  const [requestedPage, setPage] = useState("/");
   const site = getTemplate(theme.templateId);
+  const pages = site.pages?.(data) ?? ["/"];
+  const page = resolvePage(site, data, requestedPage) ?? "/";
+
+  // Links between pages of a multi-page site switch the preview instead of leaving the editor.
+  const followPageLink = (e: MouseEvent) => {
+    const a = (e.target as Element).closest("a");
+    if (!a) return;
+    e.preventDefault();
+    const target = a.getAttribute("data-page");
+    if (target) setPage(target);
+    else if (a.getAttribute("href")?.startsWith("#")) document.getElementById(a.getAttribute("href")!.slice(1))?.scrollIntoView({ behavior: "smooth" });
+  };
   const pdf = getPdfTemplate(theme.pdfTemplateId);
 
   const pickSite = (id: string) => onThemeChange({ ...theme, templateId: id });
@@ -39,6 +62,15 @@ export function Preview({ data: raw, theme, onThemeChange, initialMode = "site" 
           </button>
         </div>
         <span className="muted small grow">قالب {mode === "site" ? site.name : pdf.name}</span>
+        {mode === "site" && pages.length > 1 && (
+          <select className="preview-page" value={page} onChange={(e) => setPage(e.target.value)} aria-label="صفحه">
+            {pages.map((p) => (
+              <option key={p} value={p}>
+                {p === "/" ? "صفحه‌ی اصلی" : pageTitle(data, p) || p}
+              </option>
+            ))}
+          </select>
+        )}
         {mode === "site" && (
           <div className="segmented" role="group" aria-label="اندازه‌ی نمایش">
             <button aria-pressed={device === "desktop"} onClick={() => setDevice("desktop")}>
@@ -66,8 +98,8 @@ export function Preview({ data: raw, theme, onThemeChange, initialMode = "site" 
           ))}
         </div>
         <div className="preview-viewport">
-          <div className="preview-frame" style={{ width: device === "mobile" ? MOBILE_WIDTH : "100%" }}>
-            <site.component data={data} theme={theme} />
+          <div className="preview-frame" style={{ width: device === "mobile" ? MOBILE_WIDTH : "100%" }} onClick={followPageLink}>
+            <site.component data={data} theme={theme} page={page} />
           </div>
         </div>
         </>
