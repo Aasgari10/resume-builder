@@ -8,7 +8,7 @@
 import type { ReactNode } from "react";
 import type { Project, ResumeData } from "@rb/schema";
 import { Avatar, WebPage, webCtx, type Ctx } from "./kit";
-import { formatNumber, formatPeriod, formatYearMonth, safeUrl } from "../format";
+import { formatNumber, formatPeriod, formatYearMonth, linkLabel, safeUrl } from "../format";
 import { displayUrl } from "../kit";
 import type { TemplateProps } from "../types";
 
@@ -75,7 +75,7 @@ const TEXT = {
 /* ───────────── Click-to-edit markers ───────────── */
 
 // The editor preview reads these attributes to edit a value in place; on a published site they are inert.
-type EditKind = "text" | "multiline" | "image" | "url" | "period" | "month" | "lines" | "tags";
+type EditKind = "text" | "multiline" | "image" | "url" | "period" | "month" | "lines" | "tags" | "newlink";
 type Edit = { "data-edit": string; "data-edit-kind": EditKind; "data-edit-label": string };
 const ed = (path: string, kind: EditKind, label: string): Edit => ({ "data-edit": path, "data-edit-kind": kind, "data-edit-label": label });
 const item = (list: string, id: string) => `${list}[${id}]`;
@@ -142,17 +142,17 @@ function Header({ ctx, link, editing, page, full }: View & { page: string; full:
   const tagline = data.site?.tagline?.trim() || b.jobTitle;
   const menu = vitrinePages(data).filter((p) => MENU[p]);
   const active = page.startsWith("/projects/") ? "/" : page;
-  const email = b.email?.trim();
+  const contact = contactTarget(data);
 
   return (
     <header className={`vt-header${full ? "" : " compact"}`}>
       <div className="vt-bar">
+        <div className="vt-me">
         <PageLink to="/" link={link} className="vt-photo">
           <span {...ed("basics.avatarUrl", "image", "عکس پروفایل")}>
             <Avatar ctx={ctx} />
           </span>
         </PageLink>
-        {/* Shown beside the photo on narrow screens, where the menu moves to its own row. */}
         <div className="vt-bar-id">
           <Opt value={b.jobTitle} editing={editing} edit={ed("basics.jobTitle", "text", "عنوان شغلی")}>
             <b {...ed("basics.jobTitle", "text", "عنوان شغلی")}>{b.jobTitle}</b>
@@ -160,6 +160,7 @@ function Header({ ctx, link, editing, page, full }: View & { page: string; full:
           <Opt value={b.location} editing={editing} edit={ed("basics.location", "text", "شهر")}>
             <span {...ed("basics.location", "text", "شهر")}>{b.location}</span>
           </Opt>
+        </div>
         </div>
         {menu.length > 1 && (
           <nav className="vt-nav">
@@ -184,24 +185,37 @@ function Header({ ctx, link, editing, page, full }: View & { page: string; full:
           <a className="vt-btn primary" href="#work" {...ed("site.ctaPrimary", "text", "متن دکمه‌ی اول")}>
             {data.site?.ctaPrimary?.trim() || t.work}
           </a>
-          {email || editing ? (
-            <a className="vt-btn" href={email ? `mailto:${email}` : "#"} {...ed("site.ctaSecondary", "text", "متن دکمه‌ی تماس")}>
-              {data.site?.ctaSecondary?.trim() || t.contact}
-            </a>
-          ) : (
-            <PageLink to="/about" link={link} className="vt-btn">
+          {contact.page ? (
+            <PageLink to={contact.page} link={link} className="vt-btn" {...ed("site.ctaSecondary", "text", "متن دکمه‌ی تماس")}>
               {data.site?.ctaSecondary?.trim() || t.contact}
             </PageLink>
-          )}
-          {editing && (
-            <span className="vt-ghost" {...ed("basics.email", "text", "ایمیل برای دکمه‌ی تماس")}>
-              ✉ {email || "ایمیل"}
-            </span>
+          ) : (
+            <a className="vt-btn" href={contact.href} target={contact.href?.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer" {...ed("site.ctaSecondary", "text", "متن دکمه‌ی تماس")}>
+              {data.site?.ctaSecondary?.trim() || t.contact}
+            </a>
           )}
         </div>
       )}
     </header>
   );
+}
+
+/**
+ * Where the hero "Let's chat" button leads: the channel the user chose in the settings
+ * (email, WhatsApp, Telegram or phone), falling back to email and then the about page
+ * when that channel is not filled in.
+ */
+function contactTarget(data: ResumeData): { href?: string; page?: string } {
+  const b = data.basics;
+  const email = b.email?.trim();
+  const phone = b.phone?.trim();
+  const linkOf = (type: string) => safeUrl(b.links.find((l) => l.type === type)?.url);
+  const via = data.site?.contactVia ?? "email";
+  if (via === "whatsapp" && linkOf("whatsapp")) return { href: linkOf("whatsapp")! };
+  if (via === "telegram" && linkOf("telegram")) return { href: linkOf("telegram")! };
+  if (via === "phone" && phone) return { href: `tel:${phone.replace(/[^\d+]/g, "")}` };
+  if (via !== "about" && email) return { href: `mailto:${email}` };
+  return { page: "/about" };
 }
 
 /** Picture with a theme-colored fallback, so a card never looks broken. */
@@ -311,17 +325,81 @@ function About({ ctx, link, editing }: View) {
             ))}
           </ul>
         )}
-        {email ? (
-          <a className="vt-btn" href={`mailto:${email}`} {...ed("site.ctaSecondary", "text", "متن دکمه‌ی تماس")}>
-            {site?.ctaSecondary?.trim() || t.contact}
-          </a>
-        ) : (
+        <Contacts ctx={ctx} editing={editing} />
+        {!email && !editing && ctx.data.basics.links.length === 0 && (
           <PageLink to="/" link={link} className="vt-btn">
             {t.back}
           </PageLink>
         )}
       </div>
     </section>
+  );
+}
+
+/* ───────────── Contact buttons ───────────── */
+
+// Simple line icons (not brand logos) so every button reads at a glance in both themes.
+const ICONS: Record<string, string> = {
+  email: "M4 6h16v12H4z M4 7l8 6 8-6",
+  phone: "M6 3h4l2 5-3 2a11 11 0 0 0 5 5l2-3 5 2v4a2 2 0 0 1-2 2A17 17 0 0 1 4 5a2 2 0 0 1 2-2z",
+  whatsapp: "M4 20l1.5-4.5A8 8 0 1 1 8.5 18.5z M9 9.5c.5 2.5 2.5 4.5 5 5l1.5-1.5-2-1-1 1a5 5 0 0 1-2-2l1-1-1-2z",
+  telegram: "M21 4L3 11l6 2 2 6 3-4 5 4z M9 13l8-6",
+  instagram: "M5 5h14v14H5z M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z M16.5 7.5h.01",
+  github: "M9 18l-6-6 6-6 M15 6l6 6-6 6",
+  linkedin: "M4 8h16v12H4z M9 8V5h6v3",
+  behance: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z M3 12h18 M12 3c3 3 3 15 0 18",
+  dribbble: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z M5 7c4 3 10 4 15 3 M8 20c1-6 5-10 12-10 M7 4c3 4 6 10 7 17",
+  website: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z M3 12h18 M12 3a14 14 0 0 1 0 18 M12 3a14 14 0 0 0 0 18",
+  other: "M10 14a4 4 0 0 0 6 0l3-3a4 4 0 0 0-6-6l-1 1 M14 10a4 4 0 0 0-6 0l-3 3a4 4 0 0 0 6 6l1-1",
+};
+
+function Icon({ name }: { name: string }) {
+  return (
+    <svg className="vt-ico" viewBox="0 0 24 24" aria-hidden="true">
+      <path d={ICONS[name] ?? ICONS.other} />
+    </svg>
+  );
+}
+
+const CONTACT_TEXT = {
+  fa: { email: "ایمیل", phone: "تماس تلفنی", add: "راه ارتباطی" },
+  en: { email: "Email", phone: "Call", add: "contact" },
+};
+
+/** One button per way to reach the person: email, phone and every link (WhatsApp, Telegram, GitHub, …). */
+function Contacts({ ctx, editing }: { ctx: Ctx; editing: boolean }) {
+  const { basics, locale } = ctx.data;
+  const t = CONTACT_TEXT[locale];
+  const email = basics.email?.trim();
+  const phone = basics.phone?.trim();
+  const links = basics.links.filter((l) => safeUrl(l.url));
+  if (!email && !phone && links.length === 0 && !editing) return null;
+  return (
+    <div className="vt-contacts">
+      {email && (
+        <a className="vt-btn" href={`mailto:${email}`} {...ed("basics.email", "text", "ایمیل")}>
+          <Icon name="email" />
+          {t.email}
+        </a>
+      )}
+      {phone && (
+        <a className="vt-btn" href={`tel:${phone.replace(/[^\d+]/g, "")}`} {...ed("basics.phone", "text", "شماره‌ی تلفن")}>
+          <Icon name="phone" />
+          {t.phone}
+        </a>
+      )}
+      {links.map((l) => (
+        <a key={l.id} className="vt-btn" href={safeUrl(l.url)} target="_blank" rel="noopener noreferrer" {...ed(`basics.links[${l.id}].url`, "url", linkLabel(l, locale))}>
+          <Icon name={l.type} />
+          {linkLabel(l, locale)}
+        </a>
+      ))}
+      {editing && (
+        <span className="vt-ghost" {...ed("basics.links", "newlink", "افزودن راه ارتباطی")}>
+          + {t.add}
+        </span>
+      )}
+    </div>
   );
 }
 
@@ -538,15 +616,15 @@ const css = /* css */ `
 .vt-muted { color: var(--color-muted); }
 
 /* Header */
-.vt-bar { display: flex; align-items: center; gap: 16px; min-height: 52px; }
+.vt-bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px; min-height: 52px; }
+.vt-me { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .vt-photo { flex: none; }
-.vt-photo .k-avatar { width: 64px; height: 64px; }
-.vt-nav { display: flex; gap: 4px; margin-inline: auto; padding: 5px; border-radius: 999px; background: var(--vt-soft); box-shadow: inset 0 0 0 1px var(--vt-line); overflow-x: auto; scrollbar-width: none; }
+/* Portrait (3:4) profile photo, like an ID picture. */
+.vt-photo .k-avatar { width: 60px; height: 80px; border-radius: calc(var(--radius) + 6px); }
+.vt-nav { display: flex; gap: 4px; justify-self: center; padding: 5px; border-radius: 999px; background: var(--vt-soft); box-shadow: inset 0 0 0 1px var(--vt-line); overflow-x: auto; scrollbar-width: none; }
 .vt-nav a { flex: none; padding: 7px 16px; border-radius: 999px; color: var(--color-muted); font-size: .94em; font-weight: 600; transition: background .2s, color .2s; }
 .vt-nav a:hover { color: var(--vt-ink); }
 .vt-nav a[aria-current="page"] { background: var(--color-bg); color: var(--vt-ink); box-shadow: 0 1px 3px rgb(0 0 0 / .08); }
-/* Keeps the menu visually centred while the photo sits at the start. */
-.vt-bar::after { content: ""; width: 64px; flex: none; }
 .vt-name { margin-top: 20px !important; font-family: var(--font-heading); font-size: clamp(2.1em, 5.5cqi, 3.3em); font-weight: 700; line-height: 1.25; letter-spacing: -.01em; }
 .vt-tagline { max-width: 34em; margin-top: 10px !important; color: var(--color-muted); font-size: 1.1em; line-height: 1.85; }
 .vt-header.compact .vt-name { font-size: clamp(1.6em, 4cqi, 2.2em); margin-top: 14px !important; }
@@ -556,7 +634,7 @@ const css = /* css */ `
 .vt-btn:hover { transform: translateY(-2px); }
 .vt-btn.primary { background: var(--color-primary); color: var(--color-on-primary); box-shadow: none; }
 .vt-main { margin-top: clamp(36px, 6cqi, 64px); padding-bottom: clamp(40px, 7cqi, 90px); }
-.vt-bar-id { display: none; min-width: 0; line-height: 1.6; }
+.vt-bar-id { min-width: 0; line-height: 1.6; }
 .vt-bar-id b { display: block; font-size: .95em; }
 .vt-bar-id span { display: block; color: var(--color-muted); font-size: .85em; }
 .vt-ghost { display: inline-flex; align-items: center; margin: 2px 4px; padding: 2px 10px; border: 1px dashed currentColor; border-radius: 999px; color: var(--color-muted); font-size: .82em; font-weight: 500; opacity: .75; }
@@ -592,6 +670,8 @@ const css = /* css */ `
 .vt-about-text h2 { display: grid; gap: 6px; font-family: var(--font-heading); font-size: 1.7em; font-weight: 700; line-height: 1.45; margin-bottom: 10px !important; }
 .vt-about-text h2 span { color: var(--color-muted); font-weight: 500; }
 .vt-about-body { display: grid; gap: 16px; }
+.vt-contacts { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+.vt-ico { width: 17px; height: 17px; margin-inline-end: 7px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .vt-about-text p { color: var(--color-muted); line-height: 2; }
 
 /* Resume */
@@ -616,10 +696,8 @@ const css = /* css */ `
 
 
 @container (max-width: 760px) {
-  .vt-bar { flex-wrap: wrap; }
-  .vt-bar::after { display: none; }
-  .vt-bar-id { display: block; flex: 1; }
-  .vt-nav { order: 3; width: 100%; margin-inline: 0; }
+  .vt-bar { grid-template-columns: 1fr; }
+  .vt-nav { justify-self: stretch; }
   .vt-work { grid-template-columns: 1fr; gap: 32px; }
   .vt-about { grid-template-columns: 1fr; }
 }

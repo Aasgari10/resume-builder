@@ -19,6 +19,17 @@ const PAGES: { path: string; label: string }[] = [
   { path: "/resume", label: "رزومه" },
 ];
 
+/** Hint when the chosen contact channel is not filled in yet (the button then falls back to email). */
+function contactMissing(data: ResumeData): string | null {
+  const via = data.site?.contactVia ?? "email";
+  const has = (type: string) => data.basics.links.some((l) => l.type === type && l.url.trim());
+  if (via === "whatsapp" && !has("whatsapp")) return "هنوز واتس‌اپی اضافه نشده؛ از «+ راه ارتباطی» در صفحه‌ی درباره‌ی من اضافه کنید.";
+  if (via === "telegram" && !has("telegram")) return "هنوز تلگرامی اضافه نشده؛ از «+ راه ارتباطی» در صفحه‌ی درباره‌ی من اضافه کنید.";
+  if (via === "phone" && !data.basics.phone?.trim()) return "شماره‌ی تلفن وارد نشده است.";
+  if (via === "email" && !data.basics.email?.trim()) return "ایمیل وارد نشده است.";
+  return null;
+}
+
 /** Current month as YYYY-MM, the start date of newly added items. */
 const thisMonth = () => new Date().toISOString().slice(0, 7);
 
@@ -171,6 +182,34 @@ function Settings({ data, theme, multiPage, onData, onTheme }: Pick<Props, "data
           onChange={(dateFormat) => onTheme({ ...theme, display: { ...theme.display, dateFormat } })}
         />
       </section>
+
+      {multiPage && (
+        <section>
+          <h3>دکمه‌ی «گفت‌وگو کنیم» به کجا برود؟</h3>
+          <div className="sp-add">
+            {(
+              [
+                ["email", "ایمیل"],
+                ["whatsapp", "واتس‌اپ"],
+                ["telegram", "تلگرام"],
+                ["phone", "تماس تلفنی"],
+                ["about", "صفحه‌ی درباره‌ی من"],
+              ] as const
+            ).map(([via, label]) => (
+              <button
+                key={via}
+                type="button"
+                className="btn ghost small"
+                aria-pressed={(site.contactVia ?? "email") === via}
+                onClick={() => onData({ ...data, site: { ...site, contactVia: via } })}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {contactMissing(data) && <small className="cp-hint">{contactMissing(data)}</small>}
+        </section>
+      )}
 
       {multiPage && (
         <section>

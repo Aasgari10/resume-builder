@@ -1068,3 +1068,7 @@ select {
 .ws-edit.on i { background: #5b4bea; }
 .ws-edit.on i::after { inset-inline-start: 16px; }
 .ws-edit:focus-visible { outline: 2px solid #5b4bea; outline-offset: 2px; }
+.ep-types { display: flex; flex-wrap: wrap; gap: 6px; }
+.ep-types button { padding: 4px 10px; border: 1px solid var(--border); border-radius: 999px; background: #fff; font: inherit; font-size: 0.82rem; cursor: pointer; }
+.ep-types button[aria-checked="true"] { border-color: #5b4bea; background: #f1effe; color: #4535d6; font-weight: 700; }
+.sp .btn.ghost[aria-pressed="true"] { border-color: #5b4bea; background: #f1effe; color: #4535d6; }

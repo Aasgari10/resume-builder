@@ -41,17 +41,6 @@ export function ProjectsForm({ value, onChange }: { value: Project[]; onChange: 
                   max={500}
                 />
               </Hideable>
-              <Hideable k="projects.images">
-                <Field
-                  label="لینک تصویر"
-                  type="url"
-                  ltr
-                  placeholder="https://..."
-                  value={p.images[0] ?? ""}
-                  onChange={(image) => set({ images: image ? [image, ...p.images.slice(1)] : p.images.slice(1) })}
-                  max={500}
-                />
-              </Hideable>
             </div>
             <Hideable k="projects.description">
               <TextArea label="توضیحات" placeholder={PH.projects.description} max={2000} value={p.description ?? ""} onChange={(description) => set({ description })} />

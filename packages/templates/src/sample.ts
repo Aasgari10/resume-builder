@@ -53,7 +53,7 @@ const SAMPLE_FA: ResumeData = {
   education: [
     {
       id: "ed1",
-      institution: "دانشگاه صنعتی شریف",
+      institution: "دانشگاه صنعتی کوهسار",
       degree: "کارشناسی",
       field: "مهندسی کامپیوتر",
       period: { start: "2015-09", end: "2019-07", current: false },
@@ -79,7 +79,7 @@ const SAMPLE_FA: ResumeData = {
       description: "داشبورد مدیریت سفارش‌ها و موجودی با گزارش‌های لحظه‌ای.",
       technologies: ["React", "TypeScript", "TanStack Query"],
       url: "https://example.com/dashboard",
-      images: [img("project-dashboard"), img("project-dashboard-2")],
+      images: [img("project-dashboard")],
       period: { start: "2025-02", current: false, end: "2025-09" },
     },
     {
@@ -144,11 +144,11 @@ const SAMPLE_FA: ResumeData = {
     aboutImage: img("about"),
     aboutCaption: "یک روز آفتابی در تهران",
     gallery: [
-      { id: "g1", title: "گواهی پایان دوره‌ی ری‌اکت", image: img("certificate-1"), description: "دوره‌ی ۱۲۰ ساعته‌ی آموزشگاه فنی، ۱۴۰۰" },
-      { id: "g2", title: "مدرک کارشناسی", image: img("certificate-2"), description: "دانشگاه صنعتی شریف، رشته‌ی مهندسی کامپیوتر" },
-      { id: "g3", title: "تقدیرنامه‌ی هکاتون", image: img("certificate-3"), description: "رتبه‌ی اول هکاتون فناوری تهران" },
-      { id: "g4", title: "گواهی زبان انگلیسی", image: img("certificate-4"), description: "سطح پیشرفته، مؤسسه‌ی زبان" },
-      { id: "g5", title: "گواهی طراحی رابط کاربری", image: img("certificate-5"), description: "کارگاه ۴۰ ساعته‌ی طراحی محصول" },
+      { id: "g1", title: "گواهی پایان دوره‌ی ری‌اکت", image: img("certificate-1"), description: "آموزشگاه فنی و حرفه‌ای آزاد مهرگان، ۱۲۰ ساعت" },
+      { id: "g2", title: "مدرک کارشناسی", image: img("certificate-2"), description: "دانشگاه صنعتی کوهسار، مهندسی کامپیوتر" },
+      { id: "g3", title: "تقدیرنامه‌ی هکاتون", image: img("certificate-3"), description: "انجمن نوآوران فناوری پارسه، رتبه‌ی نخست" },
+      { id: "g4", title: "گواهی زبان انگلیسی", image: img("certificate-4"), description: "مؤسسه‌ی زبان‌های خارجی افق نو، سطح پیشرفته" },
+      { id: "g5", title: "گواهی طراحی رابط کاربری", image: img("certificate-5"), description: "کارگاه طراحی محصول «طرح نو»، ۴۰ ساعت" },
       { id: "g6", title: "تقدیرنامه‌ی همکاری", image: img("certificate-6"), description: "از طرف مدیرعامل شرکت فناوری نمونه" },
     ],
   },

@@ -336,19 +336,11 @@ export function Section({ section, ctx, variant }: { section: SectionConfig; ctx
         <Block title={title(labels.sections.projects)} icon="projects" variant={variant}>
           {items.map((p) => {
             const links = [safeUrl(p.url), safeUrl(p.repoUrl)].filter((u): u is string => Boolean(u));
-            const images = p.images.map((u) => safeUrl(u)).filter((u): u is string => Boolean(u));
             return (
               <Item key={p.id} title={p.title} sub={p.role} date={p.period ? period(p.period) : undefined}>
                 {p.description && <p className="k-desc">{p.description}</p>}
                 {p.technologies.length > 0 && <p className="k-meta">{p.technologies.join("، ")}</p>}
                 {links.length > 0 && <LinkLine urls={links} />}
-                {images.length > 0 && (
-                  <div className="k-shots">
-                    {images.slice(0, 4).map((src) => (
-                      <img key={src} src={src} alt="" />
-                    ))}
-                  </div>
-                )}
               </Item>
             );
           })}

@@ -6,6 +6,7 @@ import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { applyHiddenFields, type ResumeData, type Theme } from "@rb/schema";
 import { SITE_TEMPLATES, getTemplate, pageTitle, resolvePage, withPlaceholders } from "@rb/templates";
+import { newId } from "./editor/list";
 import { EditPopover, type EditTarget } from "./site-edit/EditPopover";
 import { SitePanel, type PanelTab } from "./site-edit/SitePanel";
 import { getAt, isItemPath, removeItem, setAt } from "./site-edit/paths";
@@ -186,6 +187,13 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
             shown={getAt(shown, target.path)}
             canRemove={isItemPath(target.path)}
             onSave={(value) => {
+              if (target.kind === "newlink") {
+                // A new way to be reached is added to the user's own links (sample links are replaced).
+                const link = value as { type: ResumeData["basics"]["links"][number]["type"]; url: string };
+                onDataChange({ ...raw, basics: { ...raw.basics, links: [...raw.basics.links, { id: newId(), ...link }] } });
+                setTarget(null);
+                return;
+              }
               // An emptied extra picture is removed rather than kept as an empty slot.
               const drop = value === "" && target.kind === "image" && /\.\d+$/.test(target.path);
               onDataChange(setAt(raw, shown, target.path, drop ? undefined : value));

@@ -15,7 +15,7 @@ const YEAR_MONTH_OR_EMPTY = /^(\d{4}-(0[1-9]|1[0-2]))?$/;
 /** Sample pictures shipped with the app and served by the API (see SAMPLE_ASSETS_PATH in the API). */
 export const SAMPLE_ASSETS_PATH = "/_assets/samples/";
 /** Bumped when the pictures change, so browsers fetch the new files instead of cached ones. */
-export const SAMPLE_ASSETS_VERSION = 3;
+export const SAMPLE_ASSETS_VERSION = 4;
 export const isSampleAsset = (v: string) => /^\/_assets\/samples\/[a-z0-9-]+\.jpg(\?v=\d+)?$/.test(v);
 
 function buildResumeSchemas(strict: boolean) {
@@ -65,6 +65,7 @@ function buildResumeSchemas(strict: boolean) {
       "github",
       "linkedin",
       "telegram",
+      "whatsapp",
       "instagram",
       "behance",
       "dribbble",
@@ -186,6 +187,7 @@ function buildResumeSchemas(strict: boolean) {
     tagline: z.string().max(200).optional(), // one or two lines under the name; the summary is used when empty
     ctaPrimary: z.string().max(30).optional(), // hero button to the work
     ctaSecondary: z.string().max(30).optional(), // hero button to contact
+    contactVia: z.enum(["email", "whatsapp", "telegram", "phone", "about"]).optional(), // where that button leads
     aboutTitle: z.string().max(120).optional(),
     aboutText: z.string().max(4000).optional(),
     aboutImage: optionalUrl,

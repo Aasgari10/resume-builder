@@ -1,5 +1,6 @@
 /** @jsxRuntime automatic @jsxImportSource react */
-// Every field the editor offers must have a place in every printable template, and a field
+// Every field the PDF editor offers must have a place in every printable template (project
+// pictures are website-only and deliberately absent from PDFs), and a field
 // the user switched off must disappear. Each field gets a unique marker that is searched for.
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -85,7 +86,6 @@ const MARKERS: Partial<Record<(typeof HIDEABLE_FIELDS)[number], string>> = {
   "projects.role": "MkRole",
   "projects.url": "mk-projurl.example",
   "projects.repoUrl": "mk-repourl.example",
-  "projects.images": "mk-image.example",
   "projects.description": "MkProjDescription",
   "projects.technologies": "MkTech",
   "certificates.issuer": "MkIssuer",

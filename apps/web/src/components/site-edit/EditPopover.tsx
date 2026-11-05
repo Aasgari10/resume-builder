@@ -6,7 +6,39 @@ import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as Rea
 import { ApiError } from "../../api";
 import { uploadPicture } from "./uploadImage";
 
-export type EditKind = "text" | "multiline" | "image" | "url" | "period" | "month" | "lines" | "tags";
+export type EditKind = "text" | "multiline" | "image" | "url" | "period" | "month" | "lines" | "tags" | "newlink";
+
+/** Ways to be reached that can be added from the page, in menu order. */
+const LINK_TYPES: { value: string; label: string; hint: string }[] = [
+  { value: "whatsapp", label: "واتس‌اپ", hint: "شماره، مثلاً ۰۹۱۲۰۰۰۰۰۰۰" },
+  { value: "telegram", label: "تلگرام", hint: "نام کاربری، مثلاً ‎@sara" },
+  { value: "instagram", label: "اینستاگرام", hint: "نام کاربری، مثلاً ‎@sara" },
+  { value: "github", label: "گیت‌هاب", hint: "https://github.com/..." },
+  { value: "linkedin", label: "لینکدین", hint: "https://linkedin.com/in/..." },
+  { value: "behance", label: "بیهنس", hint: "https://behance.net/..." },
+  { value: "dribbble", label: "دریبل", hint: "https://dribbble.com/..." },
+  { value: "website", label: "وب‌سایت", hint: "https://..." },
+  { value: "other", label: "لینک دیگر", hint: "https://..." },
+];
+
+const toLatinDigits = (v: string) => v.replace(/[۰-۹]/g, (d) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d))).replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)));
+
+/** Turns what people usually type (a phone number, @username, a bare domain) into a full link. */
+export function normalizeLink(type: string, raw: string): string | null {
+  const v = toLatinDigits(raw.trim());
+  if (!v) return null;
+  if (/^https?:\/\//i.test(v)) return v;
+  if (type === "whatsapp") {
+    let d = v.replace(/\D/g, "");
+    if (d.startsWith("00")) d = d.slice(2);
+    if (d.startsWith("0")) d = "98" + d.slice(1);
+    return d.length >= 10 ? `https://wa.me/${d}` : null;
+  }
+  const user = v.replace(/^@/, "");
+  if (type === "telegram" && /^\w{4,}$/.test(user)) return `https://t.me/${user}`;
+  if (type === "instagram" && /^[\w.]{2,}$/.test(user)) return `https://instagram.com/${user}`;
+  return /^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(v) ? `https://${v}` : null;
+}
 
 export type EditTarget = {
   path: string;
@@ -40,6 +72,7 @@ export function EditPopover({ target, value, shown, canRemove, onSave, onRemove,
   const [text, setText] = useState(kind === "tags" && Array.isArray(value) ? value.join("، ") : asText(value));
   const initialPeriod = (value ?? shown) as Period | undefined;
   const [period, setPeriod] = useState<Period>({ start: initialPeriod?.start ?? "", end: initialPeriod?.end ?? "", current: initialPeriod?.current ?? false });
+  const [linkType, setLinkType] = useState(LINK_TYPES[0]!.value);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const box = useRef<HTMLDivElement>(null);
@@ -88,7 +121,14 @@ export function EditPopover({ target, value, shown, canRemove, onSave, onRemove,
     if (kind === "month") return onSave(text || undefined);
     if (kind === "lines") return onSave(text.split("\n").map((l) => l.trim()).filter(Boolean).slice(0, 10));
     if (kind === "tags") return onSave([...new Set(text.split(/[،,\n]/).map((t) => t.trim()).filter(Boolean))].slice(0, 20));
-    if (kind === "url" && text.trim() && !/^https?:\/\//i.test(text.trim())) return setError("لینک باید با http:// یا https:// شروع شود.");
+    if (kind === "newlink") {
+      const url = normalizeLink(linkType, text);
+      return url ? onSave({ type: linkType, url }) : setError("آدرس یا شماره را کامل وارد کنید.");
+    }
+    if (kind === "url" && text.trim()) {
+      const url = normalizeLink("website", text);
+      return url ? onSave(url) : setError("لینک کامل نیست؛ مثلاً https://example.com");
+    }
     onSave(text.trim());
   }
 
@@ -151,6 +191,19 @@ export function EditPopover({ target, value, shown, canRemove, onSave, onRemove,
 
       {kind === "month" && <input type="month" dir="ltr" value={text} onChange={(e) => setText(e.target.value)} />}
 
+      {kind === "newlink" && (
+        <>
+          <div className="ep-types" role="radiogroup" aria-label="نوع">
+            {LINK_TYPES.map((t) => (
+              <button key={t.value} type="button" role="radio" aria-checked={linkType === t.value} onClick={() => setLinkType(t.value)}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+          <input autoFocus dir="ltr" className="ltr" value={text} placeholder={LINK_TYPES.find((t) => t.value === linkType)!.hint} onChange={(e) => setText(e.target.value)} onKeyDown={onEnter} />
+        </>
+      )}
+
       {kind === "period" && (
         <div className="ep-period">
           <label className="field">
@@ -170,7 +223,7 @@ export function EditPopover({ target, value, shown, canRemove, onSave, onRemove,
 
       {kind !== "image" && (
         <>
-          {value === undefined && hint && <small className="muted">متن کم‌رنگ نمونه است؛ تا چیزی ننویسید، در سایت منتشرشده نمی‌آید.</small>}
+          {value === undefined && hint && kind !== "newlink" && <small className="muted">متن کم‌رنگ نمونه است؛ تا چیزی ننویسید، در سایت منتشرشده نمی‌آید.</small>}
           <div className="ep-actions">
             <button type="button" className="btn" onClick={save}>
               ثبت
