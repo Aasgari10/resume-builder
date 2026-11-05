@@ -79,6 +79,7 @@ export function TextArea({
   rows = 3,
   max,
   hint,
+  placeholder,
 }: {
   label: string;
   value: string;
@@ -86,11 +87,12 @@ export function TextArea({
   rows?: number;
   max?: number;
   hint?: string;
+  placeholder?: string;
 }) {
   return (
     <label className="field">
       <span>{label}</span>
-      <textarea rows={rows} maxLength={max} value={value} onChange={(e) => onChange(e.target.value)} />
+      <textarea rows={rows} maxLength={max} value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
       {hint && <small className="muted">{hint}</small>}
     </label>
   );

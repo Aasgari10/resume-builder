@@ -1,5 +1,6 @@
 import type { Experience } from "@rb/schema";
 import { Empty, Field, ItemControls, PeriodFields, SectionCard, TextArea } from "./fields";
+import { PH } from "./samples";
 import { Hideable } from "./Hideable";
 import { LIMITS, move, newId, removeAt, replaceAt } from "./list";
 
@@ -15,20 +16,21 @@ export function ExperienceForm({ value, onChange }: { value: Experience[]; onCha
         return (
           <div key={x.id} className="sub-card stack">
             <div className="grid2">
-              <Field label="سمت *" value={x.position} onChange={(position) => set({ position })} max={100} />
-              <Field label="شرکت *" value={x.company} onChange={(company) => set({ company })} max={100} />
+              <Field label="سمت *" placeholder={PH.experience.position} value={x.position} onChange={(position) => set({ position })} max={100} />
+              <Field label="شرکت *" placeholder={PH.experience.company} value={x.company} onChange={(company) => set({ company })} max={100} />
               <Hideable k="experience.location">
-                <Field label="محل" value={x.location ?? ""} onChange={(location) => set({ location })} max={100} />
+                <Field label="محل" placeholder={PH.experience.location} value={x.location ?? ""} onChange={(location) => set({ location })} max={100} />
               </Hideable>
             </div>
             <PeriodFields value={x.period} onChange={(period) => set({ period })} currentLabel="هنوز اینجا کار می‌کنم" required />
             <Hideable k="experience.description">
-              <TextArea label="توضیحات" max={2000} value={x.description ?? ""} onChange={(description) => set({ description })} />
+              <TextArea label="توضیحات" placeholder={PH.experience.description} max={2000} value={x.description ?? ""} onChange={(description) => set({ description })} />
             </Hideable>
             <Hideable k="experience.highlights">
               <TextArea
                 label="دستاوردها"
                 rows={4}
+                placeholder={PH.experience.highlights}
                 hint={`هر دستاورد در یک خط (حداکثر ${LIMITS.highlights} مورد)`}
                 value={x.highlights.join("\n")}
                 onChange={(text) =>

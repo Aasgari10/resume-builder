@@ -1,5 +1,6 @@
 import type { Skill } from "@rb/schema";
 import { Empty, Field, ItemControls, SectionCard, Select } from "./fields";
+import { PH } from "./samples";
 import { Hideable } from "./Hideable";
 import { LIMITS, move, newId, removeAt, replaceAt } from "./list";
 
@@ -32,12 +33,12 @@ export function SkillsForm({ value, onChange }: { value: Skill[]; onChange: (val
         const set = (patch: Partial<Skill>) => onChange(replaceAt(value, i, patch));
         return (
           <div key={s.id} className="skill-row">
-            <Field label="مهارت *" value={s.name} onChange={(name) => set({ name })} max={50} />
+            <Field label="مهارت *" placeholder={PH.skills.name} value={s.name} onChange={(name) => set({ name })} max={50} />
             <label className="field">
               <span>دسته</span>
               <input
                 list="skill-categories"
-                placeholder="مثلاً فرانت‌اند"
+                placeholder={PH.skills.category}
                 maxLength={50}
                 value={s.category ?? ""}
                 onChange={(e) => set({ category: e.target.value })}

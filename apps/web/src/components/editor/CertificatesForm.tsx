@@ -1,5 +1,6 @@
 import type { Certificate } from "@rb/schema";
 import { Empty, Field, ItemControls, SectionCard } from "./fields";
+import { PH } from "./samples";
 import { Hideable } from "./Hideable";
 import { LIMITS, move, newId, removeAt, replaceAt } from "./list";
 
@@ -14,9 +15,9 @@ export function CertificatesForm({ value, onChange }: { value: Certificate[]; on
         return (
           <div key={c.id} className="sub-card stack">
             <div className="grid2">
-              <Field label="عنوان *" value={c.title} onChange={(title) => set({ title })} max={150} />
+              <Field label="عنوان *" placeholder={PH.certificates.title} value={c.title} onChange={(title) => set({ title })} max={150} />
               <Hideable k="certificates.issuer">
-                <Field label="صادرکننده" value={c.issuer ?? ""} onChange={(issuer) => set({ issuer })} max={100} />
+                <Field label="صادرکننده" placeholder={PH.certificates.issuer} value={c.issuer ?? ""} onChange={(issuer) => set({ issuer })} max={100} />
               </Hideable>
               <Hideable k="certificates.date">
                 <Field label="تاریخ" type="month" ltr value={c.date ?? ""} onChange={(date) => set({ date: date || undefined })} />
@@ -26,7 +27,7 @@ export function CertificatesForm({ value, onChange }: { value: Certificate[]; on
                   label="لینک تأیید"
                   type="url"
                   ltr
-                  placeholder="https://..."
+                  placeholder={PH.certificates.url}
                   value={c.url ?? ""}
                   onChange={(url) => set({ url })}
                   max={500}

@@ -1,5 +1,6 @@
 import type { CustomSection } from "@rb/schema";
 import { Empty, Field, ItemControls, SectionCard, TextArea } from "./fields";
+import { PH } from "./samples";
 import { Hideable } from "./Hideable";
 import { LIMITS, move, newId, removeAt, replaceAt } from "./list";
 
@@ -32,7 +33,7 @@ export function CustomSectionsForm({
           <div key={section.id} className="sub-card stack">
             <Field
               label="عنوان بخش *"
-              placeholder="مثلاً افتخارات"
+              placeholder={PH.custom.section}
               value={section.title}
               onChange={(title) => setSection({ title })}
               max={60}
@@ -43,9 +44,9 @@ export function CustomSectionsForm({
               return (
                 <div key={item.id} className="sub-card nested stack">
                   <div className="grid2">
-                    <Field label="عنوان *" value={item.title} onChange={(title) => setItem({ title })} max={150} />
+                    <Field label="عنوان *" placeholder={PH.custom.title} value={item.title} onChange={(title) => setItem({ title })} max={150} />
                     <Hideable k="customSections.subtitle">
-                      <Field label="زیرعنوان" value={item.subtitle ?? ""} onChange={(subtitle) => setItem({ subtitle })} max={150} />
+                      <Field label="زیرعنوان" placeholder={PH.custom.subtitle} value={item.subtitle ?? ""} onChange={(subtitle) => setItem({ subtitle })} max={150} />
                     </Hideable>
                     <Hideable k="customSections.date">
                       <Field
@@ -61,7 +62,7 @@ export function CustomSectionsForm({
                         label="لینک"
                         type="url"
                         ltr
-                        placeholder="https://..."
+                        placeholder={PH.custom.url}
                         value={item.url ?? ""}
                         onChange={(url) => setItem({ url })}
                         max={500}
@@ -72,6 +73,7 @@ export function CustomSectionsForm({
                     <TextArea
                       label="توضیحات"
                       max={1000}
+                      placeholder={PH.custom.description}
                       value={item.description ?? ""}
                       onChange={(description) => setItem({ description })}
                     />
