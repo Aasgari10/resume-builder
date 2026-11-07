@@ -13,6 +13,7 @@ import { env, siteUrl } from "../env";
 import { asyncHandler } from "../lib/http";
 import { subdomainFromHost, validateSubdomain } from "../lib/subdomain";
 import { FONT_ASSETS_PATH, SITE_CSP, renderNotFoundPage, renderSitePage } from "../render/sitePage";
+import { readVisitor } from "./shop";
 
 export const publicRouter = Router();
 
@@ -29,7 +30,7 @@ const sampleDir = [resolve(here, "../../assets/samples"), resolve(here, "../asse
 if (sampleDir) publicRouter.use(SAMPLE_ASSETS_PATH, express.static(sampleDir, { maxAge: 0, index: false }));
 else console.warn("Sample pictures folder (apps/api/assets/samples) not found; previews will show placeholders.");
 
-function sendPage(res: Response, status: number, html: string) {
+function sendPage(res: Response, status: number, html: string, personal = false) {
   res
     .status(status)
     .set({
@@ -37,7 +38,8 @@ function sendPage(res: Response, status: number, html: string) {
       "Content-Security-Policy": SITE_CSP,
       "X-Content-Type-Options": "nosniff",
       "Referrer-Policy": "strict-origin-when-cross-origin",
-      "Cache-Control": status === 200 ? "public, max-age=60" : "no-store",
+      // Shop pages show the visitor's own cart, so they must never be cached or shared.
+      "Cache-Control": status === 200 && !personal ? "public, max-age=60" : "no-store",
     })
     .send(html);
 }
@@ -74,6 +76,7 @@ async function renderSite(req: Request, res: Response, rawSubdomain: string, pat
   }
 
   const url = siteUrl(site.subdomain) ?? `${req.protocol}://${req.get("host")}/s/${site.subdomain}`;
+  const shop = Boolean(getTemplate(theme.data.templateId).shop);
   const html = renderSitePage({
     data: data.data,
     theme: theme.data,
@@ -81,8 +84,9 @@ async function renderSite(req: Request, res: Response, rawSubdomain: string, pat
     url,
     page,
     link: (p) => (p === "/" ? base || "/" : base + p),
+    visitor: shop ? readVisitor(req) : undefined,
   });
-  sendPage(res, 200, html);
+  sendPage(res, 200, html, shop);
 }
 
 /** GET /s/:subdomain and its inner pages — path-based access, used in development and as a fallback. */

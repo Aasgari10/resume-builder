@@ -46,6 +46,10 @@ export function withPlaceholders(data: ResumeData, sample: ResumeData = sampleRe
       gallery: keep(data.site?.gallery ?? [], (x) => Boolean(x.image.trim()), sample.site?.gallery ?? []),
       testimonials: keep(data.site?.testimonials ?? [], (x) => Boolean(x.text.trim()), sample.site?.testimonials ?? []),
       clients: keep(data.site?.clients ?? [], (x) => Boolean(x.image.trim()), sample.site?.clients ?? []),
+      // A shop without products yet shows the sample shop (its own texts stay where filled in).
+      ...(data.site?.shop || sample.site?.shop
+        ? { shop: data.site?.shop?.products?.length ? data.site.shop : sample.site?.shop && { ...sample.site.shop, ...Object.fromEntries(Object.entries(data.site?.shop ?? {}).filter(([k, v]) => k !== "products" && k !== "categories" && (typeof v === "string" ? v.trim() : Array.isArray(v) ? v.length : v !== undefined))) } }
+        : {}),
     },
     customSections: keep(data.customSections, (x) => Boolean(x.title && x.items.some((i) => i.title)), sample.customSections),
   };

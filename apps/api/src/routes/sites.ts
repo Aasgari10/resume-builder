@@ -4,7 +4,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import type { Prisma, Site } from "@prisma/client";
-import { checkPublishable, defaultTheme, themeSchema } from "@rb/schema";
+import { SHOP_ORDER_STATUSES, checkPublishable, defaultTheme, themeSchema } from "@rb/schema";
 import { DEFAULT_PORTFOLIO_TEMPLATE_ID, TEMPLATES } from "@rb/templates";
 import { prisma } from "../db";
 import { siteUrl } from "../env";
@@ -173,5 +173,32 @@ sitesRouter.post(
     if (!resume.site) throw new HttpError(400, "NO_SITE", "سایتی برای این رزومه وجود ندارد");
     const site = await prisma.site.update({ where: { id: resume.site.id }, data: { isPublished: false } });
     res.json({ site: toDto(site, true) });
+  })
+);
+
+/* ───────────── Shop orders ───────────── */
+
+/** GET /api/resumes/:resumeId/site/orders — orders placed on this site's shop, newest first. */
+sitesRouter.get(
+  "/orders",
+  asyncHandler(async (req, res) => {
+    const resume = await findOwnResume(req);
+    if (!resume.site) return void res.json({ orders: [] });
+    const orders = await prisma.shopOrder.findMany({ where: { siteId: resume.site.id }, orderBy: { createdAt: "desc" }, take: 200 });
+    res.json({ orders });
+  })
+);
+
+const orderStatusBody = z.object({ status: z.enum(SHOP_ORDER_STATUSES) });
+
+/** PATCH /api/resumes/:resumeId/site/orders/:orderId — the owner moves an order along (confirmed, sent…). */
+sitesRouter.patch(
+  "/orders/:orderId",
+  asyncHandler(async (req, res) => {
+    const resume = await findOwnResume(req);
+    const { status } = parseBody(orderStatusBody, req.body);
+    const order = resume.site ? await prisma.shopOrder.findFirst({ where: { id: req.params.orderId!, siteId: resume.site.id } }) : null;
+    if (!order) throw new HttpError(404, "NOT_FOUND", "سفارش پیدا نشد");
+    res.json({ order: await prisma.shopOrder.update({ where: { id: order.id }, data: { status } }) });
   })
 );

@@ -20,9 +20,12 @@ export function WebPage({ ctx, className, css, children }: { ctx: Ctx; className
   const vars = themeToCssVars(ctx.theme) as CSSProperties;
   // Large views of the certificates sit outside the page box: the page is a size container, and
   // a full-screen layer inside it would cover the whole (long) page instead of the screen.
-  const zoom = (ctx.data.site?.gallery ?? [])
-    .map((g) => ({ id: g.id, src: safeUrl(g.image), title: g.title, caption: g.description }))
-    .filter((g): g is { id: string; src: string; title: string; caption: string | undefined } => Boolean(g.src));
+  const zoomable = [
+    ...(ctx.data.site?.gallery ?? []).map((g) => ({ id: g.id, src: safeUrl(g.image), title: g.title, caption: g.description })),
+    // Shop templates enlarge product photos too ("<product id>-<photo number>").
+    ...(ctx.data.site?.shop?.products ?? []).flatMap((p) => p.images.map((u, k) => ({ id: `${p.id}-${k}`, src: safeUrl(u), title: p.name, caption: undefined }))),
+  ];
+  const zoom = zoomable.filter((g): g is { id: string; src: string; title: string; caption: string | undefined } => Boolean(g.src));
   return (
     <div className="w-shell" dir={dir} lang={ctx.data.locale} style={vars}>
       <div className={`w-page ${className}`} dir={dir} lang={ctx.data.locale} style={vars}>

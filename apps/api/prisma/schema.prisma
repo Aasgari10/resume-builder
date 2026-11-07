@@ -149,8 +149,44 @@ model Site {
   template Template @relation(fields: [templateId], references: [id])
 
   downloadTokens DownloadToken[]
+  shopOrders     ShopOrder[]
 
   @@index([userId])
+}
+
+// ───────────── Shop orders ─────────────
+
+// An order placed by a visitor on a published shop site. Prices are copied from the published
+// products at order time, so later price changes do not alter past orders.
+model ShopOrder {
+  id           String          @id @default(cuid())
+  siteId       String
+  code         String          @unique // short tracking code shown to the customer
+  status       ShopOrderStatus @default(NEW)
+  customerName String
+  phone        String
+  city         String?
+  address      String
+  postalCode   String?
+  note         String?
+  items        Json // [{ id, name, size, qty, unit, total }]
+  subtotal     Int // tomans
+  shipping     Int
+  total        Int
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@index([siteId, createdAt])
+}
+
+enum ShopOrderStatus {
+  NEW
+  CONFIRMED
+  SENT
+  DONE
+  CANCELED
 }
 
 // ───────────── Template ownership ─────────────

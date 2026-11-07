@@ -2,7 +2,7 @@
 // The page ships no JavaScript: templates are pure components rendered to static markup.
 
 import { renderToStaticMarkup } from "react-dom/server";
-import { applyHiddenFields, type ResumeData, type Theme } from "@rb/schema";
+import { applyHiddenFields, type ResumeData, type Theme, type Visitor } from "@rb/schema";
 import { buildSeo, getTemplate, type SeoOverrides, pageTitle } from "@rb/templates";
 import { env } from "../env";
 
@@ -40,7 +40,8 @@ export const SITE_CSP = [
   // The app origin is listed so uploaded photos also load in development over plain HTTP.
   `img-src 'self' https: data: ${new URL(env.appUrl).origin}`,
   "base-uri 'none'",
-  "form-action 'none'",
+  // Shop buttons post to the site itself; contact forms open the visitor's mail app.
+  "form-action 'self' mailto:",
   "frame-ancestors 'none'",
 ].join("; ");
 
@@ -54,6 +55,8 @@ export function renderSitePage(input: {
   page?: string;
   /** Turns a page path into an href (adds the /s/<subdomain> base in development). */
   link?: (path: string) => string;
+  /** Shop templates: the visitor's cart, wishlist and query string. */
+  visitor?: Visitor;
 }): string {
   const { component: Template } = getTemplate(input.theme.templateId);
   const page = input.page ?? "/";
@@ -64,7 +67,7 @@ export function renderSitePage(input: {
   const inner = pageTitle(data, page);
   if (inner) seo.title = `${inner} | ${seo.title}`;
   // Project rule: placeholder links (example.com) on a published page lead to the top of the page.
-  const body = renderToStaticMarkup(<Template data={data} theme={input.theme} page={page} link={input.link} />).replace(
+  const body = renderToStaticMarkup(<Template data={data} theme={input.theme} page={page} link={input.link} visitor={input.visitor} />).replace(
     /href="https?:\/\/([\w-]+\.)*example\.(com|ir|org)(\/[^"]*)?"( target="_blank")?/gi,
     'href="#"',
   );

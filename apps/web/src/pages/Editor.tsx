@@ -71,7 +71,7 @@ export function Editor() {
   return (
     <div className="site-editor" dir={data.locale === "fa" ? "rtl" : "ltr"}>
       {saveError && <p className="error">ذخیره نشد: {saveError}</p>}
-      <Preview data={data} theme={theme} onThemeChange={setTheme} onDataChange={setData} publish={publish} bar={bar} />
+      <Preview data={data} theme={theme} onThemeChange={setTheme} onDataChange={setData} publish={publish} bar={bar} resumeId={isDraft ? undefined : id} />
     </div>
   );
 }

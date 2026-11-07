@@ -15,6 +15,7 @@ export const SITE_PALETTES: Record<string, PageColors> = {
   "code-portfolio": { background: "#0B1222", surface: "#111B30", text: "#F1F5F9", mutedText: "#8C9AB3" },
   "simple-portfolio": { background: "#F7F7F5", surface: "#FFFFFF", text: "#1A1A1A", mutedText: "#737373" },
   "sepid-portfolio": { background: "#FFFFFF", surface: "#FCFCFC", text: "#333333", mutedText: "#8A8A8A" },
+  "boutique-shop": { background: "#FFFFFF", surface: "#F4F4F4", text: "#111111", mutedText: "#6F6F6F" },
 };
 
 /** Ready-made page color sets for the editor (the template's own colors come first). */

@@ -35,6 +35,7 @@ const templates = [
   { id: "code-portfolio", name: "کد", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
   { id: "simple-portfolio", name: "ساده", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
   { id: "sepid-portfolio", name: "سپید", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
+  { id: "boutique-shop", name: "بوتیک (فروشگاه)", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
 ];
 
 async function main() {

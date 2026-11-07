@@ -1,5 +1,5 @@
 import type { ComponentType } from "react";
-import type { ResumeData, Theme } from "@rb/schema";
+import type { ResumeData, Theme, Visitor } from "@rb/schema";
 
 /**
  * Templates render resume data with a theme. They must be pure (no data fetching,
@@ -15,6 +15,8 @@ export type TemplateProps = {
   link?: (path: string) => string;
   /** Editor preview with click-to-edit on: empty optional fields show a small "+ add" button. */
   editing?: boolean;
+  /** Shop templates: the visitor's cart, wishlist and query string. */
+  visitor?: Visitor;
 };
 
 /** Style tags used to filter the template gallery. */
@@ -34,4 +36,6 @@ export type TemplateDefinition = {
   optionalPages?: readonly { path: string; label: string }[];
   /** Sections the user may switch off (stored in site.hiddenBlocks). */
   blocks?: readonly { key: string; label: string }[];
+  /** An online shop: has products, a cart and orders, managed in the shop panel. */
+  shop?: boolean;
 };

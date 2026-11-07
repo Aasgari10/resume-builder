@@ -194,6 +194,44 @@ function buildResumeSchemas(strict: boolean) {
   });
   const clientLogo = z.object({ id, name: z.string().max(80), image: url() });
 
+  // Online shop (shop templates). Prices are whole tomans. Shown by shop templates only.
+  const price = z.number().int().min(0).max(10_000_000_000);
+  const shopCategory = z.object({ id, name: z.string().max(60), image: optionalUrl });
+  const product = z.object({
+    id,
+    name: text(1, 120),
+    categoryId: z.string().max(40).optional(),
+    price,
+    salePrice: price.optional(), // lower price while on sale; the regular price is shown struck through
+    images: z.array(url()).max(6).default([]),
+    description: z.string().max(3000).optional(),
+    sizes: z.array(z.string().max(20)).max(12).optional(), // e.g. S, M, L or 38, 40
+    stock: z.number().int().min(0).max(100000).optional(), // left out: not tracked; 0: sold out
+    badge: z.string().max(20).optional(), // small label on the picture, e.g. "حراج" or "جدید"
+    featured: z.boolean().optional(), // shown in the home page's "newest trends" list
+    hidden: z.boolean().optional(), // kept in the panel but not shown on the site
+  });
+  const perk = z.object({ id, title: z.string().max(60), text: z.string().max(200).optional() });
+  const shop = z.object({
+    categories: z.array(shopCategory).max(30).default([]),
+    products: z.array(product).max(300).default([]),
+    announcements: z.array(z.string().max(100)).max(4).optional(), // the dark strip at the very top
+    heroTitle: z.string().max(120).optional(),
+    heroText: z.string().max(400).optional(),
+    heroImage: optionalUrl,
+    promoTitle: z.string().max(120).optional(), // the dark offer card
+    promoText: z.string().max(200).optional(),
+    lookTitle: z.string().max(120).optional(), // "Inspire your wardrobe"
+    lookImage: optionalUrl,
+    trendImage: optionalUrl,
+    bandItems: z.array(z.string().max(60)).max(6).optional(), // the moving dark band
+    perks: z.array(perk).max(4).optional(),
+    shippingFee: price.optional(), // added to every order; 0 or empty: free
+    freeShippingFrom: price.optional(), // orders from this amount ship free
+    paymentNote: z.string().max(600).optional(), // how to pay for now (card-to-card, on delivery…)
+    orderNote: z.string().max(300).optional(), // shown after an order is placed
+  });
+
   const site = z.object({
     tagline: z.string().max(200).optional(), // one or two lines under the name; the summary is used when empty
     ctaPrimary: z.string().max(30).optional(), // hero button to the work
@@ -220,6 +258,7 @@ function buildResumeSchemas(strict: boolean) {
     bandText: z.string().max(200).optional(),
     address: z.string().max(200).optional(),
     contactNote: z.string().max(500).optional(),
+    shop: shop.optional(),
   });
 
   /* ───────────── Full resume ───────────── */
@@ -251,6 +290,8 @@ function buildResumeSchemas(strict: boolean) {
     customSection,
     site,
     galleryItem,
+    product,
+    shop,
   };
 }
 
@@ -291,6 +332,9 @@ export type Certificate = z.infer<typeof certificateSchema>;
 export type CustomSection = z.infer<typeof customSectionSchema>;
 export type SiteContent = z.infer<typeof siteContentSchema>;
 export type GalleryItem = SiteContent["gallery"][number];
+export const productSchema = strictSchemas.product;
+export type Shop = z.infer<typeof strictSchemas.shop>;
+export type Product = z.infer<typeof productSchema>;
 
 // Sections that can be reordered or hidden via the theme.
 export const SECTION_KEYS = [

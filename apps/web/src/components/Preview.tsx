@@ -2,14 +2,15 @@
 // (settings, assistant, publishing). "Show" turns the same workspace into a full-screen view.
 // Empty content is filled with sample text and pictures; publishing uses only the user's own content.
 
-import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
+import { useEffect, useState, type FormEvent, type MouseEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { applyHiddenFields, type ResumeData, type Theme } from "@rb/schema";
+import { applyHiddenFields, changeCart, emptyVisitor, toggleWishlist, type ResumeData, type Theme, type Visitor } from "@rb/schema";
 import { SITE_TEMPLATES, getTemplate, isDummyUrl, pageTitle, resolvePage, siteTheme, withPlaceholders } from "@rb/templates";
 import { newId } from "./editor/list";
 import { EditPopover, type EditTarget } from "./site-edit/EditPopover";
 import { SitePanel, type PanelTab } from "./site-edit/SitePanel";
 import { getAt, isItemPath, removeItem, setAt } from "./site-edit/paths";
+import { ShopManager } from "./shop/ShopManager";
 
 type Device = "desktop" | "mobile";
 
@@ -38,9 +39,11 @@ type Props = {
   publish: ReactNode;
   /** Shown at the start of the workspace bar (title, save state, …). */
   bar?: ReactNode;
+  /** Saved resume id (absent for an unsaved draft); the shop panel needs it to list orders. */
+  resumeId?: string;
 };
 
-export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish, bar }: Props) {
+export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish, bar, resumeId }: Props) {
   const site = getTemplate(theme.templateId);
   // Each template may bring its own example persona and pictures.
   const shown = withPlaceholders(raw, site.sample?.(raw.locale));
@@ -61,6 +64,9 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
   const [target, setTarget] = useState<EditTarget | null>(null);
   const [device, setDevice] = useState<Device>("desktop");
   const [requestedPage, setPage] = useState("/");
+  // Shop templates: the preview keeps its own cart and wishlist, as a visitor's browser would.
+  const [visitor, setVisitor] = useState<Visitor>(emptyVisitor);
+  const [shopOpen, setShopOpen] = useState(false);
   const pages = site.pages?.(data) ?? ["/"];
   const page = resolvePage(site, data, requestedPage) ?? "/";
 
@@ -104,6 +110,34 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
     else if (isDummyUrl(href)) a.closest(".ws-view")?.scrollTo({ top: 0, behavior: "smooth" });
     else if (href.startsWith("#")) document.getElementById(href.slice(1))?.scrollIntoView({ behavior: "smooth" });
     else if (/^(https?:|mailto:|tel:)/i.test(href)) window.open(href, "_blank", "noopener,noreferrer");
+  };
+
+  // Shop forms (cart, wishlist, search, checkout) are answered here instead of by the server.
+  const onFrameSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    const form = e.target as HTMLFormElement;
+    const action = form.getAttribute("action") ?? "";
+    const fields = Object.fromEntries(new FormData(form)) as Record<string, string>;
+    if (action.endsWith("/_cart")) {
+      const product = data.site?.shop?.products.find((p) => p.id === fields.id);
+      const qty = Math.max(0, Math.floor(Number(fields.qty ?? 1)) || 0);
+      const size = fields.size || undefined;
+      setVisitor((v) => {
+        if (fields.op === "wish") return { ...v, wishlist: toggleWishlist(v.wishlist, fields.id!) };
+        if (fields.op === "add") return { ...v, cart: changeCart(v.cart, "add", fields.id!, Math.max(1, qty), size ?? product?.sizes?.[0]) };
+        if (fields.op === "set") return { ...v, cart: changeCart(v.cart, "set", fields.id!, qty, size) };
+        if (fields.op === "remove") return { ...v, cart: changeCart(v.cart, "remove", fields.id!, 0, size) };
+        return v;
+      });
+      if (fields.back && fields.back !== page) setPage(fields.back);
+    } else if (action.endsWith("/_order")) {
+      // Nothing is saved from the preview: the order page is shown with a sample code.
+      setVisitor((v) => ({ ...v, cart: [], query: { code: "نمونه" } }));
+      setPage("/thanks");
+    } else if (action.endsWith("/search")) {
+      setVisitor((v) => ({ ...v, query: { q: fields.q ?? "" } }));
+      setPage("/search");
+    }
   };
 
   const openPanel = (next: PanelTab) => {
@@ -169,6 +203,11 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
         <button type="button" className="btn small ghost" aria-pressed={panel && tab !== "assistant"} onClick={() => (panel && tab !== "assistant" ? setPanel(false) : openPanel("settings"))}>
           تنظیمات
         </button>
+        {site.shop && (
+          <button type="button" className="btn small" onClick={() => setShopOpen(true)}>
+            🛍 مدیریت فروشگاه
+          </button>
+        )}
         {!full && (
           <button type="button" className="btn small" onClick={() => setFull(true)}>
             نمایش
@@ -182,8 +221,9 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
             className={`preview-frame${editing ? " editing" : ""}${device === "mobile" ? " mobile" : ""}`}
             style={{ width: device === "mobile" ? MOBILE_WIDTH : "100%" }}
             onClick={onFrameClick}
+            onSubmit={onFrameSubmit}
           >
-            <site.component data={data} theme={effective} page={page} editing={editing} />
+            <site.component data={data} theme={effective} page={page} editing={editing} visitor={visitor} />
           </div>
         </div>
         {panel && (
@@ -208,6 +248,11 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
   return (
     <>
       {full ? createPortal(workspace, document.body) : workspace}
+      {shopOpen &&
+        createPortal(
+          <ShopManager data={raw} sample={site.sample?.(raw.locale)} onData={onDataChange} resumeId={resumeId} onClose={() => setShopOpen(false)} />,
+          document.body,
+        )}
       {target &&
         createPortal(
           <EditPopover

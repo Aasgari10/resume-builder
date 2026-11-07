@@ -21,6 +21,7 @@ import { VCARD_OPTIONAL_PAGES, VcardPortfolio, vcardPages, vcardSample } from ".
 import { CODE_BLOCKS, CodePortfolio, codePages, codeSample } from "./web/code";
 import { SIMPLE_BLOCKS, SimplePortfolio, simplePages, simpleSample } from "./web/simple";
 import { SEPID_BLOCKS, SEPID_OPTIONAL_PAGES, SepidPortfolio, sepidPages, sepidSample } from "./web/sepid";
+import { BOUTIQUE_BLOCKS, BoutiqueShop, boutiquePages, boutiqueSample } from "./web/boutique";
 import type { ResumeData } from "@rb/schema";
 import type { TemplateDefinition, TemplateTag } from "./types";
 
@@ -83,6 +84,7 @@ export const PORTFOLIO_TEMPLATES: readonly TemplateDefinition[] = [
   { ...web("code-portfolio", "کد", CodePortfolio), pages: codePages, sample: codeSample, blocks: CODE_BLOCKS },
   { ...web("simple-portfolio", "ساده", SimplePortfolio), pages: simplePages, sample: simpleSample, blocks: SIMPLE_BLOCKS },
   { ...web("sepid-portfolio", "سپید", SepidPortfolio), pages: sepidPages, sample: sepidSample, optionalPages: SEPID_OPTIONAL_PAGES, blocks: SEPID_BLOCKS },
+  { ...web("boutique-shop", "بوتیک (فروشگاه)", BoutiqueShop), pages: boutiquePages, sample: boutiqueSample, blocks: BOUTIQUE_BLOCKS, shop: true },
   minimalPortfolio,
   web("studio-portfolio", "استودیو", StudioPortfolio),
   web("split-portfolio", "دوستونه", SplitPortfolio),
@@ -134,6 +136,12 @@ const PAGE_TITLES: Record<string, Record<ResumeData["locale"], string>> = {
   "/works": { fa: "نمونه‌کارها", en: "Works" },
   "/services": { fa: "خدمات", en: "Services" },
   "/contact": { fa: "تماس", en: "Contact" },
+  "/shop": { fa: "فروشگاه", en: "Shop" },
+  "/cart": { fa: "سبد خرید", en: "Cart" },
+  "/wishlist": { fa: "علاقه‌مندی‌ها", en: "Wishlist" },
+  "/search": { fa: "جست‌وجو", en: "Search" },
+  "/checkout": { fa: "ثبت سفارش", en: "Checkout" },
+  "/thanks": { fa: "سفارش ثبت شد", en: "Order placed" },
 };
 
 /** Title of an inner page for the browser tab ("About", a project's name); empty for the home page. */
@@ -141,6 +149,8 @@ export function pageTitle(data: ResumeData, page: string): string {
   if (page.startsWith("/projects/")) {
     return data.projects.find((p) => `/projects/${encodeURIComponent(p.id)}` === page)?.title ?? "";
   }
+  if (page.startsWith("/product/")) return data.site?.shop?.products.find((p) => `/product/${p.id}` === page)?.name ?? "";
+  if (page.startsWith("/category/")) return data.site?.shop?.categories.find((c) => `/category/${c.id}` === page)?.name ?? "";
   return PAGE_TITLES[page]?.[data.locale] ?? "";
 }
 

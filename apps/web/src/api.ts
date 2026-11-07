@@ -1,6 +1,6 @@
 // Typed API client. The session cookie is httpOnly and sent automatically by the browser.
 
-import type { ResumeData, Theme } from "@rb/schema";
+import type { ResumeData, ShopOrderStatus, Theme } from "@rb/schema";
 
 export type FieldIssue = { path: string; message: string };
 
@@ -190,6 +190,24 @@ export type Availability = { available: true } | { available: false; reason: str
 
 /* ───────────── Endpoints ───────────── */
 
+/** An order placed on a published shop (see apps/api/src/routes/shop.ts). */
+export type ShopOrder = {
+  id: string;
+  code: string;
+  status: ShopOrderStatus;
+  customerName: string;
+  phone: string;
+  city: string | null;
+  address: string;
+  postalCode: string | null;
+  note: string | null;
+  items: { id: string; name: string; size: string | null; qty: number; unit: number; total: number }[];
+  subtotal: number;
+  shipping: number;
+  total: number;
+  createdAt: string;
+};
+
 export const api = {
   requestOtp: (phone: string) =>
     request<{ ok: true; expiresInSeconds: number; devCode?: string }>("POST", "/auth/request-otp", { phone }),
@@ -215,6 +233,9 @@ export const api = {
     request<{ site: Site }>("PUT", `/resumes/${resumeId}/site`, settings),
   publishSite: (resumeId: string) => request<{ site: Site }>("POST", `/resumes/${resumeId}/site/publish`),
   unpublishSite: (resumeId: string) => request<{ site: Site }>("POST", `/resumes/${resumeId}/site/unpublish`),
+  shopOrders: (resumeId: string) => request<{ orders: ShopOrder[] }>("GET", `/resumes/${resumeId}/site/orders`),
+  setShopOrderStatus: (resumeId: string, orderId: string, status: ShopOrderStatus) =>
+    request<{ order: ShopOrder }>("PATCH", `/resumes/${resumeId}/site/orders/${encodeURIComponent(orderId)}`, { status }),
 
   listTemplates: (kind?: "PDF" | "PORTFOLIO") =>
     request<{ templates: Template[] }>("GET", `/templates${kind ? `?kind=${kind}` : ""}`),
