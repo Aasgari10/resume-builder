@@ -245,21 +245,23 @@ const css = /* css */ `
 .cd a { color: inherit; }
 .cd-glow { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(600px 400px at 85% 10%, color-mix(in srgb, var(--color-primary) 22%, transparent), transparent 70%), radial-gradient(500px 500px at 10% 70%, color-mix(in srgb, var(--color-primary) 10%, transparent), transparent 70%); }
 .cd-wrap { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: clamp(24px, 5cqi, 64px); width: min(1180px, 100% - 2 * clamp(16px, 4cqi, 48px)); margin: 0 auto; }
-.cd-side { position: sticky; top: 0; height: 100vh; max-height: 900px; display: flex; flex-direction: column; justify-content: space-between; padding: clamp(40px, 8cqi, 96px) 0; animation: cd-in .9s cubic-bezier(.2, 1, .3, 1) both; }
+/* The side column sizes to its content (no fixed screen height), so nothing spills out of it in a
+   short window or in the editor; both columns start on the same line, a little higher than before. */
+.cd-side { position: sticky; top: 0; align-self: start; display: flex; flex-direction: column; gap: 36px; padding: clamp(28px, 5cqi, 64px) 0; animation: cd-in .9s cubic-bezier(.2, 1, .3, 1) backwards; }
 @keyframes cd-in { from { opacity: 0; transform: scale(.96) translateY(20px); } }
 .cd-side h1 { color: var(--cd-head); font-size: clamp(2.2em, 5.6cqi, 3.4em); font-weight: 800; letter-spacing: -.02em; line-height: 1.3; }
 .cd-job { margin-top: 10px; color: var(--cd-ink); font-size: 1.2em; font-weight: 500; }
 .cd-tag { margin-top: 16px; max-width: 22em; line-height: 1.95; }
-.cd-nav { display: grid; gap: 4px; margin-top: 50px; justify-items: start; }
-.cd-nav a { display: flex; align-items: center; gap: 14px; padding: 8px 0; font-size: .82em; font-weight: 700; letter-spacing: .08em; animation: cd-in .7s calc(.3s + var(--i) * .08s) cubic-bezier(.2, 1, .3, 1) both; }
+.cd-nav { display: grid; gap: 2px; margin-top: 32px; justify-items: start; }
+.cd-nav a { display: flex; align-items: center; gap: 14px; padding: 9px 0; font-size: .82em; font-weight: 700; letter-spacing: .08em; line-height: 1.4; animation: cd-in .7s calc(.3s + var(--i) * .08s) cubic-bezier(.2, 1, .3, 1) backwards; }
 .cd-nav i { width: 32px; height: 1px; background: currentColor; transition: width .3s, background .3s; }
 .cd-nav a:hover { color: var(--cd-head); }
 .cd-nav a:hover i { width: 64px; background: var(--cd-accent); }
 .cd-socials a { color: var(--cd-mute); }
 .cd-socials a:hover { color: var(--cd-head); background: rgb(255 255 255 / .06); }
 
-.cd-main { padding: clamp(40px, 8cqi, 96px) 0; }
-.cd-sec { margin-bottom: clamp(60px, 10cqi, 120px); scroll-margin-top: 30px; }
+.cd-main { padding: clamp(28px, 5cqi, 64px) 0; }
+.cd-sec { margin-bottom: clamp(48px, 8cqi, 96px); scroll-margin-top: 30px; }
 .cd-h2 { display: none; }
 .cd-text { display: grid; gap: 16px; line-height: 2.05; }
 .cd-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
@@ -289,7 +291,7 @@ const css = /* css */ `
 
 @container (max-width: 860px) {
   .cd-wrap { grid-template-columns: 1fr; }
-  .cd-side { position: static; height: auto; padding-bottom: 20px; gap: 24px; }
+  .cd-side { position: static; padding-bottom: 20px; gap: 24px; }
   .cd-nav { display: none; }
   .cd-h2 { display: block; position: sticky; top: 0; z-index: 2; margin: 0 -16px 18px; padding: 14px 16px; background: color-mix(in srgb, var(--cd-bg) 85%, transparent); backdrop-filter: blur(8px); color: var(--cd-head); font-size: .85em; font-weight: 700; letter-spacing: .1em; }
   .cd-main { padding-top: 0; }
