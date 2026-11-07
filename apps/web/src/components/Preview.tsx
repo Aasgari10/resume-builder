@@ -5,7 +5,7 @@
 import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { applyHiddenFields, type ResumeData, type Theme } from "@rb/schema";
-import { SITE_TEMPLATES, getTemplate, isDummyUrl, pageTitle, resolvePage, withPlaceholders } from "@rb/templates";
+import { SITE_TEMPLATES, getTemplate, isDummyUrl, pageTitle, resolvePage, siteTheme, withPlaceholders } from "@rb/templates";
 import { newId } from "./editor/list";
 import { EditPopover, type EditTarget } from "./site-edit/EditPopover";
 import { SitePanel, type PanelTab } from "./site-edit/SitePanel";
@@ -45,6 +45,15 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
   // Each template may bring its own example persona and pictures.
   const shown = withPlaceholders(raw, site.sample?.(raw.locale));
   const data = applyHiddenFields(shown, theme.hiddenFields);
+  // The colors the site is drawn with: the template's own page colors until the user picks others.
+  const effective = siteTheme(theme);
+  const changeTheme = (next: Theme) => {
+    const page = ["background", "surface", "text", "mutedText"] as const;
+    if (page.some((k) => next.colors[k] !== effective.colors[k])) return onThemeChange({ ...next, colorsFor: next.templateId });
+    // Untouched page colors stay as stored (the template's own colors are not copied into the theme).
+    const { background, surface, text, mutedText } = theme.colors;
+    onThemeChange({ ...next, colors: { ...next.colors, background, surface, text, mutedText } });
+  };
   const [editing, setEditing] = useState(true);
   const [full, setFull] = useState(false);
   const [panel, setPanel] = useState(true);
@@ -174,7 +183,7 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
             style={{ width: device === "mobile" ? MOBILE_WIDTH : "100%" }}
             onClick={onFrameClick}
           >
-            <site.component data={data} theme={theme} page={page} editing={editing} />
+            <site.component data={data} theme={effective} page={page} editing={editing} />
           </div>
         </div>
         {panel && (
@@ -182,10 +191,12 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
             tab={tab}
             onTab={setTab}
             data={raw}
-            theme={theme}
+            theme={effective}
             template={site}
             onData={onDataChange}
-            onTheme={onThemeChange}
+            onTheme={changeTheme}
+            onResetColors={() => onThemeChange({ ...theme, colorsFor: undefined })}
+            ownColors={theme.colorsFor === theme.templateId}
             onClose={() => setPanel(false)}
             publish={publish}
           />

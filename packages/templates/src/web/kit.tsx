@@ -5,6 +5,7 @@
 // so the editor preview can emulate mobile.
 
 import { ZoomLayers, zoomCss } from "./zoom";
+import { siteTheme } from "../palettes";
 import type { CSSProperties, ReactNode } from "react";
 import { themeToCssVars, type ResumeData } from "@rb/schema";
 import { Heading, Section, displayUrl, makeCtx, type Ctx } from "../kit";
@@ -33,7 +34,8 @@ export function WebPage({ ctx, className, css, children }: { ctx: Ctx; className
   );
 }
 
-export const webCtx = ({ data, theme }: TemplateProps) => makeCtx(data, theme);
+// Website templates are drawn with their own designed page colors until the user picks others.
+export const webCtx = ({ data, theme }: TemplateProps) => makeCtx(data, siteTheme(theme));
 
 /** Social and website links as pills. */
 export function Links({ ctx, className = "" }: { ctx: Ctx; className?: string }) {

@@ -948,7 +948,8 @@ export function gridSample(locale: ResumeData["locale"]): ResumeData {
 /* ───────────── Styles ───────────── */
 
 const css = /* css */ `
-.gx { --gx-bg: #0F0F10; --gx-card: #18181A; --gx-card2: #1E1E21; --gx-line: rgb(255 255 255 / .07); --gx-ink: #F4F4F5; --gx-mute: #8E8E95; --gx-accent: var(--color-primary-on-dark);
+/* Page colors come from the theme (see palettes.ts for this template's designed ones). */
+.gx { --gx-bg: var(--color-bg); --gx-card: var(--color-surface); --gx-card2: color-mix(in srgb, var(--color-text) 4%, var(--color-surface)); --gx-line: color-mix(in srgb, var(--color-text) 8%, transparent); --gx-ink: var(--color-text); --gx-mute: var(--color-muted); --gx-accent: var(--color-primary-read); --gx-deep: color-mix(in srgb, var(--color-bg) 55%, transparent);
   background: var(--gx-bg); color: var(--gx-ink); min-height: 100%; }
 .gx a { color: inherit; }
 .gx-empty { padding: 100px 20px; text-align: center; color: var(--gx-mute); }
@@ -960,8 +961,8 @@ const css = /* css */ `
 .gx-nav { display: flex; gap: clamp(14px, 3cqi, 36px); font-size: .95em; }
 .gx-nav a { color: var(--gx-mute); transition: color .2s; }
 .gx-nav a:hover, .gx-nav a[aria-current="page"] { color: var(--gx-ink); }
-.gx-talk { padding: 10px 20px; border-radius: 12px; background: #2A2A2E; font-weight: 600; font-size: .92em; transition: background .2s; }
-.gx-talk:hover { background: #34343A; }
+.gx-talk { padding: 10px 20px; border-radius: 12px; background: var(--color-raise); font-weight: 600; font-size: .92em; transition: background .2s; }
+.gx-talk:hover { background: var(--color-raise-2); }
 .gx-foot { display: grid; justify-items: center; gap: 20px; padding: 60px 20px 40px; color: var(--gx-mute); font-size: .85em; }
 .gx-foot nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 28px; }
 .gx-foot p { margin: 0; }
@@ -971,11 +972,11 @@ const css = /* css */ `
    supports scroll-linked animation, cards further down also grow in as they scroll into view
    (gx-view). The two use different properties (scale/opacity and transform/filter), so they add
    up instead of replacing each other: cards already on screen are not held back by the second. */
-.gx-card { position: relative; border-radius: 26px; padding: clamp(16px, 2.4cqi, 28px); background: linear-gradient(140deg, var(--gx-card2), var(--gx-card) 60%); box-shadow: inset 0 1px 0 rgb(255 255 255 / .04), 0 20px 40px -30px #000;
+.gx-card { position: relative; border-radius: 26px; padding: clamp(16px, 2.4cqi, 28px); background: linear-gradient(140deg, var(--gx-card2), var(--gx-card) 60%); box-shadow: inset 0 1px 0 rgb(255 255 255 / .04), 0 20px 40px -30px rgb(0 0 0 / .55);
   transform-origin: 50% 70%;
   animation: gx-pop .9s cubic-bezier(.22, 1.2, .36, 1) calc(var(--i, 0) * 90ms) both;
   transition: translate .35s ease, box-shadow .35s ease; }
-.gx-card:hover { translate: 0 -4px; box-shadow: inset 0 1px 0 rgb(255 255 255 / .06), 0 26px 50px -28px #000; }
+.gx-card:hover { translate: 0 -4px; box-shadow: inset 0 1px 0 rgb(255 255 255 / .06), 0 26px 50px -28px rgb(0 0 0 / .6); }
 @keyframes gx-pop { from { opacity: 0; scale: .82; } to { opacity: 1; scale: 1; } }
 @keyframes gx-view { from { filter: opacity(0) blur(6px); transform: scale(.86) translateY(40px); } to { filter: none; transform: none; } }
 @supports (animation-timeline: view()) {
@@ -985,9 +986,9 @@ const css = /* css */ `
 .gx-label { display: grid; gap: 4px; align-self: end; }
 .gx-label small { color: var(--gx-mute); font-size: .74em; letter-spacing: .04em; }
 .gx-label strong { font-size: 1.15em; font-weight: 600; }
-.gx-go { position: absolute; inset-block-end: 0; inset-inline-end: 0; width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid rgb(255 255 255 / .25); border-radius: 50%; transition: transform .4s ease, border-color .3s, background .3s; }
+.gx-go { position: absolute; inset-block-end: 0; inset-inline-end: 0; width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid color-mix(in srgb, var(--color-text) 25%, transparent); border-radius: 50%; transition: transform .4s ease, border-color .3s, background .3s; }
 .gx-go svg { width: 16px; height: 16px; fill: currentColor; }
-.gx-card:hover .gx-go { transform: rotate(90deg); border-color: #fff; background: rgb(255 255 255 / .06); }
+.gx-card:hover .gx-go { transform: rotate(90deg); border-color: var(--gx-ink); background: color-mix(in srgb, var(--color-text) 6%, transparent); }
 .gx-go-edit { position: absolute; inset-block-end: 0; inset-inline-end: 0; width: 40px; height: 40px; }
 
 /* Home grid */
@@ -1018,17 +1019,17 @@ const css = /* css */ `
 .gx-thumb img { max-width: 100%; max-height: 120px; object-fit: contain; transition: transform .5s ease; }
 .gx-thumb img.gx-cover { width: 100%; height: 120px; max-height: none; object-fit: cover; border-radius: 14px; }
 .gx-card:hover .gx-thumb img { transform: scale(1.05); }
-.gx-inset { background: rgb(0 0 0 / .2); box-shadow: inset 0 0 0 1px var(--gx-line); padding: 14px; }
+.gx-inset { background: var(--gx-deep); box-shadow: inset 0 0 0 1px var(--gx-line); padding: 14px; }
 .gx-icons { display: flex; justify-content: space-around; align-items: center; min-height: 120px; }
 .gx-icons span { display: grid; place-items: center; transition: transform .3s ease; }
 .gx-card:hover .gx-icons span { transform: translateY(-3px); }
 .gx-icons .gx-ico { width: clamp(40px, 5cqi, 56px); height: clamp(40px, 5cqi, 56px); stroke-width: 1.5; }
 .gx-ico { width: 30px; height: 30px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
 .gx-socials { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
-.gx-socials a, .gx-socials .gx-ghost { width: 54px; height: 54px; display: grid; place-items: center; border-radius: 50%; background: rgb(255 255 255 / .05); box-shadow: inset 0 0 0 1px var(--gx-line); transition: background .2s, transform .2s; }
-.gx-socials a:hover { background: rgb(255 255 255 / .1); transform: translateY(-2px); }
+.gx-socials a, .gx-socials .gx-ghost { width: 54px; height: 54px; display: grid; place-items: center; border-radius: 50%; background: color-mix(in srgb, var(--color-text) 5%, transparent); box-shadow: inset 0 0 0 1px var(--gx-line); transition: background .2s, transform .2s; }
+.gx-socials a:hover { background: color-mix(in srgb, var(--color-text) 10%, transparent); transform: translateY(-2px); }
 .gx-socials .gx-ico { width: 22px; height: 22px; }
-.gx-stats > div { display: grid; place-items: center; align-content: center; gap: 8px; padding: 18px 8px; border-radius: 18px; background: rgb(0 0 0 / .18); text-align: center; }
+.gx-stats > div { display: grid; place-items: center; align-content: center; gap: 8px; padding: 18px 8px; border-radius: 18px; background: var(--gx-deep); text-align: center; }
 .gx-stats b { font-size: clamp(1.8em, 3.4cqi, 2.4em); font-weight: 500; }
 .gx-stats small { color: var(--gx-mute); font-size: .74em; line-height: 1.6; }
 .gx-together h2, .gx-form h2 { font-size: clamp(1.8em, 4cqi, 2.6em); font-weight: 500; line-height: 1.35; align-self: end; }
@@ -1039,18 +1040,18 @@ const css = /* css */ `
 .gx-fill > .gx-hang { top: calc(-1 * clamp(16px, 2.4cqi, 28px)); }
 /* Hanging star: from the top edge of the card, like the reference. */
 .gx-hang { position: absolute; top: 0; inset-inline-start: clamp(24px, 4cqi, 46px); width: 56px; height: 124px; pointer-events: none; transform-origin: 50% 0; animation: gx-sway 6s ease-in-out infinite; }
-.gx-hang svg { width: 100%; height: 100%; fill: none; stroke: #7A7A82; stroke-width: 1.6; stroke-linejoin: round; }
+.gx-hang svg { width: 100%; height: 100%; fill: none; stroke: var(--color-muted); stroke-width: 1.6; stroke-linejoin: round; }
 @keyframes gx-sway { 0%, 100% { rotate: -2deg; } 50% { rotate: 2deg; } }
 
 /* Inner pages */
 .gx-stack { display: grid; gap: 18px; align-content: start; }
 .gx-title { display: flex; align-items: center; justify-content: center; gap: 14px; font-size: clamp(2em, 6cqi, 3.6em); font-weight: 800; line-height: 1.2; text-align: center; animation: gx-pop .9s cubic-bezier(.22, 1.2, .36, 1) both; }
-.gx-burst { width: .62em; height: .62em; flex: none; fill: #A1A1A8; }
+.gx-burst { width: .62em; height: .62em; flex: none; fill: var(--color-muted); }
 .gx-split { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); gap: 18px; }
 .gx-photo-card .gx-photo { width: 100%; }
 .gx-summary { padding-top: 130px; }
 .gx-summary h2 { font-size: 1.6em; font-weight: 500; margin-bottom: 10px; }
-.gx-text { display: grid; gap: 12px; color: #C9C9CE; font-size: .92em; line-height: 2; }
+.gx-text { display: grid; gap: 12px; color: var(--color-body); font-size: .92em; line-height: 2; }
 .gx-two { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
 .gx-h3 { font-size: .95em; font-weight: 600; letter-spacing: .03em; margin-bottom: 12px; }
 .gx-entry { display: grid; gap: 4px; margin-bottom: 20px; }
@@ -1070,8 +1071,8 @@ const css = /* css */ `
 .gx-profile small { color: var(--gx-mute); }
 .gx-profile .gx-socials a { width: 38px; height: 38px; }
 .gx-profile .gx-socials .gx-ico { width: 17px; height: 17px; }
-.gx-btn { width: 100%; padding: 12px; border-radius: 12px; background: #2A2A2E; font-weight: 600; transition: background .2s; }
-.gx-btn:hover { background: #34343A; }
+.gx-btn { width: 100%; padding: 12px; border-radius: 12px; background: var(--color-raise); font-weight: 600; transition: background .2s; }
+.gx-btn:hover { background: var(--color-raise-2); }
 .gx-cv-body { display: grid; gap: 40px; }
 .gx-skills { display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; }
 
@@ -1095,12 +1096,12 @@ const css = /* css */ `
 .gx-certs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
 .gx-cert { padding: 14px 14px 22px; }
 .gx-cert .gx-fill { gap: 18px; }
-.gx-mat { aspect-ratio: 4 / 3; display: flex; align-items: center; justify-content: center; padding: 18px; border-radius: 18px; background: radial-gradient(120% 90% at 50% 0%, #2A2A2F, #141416); box-shadow: inset 0 0 0 1px var(--gx-line); overflow: hidden; }
+.gx-mat { aspect-ratio: 4 / 3; display: flex; align-items: center; justify-content: center; padding: 18px; border-radius: 18px; background: radial-gradient(120% 90% at 50% 0%, var(--color-raise), var(--color-bg)); box-shadow: inset 0 0 0 1px var(--gx-line); overflow: hidden; }
 .gx-mat img { display: block; min-width: 0; min-height: 0; max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 6px; box-shadow: 0 18px 30px -12px rgb(0 0 0 / .8); transform: rotate(-1.2deg); transition: transform .5s ease; }
 .gx-cert:nth-child(even) .gx-mat img { transform: rotate(1.2deg); }
 .gx-card.gx-cert:hover .gx-mat img { transform: rotate(0) scale(1.04); }
 .gx-cert .gx-label { padding-inline: 8px; padding-inline-end: 60px; }
-.gx-add { display: grid; place-items: center; align-content: center; gap: 10px; min-height: 260px; color: var(--gx-mute); border: 1px dashed rgb(255 255 255 / .2); background: transparent; cursor: pointer; }
+.gx-add { display: grid; place-items: center; align-content: center; gap: 10px; min-height: 260px; color: var(--gx-mute); border: 1px dashed color-mix(in srgb, var(--color-text) 20%, transparent); background: transparent; cursor: pointer; }
 .gx-add span { font-size: 2.4em; line-height: 1; }
 
 .gx-offer { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: 18px; }
@@ -1108,9 +1109,9 @@ const css = /* css */ `
 .gx-offer-list > div { display: flex; align-items: center; gap: 22px; font-weight: 500; }
 .gx-offer-list .gx-ico { width: 26px; height: 26px; }
 .gx-offer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-.gx-offer-item { display: grid; align-content: start; gap: 10px; padding: 22px; border-radius: 20px; background: linear-gradient(140deg, #26262A, #1C1C1F); }
+.gx-offer-item { display: grid; align-content: start; gap: 10px; padding: 22px; border-radius: 20px; background: linear-gradient(140deg, var(--color-raise), var(--color-soft)); }
 .gx-offer-item small { color: var(--gx-mute); font-weight: 600; font-size: .82em; }
-.gx-offer-item p { color: #D4D4D8; font-size: .9em; line-height: 1.95; }
+.gx-offer-item p { color: var(--color-body); font-size: .9em; line-height: 1.95; }
 
 .gx-contact { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: clamp(20px, 5cqi, 60px); align-items: start; }
 .gx-info { display: flex; gap: 16px; align-items: flex-start; margin-bottom: 18px; }
@@ -1119,10 +1120,10 @@ const css = /* css */ `
 .gx-box .gx-ico { width: 22px; height: 22px; }
 .gx-form { padding: clamp(24px, 4cqi, 40px); }
 .gx-form form { display: grid; gap: 12px; margin-top: 20px; }
-.gx-form input, .gx-form textarea { width: 100%; padding: 14px 16px; border: none; border-radius: 12px; background: #232326; color: var(--gx-ink); font: inherit; font-size: .9em; }
-.gx-form input::placeholder, .gx-form textarea::placeholder { color: #75757C; }
-.gx-form button { padding: 14px; border: none; border-radius: 12px; background: #2E2E33; color: var(--gx-ink); font: inherit; font-weight: 600; cursor: pointer; transition: background .2s; }
-.gx-form button:hover { background: #3A3A40; }
+.gx-form input, .gx-form textarea { width: 100%; padding: 14px 16px; border: none; border-radius: 12px; background: var(--color-raise); color: var(--gx-ink); font: inherit; font-size: .9em; }
+.gx-form input::placeholder, .gx-form textarea::placeholder { color: var(--color-muted); }
+.gx-form button { padding: 14px; border: none; border-radius: 12px; background: var(--color-raise-2); color: var(--gx-ink); font: inherit; font-weight: 600; cursor: pointer; transition: background .2s; }
+.gx-form button:hover { background: color-mix(in srgb, var(--color-text) 26%, var(--color-surface)); }
 
 .gx-ghost { display: inline-flex; align-items: center; justify-content: center; padding: 2px 10px; border: 1px dashed currentColor; border-radius: 999px; font-size: .8em; opacity: .7; }
 

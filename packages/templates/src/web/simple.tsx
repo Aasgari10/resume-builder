@@ -205,16 +205,17 @@ export function simpleSample(locale: ResumeData["locale"]): ResumeData {
 /* ───────────── Styles ───────────── */
 
 const css = /* css */ `
-.sm { --sm-bg: #F7F7F5; --sm-card: #FFFFFF; --sm-ink: #1A1A1A; --sm-mute: #737373; --sm-line: #ECECEA;
+/* Page colors come from the theme (see palettes.ts for this template's designed ones). */
+.sm { --sm-bg: var(--color-bg); --sm-card: var(--color-surface); --sm-ink: var(--color-text); --sm-mute: var(--color-muted); --sm-line: var(--color-line);
   background: var(--sm-bg); color: var(--sm-ink); min-height: 100%;
-  background-image: radial-gradient(700px 360px at 50% -80px, var(--color-primary-soft), transparent 70%); }
+  background-image: radial-gradient(700px 360px at 50% -80px, color-mix(in srgb, var(--color-primary) 18%, transparent), transparent 70%); }
 .sm a { color: inherit; }
 .sm-col { width: min(640px, 100% - 32px); margin: 0 auto; padding: clamp(36px, 7cqi, 80px) 0 40px; display: grid; gap: 16px; }
 .sm-profile { display: grid; justify-items: center; gap: 10px; text-align: center; margin-bottom: 18px; animation: sm-grow .8s cubic-bezier(.2, 1.2, .3, 1) both; }
 @keyframes sm-grow { from { opacity: 0; transform: scale(.88); } }
 .sm-photo { position: relative; width: 112px; height: 112px; }
 .sm-photo img, .sm-photo span { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
-.sm-photo span { display: grid; place-items: center; background: var(--color-primary); color: #fff; font-size: 2.6em; font-weight: 800; }
+.sm-photo span { display: grid; place-items: center; background: var(--color-primary); color: var(--color-on-primary); font-size: 2.6em; font-weight: 800; }
 .sm-photo i { position: absolute; inset: -6px; border-radius: 50%; border: 2px solid var(--color-primary); border-right-color: transparent; border-bottom-color: transparent; animation: sm-spin 6s linear infinite; }
 @keyframes sm-spin { to { rotate: 360deg; } }
 .sm-profile h1 { margin-top: 6px; font-size: 1.6em; font-weight: 800; }
@@ -222,12 +223,12 @@ const css = /* css */ `
 .sm-tag { max-width: 30em; line-height: 1.9; }
 .sm-buttons { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 8px; }
 .sm-btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 20px; border-radius: 14px; background: var(--sm-card); box-shadow: inset 0 0 0 1px var(--sm-line), 0 6px 16px -12px rgb(0 0 0 / .4); font-weight: 600; font-size: .92em; transition: transform .2s, box-shadow .2s; }
-.sm-btn.main { background: var(--sm-ink); color: #fff; box-shadow: none; }
+.sm-btn.main { background: var(--sm-ink); color: var(--sm-bg); box-shadow: none; }
 .sm-btn:hover { transform: translateY(-2px); }
 .sm-btn .p-ico { width: 18px; height: 18px; }
 .sm-socials { justify-content: center; }
 .sm-socials a { color: var(--sm-mute); }
-.sm-socials a:hover { color: var(--color-primary); background: var(--sm-card); }
+.sm-socials a:hover { color: var(--color-primary-read); background: var(--sm-card); }
 
 .sm-card { padding: 22px; border-radius: 22px; background: var(--sm-card); box-shadow: inset 0 0 0 1px var(--sm-line), 0 18px 40px -34px rgb(0 0 0 / .45);
   animation: sm-grow .8s calc(.15s + var(--i) * .1s) cubic-bezier(.2, 1.2, .3, 1) backwards; }
@@ -236,16 +237,16 @@ const css = /* css */ `
 .sm-list { display: grid; gap: 6px; }
 .sm-link, .sm-job-row { display: flex; align-items: center; gap: 14px; padding: 10px; margin: 0 -10px; border-radius: 16px; transition: background .2s; }
 .sm-link:hover { background: var(--sm-bg); }
-.sm-thumb { position: relative; width: 58px; height: 58px; flex: none; border-radius: 14px; overflow: hidden; background: var(--color-primary-soft); }
+.sm-thumb { position: relative; width: 58px; height: 58px; flex: none; border-radius: 14px; overflow: hidden; background: color-mix(in srgb, var(--color-primary) 14%, var(--color-surface)); }
 .sm-thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s; }
-.sm-thumb b { position: absolute; inset: 0; display: grid; place-items: center; color: var(--color-primary); }
+.sm-thumb b { position: absolute; inset: 0; display: grid; place-items: center; color: var(--color-primary-read); }
 .sm-link:hover .sm-thumb img { transform: scale(1.1); }
 .sm-link-text { display: grid; gap: 3px; min-width: 0; flex: 1; }
 .sm-link-text small { color: var(--sm-mute); font-size: .82em; line-height: 1.7; }
 .sm-go { width: 18px; height: 18px; color: var(--sm-mute); transition: transform .25s, color .25s; }
 .sm[dir="rtl"] .sm-go { transform: scaleX(-1); }
-.sm-link:hover .sm-go { color: var(--color-primary); transform: scaleX(-1) translate(3px, -3px); }
-.sm-dot { width: 46px; height: 46px; flex: none; display: grid; place-items: center; border-radius: 14px; background: var(--color-primary-soft); color: var(--color-primary); font-weight: 800; }
+.sm-link:hover .sm-go { color: var(--color-primary-read); transform: scaleX(-1) translate(3px, -3px); }
+.sm-dot { width: 46px; height: 46px; flex: none; display: grid; place-items: center; border-radius: 14px; background: color-mix(in srgb, var(--color-primary) 14%, var(--color-surface)); color: var(--color-primary-read); font-weight: 800; }
 .sm-certs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .sm-certs .p-cert-pic { aspect-ratio: 1; border-radius: 14px; padding: 8px; background: var(--sm-bg); }
 .sm-certs .p-cert-pic img { object-fit: contain; }

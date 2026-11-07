@@ -146,3 +146,5 @@ export function pageTitle(data: ResumeData, page: string): string {
 export function getTemplate(id: string): TemplateDefinition {
   return TEMPLATES[id] ?? minimalPortfolio;
 }
+
+export { PAGE_PRESETS, SITE_PALETTES, ownColors, pageColorsFrom, siteTheme, type PageColors } from "./palettes";

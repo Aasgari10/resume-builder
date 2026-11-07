@@ -240,7 +240,8 @@ export function codeSample(locale: ResumeData["locale"]): ResumeData {
 /* ───────────── Styles ───────────── */
 
 const css = /* css */ `
-.cd { --cd-bg: #0B1222; --cd-ink: #E2E8F0; --cd-mute: #8C9AB3; --cd-head: #F1F5F9; --cd-accent: var(--color-primary-on-dark);
+/* Page colors come from the theme (see palettes.ts for this template's designed ones). */
+.cd { --cd-bg: var(--color-bg); --cd-ink: var(--color-body); --cd-mute: var(--color-muted); --cd-head: var(--color-text); --cd-accent: var(--color-primary-read);
   position: relative; background: var(--cd-bg); color: var(--cd-mute); min-height: 100%; }
 .cd a { color: inherit; }
 .cd-glow { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(600px 400px at 85% 10%, color-mix(in srgb, var(--color-primary) 22%, transparent), transparent 70%), radial-gradient(500px 500px at 10% 70%, color-mix(in srgb, var(--color-primary) 10%, transparent), transparent 70%); }
@@ -258,7 +259,7 @@ const css = /* css */ `
 .cd-nav a:hover { color: var(--cd-head); }
 .cd-nav a:hover i { width: 64px; background: var(--cd-accent); }
 .cd-socials a { color: var(--cd-mute); }
-.cd-socials a:hover { color: var(--cd-head); background: rgb(255 255 255 / .06); }
+.cd-socials a:hover { color: var(--cd-head); background: color-mix(in srgb, var(--color-text) 6%, transparent); }
 
 .cd-main { padding: clamp(28px, 5cqi, 64px) 0; }
 .cd-sec { margin-bottom: clamp(48px, 8cqi, 96px); scroll-margin-top: 30px; }
@@ -269,7 +270,7 @@ const css = /* css */ `
 .cd-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
 .cd-list > li { animation: cd-in .8s cubic-bezier(.2, 1, .3, 1) both; }
 .cd-row { position: relative; display: grid; grid-template-columns: 9em 1fr; gap: 18px; padding: 20px; margin-inline: -20px; border-radius: 14px; transition: background .3s, box-shadow .3s; }
-.cd-row:hover { background: rgb(148 163 184 / .06); box-shadow: inset 0 1px 0 rgb(148 163 184 / .1); }
+.cd-row:hover { background: color-mix(in srgb, var(--color-text) 5%, transparent); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-text) 8%, transparent); }
 .cd-list:hover > li > .cd-row:not(:hover), .cd-list:hover > li:not(:hover) > .cd-row { opacity: .55; }
 .cd-row { transition: background .3s, box-shadow .3s, opacity .3s; }
 .cd-date { padding-top: 3px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .74em; letter-spacing: .03em; text-transform: uppercase; }
@@ -277,14 +278,14 @@ const css = /* css */ `
 .cd-at { color: var(--cd-mute); font-weight: 400; }
 .cd-row p { margin-top: 8px; font-size: .9em; line-height: 1.95; }
 .cd-row:hover h3 { color: var(--cd-accent); }
-.cd-shot { aspect-ratio: 16 / 10; border-radius: 8px; overflow: hidden; border: 2px solid rgb(148 163 184 / .2); background: rgb(148 163 184 / .1); transition: border-color .3s; }
+.cd-shot { aspect-ratio: 16 / 10; border-radius: 8px; overflow: hidden; border: 2px solid color-mix(in srgb, var(--color-text) 16%, transparent); background: color-mix(in srgb, var(--color-text) 8%, transparent); transition: border-color .3s; }
 .cd-shot img { width: 100%; height: 100%; object-fit: cover; }
-.cd-proj:hover .cd-shot { border-color: rgb(148 163 184 / .4); }
+.cd-proj:hover .cd-shot { border-color: color-mix(in srgb, var(--color-text) 32%, transparent); }
 .cd-go { width: 15px; height: 15px; margin-inline-start: 6px; vertical-align: middle; transition: transform .3s; }
 .cd[dir="rtl"] .cd-go { transform: scaleX(-1); }
 .cd-proj:hover .cd-go { transform: translate(-3px, -3px) scaleX(-1); }
 .cd-certs { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-.cd-certs .p-cert-pic { aspect-ratio: 4 / 3; border-radius: 10px; padding: 10px; background: rgb(148 163 184 / .08); border: 1px solid rgb(148 163 184 / .15); }
+.cd-certs .p-cert-pic { aspect-ratio: 4 / 3; border-radius: 10px; padding: 10px; background: color-mix(in srgb, var(--color-text) 6%, transparent); border: 1px solid color-mix(in srgb, var(--color-text) 12%, transparent); }
 .cd-certs .p-cert-pic img { object-fit: contain; }
 .cd-certs strong { color: var(--cd-head); font-weight: 600; font-size: .92em; }
 .cd-note { font-size: .8em; opacity: .7; }
