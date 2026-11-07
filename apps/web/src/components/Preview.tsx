@@ -226,9 +226,17 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
                 return;
               }
               if (target.kind === "newimage") {
-                // A new certificate picture joins the user's own gallery (sample pictures are replaced).
+                // A new picture joins the user's own list (sample pictures are replaced): a client
+                // logo, or by default a gallery picture / certificate.
                 const site = raw.site ?? { gallery: [] };
-                onDataChange({ ...raw, site: { ...site, gallery: [...site.gallery, { id: newId(), title: "مدرک جدید", image: String(value) }] } });
+                const image = String(value);
+                onDataChange({
+                  ...raw,
+                  site:
+                    target.path === "site.clients"
+                      ? { ...site, clients: [...(site.clients ?? []), { id: newId(), name: "مشتری", image }] }
+                      : { ...site, gallery: [...site.gallery, { id: newId(), title: "مدرک جدید", image }] },
+                });
                 setTarget(null);
                 return;
               }

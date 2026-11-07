@@ -20,6 +20,7 @@ import { VITRINE_OPTIONAL_PAGES } from "./web/vitrine";
 import { VCARD_OPTIONAL_PAGES, VcardPortfolio, vcardPages, vcardSample } from "./web/vcard";
 import { CODE_BLOCKS, CodePortfolio, codePages, codeSample } from "./web/code";
 import { SIMPLE_BLOCKS, SimplePortfolio, simplePages, simpleSample } from "./web/simple";
+import { SEPID_BLOCKS, SEPID_OPTIONAL_PAGES, SepidPortfolio, sepidPages, sepidSample } from "./web/sepid";
 import type { ResumeData } from "@rb/schema";
 import type { TemplateDefinition, TemplateTag } from "./types";
 
@@ -81,6 +82,7 @@ export const PORTFOLIO_TEMPLATES: readonly TemplateDefinition[] = [
   { ...web("vcard-portfolio", "کارت", VcardPortfolio), pages: vcardPages, sample: vcardSample, optionalPages: VCARD_OPTIONAL_PAGES },
   { ...web("code-portfolio", "کد", CodePortfolio), pages: codePages, sample: codeSample, blocks: CODE_BLOCKS },
   { ...web("simple-portfolio", "ساده", SimplePortfolio), pages: simplePages, sample: simpleSample, blocks: SIMPLE_BLOCKS },
+  { ...web("sepid-portfolio", "سپید", SepidPortfolio), pages: sepidPages, sample: sepidSample, optionalPages: SEPID_OPTIONAL_PAGES, blocks: SEPID_BLOCKS },
   minimalPortfolio,
   web("studio-portfolio", "استودیو", StudioPortfolio),
   web("split-portfolio", "دوستونه", SplitPortfolio),

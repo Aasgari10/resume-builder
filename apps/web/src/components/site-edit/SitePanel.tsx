@@ -137,6 +137,8 @@ function Settings({ data, theme, template, onResetColors, ownColors, onData, onT
       onData({ ...data, education: [...data.education, { id: newId(), institution: "نام دانشگاه", degree: "کارشناسی", period: { start: thisMonth(), current: false } }] }),
     certificate: () => onData({ ...data, certificates: [...data.certificates, { id: newId(), title: "دوره‌ی جدید" }] }),
     skill: () => onData({ ...data, skills: [...data.skills, { id: newId(), name: "مهارت جدید" }] }),
+    testimonial: () =>
+      onData({ ...data, site: { ...site, testimonials: [...(site.testimonials ?? []), { id: newId(), name: "نام مشتری", text: "نظر مشتری درباره‌ی کار شما" }] } }),
   };
 
   return (
@@ -266,6 +268,11 @@ function Settings({ data, theme, template, onResetColors, ownColors, onData, onT
           <button type="button" className="btn ghost small" onClick={add.skill}>
             + مهارت
           </button>
+          {blocks.some((b) => b.key === "testimonials") && (
+            <button type="button" className="btn ghost small" onClick={add.testimonial}>
+              + نظر مشتری
+            </button>
+          )}
           <input ref={file} type="file" accept="image/*" hidden onChange={(e) => e.target.files?.[0] && void addPicture(e.target.files[0])} />
         </div>
         {error && <p className="error small">{error}</p>}

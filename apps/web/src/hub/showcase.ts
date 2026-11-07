@@ -22,6 +22,7 @@ export const SHOWCASE_COLORS: Record<string, string> = {
   "vcard-portfolio": "#E8A33D",
   "code-portfolio": "#2DD4BF",
   "simple-portfolio": "#16A34A",
+  "sepid-portfolio": "#0B84E8",
 };
 
 export const showcaseColor = (id: string) => SHOWCASE_COLORS[id] ?? "#1E3A5F";

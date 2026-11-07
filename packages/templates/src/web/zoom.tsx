@@ -5,16 +5,16 @@
 // The large views are rendered once per page, outside the cards: animated cards would otherwise
 // trap the full-screen layer inside themselves.
 
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 export type ZoomItem = { id: string; src: string; title?: string; caption?: string };
 
 const zoomId = (id: string) => `zoom-${id.replace(/[^\w-]/g, "")}`;
 
 /** Clickable area that opens the large view of one item. */
-export function ZoomOpen({ id, className, children }: { id: string; className?: string; children: ReactNode }) {
+export function ZoomOpen({ id, className, style, children }: { id: string; className?: string; style?: CSSProperties; children: ReactNode }) {
   return (
-    <label htmlFor={zoomId(id)} className={`w-zoom-open${className ? ` ${className}` : ""}`}>
+    <label htmlFor={zoomId(id)} className={`w-zoom-open${className ? ` ${className}` : ""}`} style={style}>
       {children}
     </label>
   );

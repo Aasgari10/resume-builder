@@ -184,6 +184,16 @@ function buildResumeSchemas(strict: boolean) {
     description: z.string().max(500).optional(),
   });
 
+  // What a client said about the work, and the logos of clients (shown by some templates).
+  const testimonial = z.object({
+    id,
+    name: z.string().max(80),
+    role: z.string().max(100).optional(),
+    text: z.string().max(600),
+    image: optionalUrl,
+  });
+  const clientLogo = z.object({ id, name: z.string().max(80), image: url() });
+
   const site = z.object({
     tagline: z.string().max(200).optional(), // one or two lines under the name; the summary is used when empty
     ctaPrimary: z.string().max(30).optional(), // hero button to the work
@@ -194,6 +204,8 @@ function buildResumeSchemas(strict: boolean) {
     aboutImage: optionalUrl,
     aboutCaption: z.string().max(80).optional(),
     gallery: z.array(galleryItem).max(40).default([]),
+    testimonials: z.array(testimonial).max(20).optional(),
+    clients: z.array(clientLogo).max(30).optional(),
     hiddenPages: z.array(z.string().max(20)).max(10).optional(), // menu pages the user switched off, e.g. "/gallery"
     hiddenBlocks: z.array(z.string().max(30)).max(30).optional(), // template sections the user switched off
     clearedFields: z.array(z.string().max(40)).max(60).optional(), // fields emptied on purpose: the preview shows no sample there

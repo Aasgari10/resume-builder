@@ -44,6 +44,8 @@ export function withPlaceholders(data: ResumeData, sample: ResumeData = sampleRe
       ...Object.fromEntries(Object.entries(sample.site ?? {}).filter(([k]) => !cleared.has(`site.${k}`))),
       ...Object.fromEntries(Object.entries(data.site ?? {}).filter(([, v]) => (typeof v === "string" ? v.trim() : v))),
       gallery: keep(data.site?.gallery ?? [], (x) => Boolean(x.image.trim()), sample.site?.gallery ?? []),
+      testimonials: keep(data.site?.testimonials ?? [], (x) => Boolean(x.text.trim()), sample.site?.testimonials ?? []),
+      clients: keep(data.site?.clients ?? [], (x) => Boolean(x.image.trim()), sample.site?.clients ?? []),
     },
     customSections: keep(data.customSections, (x) => Boolean(x.title && x.items.some((i) => i.title)), sample.customSections),
   };

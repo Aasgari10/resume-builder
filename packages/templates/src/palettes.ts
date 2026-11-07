@@ -14,6 +14,7 @@ export const SITE_PALETTES: Record<string, PageColors> = {
   "vcard-portfolio": { background: "#EDEFF3", surface: "#FFFFFF", text: "#1E2230", mutedText: "#6B7080" },
   "code-portfolio": { background: "#0B1222", surface: "#111B30", text: "#F1F5F9", mutedText: "#8C9AB3" },
   "simple-portfolio": { background: "#F7F7F5", surface: "#FFFFFF", text: "#1A1A1A", mutedText: "#737373" },
+  "sepid-portfolio": { background: "#FFFFFF", surface: "#FCFCFC", text: "#333333", mutedText: "#8A8A8A" },
 };
 
 /** Ready-made page color sets for the editor (the template's own colors come first). */
