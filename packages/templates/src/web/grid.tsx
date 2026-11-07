@@ -9,6 +9,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import type { ResumeData } from "@rb/schema";
 import { WebPage, webCtx, type Ctx } from "./kit";
+import { ZoomOpen } from "./zoom";
 import { formatNumber, formatPeriod, formatYearMonth, isDummyUrl, linkLabel, safeUrl } from "../format";
 import { sampleImage, sampleResume } from "../sample";
 import type { TemplateProps } from "../types";
@@ -54,6 +55,7 @@ const TEXT = {
     certificates: "گواهی‌ها",
     myCerts: "مدارک من",
     addCert: "افزودن مدرک",
+    close: "بستن",
     specialization: "تخصص",
     services: "خدماتی که ارائه می‌دهم",
     stayWithMe: "همراه من باشید",
@@ -96,6 +98,7 @@ const TEXT = {
     certificates: "Certificates",
     myCerts: "My certificates",
     addCert: "Add certificate",
+    close: "Close",
     specialization: "Specialization",
     services: "Services offering",
     stayWithMe: "Stay with me",
@@ -749,7 +752,7 @@ function Gallery(view: View) {
           const src = safeUrl(g.image)!;
           return (
             <Card key={g.id} className="gx-cert" i={k}>
-              <a href={src} target="_blank" rel="noopener noreferrer" className="gx-fill">
+              <ZoomOpen id={g.id} className="gx-fill">
                 {/* The certificate sits on a dark mat, so any paper colour or shape looks at home. */}
                 <div className="gx-mat" {...ed(`${at}.image`, "image", "تصویر مدرک")}>
                   <img src={src} alt={g.title} loading="lazy" />
@@ -761,7 +764,7 @@ function Gallery(view: View) {
                   <strong {...ed(`${at}.title`, "text", "عنوان مدرک")}>{g.title}</strong>
                 </div>
                 <Go />
-              </a>
+              </ZoomOpen>
             </Card>
           );
         })}

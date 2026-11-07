@@ -5,6 +5,7 @@
 // page shows it in full with two buttons, inner pages in a compact form. Colors come from the theme.
 // Every text and picture carries a data-edit marker so the editor can change it in place.
 
+import { ZoomOpen } from "./zoom";
 import type { ReactNode } from "react";
 import type { Project, ResumeData } from "@rb/schema";
 import { Avatar, WebPage, webCtx, type Ctx } from "./kit";
@@ -272,7 +273,9 @@ function Gallery({ ctx, editing }: View) {
         const at = item("site.gallery", g.id);
         return (
           <figure key={g.id} className="vt-shot">
-            <img src={safeUrl(g.image)} alt={g.title} loading="lazy" {...ed(`${at}.image`, "image", "تصویر مدرک")} />
+            <ZoomOpen id={g.id}>
+              <img src={safeUrl(g.image)} alt={g.title} loading="lazy" {...ed(`${at}.image`, "image", "تصویر مدرک")} />
+            </ZoomOpen>
             <figcaption>
               <Opt value={g.title} editing={editing} edit={ed(`${at}.title`, "text", "عنوان")}>
                 <span {...ed(`${at}.title`, "text", "عنوان")}>{g.title}</span>

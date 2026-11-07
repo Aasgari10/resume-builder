@@ -31,6 +31,11 @@ const templates = [
   { id: "vitrine-portfolio", name: "ویترین", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
   { id: "aseman-portfolio", name: "آسمان", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
   { id: "grid-portfolio", name: "گرید", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
+  { id: "vcard-portfolio", name: "کارت", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
+  { id: "canvas-portfolio", name: "بوم", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
+  { id: "code-portfolio", name: "کد", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
+  { id: "simple-portfolio", name: "ساده", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
+  { id: "magazine-portfolio", name: "مجله", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
 ];
 
 async function main() {

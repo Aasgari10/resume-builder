@@ -17,6 +17,11 @@ import { VitrinePortfolio, vitrinePages } from "./web/vitrine";
 import { AsemanPortfolio, ASEMAN_BLOCKS, asemanPages, asemanSample } from "./web/aseman";
 import { GRID_BLOCKS, GRID_OPTIONAL_PAGES, GridPortfolio, gridPages, gridSample } from "./web/grid";
 import { VITRINE_OPTIONAL_PAGES } from "./web/vitrine";
+import { VCARD_OPTIONAL_PAGES, VcardPortfolio, vcardPages, vcardSample } from "./web/vcard";
+import { CANVAS_BLOCKS, CanvasPortfolio, canvasPages, canvasSample } from "./web/canvas";
+import { CODE_BLOCKS, CodePortfolio, codePages, codeSample } from "./web/code";
+import { SIMPLE_BLOCKS, SimplePortfolio, simplePages, simpleSample } from "./web/simple";
+import { MAGAZINE_BLOCKS, MAGAZINE_OPTIONAL_PAGES, MagazinePortfolio, magazinePages, magazineSample } from "./web/magazine";
 import type { ResumeData } from "@rb/schema";
 import type { TemplateDefinition, TemplateTag } from "./types";
 
@@ -75,6 +80,11 @@ export const PORTFOLIO_TEMPLATES: readonly TemplateDefinition[] = [
   { ...web("vitrine-portfolio", "ویترین", VitrinePortfolio), pages: vitrinePages, optionalPages: VITRINE_OPTIONAL_PAGES },
   { ...web("aseman-portfolio", "آسمان", AsemanPortfolio), pages: asemanPages, sample: asemanSample, blocks: ASEMAN_BLOCKS },
   { ...web("grid-portfolio", "گرید", GridPortfolio), pages: gridPages, sample: gridSample, optionalPages: GRID_OPTIONAL_PAGES, blocks: GRID_BLOCKS },
+  { ...web("vcard-portfolio", "کارت", VcardPortfolio), pages: vcardPages, sample: vcardSample, optionalPages: VCARD_OPTIONAL_PAGES },
+  { ...web("canvas-portfolio", "بوم", CanvasPortfolio), pages: canvasPages, sample: canvasSample, blocks: CANVAS_BLOCKS },
+  { ...web("code-portfolio", "کد", CodePortfolio), pages: codePages, sample: codeSample, blocks: CODE_BLOCKS },
+  { ...web("simple-portfolio", "ساده", SimplePortfolio), pages: simplePages, sample: simpleSample, blocks: SIMPLE_BLOCKS },
+  { ...web("magazine-portfolio", "مجله", MagazinePortfolio), pages: magazinePages, sample: magazineSample, optionalPages: MAGAZINE_OPTIONAL_PAGES, blocks: MAGAZINE_BLOCKS },
   minimalPortfolio,
   web("studio-portfolio", "استودیو", StudioPortfolio),
   web("split-portfolio", "دوستونه", SplitPortfolio),

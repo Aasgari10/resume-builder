@@ -4,6 +4,7 @@
 // and style them for the screen; layout adapts to the container width (container queries),
 // so the editor preview can emulate mobile.
 
+import { ZoomLayers, zoomCss } from "./zoom";
 import type { CSSProperties, ReactNode } from "react";
 import { themeToCssVars, type ResumeData } from "@rb/schema";
 import { Heading, Section, displayUrl, makeCtx, type Ctx } from "../kit";
@@ -14,15 +15,20 @@ export { Avatar, ContactList, Heading, Section, hasContact, makeCtx, splitSectio
 
 /** Page root for a website template: direction, language, theme variables and styles. */
 export function WebPage({ ctx, className, css, children }: { ctx: Ctx; className: string; css: string; children: ReactNode }) {
+  const dir = ctx.data.locale === "fa" ? "rtl" : "ltr";
+  const vars = themeToCssVars(ctx.theme) as CSSProperties;
+  // Large views of the certificates sit outside the page box: the page is a size container, and
+  // a full-screen layer inside it would cover the whole (long) page instead of the screen.
+  const zoom = (ctx.data.site?.gallery ?? [])
+    .map((g) => ({ id: g.id, src: safeUrl(g.image), title: g.title, caption: g.description }))
+    .filter((g): g is { id: string; src: string; title: string; caption: string | undefined } => Boolean(g.src));
   return (
-    <div
-      className={`w-page ${className}`}
-      dir={ctx.data.locale === "fa" ? "rtl" : "ltr"}
-      lang={ctx.data.locale}
-      style={themeToCssVars(ctx.theme) as CSSProperties}
-    >
-      <style>{webStyles + css}</style>
-      {children}
+    <div className="w-shell" dir={dir} lang={ctx.data.locale} style={vars}>
+      <div className={`w-page ${className}`} dir={dir} lang={ctx.data.locale} style={vars}>
+        <style>{webStyles + zoomCss + css}</style>
+        {children}
+      </div>
+      <ZoomLayers items={zoom} closeLabel={ctx.data.locale === "fa" ? "بستن" : "Close"} />
     </div>
   );
 }
@@ -121,6 +127,7 @@ export function Footer({ data }: { data: ResumeData }) {
 
 /* Base screen styles for the shared section markup (k-*) and web pieces (w-*). */
 const webStyles = /* css */ `
+.w-shell { display: contents; }
 .w-page {
   container-type: inline-size;
   --w-space: calc(var(--space-factor, 1) * 1rem);

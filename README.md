@@ -197,3 +197,11 @@ GitHub Actions runs on every push to `main` and on pull requests: install, Prism
 - Placeholder links (`#`, `example.com`, `example.ir`) always take the visitor to the top of the page:
   in the editor preview (`Preview.tsx`) and on published sites (`renderSitePage`). Templates never invent
   other dummy targets.
+- In every website template, clicking a certificate (gallery picture) shows it large over the page.
+  Wrap the picture in `ZoomOpen` (`packages/templates/src/web/zoom.tsx`), or use the shared `Certificates`
+  gallery (`web/parts.tsx`). `WebPage` adds the large views itself, outside the page box, so animated
+  cards cannot trap them. It needs no scripts, so it works on published sites too.
+- Every page, section and optional field can be removed by the user: templates list their switchable
+  pages (`optionalPages`) and sections (`blocks`), and the editor's "پاک کردن" empties a field for good.
+- Shared pieces for website templates live in `web/parts.tsx` (edit markers, icons, social links,
+  certificates), so a project-wide rule is written once.
