@@ -6,12 +6,14 @@ import { sampleResume } from "./sample";
  * resume already looks like a finished one. Empty basics fields are filled one by one; a section
  * with no items gets the sample items. Never used for the downloaded PDF or a published site.
  */
-export function withPlaceholders(data: ResumeData): ResumeData {
-  const sample = sampleResume(data.locale);
+export function withPlaceholders(data: ResumeData, sample: ResumeData = sampleResume(data.locale)): ResumeData {
   const b = data.basics;
   const s = sample.basics;
-  const pick = <T,>(value: T | undefined, fallback: T | undefined) =>
+  // Fields the user emptied on purpose stay empty instead of showing sample content.
+  const cleared = new Set(data.site?.clearedFields ?? []);
+  const fill = <T,>(value: T | undefined, fallback: T | undefined) =>
     typeof value === "string" ? (value.trim() ? value : fallback) : (value ?? fallback);
+  const pick = <T,>(value: T | undefined, fallback: T | undefined, path?: string) => (path && cleared.has(path) ? value : fill(value, fallback));
   const keep = <T,>(list: T[], filled: (x: T) => boolean, fallback: T[]) => (list.some(filled) ? list : fallback);
 
   return {
@@ -19,12 +21,12 @@ export function withPlaceholders(data: ResumeData): ResumeData {
     basics: {
       ...b,
       fullName: pick(b.fullName, s.fullName) ?? "",
-      jobTitle: pick(b.jobTitle, s.jobTitle),
-      email: pick(b.email, s.email),
-      phone: pick(b.phone, s.phone),
-      location: pick(b.location, s.location),
-      summary: pick(b.summary, s.summary),
-      avatarUrl: pick(b.avatarUrl, s.avatarUrl),
+      jobTitle: pick(b.jobTitle, s.jobTitle, "basics.jobTitle"),
+      email: pick(b.email, s.email, "basics.email"),
+      phone: pick(b.phone, s.phone, "basics.phone"),
+      location: pick(b.location, s.location, "basics.location"),
+      summary: pick(b.summary, s.summary, "basics.summary"),
+      avatarUrl: pick(b.avatarUrl, s.avatarUrl, "basics.avatarUrl"),
       links: b.links.some((l) => l.url.trim()) ? b.links : s.links,
       personal: {
         ...b.personal,
@@ -39,9 +41,11 @@ export function withPlaceholders(data: ResumeData): ResumeData {
     languages: keep(data.languages, (x) => Boolean(x.name), sample.languages),
     certificates: keep(data.certificates, (x) => Boolean(x.title), sample.certificates),
     site: {
-      ...sample.site,
+      ...Object.fromEntries(Object.entries(sample.site ?? {}).filter(([k]) => !cleared.has(`site.${k}`))),
       ...Object.fromEntries(Object.entries(data.site ?? {}).filter(([, v]) => (typeof v === "string" ? v.trim() : v))),
       gallery: keep(data.site?.gallery ?? [], (x) => Boolean(x.image.trim()), sample.site?.gallery ?? []),
+      testimonials: keep(data.site?.testimonials ?? [], (x) => Boolean(x.text.trim()), sample.site?.testimonials ?? []),
+      clients: keep(data.site?.clients ?? [], (x) => Boolean(x.image.trim()), sample.site?.clients ?? []),
     },
     customSections: keep(data.customSections, (x) => Boolean(x.title && x.items.some((i) => i.title)), sample.customSections),
   };

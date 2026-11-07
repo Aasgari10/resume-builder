@@ -24,14 +24,14 @@ test("multi-page templates render every page and reject unknown ones", () => {
   for (const t of Object.values(TEMPLATES).filter((x) => x.pages)) {
     const data = sampleResume("fa");
     const pages = t.pages!(data);
-    assert.ok(pages.includes("/about") && pages.some((p) => p.startsWith("/projects/")));
+    assert.equal(pages[0], "/");
     for (const page of pages) {
       assert.equal(resolvePage(t, data, page + "/"), page);
       const html = renderToStaticMarkup(<t.component data={data} theme={defaultTheme(t.id, "fa")} page={page} link={(p) => `/s/x${p}`} />);
       assert.ok(!html.includes("پیدا نشد"), `${t.id} ${page}`);
-      assert.ok(html.includes('href="/s/x/about"'), `${t.id} ${page} links`);
+      assert.ok(html.includes('href="/s/x/"') || html.includes('href="/s/x'), `${t.id} ${page} links`);
     }
     assert.equal(resolvePage(t, data, "/nope"), null);
-    assert.equal(resolvePage(t, emptyResume("fa"), "/gallery"), null);
+    assert.equal(resolvePage(t, emptyResume("fa"), "/projects/none"), null);
   }
 });

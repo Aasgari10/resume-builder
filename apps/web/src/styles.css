@@ -1072,3 +1072,21 @@ select {
 .ep-types button { padding: 4px 10px; border: 1px solid var(--border); border-radius: 999px; background: #fff; font: inherit; font-size: 0.82rem; cursor: pointer; }
 .ep-types button[aria-checked="true"] { border-color: #5b4bea; background: #f1effe; color: #4535d6; font-weight: 700; }
 .sp .btn.ghost[aria-pressed="true"] { border-color: #5b4bea; background: #f1effe; color: #4535d6; }
+
+/* The site editor fills the window below the top bar; only the site inside scrolls, so the page
+   never scrolls past the template into empty space. Phones keep normal page scrolling. */
+@media (min-width: 861px) {
+  #root:has(.site-editor) { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
+  #root:has(.site-editor) > main { flex: 1; min-height: 0; max-width: none; padding: 10px 12px; display: flex; flex-direction: column; }
+  .site-editor { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .site-editor .ws:not(.full) { flex: 1; height: auto; min-height: 0; }
+}
+
+/* Page color choices in the site panel */
+.sp-swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px; margin-bottom: 10px; }
+.sp-swatch { display: grid; justify-items: center; gap: 6px; padding: 8px 4px; border: 1px solid var(--border); border-radius: 12px; background: transparent; cursor: pointer; font: inherit; font-size: .75rem; color: inherit; }
+.sp-swatch[aria-pressed="true"] { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 25%, transparent); }
+.sp-swatch i { display: grid; place-items: end start; width: 44px; height: 32px; padding: 5px; border-radius: 8px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .1); }
+.sp-swatch i b { display: grid; place-items: center; width: 22px; height: 16px; border-radius: 4px; font-size: 10px; font-weight: 700; font-style: normal; }
+.sp-rainbow { background: conic-gradient(#F87171, #FBBF24, #34D399, #60A5FA, #A78BFA, #F87171); }
+.sp-bg-dot { box-shadow: inset 0 0 0 1px rgb(0 0 0 / .15); }

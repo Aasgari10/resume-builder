@@ -6,7 +6,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as Rea
 import { ApiError } from "../../api";
 import { uploadPicture } from "./uploadImage";
 
-export type EditKind = "text" | "multiline" | "image" | "url" | "period" | "month" | "lines" | "tags" | "newlink";
+export type EditKind = "text" | "multiline" | "image" | "url" | "period" | "month" | "lines" | "tags" | "newlink" | "newimage";
 
 /** Ways to be reached that can be added from the page, in menu order. */
 const LINK_TYPES: { value: string; label: string; hint: string }[] = [
@@ -57,6 +57,8 @@ type Props = {
   /** What the preview shows there now, used as a hint. */
   shown: unknown;
   canRemove: boolean;
+  /** Whether this field may be left empty (the name, titles and dates of items are required). */
+  canClear: boolean;
   onSave: (value: unknown) => void;
   onRemove: () => void;
   onClose: () => void;
@@ -67,7 +69,7 @@ const YM = /^\d{4}-(0[1-9]|1[0-2])$/;
 
 const asText = (v: unknown) => (Array.isArray(v) ? v.join("\n") : typeof v === "string" ? v : "");
 
-export function EditPopover({ target, value, shown, canRemove, onSave, onRemove, onClose }: Props) {
+export function EditPopover({ target, value, shown, canRemove, canClear, onSave, onRemove, onClose }: Props) {
   const { kind } = target;
   const [text, setText] = useState(kind === "tags" && Array.isArray(value) ? value.join("، ") : asText(value));
   const initialPeriod = (value ?? shown) as Period | undefined;
@@ -144,6 +146,16 @@ export function EditPopover({ target, value, shown, canRemove, onSave, onRemove,
         </button>
       </div>
 
+      {kind === "newimage" && (
+        <>
+          <button type="button" className="btn" disabled={busy} onClick={() => file.current?.click()}>
+            {busy ? "در حال آپلود…" : "انتخاب تصویر"}
+          </button>
+          <input ref={file} type="file" accept="image/*" hidden onChange={(e) => e.target.files?.[0] && void upload(e.target.files[0])} />
+          <small className="muted">بعد از آپلود، روی عنوان مدرک کلیک کنید تا اسمش را بنویسید.</small>
+        </>
+      )}
+
       {kind === "image" && (
         <>
           {typeof value === "string" && value && <img className="ep-thumb" src={value} alt="" />}
@@ -156,7 +168,7 @@ export function EditPopover({ target, value, shown, canRemove, onSave, onRemove,
             <input className="ltr" dir="ltr" value={text} placeholder="https://..." onChange={(e) => setText(e.target.value)} onKeyDown={onEnter} />
           </label>
           <div className="ep-actions">
-            {Boolean(value) && (
+            {canClear && Boolean(value || shown) && (
               <button type="button" className="btn ghost danger" onClick={() => onSave("")}>
                 حذف تصویر
               </button>
@@ -221,10 +233,15 @@ export function EditPopover({ target, value, shown, canRemove, onSave, onRemove,
         </div>
       )}
 
-      {kind !== "image" && (
+      {kind !== "image" && kind !== "newimage" && (
         <>
           {value === undefined && hint && kind !== "newlink" && <small className="muted">متن کم‌رنگ نمونه است؛ تا چیزی ننویسید، در سایت منتشرشده نمی‌آید.</small>}
           <div className="ep-actions">
+            {canClear && kind !== "newlink" && Boolean(asText(value) || hint) && (
+              <button type="button" className="btn ghost danger" onClick={() => onSave(kind === "lines" || kind === "tags" ? [] : "")} title="این بخش در سایت نمایش داده نمی‌شود">
+                پاک کردن
+              </button>
+            )}
             <button type="button" className="btn" onClick={save}>
               ثبت
             </button>

@@ -15,8 +15,8 @@ const YEAR_MONTH_OR_EMPTY = /^(\d{4}-(0[1-9]|1[0-2]))?$/;
 /** Sample pictures shipped with the app and served by the API (see SAMPLE_ASSETS_PATH in the API). */
 export const SAMPLE_ASSETS_PATH = "/_assets/samples/";
 /** Bumped when the pictures change, so browsers fetch the new files instead of cached ones. */
-export const SAMPLE_ASSETS_VERSION = 4;
-export const isSampleAsset = (v: string) => /^\/_assets\/samples\/[a-z0-9-]+\.jpg(\?v=\d+)?$/.test(v);
+export const SAMPLE_ASSETS_VERSION = 6;
+export const isSampleAsset = (v: string) => /^\/_assets\/samples\/[a-z0-9-]+\.(jpg|png)(\?v=\d+)?$/.test(v);
 
 function buildResumeSchemas(strict: boolean) {
   /* ───────────── Primitives ───────────── */
@@ -125,6 +125,7 @@ function buildResumeSchemas(strict: boolean) {
     name: text(1, 50),
     level: z.number().int().min(1).max(5).optional(), // 1–5; templates may hide it
     category: z.string().max(50).optional(), // used for grouping
+    description: z.string().max(800).optional(), // website templates that explain each skill
   });
 
   const project = z.object({
@@ -183,6 +184,16 @@ function buildResumeSchemas(strict: boolean) {
     description: z.string().max(500).optional(),
   });
 
+  // What a client said about the work, and the logos of clients (shown by some templates).
+  const testimonial = z.object({
+    id,
+    name: z.string().max(80),
+    role: z.string().max(100).optional(),
+    text: z.string().max(600),
+    image: optionalUrl,
+  });
+  const clientLogo = z.object({ id, name: z.string().max(80), image: url() });
+
   const site = z.object({
     tagline: z.string().max(200).optional(), // one or two lines under the name; the summary is used when empty
     ctaPrimary: z.string().max(30).optional(), // hero button to the work
@@ -193,7 +204,22 @@ function buildResumeSchemas(strict: boolean) {
     aboutImage: optionalUrl,
     aboutCaption: z.string().max(80).optional(),
     gallery: z.array(galleryItem).max(40).default([]),
+    testimonials: z.array(testimonial).max(20).optional(),
+    clients: z.array(clientLogo).max(30).optional(),
     hiddenPages: z.array(z.string().max(20)).max(10).optional(), // menu pages the user switched off, e.g. "/gallery"
+    hiddenBlocks: z.array(z.string().max(30)).max(30).optional(), // template sections the user switched off
+    clearedFields: z.array(z.string().max(40)).max(60).optional(), // fields emptied on purpose: the preview shows no sample there
+    signatureImage: optionalUrl,
+    // Extra texts and pictures used by some templates (e.g. "Aseman"); each template uses what it needs.
+    heroImage: optionalUrl,
+    accentImage: optionalUrl,
+    styleTitle: z.string().max(120).optional(),
+    styleText: z.string().max(3000).optional(),
+    contactTitle: z.string().max(120).optional(),
+    contactText: z.string().max(1000).optional(),
+    bandText: z.string().max(200).optional(),
+    address: z.string().max(200).optional(),
+    contactNote: z.string().max(500).optional(),
   });
 
   /* ───────────── Full resume ───────────── */

@@ -88,6 +88,12 @@ export const themeSchema = z.object({
   pdfTemplateId: z.string().min(1).max(50).optional(),
   /** Optional fields the user switched off (e.g. "experience.location"); see applyHiddenFields. */
   hiddenFields: z.array(z.string().max(40)).max(60).optional(),
+  /**
+   * The website template the page colors (background, cards, text) were chosen for. While it differs
+   * from templateId, a website shows its template's own designed colors instead; choosing a
+   * background in the editor (or asking the assistant) sets it.
+   */
+  colorsFor: z.string().max(50).optional(),
 });
 
 export type Theme = z.infer<typeof themeSchema>;
@@ -250,6 +256,13 @@ export function themeToCssVars(theme: Theme): Record<string, string> {
     "--color-surface": colors.surface,
     "--color-text": colors.text,
     "--color-muted": colors.mutedText,
+    // Derived page colors, so a template looks right on any background the user picks.
+    "--color-primary-read": readableOn(colors.primary, colors.background, 4.5),
+    "--color-body": mixHex(colors.text, colors.background, 0.18),
+    "--color-line": mixHex(colors.text, colors.background, 0.88),
+    "--color-soft": mixHex(colors.text, colors.surface, 0.95),
+    "--color-raise": mixHex(colors.text, colors.surface, 0.9),
+    "--color-raise-2": mixHex(colors.text, colors.surface, 0.82),
     "--font-body": `"${typography.bodyFont}", sans-serif`,
     "--font-heading": `"${typography.headingFont}", sans-serif`,
     "--font-size-base": SCALE[typography.scale],

@@ -169,6 +169,9 @@ export function safeUrl(url: string | undefined): string | undefined {
   return trimmed && (/^https?:\/\/\S+$/i.test(trimmed) || isSampleAsset(trimmed)) ? trimmed : undefined;
 }
 
+/** Placeholder addresses used in sample content; they lead nowhere real. */
+export const isDummyUrl = (href: string) => href === "#" || /^https?:\/\/([\w-]+\.)*example\.(com|ir|org)(\/|$)/i.test(href);
+
 export function linkLabel(link: { type: LinkType; label?: string; url: string }, locale: Locale): string {
   if (link.type === "other") return link.label?.trim() || hostname(link.url);
   return LABELS[locale].linkTypes[link.type];

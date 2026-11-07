@@ -1,7 +1,7 @@
 import { SAMPLE_ASSETS_PATH, SAMPLE_ASSETS_VERSION, type ResumeData } from "@rb/schema";
 
 /** Sample picture bundled with the app (apps/api/assets/samples), so previews work without outside sites. */
-const img = (name: string) => `${SAMPLE_ASSETS_PATH}${name}.jpg?v=${SAMPLE_ASSETS_VERSION}`;
+export const sampleImage = (name: string, ext: "jpg" | "png" = "jpg") => `${SAMPLE_ASSETS_PATH}${name}.${ext}?v=${SAMPLE_ASSETS_VERSION}`;
 
 /** Complete example resumes for previews and template development. Valid against resumeDataSchema. */
 export function sampleResume(locale: ResumeData["locale"]): ResumeData {
@@ -13,7 +13,7 @@ const SAMPLE_FA: ResumeData = {
   locale: "fa",
   basics: {
     fullName: "سارا محمدی",
-    avatarUrl: img("avatar"),
+    avatarUrl: sampleImage("avatar"),
     personal: { birthDate: "1372/06/15", marital: "single" },
     jobTitle: "توسعه‌دهنده‌ی فرانت‌اند",
     email: "sara@example.com",
@@ -79,7 +79,7 @@ const SAMPLE_FA: ResumeData = {
       description: "داشبورد مدیریت سفارش‌ها و موجودی با گزارش‌های لحظه‌ای.",
       technologies: ["React", "TypeScript", "TanStack Query"],
       url: "https://example.com/dashboard",
-      images: [img("project-dashboard")],
+      images: [sampleImage("project-dashboard")],
       period: { start: "2025-02", current: false, end: "2025-09" },
     },
     {
@@ -89,7 +89,7 @@ const SAMPLE_FA: ResumeData = {
       description: "مجموعه‌ی کامپوننت‌های قابل استفاده‌ی مجدد با پشتیبانی کامل از راست‌به‌چپ.",
       technologies: ["React", "Storybook", "CSS Modules"],
       repoUrl: "https://github.com/example/ui",
-      images: [img("project-components")],
+      images: [sampleImage("project-components")],
       period: { start: "2024-05", current: false, end: "2024-12" },
     },
     {
@@ -98,7 +98,7 @@ const SAMPLE_FA: ResumeData = {
       role: "پروژه‌ی شخصی",
       description: "پیشنهاد آهنگ بر اساس حال‌وهوای کاربر، با رابط ساده و سریع.",
       technologies: ["Next.js", "Web Audio"],
-      images: [img("project-music")],
+      images: [sampleImage("project-music")],
       period: { start: "2024-01", current: false, end: "2024-03" },
     },
     {
@@ -107,7 +107,7 @@ const SAMPLE_FA: ResumeData = {
       role: "طراحی و توسعه",
       description: "سایت چندصفحه‌ای سبک و سریع برای معرفی کارها.",
       technologies: ["Astro", "CSS"],
-      images: [img("project-portfolio")],
+      images: [sampleImage("project-portfolio")],
       period: { start: "2023-08", current: false, end: "2023-10" },
     },
   ],
@@ -141,15 +141,15 @@ const SAMPLE_FA: ResumeData = {
     aboutTitle: "توسعه‌دهنده‌ای که سادگی را از پیچیدگی بیرون می‌کشد",
     aboutText:
       "در تهران زندگی می‌کنم و روی محصولات وبی کار می‌کنم که باید هم ساده باشند و هم قابل اعتماد. بیشتر کارهایم پنل‌های مدیریتی و ابزارهای داخلی شرکت‌هاست؛ جایی که وضوح از تزئین مهم‌تر است.\n\nکارم را با طراحی سایت‌های شرکتی شروع کردم و کم‌کم سراغ سیستم‌های پیچیده‌تر رفتم. همین مسیر طرز فکرم را ساخت: اول ساختار، بعد ظاهر.\n\nبیرون از کار، عکاسی می‌کنم و پروژه‌های کوچک شخصی می‌سازم تا ایده‌های تازه را آزادانه امتحان کنم.",
-    aboutImage: img("about"),
+    aboutImage: sampleImage("about"),
     aboutCaption: "یک روز آفتابی در تهران",
     gallery: [
-      { id: "g1", title: "گواهی پایان دوره‌ی ری‌اکت", image: img("certificate-1"), description: "آموزشگاه فنی و حرفه‌ای آزاد مهرگان، ۱۲۰ ساعت" },
-      { id: "g2", title: "مدرک کارشناسی", image: img("certificate-2"), description: "دانشگاه صنعتی کوهسار، مهندسی کامپیوتر" },
-      { id: "g3", title: "تقدیرنامه‌ی هکاتون", image: img("certificate-3"), description: "انجمن نوآوران فناوری پارسه، رتبه‌ی نخست" },
-      { id: "g4", title: "گواهی زبان انگلیسی", image: img("certificate-4"), description: "مؤسسه‌ی زبان‌های خارجی افق نو، سطح پیشرفته" },
-      { id: "g5", title: "گواهی طراحی رابط کاربری", image: img("certificate-5"), description: "کارگاه طراحی محصول «طرح نو»، ۴۰ ساعت" },
-      { id: "g6", title: "تقدیرنامه‌ی همکاری", image: img("certificate-6"), description: "از طرف مدیرعامل شرکت فناوری نمونه" },
+      { id: "g1", title: "گواهی پایان دوره‌ی ری‌اکت", image: sampleImage("certificate-1"), description: "آموزشگاه فنی و حرفه‌ای آزاد مهرگان، ۱۲۰ ساعت" },
+      { id: "g2", title: "مدرک کارشناسی", image: sampleImage("certificate-2"), description: "دانشگاه صنعتی کوهسار، مهندسی کامپیوتر" },
+      { id: "g3", title: "تقدیرنامه‌ی هکاتون", image: sampleImage("certificate-3"), description: "انجمن نوآوران فناوری پارسه، رتبه‌ی نخست" },
+      { id: "g4", title: "گواهی زبان انگلیسی", image: sampleImage("certificate-4"), description: "مؤسسه‌ی زبان‌های خارجی افق نو، سطح پیشرفته" },
+      { id: "g5", title: "گواهی طراحی رابط کاربری", image: sampleImage("certificate-5"), description: "کارگاه طراحی محصول «طرح نو»، ۴۰ ساعت" },
+      { id: "g6", title: "تقدیرنامه‌ی همکاری", image: sampleImage("certificate-6"), description: "از طرف مدیرعامل شرکت فناوری نمونه" },
     ],
   },
 };

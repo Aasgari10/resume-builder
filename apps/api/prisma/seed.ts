@@ -29,12 +29,20 @@ const templates = [
   { id: "split-portfolio", name: "دوستونه", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 3 },
   { id: "bento-portfolio", name: "کارت‌ها", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 4 },
   { id: "vitrine-portfolio", name: "ویترین", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
+  { id: "aseman-portfolio", name: "آسمان", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
+  { id: "grid-portfolio", name: "گرید", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
+  { id: "vcard-portfolio", name: "کارت", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
+  { id: "code-portfolio", name: "کد", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
+  { id: "simple-portfolio", name: "ساده", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
+  { id: "sepid-portfolio", name: "سپید", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
 ];
 
 async function main() {
   for (const t of templates) {
     await prisma.template.upsert({ where: { id: t.id }, update: t, create: t });
   }
+  // Templates that were removed stay in the table (sites may still point to them) but are hidden.
+  await prisma.template.updateMany({ where: { id: { notIn: templates.map((t) => t.id) } }, data: { isActive: false } });
   console.log(`✅ Seeded ${templates.length} templates`);
 }
 

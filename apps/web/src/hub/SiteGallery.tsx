@@ -36,7 +36,7 @@ export function SiteGallery() {
               </div>
               <div className="s-view">
                 <div className="s-scroll">
-                  <Site template={t} data={data} />
+                  <Site template={t} data={t.sample?.("fa") ?? data} />
                 </div>
               </div>
               <span className="g-hint">استفاده از این قالب</span>

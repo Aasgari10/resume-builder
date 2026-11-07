@@ -6,6 +6,8 @@ export const kitStyles = /* css */ `
 
 .k-page {
   --k-space: calc(var(--space-factor, 1) * 1rem);
+  /* Standard space between a section heading (and its underline) and the section content. */
+  --k-head-gap: calc(var(--k-space) * 0.7);
   --k-line: color-mix(in srgb, var(--color-text) 16%, transparent);
   box-sizing: border-box;
   width: 210mm;
@@ -21,7 +23,8 @@ export const kitStyles = /* css */ `
   print-color-adjust: exact;
 }
 .k-page *, .k-page *::before, .k-page *::after { box-sizing: border-box; }
-.k-page :is(h1, h2, h3, p, ul) { margin: 0; padding: 0; }
+/* Zero-specificity reset (:where), so the margins set by classes below actually apply. */
+:where(.k-page) :where(h1, h2, h3, p, ul) { margin: 0; padding: 0; }
 .k-page ul { list-style: none; }
 .k-page a { color: inherit; text-decoration: none; }
 
@@ -39,7 +42,7 @@ export const kitStyles = /* css */ `
 /* Sections */
 .k-section { margin-top: calc(var(--k-space) * 1.15); }
 .k-h2-icon { display: none; width: 1.15em; height: 1.15em; flex: none; fill: currentColor; }
-.k-h2 { font-family: var(--font-heading); font-size: 1.12em; font-weight: 700; margin-bottom: calc(var(--k-space) * 0.55); }
+.k-h2 { font-family: var(--font-heading); font-size: 1.12em; font-weight: 700; margin-bottom: var(--k-head-gap); }
 .k-item { break-inside: avoid; }
 .k-item + .k-item { margin-top: calc(var(--k-space) * 0.7); }
 .k-item-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; }

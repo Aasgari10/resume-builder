@@ -5,7 +5,7 @@
 import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { applyHiddenFields, type ResumeData, type Theme } from "@rb/schema";
-import { SITE_TEMPLATES, getTemplate, pageTitle, resolvePage, withPlaceholders } from "@rb/templates";
+import { SITE_TEMPLATES, getTemplate, isDummyUrl, pageTitle, resolvePage, siteTheme, withPlaceholders } from "@rb/templates";
 import { newId } from "./editor/list";
 import { EditPopover, type EditTarget } from "./site-edit/EditPopover";
 import { SitePanel, type PanelTab } from "./site-edit/SitePanel";
@@ -14,6 +14,20 @@ import { getAt, isItemPath, removeItem, setAt } from "./site-edit/paths";
 type Device = "desktop" | "mobile";
 
 const MOBILE_WIDTH = 390;
+
+/** Fields that must keep a value: the name, and the main title of every item. */
+const REQUIRED = /^basics\.fullName$|\.(title|position|company|institution|name|period)$/;
+/** Templates show these fields in place of an empty one, so clearing one clears its stand-in too. */
+const STAND_IN: Record<string, string> = { "site.aboutText": "basics.summary", "site.aboutImage": "basics.avatarUrl", "site.address": "basics.location" };
+
+/** Remembers (or forgets) that a top-level field was emptied on purpose, so no sample fills it. */
+function markCleared(data: ResumeData, path: string, empty: boolean): ResumeData {
+  if (path.includes("[")) return data; // fields of items are never filled with samples one by one
+  const paths = [path, ...(STAND_IN[path] ? [STAND_IN[path]!] : [])];
+  const now = (data.site?.clearedFields ?? []).filter((p) => !paths.includes(p));
+  const clearedFields = empty ? [...now, ...paths] : now;
+  return { ...data, site: { gallery: [], ...data.site, clearedFields } };
+}
 
 type Props = {
   data: ResumeData;
@@ -27,8 +41,19 @@ type Props = {
 };
 
 export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish, bar }: Props) {
-  const shown = withPlaceholders(raw);
+  const site = getTemplate(theme.templateId);
+  // Each template may bring its own example persona and pictures.
+  const shown = withPlaceholders(raw, site.sample?.(raw.locale));
   const data = applyHiddenFields(shown, theme.hiddenFields);
+  // The colors the site is drawn with: the template's own page colors until the user picks others.
+  const effective = siteTheme(theme);
+  const changeTheme = (next: Theme) => {
+    const page = ["background", "surface", "text", "mutedText"] as const;
+    if (page.some((k) => next.colors[k] !== effective.colors[k])) return onThemeChange({ ...next, colorsFor: next.templateId });
+    // Untouched page colors stay as stored (the template's own colors are not copied into the theme).
+    const { background, surface, text, mutedText } = theme.colors;
+    onThemeChange({ ...next, colors: { ...next.colors, background, surface, text, mutedText } });
+  };
   const [editing, setEditing] = useState(true);
   const [full, setFull] = useState(false);
   const [panel, setPanel] = useState(true);
@@ -36,7 +61,6 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
   const [target, setTarget] = useState<EditTarget | null>(null);
   const [device, setDevice] = useState<Device>("desktop");
   const [requestedPage, setPage] = useState("/");
-  const site = getTemplate(theme.templateId);
   const pages = site.pages?.(data) ?? ["/"];
   const page = resolvePage(site, data, requestedPage) ?? "/";
 
@@ -54,7 +78,9 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
 
   // In edit mode a click on a marked text or picture opens its editor; links switch pages.
   const onFrameClick = (e: MouseEvent) => {
-    const marked = editing ? (e.target as Element).closest<HTMLElement>("[data-edit]") : null;
+    // The nearest marked element or link decides: a plain link inside an editable area still navigates.
+    const hit = editing ? (e.target as Element).closest<HTMLElement>("[data-edit], a") : null;
+    const marked = hit?.hasAttribute("data-edit") ? hit : null;
     if (marked) {
       e.preventDefault();
       const r = marked.getBoundingClientRect();
@@ -74,6 +100,8 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
     const to = a.getAttribute("data-page");
     const href = a.getAttribute("href") ?? "";
     if (to) setPage(to);
+    // Project rule: a placeholder link ("#", example.com) takes the visitor to the top of the page.
+    else if (isDummyUrl(href)) a.closest(".ws-view")?.scrollTo({ top: 0, behavior: "smooth" });
     else if (href.startsWith("#")) document.getElementById(href.slice(1))?.scrollIntoView({ behavior: "smooth" });
     else if (/^(https?:|mailto:|tel:)/i.test(href)) window.open(href, "_blank", "noopener,noreferrer");
   };
@@ -155,7 +183,7 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
             style={{ width: device === "mobile" ? MOBILE_WIDTH : "100%" }}
             onClick={onFrameClick}
           >
-            <site.component data={data} theme={theme} page={page} editing={editing} />
+            <site.component data={data} theme={effective} page={page} editing={editing} />
           </div>
         </div>
         {panel && (
@@ -163,10 +191,12 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
             tab={tab}
             onTab={setTab}
             data={raw}
-            theme={theme}
-            multiPage={Boolean(site.pages)}
+            theme={effective}
+            template={site}
             onData={onDataChange}
-            onTheme={onThemeChange}
+            onTheme={changeTheme}
+            onResetColors={() => onThemeChange({ ...theme, colorsFor: undefined })}
+            ownColors={theme.colorsFor === theme.templateId}
             onClose={() => setPanel(false)}
             publish={publish}
           />
@@ -186,6 +216,7 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
             value={getAt(raw, target.path)}
             shown={getAt(shown, target.path)}
             canRemove={isItemPath(target.path)}
+            canClear={!REQUIRED.test(target.path)}
             onSave={(value) => {
               if (target.kind === "newlink") {
                 // A new way to be reached is added to the user's own links (sample links are replaced).
@@ -194,9 +225,25 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
                 setTarget(null);
                 return;
               }
+              if (target.kind === "newimage") {
+                // A new picture joins the user's own list (sample pictures are replaced): a client
+                // logo, or by default a gallery picture / certificate.
+                const site = raw.site ?? { gallery: [] };
+                const image = String(value);
+                onDataChange({
+                  ...raw,
+                  site:
+                    target.path === "site.clients"
+                      ? { ...site, clients: [...(site.clients ?? []), { id: newId(), name: "مشتری", image }] }
+                      : { ...site, gallery: [...site.gallery, { id: newId(), title: "مدرک جدید", image }] },
+                });
+                setTarget(null);
+                return;
+              }
               // An emptied extra picture is removed rather than kept as an empty slot.
               const drop = value === "" && target.kind === "image" && /\.\d+$/.test(target.path);
-              onDataChange(setAt(raw, shown, target.path, drop ? undefined : value));
+              const empty = value === "" || value === undefined || (Array.isArray(value) && value.length === 0);
+              onDataChange(markCleared(setAt(raw, shown, target.path, drop ? undefined : value), target.path, empty));
               setTarget(null);
             }}
             onRemove={() => {

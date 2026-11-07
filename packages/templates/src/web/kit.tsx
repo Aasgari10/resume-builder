@@ -4,6 +4,8 @@
 // and style them for the screen; layout adapts to the container width (container queries),
 // so the editor preview can emulate mobile.
 
+import { ZoomLayers, zoomCss } from "./zoom";
+import { siteTheme } from "../palettes";
 import type { CSSProperties, ReactNode } from "react";
 import { themeToCssVars, type ResumeData } from "@rb/schema";
 import { Heading, Section, displayUrl, makeCtx, type Ctx } from "../kit";
@@ -14,20 +16,26 @@ export { Avatar, ContactList, Heading, Section, hasContact, makeCtx, splitSectio
 
 /** Page root for a website template: direction, language, theme variables and styles. */
 export function WebPage({ ctx, className, css, children }: { ctx: Ctx; className: string; css: string; children: ReactNode }) {
+  const dir = ctx.data.locale === "fa" ? "rtl" : "ltr";
+  const vars = themeToCssVars(ctx.theme) as CSSProperties;
+  // Large views of the certificates sit outside the page box: the page is a size container, and
+  // a full-screen layer inside it would cover the whole (long) page instead of the screen.
+  const zoom = (ctx.data.site?.gallery ?? [])
+    .map((g) => ({ id: g.id, src: safeUrl(g.image), title: g.title, caption: g.description }))
+    .filter((g): g is { id: string; src: string; title: string; caption: string | undefined } => Boolean(g.src));
   return (
-    <div
-      className={`w-page ${className}`}
-      dir={ctx.data.locale === "fa" ? "rtl" : "ltr"}
-      lang={ctx.data.locale}
-      style={themeToCssVars(ctx.theme) as CSSProperties}
-    >
-      <style>{webStyles + css}</style>
-      {children}
+    <div className="w-shell" dir={dir} lang={ctx.data.locale} style={vars}>
+      <div className={`w-page ${className}`} dir={dir} lang={ctx.data.locale} style={vars}>
+        <style>{webStyles + zoomCss + css}</style>
+        {children}
+      </div>
+      <ZoomLayers items={zoom} closeLabel={ctx.data.locale === "fa" ? "بستن" : "Close"} />
     </div>
   );
 }
 
-export const webCtx = ({ data, theme }: TemplateProps) => makeCtx(data, theme);
+// Website templates are drawn with their own designed page colors until the user picks others.
+export const webCtx = ({ data, theme }: TemplateProps) => makeCtx(data, siteTheme(theme));
 
 /** Social and website links as pills. */
 export function Links({ ctx, className = "" }: { ctx: Ctx; className?: string }) {
@@ -121,10 +129,14 @@ export function Footer({ data }: { data: ResumeData }) {
 
 /* Base screen styles for the shared section markup (k-*) and web pieces (w-*). */
 const webStyles = /* css */ `
+.w-shell { display: contents; }
 .w-page {
   container-type: inline-size;
   --w-space: calc(var(--space-factor, 1) * 1rem);
   --k-space: var(--w-space);
+  /* Standard space between a section heading (and its underline) and the section content. */
+  --w-head-gap: clamp(18px, 2.4cqi, 28px);
+  --k-head-gap: var(--w-head-gap);
   --k-line: color-mix(in srgb, var(--color-text) 12%, transparent);
   min-height: 100%;
   background: var(--color-bg);
@@ -135,7 +147,8 @@ const webStyles = /* css */ `
   -webkit-font-smoothing: antialiased;
 }
 .w-page *, .w-page *::before, .w-page *::after { box-sizing: border-box; }
-.w-page :is(h1, h2, h3, p, ul, figure) { margin: 0; padding: 0; }
+/* Zero-specificity reset (:where), so each template's own margins apply. */
+:where(.w-page) :where(h1, h2, h3, p, ul, figure) { margin: 0; padding: 0; }
 .w-page ul { list-style: none; }
 .w-page a { color: inherit; text-decoration: none; }
 .w-muted { color: var(--color-muted); }
@@ -148,7 +161,7 @@ const webStyles = /* css */ `
 .w-page .k-contact li { display: flex; align-items: center; gap: .55rem; min-width: 0; }
 .w-page .k-icon { width: 1.05em; height: 1.05em; flex: none; fill: currentColor; opacity: .85; }
 .w-page .k-section { margin-top: calc(var(--w-space) * 2.6); }
-.w-page .k-h2 { display: flex; align-items: center; gap: .6rem; margin-bottom: calc(var(--w-space) * 1); font-family: var(--font-heading); font-size: 1.35em; font-weight: 800; }
+.w-page .k-h2 { display: flex; align-items: center; gap: .6rem; margin-bottom: var(--w-head-gap); font-family: var(--font-heading); font-size: 1.35em; font-weight: 800; }
 .w-page .k-h2-icon { display: none; width: 1.1em; height: 1.1em; flex: none; fill: currentColor; }
 .w-page .k-item { padding: calc(var(--w-space) * .9) 0; border-top: 1px solid var(--k-line); }
 .w-page .k-item:first-of-type { border-top: none; padding-top: 0; }

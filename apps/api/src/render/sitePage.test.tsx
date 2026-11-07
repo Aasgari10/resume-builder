@@ -60,3 +60,10 @@ test("page: inner pages of a multi-page site get their own title and canonical l
   assert.ok(html.includes("<title>درباره‌ی من | "));
   assert.ok(html.includes('rel="canonical" href="https://sara.example.ir/about"'));
 });
+
+test("placeholder links lead to the top of the published page", () => {
+  const data = sampleResume("fa");
+  const html = renderSitePage({ data, theme: defaultTheme("vitrine-portfolio", "fa"), seo: {}, page: "/about" });
+  assert.ok(!/href="https?:\/\/[^"]*example\.(com|ir)/.test(html));
+  assert.ok(html.includes('href="#"'));
+});

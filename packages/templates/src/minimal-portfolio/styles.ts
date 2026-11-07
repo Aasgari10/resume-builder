@@ -17,7 +17,7 @@ export const styles = /* css */ `
   -webkit-font-smoothing: antialiased;
 }
 .mp-root *, .mp-root *::before, .mp-root *::after { box-sizing: border-box; }
-.mp-root :is(h1, h2, h3, p, ul, figure) { margin: 0; padding: 0; }
+:where(.mp-root) :where(h1, h2, h3, p, ul, figure) { margin: 0; padding: 0; }
 .mp-root ul { list-style: none; }
 .mp-root a { color: var(--color-primary); text-decoration: none; }
 .mp-root a:hover { text-decoration: underline; }
