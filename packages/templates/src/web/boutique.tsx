@@ -494,6 +494,54 @@ function Hero({ shop, link, editing }: BView) {
   );
 }
 
+/** Look book: a big photo with points on it; picking a point shows that product in the card (no scripts: radio buttons). */
+function Look({ view, fallback }: { view: BView; fallback: Product }) {
+  const { shop, link, editing } = view;
+  const products = visible(shop);
+  const spots = (shop.lookSpots ?? [])
+    .map((sp) => ({ ...sp, product: products.find((p) => p.id === sp.productId) }))
+    .filter((sp): sp is typeof sp & { product: Product } => Boolean(sp.product));
+  const cards = spots.length ? spots.map((sp) => sp.product) : [fallback];
+  const many = spots.length > 1;
+  return (
+    <section className="bq-look">
+      {many && spots.map((sp, k) => <input key={sp.id} type="radio" name="bq-look" id={`bq-look-${k}`} className="bq-dot" defaultChecked={k === 0} aria-label={sp.product.name} />)}
+      <div className="bq-look-in">
+        <div className="bq-look-text">
+          <Opt value={shop.lookTitle} editing={editing} edit={ed("site.shop.lookTitle", "text", "عنوان بخش")}>
+            <h2 {...ed("site.shop.lookTitle", "text", "عنوان بخش")}>{shop.lookTitle}</h2>
+          </Opt>
+          <Opt value={shop.lookText} editing={editing} edit={ed("site.shop.lookText", "text", "متن زیر عنوان")}>
+            <p {...ed("site.shop.lookText", "text", "متن زیر عنوان")}>{shop.lookText}</p>
+          </Opt>
+          <div className="bq-look-cards">
+            {cards.map((p, k) => (
+              <PageLink key={`${p.id}-${k}`} to={productPath(p)} link={link} className="bq-look-card">
+                <span className="bq-look-card-pic">{pic(p) && <img src={pic(p)} alt={p.name} loading="lazy" />}</span>
+                <b>{p.name}</b>
+                <Price view={view} p={p} />
+              </PageLink>
+            ))}
+          </div>
+        </div>
+        <div className="bq-look-pic">
+          <span className="bq-look-frame">
+            <span className="bq-look-img" {...ed("site.shop.lookImage", "image", "عکس بزرگ")}>
+              {safeUrl(shop.lookImage) && <img src={safeUrl(shop.lookImage)} alt="" loading="lazy" />}
+            </span>
+            {many &&
+              spots.map((sp, k) => (
+                <label key={sp.id} htmlFor={`bq-look-${k}`} className="bq-spot" style={{ left: `${sp.x}%`, top: `${sp.y}%` }} title={sp.product.name}>
+                  <i />
+                </label>
+              ))}
+          </span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function Home(view: BView) {
   const { ctx, shop, link, editing } = view;
   const data = ctx.data;
@@ -618,26 +666,7 @@ function Home(view: BView) {
         />
       )}
 
-      {on("look") && look && (
-        <section className="bq-look">
-          <div className="bq-look-text">
-            <Opt value={shop.lookTitle} editing={editing} edit={ed("site.shop.lookTitle", "text", "عنوان بخش")}>
-              <h2 {...ed("site.shop.lookTitle", "text", "عنوان بخش")}>{shop.lookTitle}</h2>
-            </Opt>
-            <Opt value={shop.lookText} editing={editing} edit={ed("site.shop.lookText", "text", "متن زیر عنوان")}>
-              <p {...ed("site.shop.lookText", "text", "متن زیر عنوان")}>{shop.lookText}</p>
-            </Opt>
-            <PageLink to={productPath(look)} link={link} className="bq-look-card">
-              <span className="bq-look-card-pic">{pic(look) && <img src={pic(look)} alt={look.name} loading="lazy" />}</span>
-              <b>{look.name}</b>
-              <Price view={view} p={look} />
-            </PageLink>
-          </div>
-          <span className="bq-look-pic" {...ed("site.shop.lookImage", "image", "عکس بزرگ")}>
-            {safeUrl(shop.lookImage) && <img src={safeUrl(shop.lookImage)} alt="" loading="lazy" />}
-          </span>
-        </section>
-      )}
+      {on("look") && look && <Look view={view} fallback={look} />}
 
       {on("brands") && cats.length > 0 && (
         <section className="bq-wrap bq-brands">
@@ -1115,10 +1144,11 @@ export function boutiqueSample(locale: ResumeData["locale"]): ResumeData {
     { id: "s4", name: "تاپ مشکی و ژاکت", categoryId: "c2", price: 1350000, images: [img("p4")], description: d },
     { id: "s5", name: "پالتو خزدار کرم", categoryId: "c1", price: 4200000, badge: "جدید", sizes: ["M", "L", "XL"], images: [img("p5")], description: d },
     { id: "s6", name: "تاپ کبریتی کرم", categoryId: "c2", price: 690000, images: [img("p6")], description: d },
-    { id: "s7", name: "کت تک بژ", categoryId: "c1", price: 3100000, sizes: ["S", "M", "L"], images: [img("p7")], description: d },
+    { id: "s7", name: "کت تک بژ", categoryId: "c1", price: 3100000, sizes: ["S", "M", "L"], images: [img("p11"), img("p7")], description: d },
     { id: "s8", name: "دامن جین کلوش", categoryId: "c3", price: 980000, featured: true, images: [img("p8")], description: d },
     { id: "s9", name: "بوت چرم قهوه‌ای", categoryId: "c5", price: 2900000, featured: true, sizes: ["37", "38", "39", "40"], images: [img("p9")], description: d },
     { id: "s10", name: "کت جین کلاسیک", categoryId: "c1", price: 1750000, featured: true, images: [img("p10")], description: d },
+    { id: "s11", name: "ست کت و شلوار بژ", categoryId: "c1", price: 4850000, salePrice: 4390000, sizes: ["S", "M", "L"], images: [img("p7"), img("p11")], description: d },
   ];
   return {
     ...base,
@@ -1161,6 +1191,10 @@ export function boutiqueSample(locale: ResumeData["locale"]): ResumeData {
         lookText: "یک ترکیب آماده برای روزهای کاری و دورهمی‌ها.",
         lookImage: img("look"),
         lookProductId: "s7",
+        lookSpots: [
+          { id: "k1", productId: "s7", x: 32, y: 37.5 },
+          { id: "k2", productId: "s11", x: 48.5, y: 67.7 },
+        ],
         trendImage: img("trend"),
         bandItems: ["استایل برای هر سفر", "خوش‌پوش، بدون زحمت", "استایل مناسب خودت را پیدا کن"],
         perks: [
@@ -1332,18 +1366,34 @@ ${[1, 2, 3, 4, 5].map((n) => `.bq-dot:nth-of-type(${n}):checked ~ .bq-slides > .
 .bq-band .bq-marq-copy > span { gap: clamp(26px, 3.4cqi, 54px); padding-inline-end: clamp(26px, 3.4cqi, 54px); }
 .bq-band i { font-style: normal; opacity: .85; }
 
-/* Look book: the product beside a big photo; the photo keeps its own size and fades into the background */
-.bq-look { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); height: clamp(480px, 44cqi, 705px); background: linear-gradient(90deg, #E3E3E3, #E6E6E6 48%, #EFEFEF); color: #111; }
-.bq-look-text { display: grid; align-content: center; justify-items: center; gap: 12px; padding: clamp(30px, 4cqi, 60px) 20px; text-align: center; }
-.bq-look-text h2 { font-size: clamp(1.7em, 3.2cqi, 3em); font-weight: 500; }
+/* Look book: a product card beside a big photo with points; the photo keeps its own size and blends into the background */
+/* The background follows the photo's own light: lighter on its outer side, darker towards the card. */
+.bq-look { position: relative; background: linear-gradient(90deg, #F4F4F4 14%, #E5E5E5 48%, #ECECEC); color: #111; }
+.bq-look-in { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); height: clamp(540px, 50cqi, 800px); }
+.bq-look-text { display: grid; align-content: center; justify-items: center; gap: 10px; padding: clamp(24px, 3cqi, 46px) 20px; text-align: center; }
+.bq-look-text h2 { font-size: clamp(1.7em, 3cqi, 2.9em); font-weight: 500; }
 .bq-look-text > p { color: #555; }
-.bq-look-card { display: grid; justify-items: center; gap: 6px; width: min(250px, 60%); margin-top: clamp(10px, 2cqi, 30px); }
-.bq-look-card-pic { position: relative; width: 100%; aspect-ratio: 290 / 372; overflow: hidden; background: #F2F2F2; }
+.bq-look-cards { display: grid; width: min(300px, 70%); margin-top: clamp(8px, 1.4cqi, 20px); }
+.bq-look-card { grid-area: 1 / 1; display: grid; justify-items: center; gap: 6px; }
+.bq-look-card-pic { position: relative; width: 100%; aspect-ratio: 373 / 475; overflow: hidden; background: #F2F2F2; }
 .bq-look-card-pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .7s; }
 .bq-look-card:hover img { transform: scale(1.05); }
 .bq-look-card b { margin-top: 8px; font-size: 1.1em; font-weight: 500; }
-.bq-look-pic { position: relative; display: flex; justify-content: flex-start; min-height: 0; }
-.bq-look-pic img { display: block; max-width: 100%; height: 100%; object-fit: contain; object-position: left bottom; -webkit-mask-image: linear-gradient(to left, transparent, #000 18%); mask-image: linear-gradient(to left, transparent, #000 18%); }
+${[1, 2, 3, 4].map((n) => `.bq-dot:nth-of-type(${n}):not(:checked) ~ .bq-look-in .bq-look-card:nth-child(${n})`).join(", ")} { opacity: 0; visibility: hidden; transform: translateY(14px); }
+.bq-look-card { transition: opacity .5s, visibility .5s, transform .6s cubic-bezier(.2, 1, .3, 1); }
+/* The picture sits towards the card (as in the reference) and is never stretched past its size. */
+.bq-look-pic { position: relative; min-height: 0; }
+/* Pinned to the side next to the card, at the full height of the section. */
+.bq-look-frame { position: absolute; inset-block: 0; right: 3%; display: block; max-width: 97%; }
+.bq-look-img { display: block; height: 100%; }
+.bq-look-frame img { display: block; height: 100%; width: auto; max-width: 100%; object-fit: contain; object-position: bottom; -webkit-mask-image: linear-gradient(to right, transparent, #000 4%, #000 90%, transparent); mask-image: linear-gradient(to right, transparent, #000 4%, #000 90%, transparent); }
+.bq-spot { position: absolute; width: 52px; height: 52px; margin: -26px 0 0 -26px; display: grid; place-items: center; border: 1px solid rgb(255 255 255 / .9); border-radius: 50%; cursor: pointer; transition: transform .3s, background .3s; }
+.bq-spot i { width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 2px 8px rgb(0 0 0 / .3); }
+.bq-spot::after { content: ""; position: absolute; inset: -1px; border-radius: 50%; border: 1px solid #fff; animation: bq-pulse 2.2s ease-out infinite; }
+@keyframes bq-pulse { from { transform: scale(1); opacity: .9; } to { transform: scale(1.7); opacity: 0; } }
+.bq-spot:hover { transform: scale(1.12); background: rgb(255 255 255 / .2); }
+${[1, 2, 3, 4].map((n) => `.bq-dot:nth-of-type(${n}):checked ~ .bq-look-in .bq-spot:nth-of-type(${n})`).join(", ")} { background: rgb(255 255 255 / .28); }
+${[1, 2, 3, 4].map((n) => `.bq-dot:nth-of-type(${n}):checked ~ .bq-look-in .bq-spot:nth-of-type(${n}) i`).join(", ")} { background: var(--bq-red); }
 
 /* Category boxes */
 .bq-brands { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; padding-block: clamp(40px, 6cqi, 70px) 0; }
@@ -1498,9 +1548,10 @@ ${[1, 2, 3, 4, 5].map((n) => `.bq-dot:nth-of-type(${n}):checked ~ .bq-slides > .
   .bq-cats { grid-template-columns: 1fr; }
   .bq-new { min-height: 640px; }
   .bq-look, .bq-trends, .bq-product, .bq-cart, .bq-quotes { grid-template-columns: 1fr; }
-  .bq-look { height: auto; }
-  .bq-look-pic { height: 420px; justify-content: center; }
-  .bq-look-pic img { -webkit-mask-image: none; mask-image: none; }
+  .bq-look-in { grid-template-columns: 1fr; height: auto; }
+  .bq-look-pic { height: 480px; }
+  .bq-look { background: #EDEDED; }
+  .bq-look-frame { inset-inline: 0; width: fit-content; margin-inline: auto; }
   .bq-trends-pic { max-height: 520px; }
   .bq-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 14px; }
   .bq-perks { grid-template-columns: 1fr 1fr; }
@@ -1532,8 +1583,8 @@ ${[1, 2, 3, 4, 5].map((n) => `.bq-dot:nth-of-type(${n}):checked ~ .bq-slides > .
   .bq-discover { aspect-ratio: auto; min-height: 210px; padding-block: 28px; }
   .bq-discover-text { width: 70%; }
   .bq-dots.two { grid-template-columns: 1fr; gap: 10px; }
-  .bq-look-card { width: min(220px, 70%); }
-  .bq-look-pic { height: 360px; }
+  .bq-look-cards { width: min(260px, 72%); }
+  .bq-look-pic { height: 420px; }
   .bq-brands { grid-template-columns: 1fr; gap: 12px; }
   .bq-brands a { padding: 18px 12px; }
   .bq-new .bq-btn { padding: 13px 22px; white-space: nowrap; }
@@ -1550,6 +1601,7 @@ ${[1, 2, 3, 4, 5].map((n) => `.bq-dot:nth-of-type(${n}):checked ~ .bq-slides > .
 @media (prefers-reduced-motion: reduce) {
   .bq-card, .bq-check, .bq-main > *, .bq-drawer { animation: none !important; }
   .bq-marq-track { animation: none; }
-  .bq-slide, .bq-slide > * { transition: none !important; }
+  .bq-slide, .bq-slide > *, .bq-look-card { transition: none !important; }
+  .bq-spot::after { animation: none; }
 }
 `;

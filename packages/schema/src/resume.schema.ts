@@ -15,7 +15,7 @@ const YEAR_MONTH_OR_EMPTY = /^(\d{4}-(0[1-9]|1[0-2]))?$/;
 /** Sample pictures shipped with the app and served by the API (see SAMPLE_ASSETS_PATH in the API). */
 export const SAMPLE_ASSETS_PATH = "/_assets/samples/";
 /** Bumped when the pictures change, so browsers fetch the new files instead of cached ones. */
-export const SAMPLE_ASSETS_VERSION = 7;
+export const SAMPLE_ASSETS_VERSION = 8;
 export const isSampleAsset = (v: string) => /^\/_assets\/samples\/[a-z0-9-]+\.(jpg|png)(\?v=\d+)?$/.test(v);
 
 function buildResumeSchemas(strict: boolean) {
@@ -233,6 +233,8 @@ function buildResumeSchemas(strict: boolean) {
     lookText: z.string().max(200).optional(),
     lookImage: optionalUrl,
     lookProductId: z.string().max(40).optional(), // the product shown beside the big picture
+    // Points on the big picture; picking one shows its product in the card. x and y are percentages.
+    lookSpots: z.array(z.object({ id, productId: z.string().max(40), x: z.number().min(0).max(100), y: z.number().min(0).max(100) })).max(4).optional(),
     trendImage: optionalUrl,
     bandItems: z.array(z.string().max(60)).max(6).optional(), // the moving dark band
     perks: z.array(perk).max(4).optional(),

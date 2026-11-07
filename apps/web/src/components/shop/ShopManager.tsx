@@ -417,17 +417,69 @@ function Banners({ shop, setShop }: { shop: Shop; setShop: (s: Partial<Shop>) =>
         />
       </Field>
       <h3>بخش «کمد لباست را تازه کن»</h3>
-      <Field label="محصولی که کنار عکس بزرگ نمایش داده می‌شود">
-        <select value={shop.lookProductId ?? ""} onChange={(e) => setShop({ lookProductId: e.target.value || undefined })}>
-          <option value="">خودکار (اولین محصول ویژه)</option>
-          {shop.products.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
-      </Field>
+      <LookSpots shop={shop} setShop={setShop} />
       <p className="muted">عکس‌ها و متن‌های بقیه‌ی بخش‌ها را مستقیم روی خود سایت ویرایش کنید؛ روی هر کدام بزنید.</p>
+    </div>
+  );
+}
+
+type Spot = NonNullable<Shop["lookSpots"]>[number];
+
+/** Points on the big look-book photo; each opens one product in the card beside it. */
+function LookSpots({ shop, setShop }: { shop: Shop; setShop: (s: Partial<Shop>) => void }) {
+  const spots = shop.lookSpots ?? [];
+  const save = (next: Spot[]) => setShop({ lookSpots: next.length ? next : undefined });
+  const update = (id: string, patch: Partial<Spot>) => save(spots.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+  // Percent with an optional decimal point, typed with Persian or Latin digits.
+  const percent = (v: string) => {
+    const n = Number.parseFloat(v.replace(/[۰-۹]/g, (d) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d))).replace(/[٫,]/g, "."));
+    return Number.isFinite(n) ? Math.round(Math.max(0, Math.min(100, n)) * 10) / 10 : 50;
+  };
+  return (
+    <div className="shm-spots">
+      <p className="muted">
+        روی عکس بزرگ این بخش نقطه‌هایی هست که با کلیک روی هر کدام، محصول همان نقطه در کارت کنار عکس نمایش داده می‌شود. جای هر نقطه را با درصد فاصله از چپ و از بالای عکس تعیین کنید.
+      </p>
+      {spots.map((x, k) => (
+        <div key={x.id} className="shm-spot">
+          <b>نقطه‌ی {new Intl.NumberFormat("fa-IR").format(k + 1)}</b>
+          <select value={x.productId} onChange={(e) => update(x.id, { productId: e.target.value })} aria-label="محصول این نقطه">
+            {shop.products.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+          <label>
+            از چپ ٪
+            <input inputMode="numeric" defaultValue={String(x.x)} onBlur={(e) => update(x.id, { x: percent(e.target.value) })} />
+          </label>
+          <label>
+            از بالا ٪
+            <input inputMode="numeric" defaultValue={String(x.y)} onBlur={(e) => update(x.id, { y: percent(e.target.value) })} />
+          </label>
+          <button type="button" className="btn ghost small danger" onClick={() => save(spots.filter((y) => y.id !== x.id))}>
+            حذف
+          </button>
+        </div>
+      ))}
+      {spots.length < 4 && shop.products.length > 0 && (
+        <button type="button" className="btn small" onClick={() => save([...spots, { id: newId(), productId: shop.products[0]!.id, x: 50, y: 50 }])}>
+          + نقطه‌ی جدید
+        </button>
+      )}
+      {spots.length < 2 && (
+        <Field label="محصول کارت (وقتی کمتر از دو نقطه دارید)">
+          <select value={shop.lookProductId ?? ""} onChange={(e) => setShop({ lookProductId: e.target.value || undefined })}>
+            <option value="">خودکار (اولین محصول ویژه)</option>
+            {shop.products.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+      )}
     </div>
   );
 }
