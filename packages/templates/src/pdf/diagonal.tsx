@@ -20,7 +20,7 @@ const css = /* css */ `
 .t-diagonal .k-h2 { display: flex; align-items: center; gap: 2.2mm; padding-bottom: 1.5mm; border-bottom: 0.35mm dashed color-mix(in srgb, var(--color-text) 35%, transparent); color: var(--color-text); }
 .t-diagonal .k-h2-icon { display: block; fill: var(--color-primary); width: 1.3em; height: 1.3em; }
 .t-diagonal .k-section:is(.k-section-experience, .k-section-education, .k-section-projects, .k-section-certificates, .k-section-customSections) { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm 8mm; align-content: start; }
-.t-diagonal .k-section > .k-h2 { grid-column: 1 / -1; margin-bottom: 0; }
+.t-diagonal .k-section > .k-h2 { grid-column: 1 / -1; margin-bottom: var(--k-head-gap); }
 .t-diagonal .k-item + .k-item { margin-top: 0; }
 .t-diagonal .k-item-sub { color: var(--color-primary-strong); opacity: 1; }
 .t-diagonal .k-bars { grid-template-columns: 1fr 1fr; gap: 2.5mm 8mm; }

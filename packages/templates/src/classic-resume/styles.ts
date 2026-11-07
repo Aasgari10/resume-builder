@@ -22,7 +22,7 @@ export const styles = /* css */ `
   print-color-adjust: exact;
 }
 .cr-root *, .cr-root *::before, .cr-root *::after { box-sizing: border-box; }
-.cr-root :is(h1, h2, h3, p, ul) { margin: 0; padding: 0; }
+:where(.cr-root) :where(h1, h2, h3, p, ul) { margin: 0; padding: 0; }
 .cr-root ul { list-style: none; }
 .cr-root a { color: inherit; text-decoration: none; }
 
@@ -36,7 +36,7 @@ export const styles = /* css */ `
 /* Sections */
 .cr-section { margin-top: calc(var(--cr-space) * 1.1); }
 .cr-h2 {
-  margin-bottom: calc(var(--cr-space) * 0.5);
+  margin-bottom: calc(var(--cr-space) * 0.7);
   padding-bottom: 0.2rem;
   border-bottom: 1px solid var(--cr-line);
   font-family: var(--font-heading);

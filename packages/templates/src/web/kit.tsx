@@ -134,6 +134,9 @@ const webStyles = /* css */ `
   container-type: inline-size;
   --w-space: calc(var(--space-factor, 1) * 1rem);
   --k-space: var(--w-space);
+  /* Standard space between a section heading (and its underline) and the section content. */
+  --w-head-gap: clamp(18px, 2.4cqi, 28px);
+  --k-head-gap: var(--w-head-gap);
   --k-line: color-mix(in srgb, var(--color-text) 12%, transparent);
   min-height: 100%;
   background: var(--color-bg);
@@ -144,7 +147,8 @@ const webStyles = /* css */ `
   -webkit-font-smoothing: antialiased;
 }
 .w-page *, .w-page *::before, .w-page *::after { box-sizing: border-box; }
-.w-page :is(h1, h2, h3, p, ul, figure) { margin: 0; padding: 0; }
+/* Zero-specificity reset (:where), so each template's own margins apply. */
+:where(.w-page) :where(h1, h2, h3, p, ul, figure) { margin: 0; padding: 0; }
 .w-page ul { list-style: none; }
 .w-page a { color: inherit; text-decoration: none; }
 .w-muted { color: var(--color-muted); }
@@ -157,7 +161,7 @@ const webStyles = /* css */ `
 .w-page .k-contact li { display: flex; align-items: center; gap: .55rem; min-width: 0; }
 .w-page .k-icon { width: 1.05em; height: 1.05em; flex: none; fill: currentColor; opacity: .85; }
 .w-page .k-section { margin-top: calc(var(--w-space) * 2.6); }
-.w-page .k-h2 { display: flex; align-items: center; gap: .6rem; margin-bottom: calc(var(--w-space) * 1); font-family: var(--font-heading); font-size: 1.35em; font-weight: 800; }
+.w-page .k-h2 { display: flex; align-items: center; gap: .6rem; margin-bottom: var(--w-head-gap); font-family: var(--font-heading); font-size: 1.35em; font-weight: 800; }
 .w-page .k-h2-icon { display: none; width: 1.1em; height: 1.1em; flex: none; fill: currentColor; }
 .w-page .k-item { padding: calc(var(--w-space) * .9) 0; border-top: 1px solid var(--k-line); }
 .w-page .k-item:first-of-type { border-top: none; padding-top: 0; }

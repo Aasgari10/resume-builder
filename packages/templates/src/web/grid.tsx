@@ -1053,7 +1053,7 @@ const css = /* css */ `
 .gx-summary h2 { font-size: 1.6em; font-weight: 500; margin-bottom: 10px; }
 .gx-text { display: grid; gap: 12px; color: var(--color-body); font-size: .92em; line-height: 2; }
 .gx-two { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-.gx-h3 { font-size: .95em; font-weight: 600; letter-spacing: .03em; margin-bottom: 12px; }
+.gx-h3 { font-size: .95em; font-weight: 600; letter-spacing: .03em; margin-bottom: var(--w-head-gap); }
 .gx-entry { display: grid; gap: 4px; margin-bottom: 20px; }
 .gx-entry small { color: var(--gx-mute); font-size: .8em; }
 .gx-entry strong { font-weight: 500; }

@@ -350,7 +350,7 @@ const css = /* css */ `
 .vc-page > :nth-child(2) { animation-delay: .08s; } .vc-page > :nth-child(3) { animation-delay: .16s; } .vc-page > :nth-child(4) { animation-delay: .24s; } .vc-page > :nth-child(n+5) { animation-delay: .32s; }
 @keyframes vc-pop { from { opacity: 0; transform: scale(.95) translateY(14px); } }
 .vc-text { display: grid; gap: 14px; color: var(--color-body); line-height: 2.05; }
-.vc-h3 { display: flex; align-items: center; gap: 12px; margin: 34px 0 18px; font-size: 1.2em; font-weight: 700; }
+.vc-h3 { display: flex; align-items: center; gap: 12px; margin: 34px 0 var(--w-head-gap); font-size: 1.2em; font-weight: 700; }
 .vc-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 26px; }
 .vc-stats div { display: grid; gap: 4px; justify-items: center; padding: 18px 10px; border-radius: 18px; background: var(--vc-soft); }
 .vc-stats b { font-size: 1.8em; color: var(--vc-accent); }
