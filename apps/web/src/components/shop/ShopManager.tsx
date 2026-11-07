@@ -17,7 +17,7 @@ import { ApiError, api, type ShopOrder } from "../../api";
 import { newId } from "../editor/list";
 import { uploadPicture } from "../site-edit/uploadImage";
 
-type Tab = "products" | "categories" | "orders" | "settings";
+type Tab = "products" | "categories" | "banners" | "orders" | "settings";
 
 type Props = {
   data: ResumeData;
@@ -70,6 +70,7 @@ export function ShopManager({ data, sample, onData, resumeId, onClose }: Props) 
             [
               ["products", `محصولات (${showNumber(shop.products.length)})`],
               ["categories", "دسته‌ها"],
+              ["banners", "بنرها و اسلایدها"],
               ["orders", "سفارش‌ها"],
               ["settings", "تنظیمات فروشگاه"],
             ] as [Tab, string][]
@@ -86,6 +87,7 @@ export function ShopManager({ data, sample, onData, resumeId, onClose }: Props) 
       <div className="shm-body">
         {tab === "products" && <Products shop={shop} setShop={setShop} onSample={sample?.site?.shop ? startFromSample : undefined} />}
         {tab === "categories" && <Categories shop={shop} setShop={setShop} />}
+        {tab === "banners" && <Banners shop={shop} setShop={setShop} />}
         {tab === "orders" && <Orders resumeId={resumeId} />}
         {tab === "settings" && <Settings shop={shop} setShop={setShop} />}
       </div>
@@ -354,6 +356,78 @@ function Categories({ shop, setShop }: { shop: Shop; setShop: (s: Partial<Shop>)
       <button type="button" className="btn small" onClick={() => setShop({ categories: [...shop.categories, { id: newId(), name: "دسته‌ی جدید", image: "" }] })}>
         + دسته‌ی جدید
       </button>
+    </div>
+  );
+}
+
+/* ───────────── Banners ───────────── */
+
+type Slide = NonNullable<Shop["slides"]>[number];
+
+function Banners({ shop, setShop }: { shop: Shop; setShop: (s: Partial<Shop>) => void }) {
+  // A shop made before slides existed has one hero; it becomes the first slide when slides are edited.
+  const slides: Slide[] = shop.slides?.length ? shop.slides : shop.heroTitle || shop.heroImage ? [{ id: "hero", title: shop.heroTitle, text: shop.heroText, image: shop.heroImage ?? "" }] : [];
+  const save = (next: Slide[]) => setShop({ slides: next });
+  const update = (id: string, patch: Partial<Slide>) => save(slides.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+  const move = (k: number, by: number) => {
+    const next = [...slides];
+    const [x] = next.splice(k, 1);
+    next.splice(Math.max(0, Math.min(next.length, k + by)), 0, x!);
+    save(next);
+  };
+  const remove = (id: string) => window.confirm("این اسلاید حذف شود؟") && save(slides.filter((x) => x.id !== id));
+  return (
+    <div className="shm-cats">
+      <p className="muted">اسلایدهای بالای صفحه‌ی اول (حداکثر ۵). بازدیدکننده با فلش‌ها بینشان جابه‌جا می‌شود. عکس با پس‌زمینه‌ی روشن و ساده بهترین نتیجه را می‌دهد.</p>
+      {slides.map((x, k) => (
+        <div key={x.id} className="shm-slide">
+          <span className="shm-thumb wide">{x.image ? <img src={x.image} alt="" /> : "🖼"}</span>
+          <div className="shm-slide-fields">
+            <input value={x.title ?? ""} maxLength={120} placeholder="تیتر اسلاید" onChange={(e) => update(x.id, { title: e.target.value || undefined })} aria-label="تیتر اسلاید" />
+            <textarea rows={2} value={x.text ?? ""} maxLength={400} placeholder="متن کوتاه زیر تیتر" onChange={(e) => update(x.id, { text: e.target.value || undefined })} aria-label="متن اسلاید" />
+            <div className="row gap wrap">
+              <ImagePicker value={x.image} onChange={(url) => update(x.id, { image: url })} />
+              <button type="button" className="btn ghost small" disabled={k === 0} onClick={() => move(k, -1)} aria-label="جلوتر">
+                ↑
+              </button>
+              <button type="button" className="btn ghost small" disabled={k === slides.length - 1} onClick={() => move(k, 1)} aria-label="عقب‌تر">
+                ↓
+              </button>
+              <button type="button" className="btn ghost small danger" onClick={() => remove(x.id)}>
+                حذف
+              </button>
+            </div>
+          </div>
+        </div>
+      ))}
+      {slides.length < 5 && (
+        <button type="button" className="btn small" onClick={() => save([...slides, { id: newId(), title: "تیتر اسلاید جدید", image: "" }])}>
+          + اسلاید جدید
+        </button>
+      )}
+      <h3>نوار متحرک وسط صفحه</h3>
+      <Field label="متن‌ها (هر خط یکی، حداکثر ۶)" wide>
+        <textarea
+          rows={4}
+          defaultValue={(shop.bandItems ?? []).join("\n")}
+          onBlur={(e) => {
+            const list = e.target.value.split("\n").map((t) => t.trim().slice(0, 60)).filter(Boolean).slice(0, 6);
+            setShop({ bandItems: list.length ? list : undefined });
+          }}
+        />
+      </Field>
+      <h3>بخش «کمد لباست را تازه کن»</h3>
+      <Field label="محصولی که کنار عکس بزرگ نمایش داده می‌شود">
+        <select value={shop.lookProductId ?? ""} onChange={(e) => setShop({ lookProductId: e.target.value || undefined })}>
+          <option value="">خودکار (اولین محصول ویژه)</option>
+          {shop.products.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+      </Field>
+      <p className="muted">عکس‌ها و متن‌های بقیه‌ی بخش‌ها را مستقیم روی خود سایت ویرایش کنید؛ روی هر کدام بزنید.</p>
     </div>
   );
 }

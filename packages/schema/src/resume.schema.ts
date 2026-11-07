@@ -15,7 +15,7 @@ const YEAR_MONTH_OR_EMPTY = /^(\d{4}-(0[1-9]|1[0-2]))?$/;
 /** Sample pictures shipped with the app and served by the API (see SAMPLE_ASSETS_PATH in the API). */
 export const SAMPLE_ASSETS_PATH = "/_assets/samples/";
 /** Bumped when the pictures change, so browsers fetch the new files instead of cached ones. */
-export const SAMPLE_ASSETS_VERSION = 6;
+export const SAMPLE_ASSETS_VERSION = 7;
 export const isSampleAsset = (v: string) => /^\/_assets\/samples\/[a-z0-9-]+\.(jpg|png)(\?v=\d+)?$/.test(v);
 
 function buildResumeSchemas(strict: boolean) {
@@ -212,6 +212,8 @@ function buildResumeSchemas(strict: boolean) {
     hidden: z.boolean().optional(), // kept in the panel but not shown on the site
   });
   const perk = z.object({ id, title: z.string().max(60), text: z.string().max(200).optional() });
+  // One picture of the home page slider, with its own heading and line of text.
+  const slide = z.object({ id, title: z.string().max(120).optional(), text: z.string().max(400).optional(), image: optionalUrl });
   const shop = z.object({
     categories: z.array(shopCategory).max(30).default([]),
     products: z.array(product).max(300).default([]),
@@ -219,10 +221,18 @@ function buildResumeSchemas(strict: boolean) {
     heroTitle: z.string().max(120).optional(),
     heroText: z.string().max(400).optional(),
     heroImage: optionalUrl,
+    slides: z.array(slide).max(5).optional(), // home page slider; when empty the hero texts above make one slide
+    newTitle: z.string().max(120).optional(), // the tall "new arrivals" card with every category
+    newText: z.string().max(300).optional(),
+    newImage: optionalUrl,
+    discoverTitle: z.string().max(120).optional(), // the card listing a few products
+    discoverImage: optionalUrl,
     promoTitle: z.string().max(120).optional(), // the dark offer card
     promoText: z.string().max(200).optional(),
     lookTitle: z.string().max(120).optional(), // "Inspire your wardrobe"
+    lookText: z.string().max(200).optional(),
     lookImage: optionalUrl,
+    lookProductId: z.string().max(40).optional(), // the product shown beside the big picture
     trendImage: optionalUrl,
     bandItems: z.array(z.string().max(60)).max(6).optional(), // the moving dark band
     perks: z.array(perk).max(4).optional(),

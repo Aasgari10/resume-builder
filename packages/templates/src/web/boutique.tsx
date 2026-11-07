@@ -12,7 +12,7 @@ import { WebPage, webCtx, type Ctx } from "./kit";
 import { safeUrl } from "../format";
 import { sampleImage, sampleResume } from "../sample";
 import type { TemplateProps } from "../types";
-import { Icon, Opt, PageLink, Socials, blockOn, ed, item, outside, partsCss } from "./parts";
+import { Icon, Opt, PageLink, Socials, blockOn, ed, item, partsCss } from "./parts";
 import { ZoomOpen } from "./zoom";
 
 export const BOUTIQUE_BLOCKS = [
@@ -63,7 +63,7 @@ export function BoutiqueShop(props: TemplateProps) {
         {body}
       </main>
       <Footer {...view} />
-      <Floating {...view} />
+      <Floating />
     </WebPage>
   );
 }
@@ -71,11 +71,12 @@ export function BoutiqueShop(props: TemplateProps) {
 /* ───────────── Small pieces ───────────── */
 
 const SVG: Record<string, string> = {
-  bag: "M6 8h12l-1 12H7z M9 8V6a3 3 0 0 1 6 0v2",
-  search: "M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14z M20 20l-4-4",
-  heart: "M12 20s-7-4.6-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.4-7 10-7 10z",
-  user: "M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8z M4 21c1-4 4-6 8-6s7 2 8 6",
-  menu: "M3 7h18 M3 12h18 M3 17h18",
+  // Header icons, drawn like the reference: a shopping bag, a thick magnifier, heart, person.
+  bag: "M6.2 7.5h11.6l1.2 13.5H5z M9 10.5V6.8a3 3 0 0 1 6 0v3.7",
+  search: "M10.6 3.6a7 7 0 1 0 0 14 7 7 0 0 0 0-14z M15.8 15.8 20.6 20.6 M7.4 9.6a3.4 3.4 0 0 1 3.2-2.9",
+  heart: "M12 20.2s-8-4.9-8-10.6A4.4 4.4 0 0 1 12 7a4.4 4.4 0 0 1 8 2.6c0 5.7-8 10.6-8 10.6z",
+  user: "M12 3.6a4 4 0 1 0 0 8 4 4 0 0 0 0-8z M4.6 21v-.6a5.2 5.2 0 0 1 5.2-5.2h4.4a5.2 5.2 0 0 1 5.2 5.2v.6z",
+  close: "M6 6l12 12M18 6 6 18",
   trash: "M5 7h14 M10 7V5h4v2 M7 7l1 13h8l1-13",
   truck: "M3 7h11v9H3z M14 10h4l3 3v3h-7 M7 19a1.5 1.5 0 1 0 0-.1 M17 19a1.5 1.5 0 1 0 0-.1",
   tag: "M3 12V4h8l10 10-8 8z M8 8.5v.01",
@@ -83,7 +84,10 @@ const SVG: Record<string, string> = {
   shield: "M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z M9 12l2 2 4-4",
   store: "M4 10l2-6h12l2 6 M4 10h16v10H4z M9 20v-5h6v5",
   chevron: "M15 5l-7 7 7 7",
+  right: "M8.5 3.5 17 12l-8.5 8.5",
+  left: "M15.5 3.5 7 12l8.5 8.5",
   star: "M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z",
+  bolt: "M13 2 5 13.5h6L10 22l9-12.5h-6z",
 };
 const PERK_ICONS = ["store", "tag", "chat", "shield"];
 
@@ -92,6 +96,32 @@ function Svg({ name, className = "bq-ico" }: { name: string; className?: string 
     <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
       <path d={SVG[name] ?? ""} />
     </svg>
+  );
+}
+
+/** The wide three-line menu icon of the reference. */
+const MenuLines = () => (
+  <svg viewBox="0 0 44 24" className="bq-ico bq-burger-ico" aria-hidden="true">
+    <path d="M1 5h42M1 12h42M1 19h42" />
+  </svg>
+);
+
+const fa = (n: number) => new Intl.NumberFormat("fa-IR").format(n);
+
+/** Text that keeps sliding sideways; it stops while the pointer is over it. Two copies make the loop seamless. */
+function Marquee({ className, items, edit }: { className: string; items: ReactNode[]; edit?: Record<string, string> }) {
+  // Enough repeats that one copy is wider than a large screen.
+  const reps = Math.max(2, Math.ceil(6 / Math.max(items.length, 1)));
+  const copy = Array.from({ length: reps }, (_, r) => items.map((it, k) => <span key={`${r}-${k}`}>{it}</span>));
+  return (
+    <div className={`bq-marq ${className}`} {...edit}>
+      <div className="bq-marq-track">
+        <div className="bq-marq-copy">{copy}</div>
+        <div className="bq-marq-copy" aria-hidden="true">
+          {copy}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -221,17 +251,19 @@ function Announcements({ shop, link }: BView) {
   const items = (shop.announcements ?? []).filter((a) => a.trim());
   if (!items.length) return null;
   return (
-    <div className="bq-ann" {...ed("site.shop.announcements", "lines", "اطلاعیه‌ها (هر خط یکی)")}>
-      {items.map((a, k) => (
-        <span key={k}>
-          {k > 0 && <i aria-hidden="true" />}
+    <Marquee
+      className="bq-ann"
+      edit={ed("site.shop.announcements", "lines", "اطلاعیه‌ها (هر خط یکی)")}
+      items={items.map((a) => (
+        <>
           {a}{" "}
           <PageLink to="/shop" link={link}>
             خرید کنید
           </PageLink>
-        </span>
+          <i aria-hidden="true" />
+        </>
       ))}
-    </div>
+    />
   );
 }
 
@@ -239,7 +271,9 @@ function Header(view: BView) {
   const { ctx, link, visitor, shop, editing } = view;
   const b = ctx.data.basics;
   const count = priceCart(shop, visitor.cart).count;
-  const cats = (shop.categories ?? []).filter((c) => visible(shop).some((p) => p.categoryId === c.id)).slice(0, 4);
+  const allCats = (shop.categories ?? []).filter((c) => visible(shop).some((p) => p.categoryId === c.id));
+  const cats = allCats.slice(0, 4);
+  const wishes = visitor.wishlist.filter((id) => visible(shop).some((p) => p.id === id)).length;
   return (
     <>
       <div className="bq-info bq-wrap">
@@ -283,18 +317,56 @@ function Header(view: BView) {
         <div className="bq-icons">
           <PageLink to="/cart" link={link} className="bq-icon">
             <Svg name="bag" />
-            {count > 0 && <b>{new Intl.NumberFormat("fa-IR").format(count)}</b>}
+            {count > 0 && <b>{fa(count)}</b>}
             <span className="sr-only">سبد خرید</span>
           </PageLink>
           <PageLink to="/search" link={link} className="bq-icon">
-            <Svg name="search" />
+            <Svg name="search" className="bq-ico bq-thick" />
             <span className="sr-only">جست‌وجو</span>
           </PageLink>
           <PageLink to="/wishlist" link={link} className="bq-icon">
             <Svg name="heart" />
-            <b className={visitor.wishlist.length ? "" : "zero"}>{new Intl.NumberFormat("fa-IR").format(visitor.wishlist.length)}</b>
+            {wishes > 0 && <b>{fa(wishes)}</b>}
             <span className="sr-only">علاقه‌مندی‌ها</span>
           </PageLink>
+          <a href="#bq-contact" className="bq-icon" title="تماس با فروشگاه">
+            <Svg name="user" />
+            <span className="sr-only">تماس با فروشگاه</span>
+          </a>
+          {/* The menu opens without scripts: a details element whose summary turns into the close button. */}
+          <details className="bq-menu">
+            <summary className="bq-icon bq-burger" aria-label="منو">
+              <MenuLines />
+              <Svg name="close" className="bq-ico bq-x" />
+            </summary>
+            <nav className="bq-drawer">
+              <PageLink to="/" link={link} className="bq-logo">
+                {b.fullName}
+                <i>.</i>
+              </PageLink>
+              <PageLink to="/" link={link} current={view.page === "/"}>
+                خانه
+              </PageLink>
+              <PageLink to="/shop" link={link} current={view.page === "/shop"}>
+                همه‌ی محصولات
+              </PageLink>
+              {allCats.map((c) => (
+                <PageLink key={c.id} to={`/category/${c.id}`} link={link} current={view.page === `/category/${c.id}`}>
+                  {c.name}
+                </PageLink>
+              ))}
+              <hr />
+              <PageLink to="/cart" link={link} current={view.page === "/cart"}>
+                سبد خرید{count > 0 && ` (${fa(count)})`}
+              </PageLink>
+              <PageLink to="/wishlist" link={link} current={view.page === "/wishlist"}>
+                علاقه‌مندی‌ها
+              </PageLink>
+              <PageLink to="/search" link={link} current={view.page === "/search"}>
+                جست‌وجو
+              </PageLink>
+            </nav>
+          </details>
         </div>
       </header>
     </>
@@ -310,7 +382,7 @@ function Footer({ ctx, link, editing }: BView) {
     { icon: "phone", label: "تماس", value: b.phone, path: "basics.phone", href: b.phone ? `tel:${b.phone.replace(/[^\d+]/g, "")}` : undefined },
   ];
   return (
-    <footer className="bq-foot">
+    <footer className="bq-foot" id="bq-contact">
       <div className="bq-wrap">
         <PageLink to="/" link={link} className="bq-logo">
           {b.fullName}
@@ -363,20 +435,9 @@ function Footer({ ctx, link, editing }: BView) {
   );
 }
 
-function Floating({ ctx }: BView) {
-  const wa = ctx.data.basics.links.find((l) => l.type === "whatsapp" && safeUrl(l.url));
-  const phone = ctx.data.basics.phone?.replace(/[^\d+]/g, "");
-  const href = wa ? safeUrl(wa.url) : phone ? `tel:${phone}` : undefined;
+function Floating() {
   return (
     <div className="bq-float">
-      {href && (
-        <a href={href} {...outside(href)} className="bq-chat">
-          <span>گفت‌وگو با ما 👋</span>
-          <i>
-            <Svg name="chat" />
-          </i>
-        </a>
-      )}
       <a href="#" className="bq-top" aria-label="بالای صفحه">
         <Svg name="chevron" />
       </a>
@@ -386,6 +447,53 @@ function Floating({ ctx }: BView) {
 
 /* ───────────── Home ───────────── */
 
+/** Home page slider. It works without scripts: hidden radio buttons pick the slide, the arrows are their labels. */
+function Hero({ shop, link, editing }: BView) {
+  const own = (shop.slides ?? []).length > 0;
+  const slides = own ? shop.slides! : [{ id: "hero", title: shop.heroTitle, text: shop.heroText, image: shop.heroImage }];
+  const at = (id: string, f: string) => (own ? `${item("site.shop.slides", id)}.${f}` : `site.shop.hero${f.charAt(0).toUpperCase()}${f.slice(1)}`);
+  const n = slides.length;
+  return (
+    <section className="bq-hero">
+      {n > 1 && slides.map((s, k) => <input key={s.id} type="radio" name="bq-hero" id={`bq-hero-${k}`} className="bq-dot" defaultChecked={k === 0} aria-label={`اسلاید ${fa(k + 1)}`} />)}
+      <div className="bq-slides">
+        {slides.map((s, k) => {
+          const img = safeUrl(s.image);
+          const H = k === 0 ? "h1" : "h2";
+          return (
+            <div key={s.id} className="bq-slide">
+              <span className="bq-slide-pic" {...ed(at(s.id, "image"), "image", "عکس اسلاید")}>
+                {img && <img src={img} alt="" loading={k ? "lazy" : undefined} />}
+              </span>
+              <div className="bq-slide-text">
+                <Opt value={s.title} editing={editing} edit={ed(at(s.id, "title"), "text", "تیتر اسلاید")}>
+                  <H {...ed(at(s.id, "title"), "text", "تیتر اسلاید")}>{s.title}</H>
+                </Opt>
+                <Opt value={s.text} editing={editing} edit={ed(at(s.id, "text"), "multiline", "متن اسلاید")}>
+                  <p {...ed(at(s.id, "text"), "multiline", "متن اسلاید")}>{s.text}</p>
+                </Opt>
+                <PageLink to="/shop" link={link} className="bq-btn">
+                  مشاهده‌ی مجموعه
+                </PageLink>
+                {n > 1 && (
+                  <div className="bq-arrows">
+                    <label htmlFor={`bq-hero-${(k + n - 1) % n}`} title="اسلاید قبلی">
+                      <Svg name="right" />
+                    </label>
+                    <label htmlFor={`bq-hero-${(k + 1) % n}`} title="اسلاید بعدی">
+                      <Svg name="left" />
+                    </label>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 function Home(view: BView) {
   const { ctx, shop, link, editing } = view;
   const data = ctx.data;
@@ -394,82 +502,92 @@ function Home(view: BView) {
   const cats = (shop.categories ?? []).map((c) => ({ ...c, count: products.filter((p) => p.categoryId === c.id).length })).filter((c) => c.count > 0);
   const featured = products.filter((p) => p.featured).slice(0, 3);
   const trendPics = featured.length ? featured : products.slice(0, 3);
-  const look = products.find((p) => p.featured) ?? products[0];
-  const hero = safeUrl(shop.heroImage);
-  const tall = safeUrl(data.site?.aboutImage);
+  const look = products.find((p) => p.id === shop.lookProductId) ?? products.find((p) => p.featured) ?? products[0];
   const testimonials = data.site?.testimonials ?? [];
+  // The card with a picture is the first category that has its own picture.
+  const picCat = cats.find((c) => safeUrl(c.image)) ?? cats[0];
+  const discover = products.filter((p) => !p.featured).slice(0, 6);
   return (
     <>
-      <section className="bq-hero">
-        <span className="bq-hero-pic" {...ed("site.shop.heroImage", "image", "تصویر اصلی")}>
-          {hero && <img src={hero} alt="" />}
-        </span>
-        <div className="bq-hero-text">
-          <Opt value={shop.heroTitle} editing={editing} edit={ed("site.shop.heroTitle", "text", "تیتر اصلی")}>
-            <h1 {...ed("site.shop.heroTitle", "text", "تیتر اصلی")}>{shop.heroTitle}</h1>
-          </Opt>
-          <Opt value={shop.heroText} editing={editing} edit={ed("site.shop.heroText", "multiline", "متن زیر تیتر")}>
-            <p {...ed("site.shop.heroText", "multiline", "متن زیر تیتر")}>{shop.heroText}</p>
-          </Opt>
-          <PageLink to="/shop" link={link} className="bq-btn">
-            مشاهده‌ی مجموعه
-          </PageLink>
-        </div>
-      </section>
+      <Hero {...view} />
 
       {on("categories") && cats.length > 0 && (
         <section className="bq-wrap bq-cats">
-          <div className="bq-cats-main">
-            <div>
-              <h2>تازه‌ها</h2>
-              <p>هر هفته لباس‌های تازه به فروشگاه اضافه می‌شود؛ دسته‌ی دلخواهتان را انتخاب کنید.</p>
-              <ul>
+          <div className="bq-new">
+            <span className="bq-cover" {...ed("site.shop.newImage", "image", "عکس کارت تازه‌ها")}>
+              {safeUrl(shop.newImage) && <img src={safeUrl(shop.newImage)} alt="" loading="lazy" />}
+            </span>
+            <div className="bq-new-text">
+              <Opt value={shop.newTitle} editing={editing} edit={ed("site.shop.newTitle", "text", "عنوان کارت")}>
+                <h2 {...ed("site.shop.newTitle", "text", "عنوان کارت")}>{shop.newTitle}</h2>
+              </Opt>
+              <Opt value={shop.newText} editing={editing} edit={ed("site.shop.newText", "multiline", "متن کارت")}>
+                <p {...ed("site.shop.newText", "multiline", "متن کارت")}>{shop.newText}</p>
+              </Opt>
+              <ul className="bq-dots">
                 {cats.map((c) => (
                   <li key={c.id}>
                     <PageLink to={`/category/${c.id}`} link={link}>
                       <span {...ed(`${item("site.shop.categories", c.id)}.name`, "text", "نام دسته")}>{c.name}</span>
-                      <sup>{new Intl.NumberFormat("fa-IR").format(c.count)}</sup>
+                      <sup>{fa(c.count)}</sup>
                     </PageLink>
                   </li>
                 ))}
               </ul>
               <PageLink to="/shop" link={link} className="bq-btn">
-                همه‌ی محصولات
+                مشاهده‌ی همه‌ی مجموعه‌ها
               </PageLink>
             </div>
-            <span className="bq-cats-pic" {...ed("site.aboutImage", "image", "عکس کنار دسته‌ها")}>
-              {tall && <img src={tall} alt="" loading="lazy" />}
-            </span>
           </div>
           <div className="bq-cats-side">
             <div className="bq-promo">
-              <small>پیشنهاد ویژه</small>
+              <small>
+                <Svg name="bolt" className="bq-ico bq-bolt" /> پیشنهاد ویژه
+              </small>
               <Opt value={shop.promoTitle} editing={editing} edit={ed("site.shop.promoTitle", "text", "متن پیشنهاد ویژه")}>
                 <h3 {...ed("site.shop.promoTitle", "text", "متن پیشنهاد ویژه")}>{shop.promoTitle}</h3>
               </Opt>
               <Opt value={shop.promoText} editing={editing} edit={ed("site.shop.promoText", "text", "توضیح پیشنهاد")}>
                 <p {...ed("site.shop.promoText", "text", "توضیح پیشنهاد")}>{shop.promoText}</p>
               </Opt>
-              <b className="bq-promo-logo">
+              <PageLink to="/shop" link={link} className="bq-promo-logo">
+                <b>{data.basics.fullName}</b>
+                <i aria-hidden="true" />
+              </PageLink>
+              <span className="bq-promo-mark" aria-hidden="true">
                 {data.basics.fullName}
-                <i>.</i>
-              </b>
+              </span>
             </div>
-            {cats.slice(0, 2).map((c, k) => {
-              const first = products.find((p) => p.categoryId === c.id);
-              const img = safeUrl(c.image) ?? (first ? pic(first) : undefined);
-              return (
-                <PageLink key={c.id} to={`/category/${c.id}`} link={link} className={`bq-catcard${k ? " alt" : ""}`}>
-                  <span>
-                    <h3>{c.name}</h3>
-                    <small>{new Intl.NumberFormat("fa-IR").format(c.count)} محصول</small>
-                  </span>
-                  <span className="bq-catcard-pic" {...ed(`${item("site.shop.categories", c.id)}.image`, "image", "عکس دسته")}>
-                    {img && <img src={img} alt="" loading="lazy" />}
-                  </span>
-                </PageLink>
-              );
-            })}
+            {picCat && (
+              <PageLink to={`/category/${picCat.id}`} link={link} className="bq-picard">
+                <span className="bq-cover" {...ed(`${item("site.shop.categories", picCat.id)}.image`, "image", "عکس دسته")}>
+                  {safeUrl(picCat.image) && <img src={safeUrl(picCat.image)} alt="" loading="lazy" />}
+                </span>
+                <span className="bq-picard-text">
+                  <h3>{picCat.name}</h3>
+                  <small>(+{fa(picCat.count)} محصول متنوع)</small>
+                </span>
+              </PageLink>
+            )}
+            <div className="bq-discover">
+              <span className="bq-discover-pic" {...ed("site.shop.discoverImage", "image", "عکس کارت")}>
+                {safeUrl(shop.discoverImage) && <img src={safeUrl(shop.discoverImage)} alt="" loading="lazy" />}
+              </span>
+              <div className="bq-discover-text">
+                <Opt value={shop.discoverTitle} editing={editing} edit={ed("site.shop.discoverTitle", "text", "عنوان کارت")}>
+                  <h3 {...ed("site.shop.discoverTitle", "text", "عنوان کارت")}>{shop.discoverTitle}</h3>
+                </Opt>
+                <ul className="bq-dots two">
+                  {(discover.length ? discover : products.slice(0, 6)).map((p) => (
+                    <li key={p.id}>
+                      <PageLink to={productPath(p)} link={link}>
+                        {p.name}
+                      </PageLink>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
           </div>
         </section>
       )}
@@ -485,18 +603,19 @@ function Home(view: BView) {
         </section>
       )}
 
-      {on("band") && (shop.bandItems ?? []).length > 0 && (
-        <div className="bq-band" aria-hidden="true">
-          <div className="bq-band-track" {...ed("site.shop.bandItems", "lines", "متن‌های نوار متحرک (هر خط یکی)")}>
-            {[0, 1, 2, 3].flatMap((r) =>
-              (shop.bandItems ?? []).map((t, k) => (
-                <span key={`${r}-${k}`}>
-                  {t} <i>◐</i>
-                </span>
-              )),
-            )}
-          </div>
-        </div>
+      {on("band") && (shop.bandItems ?? []).some((t) => t.trim()) && (
+        <Marquee
+          className="bq-band"
+          edit={ed("site.shop.bandItems", "lines", "متن‌های نوار متحرک (هر خط یکی)")}
+          items={(shop.bandItems ?? [])
+            .filter((t) => t.trim())
+            .map((t) => (
+              <>
+                {t}
+                <i aria-hidden="true">◐</i>
+              </>
+            ))}
+        />
       )}
 
       {on("look") && look && (
@@ -505,10 +624,14 @@ function Home(view: BView) {
             <Opt value={shop.lookTitle} editing={editing} edit={ed("site.shop.lookTitle", "text", "عنوان بخش")}>
               <h2 {...ed("site.shop.lookTitle", "text", "عنوان بخش")}>{shop.lookTitle}</h2>
             </Opt>
-            <p>یک ترکیب آماده برای روزهای کاری و دورهمی‌ها.</p>
-            <div className="bq-look-card">
-              <ProductCard view={view} p={products.find((p) => p.id !== look.id && /کت|بلیزر/.test(p.name)) ?? look} />
-            </div>
+            <Opt value={shop.lookText} editing={editing} edit={ed("site.shop.lookText", "text", "متن زیر عنوان")}>
+              <p {...ed("site.shop.lookText", "text", "متن زیر عنوان")}>{shop.lookText}</p>
+            </Opt>
+            <PageLink to={productPath(look)} link={link} className="bq-look-card">
+              <span className="bq-look-card-pic">{pic(look) && <img src={pic(look)} alt={look.name} loading="lazy" />}</span>
+              <b>{look.name}</b>
+              <Price view={view} p={look} />
+            </PageLink>
           </div>
           <span className="bq-look-pic" {...ed("site.shop.lookImage", "image", "عکس بزرگ")}>
             {safeUrl(shop.lookImage) && <img src={safeUrl(shop.lookImage)} alt="" loading="lazy" />}
@@ -1013,8 +1136,7 @@ export function boutiqueSample(locale: ResumeData["locale"]): ResumeData {
       ...base.site,
       gallery: [],
       tagline: "استایل‌های ضروری با قیمت‌های استثنایی",
-      aboutImage: img("tall"),
-      accentImage: img("trend"),
+      accentImage: img("banner"),
       address: "تهران، خیابان ولیعصر، پلاک ۵۸",
       testimonials: [
         { id: "bt1", name: "لیلا، شیراز", role: "خوش‌دوخت و زیبا", text: "جنس پارچه دقیقاً همان بود که در عکس دیدم و سایزش هم کاملاً اندازه شد. بسته‌بندی هم خیلی مرتب بود." },
@@ -1024,14 +1146,22 @@ export function boutiqueSample(locale: ResumeData["locale"]): ResumeData {
         categories: cats.map((c) => ({ ...c, image: c.id === "c5" ? img("bag") : "" })),
         products,
         announcements: ["تا ۴۰٪ تخفیف تابستانه", "ارسال رایگان خریدهای بالای ۲ میلیون تومان", "حراج ویژه‌ی ۲۴ ساعته"],
-        heroTitle: "استایل‌های امروزی برای خانم‌های خوش‌پوش",
-        heroText: "مجموعه‌ی تازه‌ی فصل با رنگ‌های ملایم و طراحی ساده؛ برای کار، دورهمی و هر روز.",
-        heroImage: img("hero"),
-        promoTitle: "۱۵٪ تخفیف ویژه‌ی تعطیلات",
-        promoText: "فقط برای خریدهای این هفته",
+        slides: [
+          { id: "h1", title: "استایل‌های امروزی برای خانم‌های خوش‌پوش", text: "مجموعه‌ی تازه‌ی فصل با رنگ‌های ملایم و طراحی ساده؛ برای کار، دورهمی و هر روز.", image: img("p3") },
+          { id: "h2", title: "لباس‌های مجلسی که دیده می‌شوند", text: "پیراهن‌ها و سرهمی‌های تازه برای شب‌های خاص؛ با دوخت تمیز و پارچه‌ی خوش‌دست.", image: img("p2") },
+          { id: "h3", title: "گرم و شیک در روزهای سرد", text: "پالتوها و کت‌های پاییزی را ببینید؛ ارسال رایگان برای خریدهای بالای ۲ میلیون تومان.", image: img("p5") },
+        ],
+        newTitle: "تازه‌ها",
+        newText: "هر هفته لباس‌های تازه به فروشگاه اضافه می‌شود؛ دسته‌ی دلخواهتان را انتخاب کنید.",
+        newImage: img("arrivals"),
+        discoverTitle: "پوشاک زنانه را کشف کنید",
+        discoverImage: img("p6"),
+        promoTitle: "۱۵٪ تخفیف ویژه‌ی تعطیلات را همین امروز بگیرید",
         lookTitle: "کمد لباست را تازه کن",
-        lookImage: img("hero"),
-        trendImage: img("p5"),
+        lookText: "یک ترکیب آماده برای روزهای کاری و دورهمی‌ها.",
+        lookImage: img("look"),
+        lookProductId: "s7",
+        trendImage: img("trend"),
         bandItems: ["استایل برای هر سفر", "خوش‌پوش، بدون زحمت", "استایل مناسب خودت را پیدا کن"],
         perks: [
           { id: "k1", title: "تحویل حضوری", text: "سفارش را از فروشگاه تحویل بگیرید." },
@@ -1051,7 +1181,7 @@ export function boutiqueSample(locale: ResumeData["locale"]): ResumeData {
 /* ───────────── Styles ───────────── */
 
 const css = /* css */ `
-.bq { --bq-ink: var(--color-text); --bq-line: var(--color-line); --bq-dark: #0B0B0C; --bq-red: var(--color-primary); --bq-wrap: min(1480px, 100% - 2 * clamp(14px, 3cqi, 44px));
+.bq { --bq-ink: var(--color-text); --bq-line: var(--color-line); --bq-dark: #0B0B0C; --bq-red: var(--color-primary); --bq-soft: color-mix(in srgb, var(--color-text) 5%, var(--color-bg)); --bq-wrap: min(1480px, 100% - 2 * clamp(14px, 3cqi, 44px));
   background: var(--color-bg); color: var(--color-text); min-height: 100%; }
 .bq a { color: inherit; }
 .bq button { font: inherit; color: inherit; }
@@ -1070,64 +1200,112 @@ const css = /* css */ `
 .bq-title h2 { font-size: clamp(1.7em, 3.6cqi, 2.5em); font-weight: 600; }
 .bq-title p { max-width: 34em; color: var(--color-muted); line-height: 1.9; }
 
+/* Sliding text (top strip and the dark band); it stops under the pointer */
+.bq-marq { overflow: hidden; direction: ltr; }
+.bq-marq-track { display: flex; width: max-content; animation: bq-marq var(--bq-speed, 50s) linear infinite; }
+.bq-marq:hover .bq-marq-track, .bq-marq:focus-within .bq-marq-track { animation-play-state: paused; }
+.bq-marq-copy { display: flex; flex: none; }
+.bq-marq-copy > span { display: inline-flex; align-items: center; direction: rtl; white-space: nowrap; }
+/* Persian reads right to left, so the text moves to the right. */
+@keyframes bq-marq { from { transform: translateX(-50%); } to { transform: none; } }
+
 /* Top strip, info line and header */
-.bq-ann { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px 26px; padding: 11px 16px; background: var(--bq-dark); color: #E7E7E7; font-size: .84em; }
-.bq-ann span { display: inline-flex; align-items: center; gap: 8px; }
-.bq-ann i { width: 50px; height: 1px; margin-inline-end: 18px; background: #555; }
-.bq-ann a { color: #fff; font-weight: 700; text-decoration: underline; }
+.bq-ann { --bq-speed: 45s; padding: 10px 0; background: var(--bq-dark); color: #E7E7E7; font-size: .86em; }
+.bq-ann .bq-marq-copy > span { gap: 8px; }
+.bq-ann a { color: #fff; font-weight: 700; text-decoration: underline; text-underline-offset: 4px; }
+.bq-ann i { width: 60px; height: 1px; margin-inline: 36px; background: #5A5A5A; }
 .bq-info { display: flex; align-items: center; justify-content: center; gap: 10px 14px; flex-wrap: wrap; padding: 12px 0; border-bottom: 1px solid var(--bq-line); color: var(--color-muted); font-size: .9em; }
 .bq-strong { color: var(--bq-ink); font-weight: 600; }
 .bq-info-end { margin-inline-start: auto; display: flex; gap: 20px; color: var(--bq-ink); }
-.bq-head { display: flex; align-items: center; gap: 24px; padding: 20px 0; }
+.bq-head { display: flex; align-items: center; gap: 24px; padding: 22px 0; }
 .bq-logo { font-size: 2.3em; font-weight: 800; letter-spacing: -.02em; line-height: 1; }
 .bq-logo i { font-style: normal; color: var(--bq-red); }
 .bq-nav { display: flex; gap: clamp(14px, 2.4cqi, 30px); margin-inline: auto; font-weight: 500; }
 .bq-nav a { position: relative; padding: 6px 0; }
 .bq-nav a::after { content: ""; position: absolute; inset-inline: 0; bottom: 0; height: 2px; background: var(--bq-red); transform: scaleX(0); transition: transform .25s; }
 .bq-nav a:hover::after, .bq-nav a[aria-current="page"]::after { transform: none; }
-.bq-icons { display: flex; gap: 18px; }
-.bq-icon { position: relative; display: grid; place-items: center; width: 34px; height: 34px; }
-.bq-icon .bq-ico { width: 25px; height: 25px; }
-.bq-icon b { position: absolute; top: -4px; inset-inline-end: -6px; min-width: 18px; height: 18px; padding: 0 4px; display: grid; place-items: center; border-radius: 999px; background: var(--bq-red); color: #fff; font-size: 10px; }
+.bq-icons { display: flex; align-items: center; gap: clamp(14px, 1.8cqi, 26px); }
+.bq-icon { position: relative; display: grid; place-items: center; height: 34px; min-width: 30px; cursor: pointer; }
+.bq-icon .bq-ico { width: 27px; height: 27px; stroke-width: 1.8; }
+.bq-icon .bq-thick { stroke-width: 2.4; }
+.bq-icon b { position: absolute; top: -5px; inset-inline-end: -8px; min-width: 19px; height: 19px; padding: 0 5px; display: grid; place-items: center; border-radius: 999px; background: var(--bq-red); color: #fff; font-size: 11px; font-weight: 700; line-height: 1; }
+.bq-icon:hover { color: var(--bq-red); }
+.bq-menu > summary { list-style: none; }
+.bq-menu > summary::-webkit-details-marker { display: none; }
+.bq-burger .bq-burger-ico { width: 50px; height: 26px; stroke-width: 1.5; }
+.bq-burger .bq-x { display: none; }
+.bq-menu[open] > summary { position: fixed; top: 22px; inset-inline-start: 22px; z-index: 102; width: 44px; height: 44px; border-radius: 50%; background: var(--bq-red); color: #fff; }
+.bq-menu[open] .bq-burger-ico { display: none; }
+.bq-menu[open] .bq-x { display: block; width: 22px; height: 22px; stroke-width: 2; }
+.bq-menu[open]::before { content: ""; position: fixed; inset: 0; z-index: 100; background: rgb(0 0 0 / .45); }
+.bq-drawer { position: fixed; top: 0; inset-inline-end: 0; z-index: 101; display: flex; flex-direction: column; gap: 4px; width: min(360px, 86%); height: 100vh; padding: 28px 30px; overflow-y: auto; background: var(--color-bg); color: var(--bq-ink); box-shadow: 0 0 40px rgb(0 0 0 / .25); animation: bq-drawer .35s cubic-bezier(.2, 1, .3, 1); }
+@keyframes bq-drawer { from { transform: translateX(-100%); } }
+.bq-drawer .bq-logo { margin-bottom: 22px; font-size: 2em; }
+.bq-drawer a:not(.bq-logo) { padding: 11px 0; border-bottom: 1px solid var(--bq-line); font-weight: 500; }
+.bq-drawer a[aria-current="page"], .bq-drawer a:hover { color: var(--bq-red); }
+.bq-drawer hr { margin: 14px 0; border: none; }
 
-/* Hero */
-.bq-hero { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; min-height: clamp(420px, 44cqi, 640px); background: var(--color-soft); overflow: hidden; }
-.bq-hero-pic { position: relative; align-self: stretch; }
-.bq-hero-pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; animation: bq-zoom 1.6s cubic-bezier(.2, 1, .3, 1) backwards; }
-@keyframes bq-zoom { from { transform: scale(1.1); opacity: 0; } }
-.bq-hero-text { display: grid; gap: 18px; justify-items: start; padding: 40px clamp(20px, 6cqi, 90px); animation: bq-up .9s .2s cubic-bezier(.2, 1, .3, 1) backwards; }
-@keyframes bq-up { from { opacity: 0; transform: translateY(30px); } }
-.bq-hero-text h1 { font-size: clamp(2em, 4.4cqi, 3.4em); font-weight: 600; line-height: 1.35; }
-.bq-hero-text p { max-width: 30em; color: var(--color-muted); line-height: 1.9; }
+/* Slider: hidden radio buttons pick the slide, the arrows are their labels */
+.bq-hero { --bq-hero-h: clamp(440px, 36cqi, 660px); position: relative; background: var(--bq-soft); overflow: hidden; }
+.bq-dot { position: absolute; width: 1px !important; height: 1px; margin: 0; opacity: 0; pointer-events: none; }
+.bq h1, .bq h2, .bq h3 { line-height: 1.45; letter-spacing: normal; }
+.bq-slides { display: grid; }
+.bq-slide { grid-area: 1 / 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); height: var(--bq-hero-h); opacity: 0; visibility: hidden; transition: opacity .7s, visibility .7s; }
+.bq-slide:only-child, ${[1, 2, 3, 4, 5].map((n) => `.bq-dot:nth-of-type(${n}):checked ~ .bq-slides > .bq-slide:nth-child(${n})`).join(", ")} { opacity: 1; visibility: visible; }
+.bq-slide-pic { position: relative; display: flex; justify-content: center; align-items: flex-end; min-height: 0; }
+/* The picture is never stretched past its own size, and its edges fade into the background. */
+.bq-slide-pic img { display: block; height: 100%; max-width: 100%; object-fit: contain; object-position: bottom; -webkit-mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent); mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent); }
+.bq-slide-text { display: grid; align-content: center; justify-items: start; gap: clamp(14px, 1.6cqi, 22px); padding: 30px clamp(20px, 5cqi, 80px) 30px 20px; }
+.bq-slide-text h1, .bq-slide-text h2 { max-width: 14em; font-size: clamp(1.8em, 3.1cqi, 3.1em); font-weight: 600; line-height: 1.45; }
+.bq-slide-text p { max-width: 30em; color: var(--color-muted); line-height: 1.95; }
+.bq-slide > * { transition: transform .8s cubic-bezier(.2, 1, .3, 1); }
+.bq-slide:not(:only-child) .bq-slide-text { transform: translateY(24px); }
+${[1, 2, 3, 4, 5].map((n) => `.bq-dot:nth-of-type(${n}):checked ~ .bq-slides > .bq-slide:nth-child(${n}) .bq-slide-text`).join(", ")} { transform: none; }
+.bq-arrows { display: flex; gap: 18px; margin-top: 8px; }
+.bq-arrows label { display: grid; place-items: center; width: 40px; height: 40px; cursor: pointer; transition: color .2s, transform .2s; }
+.bq-arrows label:hover { color: var(--bq-red); transform: scale(1.1); }
+.bq-arrows .bq-ico { width: 34px; height: 34px; stroke-width: 1.3; }
+.bq-dot:focus-visible ~ .bq-slides .bq-arrows label { outline: 1px dashed currentColor; }
 
-/* Categories block */
-.bq-cats { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 22px; padding-block: clamp(40px, 6cqi, 80px) 0; }
-.bq-cats-main { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); background: var(--color-soft); min-height: 540px; }
-.bq-cats-main > div { display: grid; align-content: center; gap: 16px; padding: 34px; }
-.bq-cats-main h2 { font-size: 1.8em; font-weight: 600; }
-.bq-cats-main p { color: var(--color-muted); font-size: .9em; line-height: 1.9; }
-.bq-cats-main ul { list-style: none; margin: 4px 0 10px; padding: 0; display: grid; gap: 12px; }
-.bq-cats-main li a { display: inline-flex; align-items: flex-start; gap: 4px; }
-.bq-cats-main li a::before { content: "•"; margin-inline-end: 10px; color: var(--bq-red); }
-.bq-cats-main li a:hover { color: var(--bq-red); }
-.bq-cats-main sup { font-size: .7em; color: var(--color-muted); }
-.bq-cats-main .bq-btn { justify-self: start; }
-.bq-cats-pic { position: relative; overflow: hidden; }
-.bq-cats-pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.bq-cats-side { display: grid; gap: 22px; grid-template-rows: auto 1fr 1fr; }
-.bq-promo { position: relative; display: grid; gap: 10px; padding: 28px 30px; background: var(--bq-dark); color: #fff; overflow: hidden; }
-.bq-promo small { justify-self: start; padding: 5px 14px; border: 1px solid #444; border-radius: 999px; font-size: .78em; }
-.bq-promo h3 { font-size: 1.6em; font-weight: 500; line-height: 1.5; }
-.bq-promo p { color: #B9B9B9; font-size: .9em; }
-.bq-promo-logo { font-size: 1.4em; letter-spacing: .1em; }
-.bq-promo-logo i { font-style: normal; color: var(--bq-red); }
-.bq-catcard { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 10px; min-height: 180px; padding-inline-start: 30px; background: var(--color-soft); overflow: hidden; transition: background .3s; }
-.bq-catcard.alt { background: color-mix(in srgb, var(--color-text) 6%, var(--color-bg)); }
-.bq-catcard h3 { font-size: 1.5em; font-weight: 500; }
-.bq-catcard small { color: var(--color-muted); }
-.bq-catcard-pic { position: relative; align-self: stretch; min-height: 180px; overflow: hidden; }
-.bq-catcard-pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .6s; }
-.bq-catcard:hover .bq-catcard-pic img { transform: scale(1.06); }
+/* Collections: a tall card beside three stacked ones, as in the reference */
+.bq-cats { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(12px, 1.3cqi, 20px); padding-block: clamp(40px, 5cqi, 70px) 0; }
+.bq-cover { position: absolute; inset: 0; overflow: hidden; }
+.bq-cover img { width: 100%; height: 100%; object-fit: cover; transition: transform 1s cubic-bezier(.2, 1, .3, 1); }
+.bq-new, .bq-promo, .bq-picard, .bq-discover { position: relative; overflow: hidden; background: var(--bq-soft); color: #111; }
+.bq-new .bq-cover img { object-position: left center; }
+.bq-new:hover .bq-cover img, .bq-picard:hover .bq-cover img { transform: scale(1.04); }
+.bq-new-text { position: relative; display: grid; justify-items: start; align-content: start; gap: 14px; width: 66%; padding: 11% 7% 7%; }
+.bq-cats h2 { font-size: clamp(1.5em, 2.4cqi, 2.3em); font-weight: 500; }
+.bq-new-text > p { max-width: 24em; color: #555; font-size: .92em; line-height: 1.9; }
+.bq-dots { list-style: none; margin: 14px 0 22px; padding: 0; display: grid; gap: clamp(12px, 1.6cqi, 22px); font-size: clamp(1em, 1.2cqi, 1.15em); }
+.bq-dots.two { grid-template-columns: 1fr 1fr; gap: 14px 24px; margin: 0; }
+.bq-dots a { display: inline-flex; align-items: flex-start; gap: 5px; }
+.bq-dots a::before { content: ""; width: 6px; height: 6px; margin: .7em 0 0 10px; border-radius: 50%; background: var(--bq-red); flex: none; }
+.bq-dots a:hover { color: var(--bq-red); }
+.bq-dots sup { font-size: .68em; }
+.bq-cats-side { display: grid; gap: clamp(12px, 1.3cqi, 20px); }
+.bq-promo { display: grid; align-content: center; justify-items: start; gap: 14px; aspect-ratio: 690 / 386; padding: 6% 7%; background: #0A0A0A; color: #fff; }
+.bq-promo small { display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; border: 1px solid #5A5A5A; border-radius: 999px; font-size: .82em; font-weight: 600; }
+.bq-bolt { width: 15px; height: 15px; fill: #F5C518; stroke: none; }
+.bq-promo h3 { position: relative; max-width: 17em; color: #C9C9C9; font-size: clamp(1.25em, 2cqi, 2em); font-weight: 500; line-height: 1.5; }
+.bq-promo p { color: #9A9A9A; font-size: .9em; }
+.bq-promo-logo { position: relative; display: inline-flex; align-items: center; gap: 12px; font-size: clamp(1.3em, 1.8cqi, 1.8em); }
+.bq-promo-logo b { text-decoration: underline; text-underline-offset: 6px; text-decoration-thickness: 2px; }
+.bq-promo-logo i { position: relative; width: 22px; height: 22px; border: 2px solid var(--bq-red); border-radius: 4px; }
+.bq-promo-logo i::after { content: ""; position: absolute; inset: 3px -7px -7px 3px; border: 2px solid var(--bq-red); border-radius: 4px; }
+.bq-promo-mark { position: absolute; inset-inline-start: -2%; bottom: -14%; color: #1C1C1C; font-size: clamp(5em, 11cqi, 10em); font-weight: 800; line-height: 1; transform: rotate(-8deg); pointer-events: none; }
+.bq-picard { display: grid; align-items: center; aspect-ratio: 690 / 359; }
+.bq-picard .bq-cover img { object-position: left center; }
+.bq-picard-text { position: relative; display: grid; gap: 6px; padding-inline: 7%; }
+.bq-picard h3, .bq-discover h3 { font-size: clamp(1.3em, 2cqi, 2em); font-weight: 500; line-height: 1.5; }
+.bq-picard small { font-size: .9em; letter-spacing: .02em; }
+.bq-discover { display: grid; align-items: center; aspect-ratio: 690 / 425; background: #F2F2F2; }
+.bq-discover-pic { position: absolute; inset-block: 0; inset-inline-end: 0; width: 34%; display: flex; justify-content: flex-end; }
+.bq-discover-pic img { height: 100%; width: auto; max-width: 100%; object-fit: contain; object-position: bottom; -webkit-mask-image: linear-gradient(to left, #000 70%, transparent); mask-image: linear-gradient(to left, #000 70%, transparent); }
+.bq-discover-text { position: relative; display: grid; gap: clamp(16px, 2.2cqi, 30px); width: 70%; padding-inline: 7% 0; }
+.bq-dots.two li { min-width: 0; }
+.bq-dots.two a { max-width: 100%; }
+.bq-dots.two a span, .bq-dots.two a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Product cards */
 .bq-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 30px 22px; }
@@ -1150,21 +1328,22 @@ const css = /* css */ `
 .bq-price s { color: var(--color-muted); font-size: .9em; }
 
 /* Moving band */
-.bq-band { overflow: hidden; padding: 16px 0; background: var(--bq-dark); color: #fff; }
-.bq-band-track { display: flex; width: max-content; gap: 40px; font-size: clamp(1.1em, 2.2cqi, 1.6em); white-space: nowrap; animation: bq-slide 40s linear infinite; }
-.bq-band-track i { font-style: normal; margin-inline-start: 34px; opacity: .8; }
-.bq[dir="rtl"] .bq-band-track { animation-name: bq-slide-rtl; }
-@keyframes bq-slide { to { transform: translateX(-50%); } }
-@keyframes bq-slide-rtl { to { transform: translateX(50%); } }
+.bq-band { --bq-speed: 60s; padding: clamp(12px, 1.3cqi, 18px) 0; background: var(--bq-dark); color: #fff; font-size: clamp(1.05em, 1.6cqi, 1.5em); font-weight: 500; }
+.bq-band .bq-marq-copy > span { gap: clamp(26px, 3.4cqi, 54px); padding-inline-end: clamp(26px, 3.4cqi, 54px); }
+.bq-band i { font-style: normal; opacity: .85; }
 
-/* Look book */
-.bq-look { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: stretch; background: var(--color-soft); }
-.bq-look-text { display: grid; align-content: center; justify-items: center; gap: 12px; padding: clamp(30px, 6cqi, 70px); text-align: center; }
-.bq-look-text h2 { font-size: clamp(1.7em, 3.6cqi, 2.6em); font-weight: 600; }
-.bq-look-text > p { color: var(--color-muted); }
-.bq-look-card { width: min(240px, 100%); margin-top: 16px; text-align: start; }
-.bq-look-pic { position: relative; min-height: clamp(420px, 44cqi, 640px); overflow: hidden; }
-.bq-look-pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+/* Look book: the product beside a big photo; the photo keeps its own size and fades into the background */
+.bq-look { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); height: clamp(480px, 44cqi, 705px); background: linear-gradient(90deg, #E3E3E3, #E6E6E6 48%, #EFEFEF); color: #111; }
+.bq-look-text { display: grid; align-content: center; justify-items: center; gap: 12px; padding: clamp(30px, 4cqi, 60px) 20px; text-align: center; }
+.bq-look-text h2 { font-size: clamp(1.7em, 3.2cqi, 3em); font-weight: 500; }
+.bq-look-text > p { color: #555; }
+.bq-look-card { display: grid; justify-items: center; gap: 6px; width: min(250px, 60%); margin-top: clamp(10px, 2cqi, 30px); }
+.bq-look-card-pic { position: relative; width: 100%; aspect-ratio: 290 / 372; overflow: hidden; background: #F2F2F2; }
+.bq-look-card-pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .7s; }
+.bq-look-card:hover img { transform: scale(1.05); }
+.bq-look-card b { margin-top: 8px; font-size: 1.1em; font-weight: 500; }
+.bq-look-pic { position: relative; display: flex; justify-content: flex-start; min-height: 0; }
+.bq-look-pic img { display: block; max-width: 100%; height: 100%; object-fit: contain; object-position: left bottom; -webkit-mask-image: linear-gradient(to left, transparent, #000 18%); mask-image: linear-gradient(to left, transparent, #000 18%); }
 
 /* Category boxes */
 .bq-brands { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; padding-block: clamp(40px, 6cqi, 70px) 0; }
@@ -1174,9 +1353,9 @@ const css = /* css */ `
 .bq-brands small { color: var(--color-muted); }
 
 /* Newest trends */
-.bq-trends { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 26px; }
-.bq-trends-pic { position: relative; min-height: 520px; overflow: hidden; background: var(--color-soft); }
-.bq-trends-pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.bq-trends { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: clamp(20px, 3cqi, 40px); align-items: start; }
+.bq-trends-pic { position: relative; aspect-ratio: 567 / 704; max-height: 704px; overflow: hidden; background: #F2F2F2; }
+.bq-trends-pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center top; }
 .bq-trends-list { display: grid; gap: 18px; align-content: start; }
 .bq-row { display: grid; grid-template-columns: 140px 1fr auto; align-items: center; gap: 22px; }
 .bq-row-pic { position: relative; display: block; aspect-ratio: 1; overflow: hidden; background: var(--color-soft); }
@@ -1201,7 +1380,7 @@ const css = /* css */ `
 
 /* Perks */
 .bq-perks { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 26px; padding-block: clamp(40px, 6cqi, 80px); text-align: center; }
-.bq-perks > div { display: grid; justify-items: center; gap: 10px; }
+.bq-perks > div { display: grid; justify-items: center; align-content: start; gap: 10px; }
 .bq-perk-ico { width: 74px; height: 74px; display: grid; place-items: center; border-radius: 50%; background: var(--color-soft); transition: background .3s, color .3s; }
 .bq-perk-ico .bq-ico { width: 32px; height: 32px; stroke-width: 1.4; }
 .bq-perks > div:hover .bq-perk-ico { background: var(--bq-red); color: #fff; }
@@ -1209,7 +1388,7 @@ const css = /* css */ `
 .bq-perks p { max-width: 16em; color: var(--color-muted); font-size: .88em; line-height: 1.8; }
 
 /* Footer and floating buttons */
-.bq-foot { margin-top: clamp(40px, 6cqi, 80px); padding: clamp(46px, 6cqi, 80px) 0 26px; background: var(--bq-dark); color: #fff; text-align: center; }
+.bq-foot { margin-top: clamp(20px, 3cqi, 40px); padding: clamp(46px, 6cqi, 80px) 0 26px; background: var(--bq-dark); color: #fff; text-align: center; }
 .bq-foot .bq-wrap { display: grid; justify-items: center; gap: 26px; }
 .bq-foot-text { max-width: 36em; color: #CFCFCF; line-height: 2; }
 .bq-foot-rows { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; width: 100%; padding-block: 26px; border-block: 1px solid #262626; text-align: start; }
@@ -1222,13 +1401,8 @@ const css = /* css */ `
 .bq-foot-socials a { border: 1px solid #4A4A4A; color: #fff; }
 .bq-foot-socials a:hover { background: #fff; color: #111; }
 .bq-copy { justify-self: stretch; text-align: start; color: #BDBDBD; }
-.bq-float { position: sticky; bottom: 18px; z-index: 20; display: flex; justify-content: flex-end; align-items: center; gap: 12px; width: var(--bq-wrap); margin: -76px auto 18px; pointer-events: none; }
+.bq-float { position: sticky; bottom: 18px; z-index: 20; display: flex; justify-content: flex-end; width: var(--bq-wrap); margin: -68px auto 18px; pointer-events: none; }
 .bq-float > * { pointer-events: auto; }
-.bq-chat { display: flex; align-items: center; gap: 12px; }
-.bq-chat span { padding: 10px 18px; border-radius: 12px; background: #fff; color: #111; box-shadow: 0 10px 24px -12px rgb(0 0 0 / .35); }
-.bq-chat i { width: 56px; height: 56px; display: grid; place-items: center; border-radius: 50%; background: var(--bq-red); color: #fff; animation: bq-pulse 2.4s ease-in-out infinite; }
-@keyframes bq-pulse { 50% { box-shadow: 0 0 0 10px color-mix(in srgb, var(--bq-red) 20%, transparent); } }
-.bq-chat .bq-ico { fill: currentColor; stroke: none; }
 .bq-top { width: 50px; height: 50px; display: grid; place-items: center; border-radius: 50%; background: #fff; color: #111; box-shadow: 0 8px 20px -10px rgb(0 0 0 / .4); }
 .bq-top .bq-ico { transform: rotate(90deg); }
 
@@ -1316,39 +1490,66 @@ const css = /* css */ `
 
 @container (max-width: 1100px) {
   .bq-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .bq-cats { grid-template-columns: 1fr; }
   .bq-nav { display: none; }
   .bq-icons { margin-inline-start: auto; }
+  .bq-slide-text h1, .bq-slide-text h2 { font-size: clamp(1.6em, 3.6cqi, 2.4em); }
 }
 @container (max-width: 820px) {
-  .bq-hero, .bq-look, .bq-trends, .bq-product, .bq-cart, .bq-quotes { grid-template-columns: 1fr; }
-  .bq-hero-pic { min-height: 380px; }
-  .bq-look-pic { min-height: 380px; }
-  .bq-trends-pic { min-height: 380px; }
+  .bq-cats { grid-template-columns: 1fr; }
+  .bq-new { min-height: 640px; }
+  .bq-look, .bq-trends, .bq-product, .bq-cart, .bq-quotes { grid-template-columns: 1fr; }
+  .bq-look { height: auto; }
+  .bq-look-pic { height: 420px; justify-content: center; }
+  .bq-look-pic img { -webkit-mask-image: none; mask-image: none; }
+  .bq-trends-pic { max-height: 520px; }
   .bq-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 14px; }
   .bq-perks { grid-template-columns: 1fr 1fr; }
   .bq-foot-rows { grid-template-columns: 1fr; }
   .bq-foot-rows > div { justify-content: flex-start; }
-  .bq-info { justify-content: space-between; }
+  .bq-info { justify-content: center; }
   .bq-info-end { display: none; }
   .bq-info-col, .bq-sum { position: static; }
   .bq-card-acts { opacity: 1; transform: none; }
 }
-@container (max-width: 560px) {
-  .bq-cats-main { grid-template-columns: 1fr; min-height: 0; }
-  .bq-cats-pic { min-height: 320px; }
-  .bq-brands { grid-template-columns: 1fr; }
+/* Phones, as in the reference: the slide picture sits behind centred text, only the bag and menu stay in the header */
+@container (max-width: 600px) {
+  .bq-hero { --bq-hero-h: clamp(380px, 112cqi, 460px); }
+  .bq-slide { grid-template-columns: 1fr; }
+  .bq-slide-pic { position: absolute; inset: 0; }
+  .bq-slide-pic img { opacity: .55; -webkit-mask-image: none; mask-image: none; }
+  .bq-slide-text { position: relative; justify-items: center; padding: 30px 18px; text-align: center; }
+  .bq-slide-text p { color: var(--bq-ink); font-size: .9em; }
+  .bq-icons > a:not(:first-child) { display: none; }
+  .bq-info > :not(:first-child):not(.bq-strong) { display: none; }
+  .bq-head { padding: 14px 0; }
+  .bq-burger .bq-burger-ico { width: 40px; }
+  .bq-cats { gap: 12px; }
+  .bq-new { min-height: 0; }
+  .bq-new-text { width: 72%; padding: 9% 6% 9%; }
+  .bq-new .bq-cover img { object-position: 0% center; }
+  .bq-promo { aspect-ratio: auto; padding: 28px 22px; }
+  .bq-picard { aspect-ratio: auto; min-height: 150px; }
+  .bq-discover { aspect-ratio: auto; min-height: 210px; padding-block: 28px; }
+  .bq-discover-text { width: 70%; }
+  .bq-dots.two { grid-template-columns: 1fr; gap: 10px; }
+  .bq-look-card { width: min(220px, 70%); }
+  .bq-look-pic { height: 360px; }
+  .bq-brands { grid-template-columns: 1fr; gap: 12px; }
+  .bq-brands a { padding: 18px 12px; }
+  .bq-new .bq-btn { padding: 13px 22px; white-space: nowrap; }
   .bq-row { grid-template-columns: 90px 1fr; }
   .bq-row .bq-under { grid-column: 2; justify-self: start; }
   .bq-line { grid-template-columns: 72px minmax(0, 1fr) auto; }
   .bq-line .bq-stepper { grid-column: 2; }
-  .bq-line-total { grid-column: 3; grid-row: 2; min-width: 0; }
+  .bq-line-total { grid-column: 2 / -1; grid-row: 3; min-width: 0; justify-self: end; }
   .bq-checkout { grid-template-columns: 1fr; }
-  .bq-chat span { display: none; }
-  .bq-ann i { display: none; }
+  .bq-ann i { width: 30px; margin-inline: 20px; }
   .bq-logo { font-size: 1.9em; }
+  .bq-menu[open] > summary { top: 14px; inset-inline-start: 14px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .bq-hero-pic img, .bq-hero-text, .bq-card, .bq-band-track, .bq-chat i, .bq-check, .bq-main > * { animation: none !important; }
+  .bq-card, .bq-check, .bq-main > *, .bq-drawer { animation: none !important; }
+  .bq-marq-track { animation: none; }
+  .bq-slide, .bq-slide > * { transition: none !important; }
 }
 `;
