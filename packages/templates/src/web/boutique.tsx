@@ -14,11 +14,13 @@ import { sampleImage, sampleResume } from "../sample";
 import type { TemplateProps } from "../types";
 import { Icon, Opt, PageLink, Socials, blockOn, ed, item, partsCss } from "./parts";
 import { ZoomOpen } from "./zoom";
+import { AccountPage, CouponBox, FilterForm, filterProducts, hasChoices, InfoLinks, InfoPage, infoPages, onSale, OptionPicker, percentOff, Reviews, saleProducts, shopkitCss, SpecsTable, timeLeft } from "./shopkit";
 
 export const BOUTIQUE_BLOCKS = [
   { key: "announcements", label: "نوار اطلاعیه‌ی بالا" },
   { key: "categories", label: "دسته‌ها و پیشنهاد ویژه" },
   { key: "products", label: "محصولات صفحه‌ی اول" },
+  { key: "sale", label: "حراج (کالاهای تخفیف‌دار)" },
   { key: "band", label: "نوار متحرک" },
   { key: "look", label: "بخش «کمد لباست را تازه کن»" },
   { key: "brands", label: "کادرهای دسته‌ها" },
@@ -27,14 +29,14 @@ export const BOUTIQUE_BLOCKS = [
   { key: "perks", label: "مزیت‌های فروشگاه" },
 ] as const;
 
-const visible = (shop: Shop | undefined) => (shop?.products ?? []).filter((p) => !p.hidden && p.name.trim());
+const visible = (shop: Shop | undefined) => (shop?.products ?? []).filter((p) => !p.hidden && !p.trashed && p.name.trim());
 
 /** Every page this shop has: the fixed shop pages, one per category and one per product. */
 export function boutiquePages(data: ResumeData): string[] {
   const shop = data.site?.shop;
   const products = visible(shop);
   const cats = (shop?.categories ?? []).filter((c) => products.some((p) => p.categoryId === c.id));
-  return ["/", "/shop", ...cats.map((c) => `/category/${c.id}`), ...products.map((p) => `/product/${p.id}`), "/cart", "/wishlist", "/search", "/checkout", "/thanks"];
+  return ["/", "/shop", ...cats.map((c) => `/category/${c.id}`), ...products.map((p) => `/product/${p.id}`), "/cart", "/wishlist", "/search", "/checkout", "/thanks", "/account", ...infoPages(shop)];
 }
 
 type BView = { ctx: Ctx; shop: Shop; link: (p: string) => string; editing: boolean; visitor: Visitor; page: string };
@@ -54,9 +56,16 @@ export function BoutiqueShop(props: TemplateProps) {
   else if (kind === "wishlist") body = <Wishlist {...view} />;
   else if (kind === "search") body = <Search {...view} />;
   else if (kind === "checkout") body = <Checkout {...view} />;
-  else body = <Thanks {...view} />;
+  else if (kind === "account") body = <Account {...view} />;
+  else if (kind === "thanks") body = <Thanks {...view} />;
+  else
+    body = (
+      <div className="bq-wrap">
+        <InfoPage data={ctx.data} page={page} link={view.link} editing={view.editing} />
+      </div>
+    );
   return (
-    <WebPage ctx={ctx} className="bq" css={partsCss + css}>
+    <WebPage ctx={ctx} className="bq" css={partsCss + shopkitCss + css}>
       {blockOn(ctx.data, "announcements") && <Announcements {...view} />}
       <Header {...view} />
       <main className="bq-main" key={page}>
@@ -88,6 +97,8 @@ const SVG: Record<string, string> = {
   left: "M15.5 3.5 7 12l8.5 8.5",
   star: "M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z",
   bolt: "M13 2 5 13.5h6L10 22l9-12.5h-6z",
+  clock: "M12 3.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17z M12 7.5V12l3 2",
+  filter: "M4 6h16 M7 12h10 M10 18h4",
 };
 const PERK_ICONS = ["store", "tag", "chat", "shield"];
 
@@ -161,20 +172,21 @@ function ProductCard({ view, p, i = 0 }: { view: BView; p: Product; i?: number }
   const wished = view.visitor.wishlist.includes(p.id);
   const soldOut = p.stock === 0;
   return (
-    <article className="bq-card" style={{ "--i": i } as CSSProperties}>
+    <article className="bq-card" style={{ "--i": i } as CSSProperties} data-product={p.id}>
       <div className="bq-card-pic">
         <PageLink to={productPath(p)} link={view.link}>
-          <span className="bq-img" {...ed(`${P(p.id)}.images.0`, "image", "عکس محصول")}>
+          <span className="bq-img">
             {img ? <img src={img} alt={p.name} loading="lazy" /> : <b>{p.name.charAt(0)}</b>}
           </span>
         </PageLink>
         {(p.badge || soldOut) && <span className="bq-badge">{soldOut ? "ناموجود" : p.badge}</span>}
+        {!soldOut && onSale(p) && <span className="bq-pct">{fa(percentOff(p))}٪</span>}
         <div className="bq-card-acts">
           <Act view={view} op="wish" id={p.id} className={`bq-round${wished ? " on" : ""}`} label={wished ? "حذف از علاقه‌مندی‌ها" : "افزودن به علاقه‌مندی‌ها"}>
             <Svg name="heart" />
           </Act>
           {!soldOut &&
-            (p.sizes?.length ? (
+            (hasChoices(p) ? (
               <PageLink to={productPath(p)} link={view.link} className="bq-round" current={false}>
                 <Svg name="bag" />
               </PageLink>
@@ -186,10 +198,55 @@ function ProductCard({ view, p, i = 0 }: { view: BView; p: Product; i?: number }
         </div>
       </div>
       <PageLink to={productPath(p)} link={view.link} className="bq-card-name">
-        <span {...ed(`${P(p.id)}.name`, "text", "نام محصول")}>{p.name}</span>
+        <span>{p.name}</span>
       </PageLink>
       <Price view={view} p={p} />
     </article>
+  );
+}
+
+/** Time left of a sale, as "۲ روز و ۵ ساعت" (or minutes in its last hour). */
+function SaleClock({ p }: { p: Product }) {
+  if (!p.saleEndsAt || !onSale(p)) return null;
+  const { d, h, m } = timeLeft(p.saleEndsAt);
+  const text = d ? `${fa(d)} روز${h ? ` و ${fa(h)} ساعت` : ""}` : h ? `${fa(h)} ساعت${m ? ` و ${fa(m)} دقیقه` : ""}` : `${fa(Math.max(1, m))} دقیقه`;
+  return (
+    <span className="bq-clock" title="زمان باقی‌مانده تا پایان حراج">
+      <Svg name="clock" /> {text} تا پایان حراج
+    </span>
+  );
+}
+
+/** The home page's sale: products with a discount, ending soonest first; hidden when there are none. */
+function SaleRow({ view }: { view: BView }) {
+  const list = saleProducts(visible(view.shop)).slice(0, 8);
+  if (!list.length) return null;
+  const top = Math.max(...list.map(percentOff));
+  return (
+    <section className="bq-sale">
+      <div className="bq-wrap">
+        <div className="bq-sale-head">
+          <div>
+            <span className="bq-sale-kicker">تا {fa(top)}٪ تخفیف</span>
+            <h2 {...ed("site.shop.discountTitle", "text", "عنوان بخش حراج")}>{view.shop.discountTitle?.trim() || "حراج فصل"}</h2>
+          </div>
+          <form method="get" action={view.link("/shop")}>
+            <input type="hidden" name="sale" value="1" />
+            <button type="submit" className="bq-link">
+              همه‌ی حراجی‌ها <Svg name="left" />
+            </button>
+          </form>
+        </div>
+        <div className="bq-sale-row">
+          {list.map((p, k) => (
+            <div key={p.id} className="bq-sale-item">
+              <ProductCard view={view} p={p} i={k} />
+              <SaleClock p={p} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -329,10 +386,10 @@ function Header(view: BView) {
             {wishes > 0 && <b>{fa(wishes)}</b>}
             <span className="sr-only">علاقه‌مندی‌ها</span>
           </PageLink>
-          <a href="#bq-contact" className="bq-icon" title="تماس با فروشگاه">
+          <PageLink to="/account" link={link} className="bq-icon">
             <Svg name="user" />
-            <span className="sr-only">تماس با فروشگاه</span>
-          </a>
+            <span className="sr-only">{visitor.customer ? `حساب ${visitor.customer.name}` : "ورود / ثبت‌نام"}</span>
+          </PageLink>
           {/* The menu opens without scripts: a details element whose summary turns into the close button. */}
           <details className="bq-menu">
             <summary className="bq-icon bq-burger" aria-label="منو">
@@ -373,7 +430,7 @@ function Header(view: BView) {
   );
 }
 
-function Footer({ ctx, link, editing }: BView) {
+function Footer({ ctx, link, editing, shop }: BView) {
   const b = ctx.data.basics;
   const site = ctx.data.site;
   const rows: { icon: string; label: string; value?: string; path: string; href?: string }[] = [
@@ -427,6 +484,7 @@ function Footer({ ctx, link, editing }: BView) {
           <PageLink to="/wishlist" link={link}>
             علاقه‌مندی‌ها
           </PageLink>
+          <InfoLinks shop={shop} link={link} />
         </nav>
         <Socials ctx={ctx} editing={editing} className="bq-foot-socials" />
         <small className="bq-copy">© همه‌ی حقوق برای {b.fullName} محفوظ است.</small>
@@ -505,7 +563,6 @@ function Look({ view, fallback }: { view: BView; fallback: Product }) {
   const many = spots.length > 1;
   return (
     <section className="bq-look">
-      {many && spots.map((sp, k) => <input key={sp.id} type="radio" name="bq-look" id={`bq-look-${k}`} className="bq-dot" defaultChecked={k === 0} aria-label={sp.product.name} />)}
       <div className="bq-look-in">
         <div className="bq-look-text">
           <Opt value={shop.lookTitle} editing={editing} edit={ed("site.shop.lookTitle", "text", "عنوان بخش")}>
@@ -516,7 +573,7 @@ function Look({ view, fallback }: { view: BView; fallback: Product }) {
           </Opt>
           <div className="bq-look-cards">
             {cards.map((p, k) => (
-              <PageLink key={`${p.id}-${k}`} to={productPath(p)} link={link} className="bq-look-card">
+              <PageLink key={`${p.id}-${k}`} to={productPath(p)} link={link} className="bq-look-card" product={p.id}>
                 <span className="bq-look-card-pic">{pic(p) && <img src={pic(p)} alt={p.name} loading="lazy" />}</span>
                 <b>{p.name}</b>
                 <Price view={view} p={p} />
@@ -531,7 +588,9 @@ function Look({ view, fallback }: { view: BView; fallback: Product }) {
             </span>
             {many &&
               spots.map((sp, k) => (
-                <label key={sp.id} htmlFor={`bq-look-${k}`} className="bq-spot" style={{ left: `${sp.x}%`, top: `${sp.y}%` }} title={sp.product.name}>
+                // The radio button sits inside the point itself: picking it never scrolls the page.
+                <label key={sp.id} className="bq-spot" style={{ left: `${sp.x}%`, top: `${sp.y}%` }} title={sp.product.name}>
+                  <input type="radio" name="bq-look" defaultChecked={k === 0} aria-label={sp.product.name} />
                   <i />
                 </label>
               ))}
@@ -551,7 +610,7 @@ function Home(view: BView) {
   const featured = products.filter((p) => p.featured).slice(0, 3);
   const trendPics = featured.length ? featured : products.slice(0, 3);
   const look = products.find((p) => p.id === shop.lookProductId) ?? products.find((p) => p.featured) ?? products[0];
-  const testimonials = data.site?.testimonials ?? [];
+  const testimonials = (data.site?.testimonials ?? []).filter((t) => !t.hidden);
   // The card with a picture is the first category that has its own picture.
   const picCat = cats.find((c) => safeUrl(c.image)) ?? cats[0];
   const discover = products.filter((p) => !p.featured).slice(0, 6);
@@ -651,6 +710,8 @@ function Home(view: BView) {
         </section>
       )}
 
+      {on("sale") && <SaleRow view={view} />}
+
       {on("band") && (shop.bandItems ?? []).some((t) => t.trim()) && (
         <Marquee
           className="bq-band"
@@ -690,11 +751,11 @@ function Home(view: BView) {
               {trendPics.map((p) => (
                 <div key={p.id} className="bq-row">
                   <PageLink to={productPath(p)} link={view.link} className="bq-row-pic">
-                    <span {...ed(`${P(p.id)}.images.0`, "image", "عکس محصول")}>{pic(p) && <img src={pic(p)} alt={p.name} loading="lazy" />}</span>
+                    <span>{pic(p) && <img src={pic(p)} alt={p.name} loading="lazy" />}</span>
                   </PageLink>
                   <div>
                     <PageLink to={productPath(p)} link={view.link} className="bq-row-name">
-                      <span {...ed(`${P(p.id)}.name`, "text", "نام محصول")}>{p.name}</span>
+                      <span>{p.name}</span>
                     </PageLink>
                     <Price view={view} p={p} />
                   </div>
@@ -773,12 +834,10 @@ function Home(view: BView) {
 /* ───────────── All products / a category ───────────── */
 
 function Listing(view: BView & { categoryId?: string }) {
-  const { shop, link, categoryId } = view;
-  const products = visible(shop);
-  const cats = (shop.categories ?? []).filter((c) => products.some((p) => p.categoryId === c.id));
-  const cat = cats.find((c) => c.id === categoryId);
-  const list = cat ? products.filter((p) => p.categoryId === cat.id) : products;
+  const { shop, link, categoryId, visitor } = view;
+  const { list, cats, cat, active } = filterProducts(visible(shop), shop.categories ?? [], visitor.query, categoryId);
   const title = cat?.name ?? "فروشگاه";
+  const here = categoryId ? `/category/${categoryId}` : "/shop";
   return (
     <>
       <Banner view={view} title={title} trail={cat ? [{ label: "فروشگاه", to: "/shop" }, { label: cat.name }] : undefined} />
@@ -793,6 +852,7 @@ function Listing(view: BView & { categoryId?: string }) {
             </PageLink>
           ))}
         </nav>
+        <Filters view={view} here={here} cats={cats} fixedCategory={Boolean(categoryId)} active={active} count={list.length} />
         {list.length ? (
           <div className="bq-grid">
             {list.map((p, k) => (
@@ -800,10 +860,25 @@ function Listing(view: BView & { categoryId?: string }) {
             ))}
           </div>
         ) : (
-          <p className="bq-notice">هنوز محصولی اضافه نشده است.</p>
+          <p className="bq-notice">{active ? "محصولی با این فیلترها وجود ندارد؛ فیلترها را تغییر دهید." : "هنوز محصولی اضافه نشده است."}</p>
         )}
       </section>
     </>
+  );
+}
+
+/** The "filter and sort" bar: opens a panel with the shared filter form (no script). */
+function Filters({ view, here, cats, fixedCategory, active, count }: { view: BView; here: string; cats: Shop["categories"]; fixedCategory?: boolean; active: boolean; count: number }) {
+  return (
+    <details className="bq-filter" open={active || undefined}>
+      <summary>
+        <span>
+          <Svg name="filter" /> فیلتر و مرتب‌سازی{active && <i className="bq-filter-on" aria-label="فیلتر فعال است" />}
+        </span>
+        <small>{fa(count)} محصول</small>
+      </summary>
+      <FilterForm link={view.link} here={here} query={view.visitor.query} cats={cats} fixedCategory={fixedCategory} className="bq-filter-form" submitClass="bq-btn" resetClass="bq-link" />
+    </details>
   );
 }
 
@@ -821,17 +896,17 @@ function ProductPage(view: BView & { id: string }) {
   const imgs = p.images.map((u) => safeUrl(u)).filter((u): u is string => Boolean(u));
   return (
     <>
-      <section className="bq-wrap bq-product">
+      <section className="bq-wrap bq-product" data-product={p.id}>
         <div className="bq-gallery">
           {(imgs.length ? imgs : [undefined]).map((src, k) =>
             src ? (
               <ZoomOpen key={k} id={`${p.id}-${k}`} className={`bq-gal${k === 0 ? " first" : ""}`}>
-                <span {...ed(`${P(p.id)}.images.${k}`, "image", "عکس محصول")}>
+                <span>
                   <img src={src} alt={p.name} />
                 </span>
               </ZoomOpen>
             ) : (
-              <span key={k} className="bq-gal first" {...ed(`${P(p.id)}.images.0`, "image", "عکس محصول")} />
+              <span key={k} className="bq-gal first" />
             ),
           )}
         </div>
@@ -845,13 +920,19 @@ function ProductPage(view: BView & { id: string }) {
               {cat?.name ?? "فروشگاه"}
             </PageLink>
           </nav>
-          <h1 {...ed(`${P(p.id)}.name`, "text", "نام محصول")}>{p.name}</h1>
+          <h1>{p.name}</h1>
           <Price view={view} p={p} />
-          <Opt value={p.description} editing={editing} edit={ed(`${P(p.id)}.description`, "multiline", "توضیح محصول")}>
-            <p className="bq-desc" {...ed(`${P(p.id)}.description`, "multiline", "توضیح محصول")}>
+          {onSale(p) && p.stock !== 0 && (
+            <span className="bq-save">
+              <b>{fa(percentOff(p))}٪ تخفیف</b> · {money(view, p.price - unitPrice(p))} صرفه‌جویی
+            </span>
+          )}
+          <SaleClock p={p} />
+          {p.description && (
+            <p className="bq-desc">
               {p.description}
             </p>
-          </Opt>
+          )}
           {soldOut ? (
             <p className="bq-notice">این محصول فعلاً ناموجود است.</p>
           ) : (
@@ -859,17 +940,7 @@ function ProductPage(view: BView & { id: string }) {
               <input type="hidden" name="op" value="add" />
               <input type="hidden" name="id" value={p.id} />
               <input type="hidden" name="back" value="/cart" />
-              {p.sizes?.length ? (
-                <fieldset className="bq-sizes">
-                  <legend>سایز</legend>
-                  {p.sizes.map((s, k) => (
-                    <label key={s}>
-                      <input type="radio" name="size" value={s} defaultChecked={k === 0} />
-                      <span>{s}</span>
-                    </label>
-                  ))}
-                </fieldset>
-              ) : null}
+              <OptionPicker p={p} />
               <div className="bq-buy-row">
                 <label className="bq-qty">
                   <span className="sr-only">تعداد</span>
@@ -894,6 +965,10 @@ function ProductPage(view: BView & { id: string }) {
           </ul>
         </div>
       </section>
+      <section className="bq-wrap bq-sec bq-about">
+        <SpecsTable p={p} className="bq-specs" />
+        <Reviews p={p} link={link} page={view.page} visitor={visitor} />
+      </section>
       {related.length > 0 && (
         <section className="bq-wrap bq-sec">
           <Title title="محصولات مشابه" />
@@ -912,7 +987,7 @@ function ProductPage(view: BView & { id: string }) {
 
 function Cart(view: BView) {
   const { shop, visitor, link } = view;
-  const cart = priceCart(shop, visitor.cart);
+  const cart = priceCart(shop, visitor.cart, visitor.coupon);
   return (
     <>
       <Banner view={view} title="سبد خرید" />
@@ -954,6 +1029,12 @@ function Cart(view: BView) {
             <dl>
               <dt>جمع کالاها</dt>
               <dd>{money(view, cart.subtotal)}</dd>
+              {cart.discount > 0 && (
+                <>
+                  <dt>کد تخفیف</dt>
+                  <dd className="bq-off">− {money(view, cart.discount)}</dd>
+                </>
+              )}
               <dt>هزینه‌ی ارسال</dt>
               <dd>{cart.shipping ? money(view, cart.shipping) : "رایگان"}</dd>
               <dt className="total">مبلغ قابل پرداخت</dt>
@@ -962,6 +1043,7 @@ function Cart(view: BView) {
             {shop.freeShippingFrom && cart.shipping > 0 ? (
               <small>برای خریدهای بالای {money(view, shop.freeShippingFrom)} ارسال رایگان است.</small>
             ) : null}
+            {(shop.coupons ?? []).length > 0 && <CouponBox link={link} page={view.page} visitor={visitor} applied={cart.coupon} error={cart.couponError} />}
             <PageLink to="/checkout" link={link} className="bq-btn wide">
               ادامه و ثبت سفارش
             </PageLink>
@@ -998,8 +1080,8 @@ function Wishlist(view: BView) {
 
 function Search(view: BView) {
   const q = (view.visitor.query.q ?? "").trim();
-  const words = q.split(/\s+/).filter(Boolean);
-  const found = words.length ? visible(view.shop).filter((p) => words.every((w) => `${p.name} ${p.description ?? ""}`.includes(w))) : [];
+  const { list: found, cats, active } = filterProducts(visible(view.shop), view.shop.categories ?? [], view.visitor.query);
+  const words = active ? [q || " "] : [];
   return (
     <section className="bq-wrap bq-search">
       <form method="get" action={view.link("/search")} className="bq-search-box">
@@ -1008,6 +1090,7 @@ function Search(view: BView) {
           <Svg name="search" />
         </button>
       </form>
+      <Filters view={view} here="/search" cats={cats} active={active} count={found.length} />
       {words.length > 0 &&
         (found.length ? (
           <div className="bq-grid">
@@ -1016,7 +1099,7 @@ function Search(view: BView) {
             ))}
           </div>
         ) : (
-          <p className="bq-notice">محصولی با «{q}» پیدا نشد.</p>
+          <p className="bq-notice">{q ? <>محصولی با «{q}» پیدا نشد.</> : "محصولی با این فیلترها وجود ندارد."}</p>
         ))}
     </section>
   );
@@ -1026,8 +1109,10 @@ function Search(view: BView) {
 
 function Checkout(view: BView) {
   const { shop, visitor, link } = view;
-  const cart = priceCart(shop, visitor.cart);
+  const cart = priceCart(shop, visitor.cart, visitor.coupon);
   const error = visitor.query.error;
+  const me = visitor.customer;
+  const addr = visitor.account?.addresses[0];
   if (cart.lines.length === 0)
     return (
       <>
@@ -1044,23 +1129,23 @@ function Checkout(view: BView) {
           {error && <p className="bq-error">{error}</p>}
           <label>
             نام و نام خانوادگی *
-            <input name="name" required maxLength={80} autoComplete="name" />
+            <input name="name" required maxLength={80} autoComplete="name" defaultValue={me?.name} />
           </label>
           <label>
             شماره‌ی موبایل *
-            <input name="phone" required inputMode="tel" dir="ltr" maxLength={14} autoComplete="tel" placeholder="09xx xxx xxxx" />
+            <input name="phone" required inputMode="tel" dir="ltr" maxLength={14} autoComplete="tel" placeholder="09xx xxx xxxx" defaultValue={me?.phone} />
           </label>
           <label>
             شهر
-            <input name="city" maxLength={60} autoComplete="address-level2" />
+            <input name="city" maxLength={60} autoComplete="address-level2" defaultValue={addr?.city} />
           </label>
           <label>
             کد پستی
-            <input name="postalCode" maxLength={20} inputMode="numeric" dir="ltr" autoComplete="postal-code" />
+            <input name="postalCode" maxLength={20} inputMode="numeric" dir="ltr" autoComplete="postal-code" defaultValue={addr?.postalCode} />
           </label>
           <label className="full">
             نشانی کامل *
-            <textarea name="address" required maxLength={400} rows={3} autoComplete="street-address" />
+            <textarea name="address" required maxLength={400} rows={3} autoComplete="street-address" defaultValue={addr?.address} />
           </label>
           <label className="full">
             توضیحات سفارش
@@ -1086,6 +1171,12 @@ function Checkout(view: BView) {
             ))}
           </ul>
           <dl>
+            {cart.discount > 0 && (
+              <>
+                <dt>کد تخفیف «{cart.coupon}»</dt>
+                <dd className="bq-off">− {money(view, cart.discount)}</dd>
+              </>
+            )}
             <dt>هزینه‌ی ارسال</dt>
             <dd>{cart.shipping ? money(view, cart.shipping) : "رایگان"}</dd>
             <dt className="total">مبلغ قابل پرداخت</dt>
@@ -1093,6 +1184,17 @@ function Checkout(view: BView) {
           </dl>
           {shop.paymentNote && <p className="bq-pay" {...ed("site.shop.paymentNote", "multiline", "روش پرداخت")}>{shop.paymentNote}</p>}
         </aside>
+      </section>
+    </>
+  );
+}
+
+function Account(view: BView) {
+  return (
+    <>
+      <Banner view={view} title={view.visitor.customer ? "حساب کاربری" : "ورود یا ثبت‌نام"} />
+      <section className="bq-wrap bq-sec">
+        <AccountPage link={view.link} page={view.page} visitor={view.visitor} />
       </section>
     </>
   );
@@ -1138,7 +1240,25 @@ export function boutiqueSample(locale: ResumeData["locale"]): ResumeData {
   ];
   const d = "پارچه‌ی باکیفیت، دوخت تمیز و قالب استاندارد. برای انتخاب سایز، جدول سایز را در توضیحات ببینید یا از ما بپرسید.";
   const products: Product[] = [
-    { id: "s1", name: "کت جلیقه‌ای کمربنددار", categoryId: "c1", price: 2450000, salePrice: 1890000, badge: "حراج", sizes: ["S", "M", "L"], images: [img("p1")], description: d },
+    {
+      id: "s1",
+      name: "کت جلیقه‌ای کمربنددار",
+      categoryId: "c1",
+      price: 2450000,
+      salePrice: 1890000,
+      // The sample's sale runs a few days from whenever the sample is made.
+      saleEndsAt: new Date(Date.now() + 3 * 86400000 + 5 * 3600000).toISOString(),
+      badge: "حراج",
+      sizes: ["S", "M", "L"],
+      images: [img("p1")],
+      description: d,
+      specs: [
+        { label: "جنس", value: "پشم و پلی‌استر" },
+        { label: "آستر", value: "ساتن" },
+        { label: "کشور سازنده", value: "ایران" },
+        { label: "نگهداری", value: "خشک‌شویی" },
+      ],
+    },
     { id: "s2", name: "پیراهن کوتاه سرمه‌ای", categoryId: "c4", price: 1980000, salePrice: 1490000, badge: "حراج", sizes: ["S", "M", "L"], images: [img("p2")], description: d },
     { id: "s3", name: "سرهمی براق مهمانی", categoryId: "c4", price: 2650000, sizes: ["S", "M"], images: [img("p3")], description: d },
     { id: "s4", name: "تاپ مشکی و ژاکت", categoryId: "c2", price: 1350000, images: [img("p4")], description: d },
@@ -1215,7 +1335,7 @@ export function boutiqueSample(locale: ResumeData["locale"]): ResumeData {
 /* ───────────── Styles ───────────── */
 
 const css = /* css */ `
-.bq { --bq-ink: var(--color-text); --bq-line: var(--color-line); --bq-dark: #0B0B0C; --bq-red: var(--color-primary); --bq-soft: color-mix(in srgb, var(--color-text) 5%, var(--color-bg)); --bq-wrap: min(1480px, 100% - 2 * clamp(14px, 3cqi, 44px));
+.bq { --bq-ink: var(--color-text); --bq-line: var(--color-line); --bq-dark: #0B0B0C; --sk-accent: var(--bq-dark); --sk-card: var(--color-bg); --sk-line: var(--bq-line); --sk-soft: var(--bq-soft); --sk-muted: var(--color-muted); --sk-card-radius: 0; --bq-red: var(--color-primary); --bq-soft: color-mix(in srgb, var(--color-text) 5%, var(--color-bg)); --bq-wrap: min(1480px, 100% - 2 * clamp(14px, 3cqi, 44px));
   background: var(--color-bg); color: var(--color-text); min-height: 100%; }
 .bq a { color: inherit; }
 .bq button { font: inherit; color: inherit; }
@@ -1281,7 +1401,8 @@ const css = /* css */ `
 
 /* Slider: hidden radio buttons pick the slide, the arrows are their labels */
 .bq-hero { --bq-hero-h: clamp(440px, 36cqi, 660px); position: relative; background: var(--bq-soft); overflow: hidden; }
-.bq-dot { position: absolute; width: 1px !important; height: 1px; margin: 0; opacity: 0; pointer-events: none; }
+/* Hidden radios sit in the middle of the slider, which is on screen whenever its arrows are clicked, so picking one never scrolls. */
+.bq-dot { position: absolute; top: 50%; left: 50%; width: 1px !important; height: 1px; margin: 0; opacity: 0; pointer-events: none; }
 .bq h1, .bq h2, .bq h3 { line-height: 1.45; letter-spacing: normal; }
 .bq-slides { display: grid; }
 .bq-slide { grid-area: 1 / 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); height: var(--bq-hero-h); opacity: 0; visibility: hidden; transition: opacity .7s, visibility .7s; }
@@ -1379,7 +1500,7 @@ ${[1, 2, 3, 4, 5].map((n) => `.bq-dot:nth-of-type(${n}):checked ~ .bq-slides > .
 .bq-look-card-pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .7s; }
 .bq-look-card:hover img { transform: scale(1.05); }
 .bq-look-card b { margin-top: 8px; font-size: 1.1em; font-weight: 500; }
-${[1, 2, 3, 4].map((n) => `.bq-dot:nth-of-type(${n}):not(:checked) ~ .bq-look-in .bq-look-card:nth-child(${n})`).join(", ")} { opacity: 0; visibility: hidden; transform: translateY(14px); }
+${[1, 2, 3, 4].map((n) => `.bq-look:has(.bq-spot:nth-of-type(${n}) input:not(:checked)) .bq-look-card:nth-child(${n})`).join(", ")} { opacity: 0; visibility: hidden; transform: translateY(14px); }
 .bq-look-card { transition: opacity .5s, visibility .5s, transform .6s cubic-bezier(.2, 1, .3, 1); }
 /* The picture sits towards the card (as in the reference) and is never stretched past its size. */
 .bq-look-pic { position: relative; min-height: 0; }
@@ -1392,8 +1513,10 @@ ${[1, 2, 3, 4].map((n) => `.bq-dot:nth-of-type(${n}):not(:checked) ~ .bq-look-in
 .bq-spot::after { content: ""; position: absolute; inset: -1px; border-radius: 50%; border: 1px solid #fff; animation: bq-pulse 2.2s ease-out infinite; }
 @keyframes bq-pulse { from { transform: scale(1); opacity: .9; } to { transform: scale(1.7); opacity: 0; } }
 .bq-spot:hover { transform: scale(1.12); background: rgb(255 255 255 / .2); }
-${[1, 2, 3, 4].map((n) => `.bq-dot:nth-of-type(${n}):checked ~ .bq-look-in .bq-spot:nth-of-type(${n})`).join(", ")} { background: rgb(255 255 255 / .28); }
-${[1, 2, 3, 4].map((n) => `.bq-dot:nth-of-type(${n}):checked ~ .bq-look-in .bq-spot:nth-of-type(${n}) i`).join(", ")} { background: var(--bq-red); }
+.bq-spot input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.bq-spot:has(input:checked) { background: rgb(255 255 255 / .28); }
+.bq-spot:has(input:checked) i { background: var(--bq-red); }
+.bq-spot:has(input:focus-visible) { outline: 2px solid #fff; outline-offset: 3px; }
 
 /* Category boxes */
 .bq-brands { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; padding-block: clamp(40px, 6cqi, 70px) 0; }
@@ -1451,6 +1574,7 @@ ${[1, 2, 3, 4].map((n) => `.bq-dot:nth-of-type(${n}):checked ~ .bq-look-in .bq-s
 .bq-foot-socials a { border: 1px solid #4A4A4A; color: #fff; }
 .bq-foot-socials a:hover { background: #fff; color: #111; }
 .bq-copy { justify-self: stretch; text-align: start; color: #BDBDBD; }
+.bq-off { color: #15803D; }
 .bq-float { position: sticky; bottom: 18px; z-index: 20; display: flex; justify-content: flex-end; width: var(--bq-wrap); margin: -68px auto 18px; pointer-events: none; }
 .bq-float > * { pointer-events: auto; }
 .bq-top { width: 50px; height: 50px; display: grid; place-items: center; border-radius: 50%; background: #fff; color: #111; box-shadow: 0 8px 20px -10px rgb(0 0 0 / .4); }
@@ -1538,6 +1662,34 @@ ${[1, 2, 3, 4].map((n) => `.bq-dot:nth-of-type(${n}):checked ~ .bq-look-in .bq-s
 
 .bq-main > * { animation: bq-up .7s cubic-bezier(.2, 1, .3, 1) backwards; }
 
+/* Sale: percent tag, sale row, time left, savings */
+.bq-pct { position: absolute; bottom: 12px; inset-inline-start: 12px; padding: 3px 9px; border-radius: 999px; background: var(--bq-red); color: #fff; font-size: .74em; font-weight: 700; }
+.bq-card-acts { z-index: 2; }
+.bq-sale { padding-block: clamp(36px, 5cqi, 64px); background: var(--bq-soft); }
+.bq-sale-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: clamp(18px, 3cqi, 30px); }
+.bq-sale-kicker { display: inline-block; margin-bottom: 8px; padding: 4px 12px; border-radius: 999px; background: var(--bq-red); color: #fff; font-size: .8em; font-weight: 700; }
+.bq-sale-head h2 { font-size: clamp(1.6em, 3.4cqi, 2.4em); font-weight: 600; }
+.bq-sale-row { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(220px, calc((100% - 3 * 22px) / 4)); gap: 22px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 8px; scrollbar-width: thin; }
+.bq-sale-item { display: grid; gap: 8px; align-content: start; scroll-snap-align: start; }
+.bq-clock { display: inline-flex; align-items: center; gap: 6px; color: var(--bq-red); font-size: .8em; font-weight: 600; }
+.bq-clock .bq-ico { width: 15px; height: 15px; }
+.bq-save { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-self: start; padding: 5px 12px; border-radius: 999px; background: color-mix(in srgb, var(--bq-red) 10%, var(--color-bg)); color: var(--bq-red); font-size: .85em; }
+.bq-link { display: inline-flex; align-items: center; gap: 6px; padding: 6px 0; border: 0; border-bottom: 1px solid currentColor; background: none; color: inherit; font: inherit; font-size: .9em; font-weight: 600; cursor: pointer; }
+.bq-link .bq-ico { width: 16px; height: 16px; }
+/* Filters: a bar that opens the filter form */
+.bq-filter { margin: -14px 0 28px; border: 1px solid var(--bq-line); }
+.bq-filter > summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 18px; cursor: pointer; list-style: none; font-weight: 600; }
+.bq-filter > summary::-webkit-details-marker { display: none; }
+.bq-filter > summary > span { display: inline-flex; align-items: center; gap: 8px; }
+.bq-filter > summary small { color: var(--color-muted); font-weight: 400; }
+.bq-filter[open] > summary { border-bottom: 1px solid var(--bq-line); }
+.bq-filter-on { width: 8px; height: 8px; border-radius: 50%; background: var(--bq-red); }
+.bq-filter-form { grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: end; padding: 18px; }
+.bq-filter-form input:not([type=checkbox]), .bq-filter-form select { border-radius: 0; }
+.bq-filter-form .bq-btn { padding: 12px 22px; }
+.bq-search .bq-filter { width: min(900px, 100%); margin: 22px auto 30px; }
+.bq-about { display: grid; gap: clamp(28px, 4cqi, 48px); }
+.bq-specs { width: min(760px, 100%); }
 @container (max-width: 1100px) {
   .bq-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .bq-nav { display: none; }
@@ -1563,7 +1715,14 @@ ${[1, 2, 3, 4].map((n) => `.bq-dot:nth-of-type(${n}):checked ~ .bq-look-in .bq-s
   .bq-card-acts { opacity: 1; transform: none; }
 }
 /* Phones, as in the reference: the slide picture sits behind centred text, only the bag and menu stay in the header */
+@container (max-width: 820px) {
+  .bq-filter-form { grid-template-columns: 1fr 1fr; }
+  .bq-sale-row { grid-auto-columns: minmax(200px, 44%); }
+}
 @container (max-width: 600px) {
+  .bq-filter-form { grid-template-columns: 1fr; }
+  .bq-sale-row { grid-auto-columns: 62%; gap: 14px; }
+  .bq-sale-head { align-items: flex-start; flex-direction: column; }
   .bq-hero { --bq-hero-h: clamp(380px, 112cqi, 460px); }
   .bq-slide { grid-template-columns: 1fr; }
   .bq-slide-pic { position: absolute; inset: 0; }

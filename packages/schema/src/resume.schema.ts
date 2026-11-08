@@ -15,7 +15,7 @@ const YEAR_MONTH_OR_EMPTY = /^(\d{4}-(0[1-9]|1[0-2]))?$/;
 /** Sample pictures shipped with the app and served by the API (see SAMPLE_ASSETS_PATH in the API). */
 export const SAMPLE_ASSETS_PATH = "/_assets/samples/";
 /** Bumped when the pictures change, so browsers fetch the new files instead of cached ones. */
-export const SAMPLE_ASSETS_VERSION = 8;
+export const SAMPLE_ASSETS_VERSION = 9;
 export const isSampleAsset = (v: string) => /^\/_assets\/samples\/[a-z0-9-]+\.(jpg|png)(\?v=\d+)?$/.test(v);
 
 function buildResumeSchemas(strict: boolean) {
@@ -191,6 +191,8 @@ function buildResumeSchemas(strict: boolean) {
     role: z.string().max(100).optional(),
     text: z.string().max(600),
     image: optionalUrl,
+    rating: z.number().int().min(1).max(5).optional(), // stars shown by shop templates (5 when empty)
+    hidden: z.boolean().optional(), // kept but not shown
   });
   const clientLogo = z.object({ id, name: z.string().max(80), image: url() });
 
@@ -209,7 +211,19 @@ function buildResumeSchemas(strict: boolean) {
     stock: z.number().int().min(0).max(100000).optional(), // left out: not tracked; 0: sold out
     badge: z.string().max(20).optional(), // small label on the picture, e.g. "حراج" or "جدید"
     featured: z.boolean().optional(), // shown in the home page's "newest trends" list
+    seoTitle: z.string().max(70).optional(), // the product page's title in search results
+    seoDescription: z.string().max(160).optional(), // and its description there
     hidden: z.boolean().optional(), // kept in the panel but not shown on the site
+    specs: z.array(z.object({ label: z.string().max(40), value: z.string().max(80) })).max(12).optional(), // e.g. brand, weight, size
+    optionLabel: z.string().max(30).optional(), // what the "sizes" choices are called, e.g. "رنگ" or "حافظه"
+    saleEndsAt: z.string().max(40).optional(), // ISO date; the sale price shows a countdown until then
+    // Choices such as colour and size (at most two), and the combinations with their own price/stock.
+    options: z
+      .array(z.object({ name: z.string().max(30), values: z.array(z.object({ label: z.string().min(1).max(30), color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional() })).max(12) }))
+      .max(2)
+      .optional(),
+    variants: z.array(z.object({ key: z.string().max(70), price: price.optional(), stock: z.number().int().min(0).max(100000).optional() })).max(144).optional(),
+    trashed: z.boolean().optional(), // in the panel's trash (also hidden); can be restored
   });
   const perk = z.object({ id, title: z.string().max(60), text: z.string().max(200).optional() });
   // One picture of the home page slider, with its own heading and line of text.
@@ -238,8 +252,49 @@ function buildResumeSchemas(strict: boolean) {
     trendImage: optionalUrl,
     bandItems: z.array(z.string().max(60)).max(6).optional(), // the moving dark band
     perks: z.array(perk).max(4).optional(),
+    // Discount codes customers type at checkout.
+    coupons: z
+      .array(
+        z.object({
+          id,
+          code: z.string().trim().min(2).max(30),
+          percent: z.number().int().min(1).max(100).optional(), // either a percent…
+          amount: price.optional(), // …or a fixed amount off
+          maxDiscount: price.optional(), // cap for percent codes
+          minTotal: price.optional(), // only for carts from this amount
+          startsAt: z.string().max(40).optional(),
+          endsAt: z.string().max(40).optional(),
+          // Only for these products / categories (both empty: the whole cart).
+          productIds: z.array(z.string().max(40)).max(200).optional(),
+          categoryIds: z.array(z.string().max(40)).max(50).optional(),
+          usageLimit: z.number().int().min(1).max(100000).optional(),
+          used: z.number().int().min(0).optional(), // counted by the server on each order
+          active: z.boolean().optional(),
+        }),
+      )
+      .max(50)
+      .optional(),
+    heroKicker: z.string().max(120).optional(), // short line above the hero heading
+    banners: z.array(z.object({ id, image: optionalUrl, link: optionalUrl, wide: z.boolean().optional(), title: z.string().max(80).optional(), hidden: z.boolean().optional() })).max(8).optional(), // ad pictures between sections
+    bestTitle: z.string().max(120).optional(),
+    bestText: z.string().max(200).optional(),
+    discountTitle: z.string().max(120).optional(),
+    showcaseTitle: z.string().max(120).optional(), // a section for one chosen category
+    showcaseText: z.string().max(200).optional(),
+    showcaseCategoryId: z.string().max(40).optional(),
+    // Comments of signed-in customers show at once instead of waiting for the owner's approval.
+    reviewsAutoApprove: z.boolean().optional(),
+    newsletterTitle: z.string().max(120).optional(),
+    newsletterText: z.string().max(200).optional(),
     shippingFee: price.optional(), // added to every order; 0 or empty: free
     freeShippingFrom: price.optional(), // orders from this amount ship free
+    // Questions and answers (the "/faq" page) and simple text pages such as "about us" or "terms".
+    faqTitle: z.string().max(120).optional(),
+    faq: z.array(z.object({ id, q: z.string().max(200), a: z.string().max(1500) })).max(30).optional(),
+    pages: z
+      .array(z.object({ id, slug: z.string().regex(/^[a-z0-9-]{1,30}$/), title: z.string().max(80), text: z.string().max(8000), hidden: z.boolean().optional() }))
+      .max(8)
+      .optional(),
     paymentNote: z.string().max(600).optional(), // how to pay for now (card-to-card, on delivery…)
     orderNote: z.string().max(300).optional(), // shown after an order is placed
   });
@@ -270,6 +325,7 @@ function buildResumeSchemas(strict: boolean) {
     bandText: z.string().max(200).optional(),
     address: z.string().max(200).optional(),
     contactNote: z.string().max(500).optional(),
+    mapUrl: optionalUrl, // a map link (Google Maps, Neshan, Balad) for directions
     shop: shop.optional(),
   });
 

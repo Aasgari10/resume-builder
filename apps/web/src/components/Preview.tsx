@@ -2,15 +2,27 @@
 // (settings, assistant, publishing). "Show" turns the same workspace into a full-screen view.
 // Empty content is filled with sample text and pictures; publishing uses only the user's own content.
 
-import { useEffect, useState, type FormEvent, type MouseEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type FormEvent, type MouseEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { applyHiddenFields, changeCart, emptyVisitor, toggleWishlist, type ResumeData, type Theme, type Visitor } from "@rb/schema";
+import { applyHiddenFields, changeCart, emptyVisitor, toggleWishlist, variantKey, type ResumeData, type Theme, type Visitor } from "@rb/schema";
 import { SITE_TEMPLATES, getTemplate, isDummyUrl, pageTitle, resolvePage, siteTheme, withPlaceholders } from "@rb/templates";
 import { newId } from "./editor/list";
 import { EditPopover, type EditTarget } from "./site-edit/EditPopover";
 import { SitePanel, type PanelTab } from "./site-edit/SitePanel";
 import { getAt, isItemPath, removeItem, setAt } from "./site-edit/paths";
 import { ShopManager } from "./shop/ShopManager";
+import { onSampleChange, resetSample, sampleAccountAction, sampleMe, sampleOrder, sampleShopFor, sampleSignIn, sampleSignOut, sampleVisitor, touchSample } from "./shop/sampleData";
+import { SHOWCASE_COLORS, showcaseColor } from "../hub/showcase";
+
+/**
+ * Another template keeps the user's own main color, but a color that only came with the previous
+ * template (its designed color, or the starting default) is swapped for the new template's own.
+ */
+function switchTemplate(theme: Theme, templateId: string): Theme {
+  const now = theme.colors.primary.toUpperCase();
+  const designed = new Set([...Object.values(SHOWCASE_COLORS), "#1E3A5F"].map((c) => c.toUpperCase()));
+  return designed.has(now) ? { ...theme, templateId, colors: { ...theme.colors, primary: showcaseColor(templateId) } } : { ...theme, templateId };
+}
 
 type Device = "desktop" | "mobile";
 
@@ -46,7 +58,8 @@ type Props = {
 export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish, bar, resumeId }: Props) {
   const site = getTemplate(theme.templateId);
   // Each template may bring its own example persona and pictures.
-  const shown = withPlaceholders(raw, site.sample?.(raw.locale));
+  const templateSample = useMemo(() => site.sample?.(raw.locale), [site, raw.locale]);
+  const shown = withPlaceholders(raw, templateSample);
   const data = applyHiddenFields(shown, theme.hiddenFields);
   // The colors the site is drawn with: the template's own page colors until the user picks others.
   const effective = siteTheme(theme);
@@ -67,8 +80,25 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
   // Shop templates: the preview keeps its own cart and wishlist, as a visitor's browser would.
   const [visitor, setVisitor] = useState<Visitor>(emptyVisitor);
   const [shopOpen, setShopOpen] = useState(false);
+  const [shopFocus, setShopFocus] = useState<string | undefined>();
   const pages = site.pages?.(data) ?? ["/"];
   const page = resolvePage(site, data, requestedPage) ?? "/";
+
+  // Shop templates: the customer's side (signing in, orders, tickets, comments) runs on the sample
+  // shop activity that the shop manager shows too, kept in this browser only.
+  const sampleShop = sampleShopFor(raw.site?.shop, templateSample?.site?.shop);
+  const [, setSampleRound] = useState(0);
+  useEffect(() => {
+    if (!site.shop) return;
+    const stop = onSampleChange(() => setSampleRound((n) => n + 1));
+    touchSample();
+    const timer = setInterval(touchSample, 60000);
+    return () => {
+      stop();
+      clearInterval(timer);
+    };
+  }, [site.shop]);
+  const shownVisitor: Visitor = site.shop ? { ...visitor, ...sampleVisitor(sampleShop, page) } : visitor;
 
   // Esc leaves the full-screen view (an open popover closes first).
   useEffect(() => {
@@ -84,6 +114,15 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
 
   // In edit mode a click on a marked text or picture opens its editor; links switch pages.
   const onFrameClick = (e: MouseEvent) => {
+    // Products are edited in the shop manager: a click on a product (not on its buttons) opens it there.
+    const el = e.target as Element;
+    const product = editing && site.shop && !el.closest("button, input, select, label, textarea") ? el.closest<HTMLElement>("[data-product]") : null;
+    if (product) {
+      e.preventDefault();
+      setShopFocus(product.dataset.product!);
+      setShopOpen(true);
+      return;
+    }
     // The nearest marked element or link decides: a plain link inside an editable area still navigates.
     const hit = editing ? (e.target as Element).closest<HTMLElement>("[data-edit], a") : null;
     const marked = hit?.hasAttribute("data-edit") ? hit : null;
@@ -113,30 +152,46 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
   };
 
   // Shop forms (cart, wishlist, search, checkout) are answered here instead of by the server.
+  /** Scrolls the preview to the top, as a new page would open. */
+  const frameTop = (from: Element) => from.closest(".ws-view")?.scrollTo({ top: 0, behavior: "smooth" });
+
   const onFrameSubmit = (e: FormEvent) => {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
     const action = form.getAttribute("action") ?? "";
     const fields = Object.fromEntries(new FormData(form)) as Record<string, string>;
     if (action.endsWith("/_cart")) {
-      const product = data.site?.shop?.products.find((p) => p.id === fields.id);
       const qty = Math.max(0, Math.floor(Number(fields.qty ?? 1)) || 0);
-      const size = fields.size || undefined;
+      // Choices come as opt0/opt1 from a product page, or as the stored key from the cart.
+      const size = (fields.opt0 ? variantKey([fields.opt0, fields.opt1]) : fields.size) || undefined;
       setVisitor((v) => {
+        if (fields.op === "coupon") return { ...v, coupon: fields.code?.trim() || undefined };
         if (fields.op === "wish") return { ...v, wishlist: toggleWishlist(v.wishlist, fields.id!) };
-        if (fields.op === "add") return { ...v, cart: changeCart(v.cart, "add", fields.id!, Math.max(1, qty), size ?? product?.sizes?.[0]) };
+        if (fields.op === "add") return { ...v, cart: changeCart(v.cart, "add", fields.id!, Math.max(1, qty), size) };
         if (fields.op === "set") return { ...v, cart: changeCart(v.cart, "set", fields.id!, qty, size) };
         if (fields.op === "remove") return { ...v, cart: changeCart(v.cart, "remove", fields.id!, 0, size) };
         return v;
       });
       if (fields.back && fields.back !== page) setPage(fields.back);
+    } else if (action.endsWith("/_account")) {
+      // The preview signs in sample customers; their tickets and comments join the sample the manager shows.
+      const r = sampleAccountAction(sampleShop, fields, Boolean(raw.site?.shop?.reviewsAutoApprove));
+      const query: Record<string, string> = r.error ? { error: r.error } : r.msg ? { msg: r.msg } : {};
+      setVisitor((v) => ({ ...v, query }));
+      if (r.page) setPage(r.page);
+      frameTop(form);
     } else if (action.endsWith("/_order")) {
-      // Nothing is saved from the preview: the order page is shown with a sample code.
-      setVisitor((v) => ({ ...v, cart: [], query: { code: "نمونه" } }));
-      setPage("/thanks");
-    } else if (action.endsWith("/search")) {
-      setVisitor((v) => ({ ...v, query: { q: fields.q ?? "" } }));
-      setPage("/search");
+      // The order joins the sample: the manager shows it as a new order (nothing reaches the server).
+      const r = sampleOrder(sampleShop, visitor.cart, visitor.coupon, fields);
+      const query: Record<string, string> = r.code ? { code: r.code } : { error: r.error ?? "" };
+      setVisitor((v) => (r.code ? { ...v, cart: [], coupon: undefined, query } : { ...v, query }));
+      if (r.page) setPage(r.page);
+      frameTop(form);
+    } else if ((form.getAttribute("method") ?? "get").toLowerCase() === "get" && action.startsWith("/")) {
+      // Search boxes and shop filters: open that page with the filled-in fields as its query.
+      const query = Object.fromEntries(Object.entries(fields).filter(([, v]) => typeof v === "string" && v.trim()));
+      setVisitor((v) => ({ ...v, query }));
+      setPage(action);
     }
   };
 
@@ -157,7 +212,7 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
         )}
         <span className="ws-gap" />
         {SITE_TEMPLATES.length > 1 && (
-          <select className="ws-select" value={site.id} onChange={(e) => onThemeChange({ ...theme, templateId: e.target.value })} aria-label="قالب">
+          <select className="ws-select" value={site.id} onChange={(e) => onThemeChange(switchTemplate(theme, e.target.value))} aria-label="قالب">
             {SITE_TEMPLATES.map((t) => (
               <option key={t.id} value={t.id}>
                 قالب {t.name}
@@ -204,7 +259,32 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
           تنظیمات
         </button>
         {site.shop && (
-          <button type="button" className="btn small" onClick={() => setShopOpen(true)}>
+          <DemoMenu
+            customer={sampleMe(sampleShop)}
+            onSignIn={() => {
+              sampleSignIn(sampleShop);
+              setVisitor((v) => ({ ...v, query: {} }));
+              setEditing(false);
+              setPage("/account");
+            }}
+            onSignOut={() => {
+              sampleSignOut(sampleShop);
+              setPage("/");
+            }}
+            onAdmin={() => {
+              setShopFocus(undefined);
+              setShopOpen(true);
+            }}
+            onReset={() => {
+              if (!window.confirm("سفارش‌ها، تیکت‌ها و نظرهای نمونه به حالت اول برگردند؟")) return;
+              resetSample(sampleShop);
+              setVisitor(emptyVisitor());
+              setPage("/");
+            }}
+          />
+        )}
+        {site.shop && (
+          <button type="button" className="btn small" onClick={() => { setShopFocus(undefined); setShopOpen(true); }}>
             🛍 مدیریت فروشگاه
           </button>
         )}
@@ -223,7 +303,7 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
             onClick={onFrameClick}
             onSubmit={onFrameSubmit}
           >
-            <site.component data={data} theme={effective} page={page} editing={editing} visitor={visitor} />
+            <site.component data={data} theme={effective} page={page} editing={editing} visitor={shownVisitor} />
           </div>
         </div>
         {panel && (
@@ -250,7 +330,7 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
       {full ? createPortal(workspace, document.body) : workspace}
       {shopOpen &&
         createPortal(
-          <ShopManager data={raw} sample={site.sample?.(raw.locale)} onData={onDataChange} resumeId={resumeId} onClose={() => setShopOpen(false)} />,
+          <ShopManager data={raw} sample={templateSample} onData={onDataChange} resumeId={resumeId} focusProductId={shopFocus} onClose={() => { setShopOpen(false); setShopFocus(undefined); }} />,
           document.body,
         )}
       {target &&
@@ -300,5 +380,75 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
           document.body,
         )}
     </>
+  );
+}
+
+/**
+ * The "demo mode" menu of shop templates: try the shop as a customer (signed in with a sample
+ * account) or as its manager, and start the sample over.
+ */
+function DemoMenu({ customer, onSignIn, onSignOut, onAdmin, onReset }: { customer?: string; onSignIn: () => void; onSignOut: () => void; onAdmin: () => void; onReset: () => void }) {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: Event) => !(e.target as Element).closest?.(".demo-menu") && setOpen(false);
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("pointerdown", close);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("pointerdown", close);
+      document.removeEventListener("keydown", esc);
+    };
+  }, [open]);
+  const pick = (f: () => void) => () => {
+    setOpen(false);
+    f();
+  };
+  return (
+    <div className="demo-menu">
+      <button type="button" className={`demo-chip${customer ? " on" : ""}`} aria-expanded={open} onClick={() => setOpen(!open)}>
+        🧪 حالت نمایشی{customer && <small>: {customer}</small>}
+      </button>
+      {open && (
+        <div className="demo-pop" role="menu">
+          <p className="demo-pop-head">
+            <b>فروشگاه را از هر دو طرف امتحان کنید</b>
+            <span>به‌عنوان مشتری سفارش بدهید، تیکت بفرستید و نظر بنویسید؛ بعد در پنل مدیریت ببینید و جواب بدهید.</span>
+          </p>
+          {customer ? (
+            <button type="button" role="menuitem" onClick={pick(onSignOut)}>
+              <i>👤</i>
+              <span>
+                خروج از حساب مشتری
+                <small>الان به‌عنوان «{customer}» وارد شده‌اید</small>
+              </span>
+            </button>
+          ) : (
+            <button type="button" role="menuitem" onClick={pick(onSignIn)}>
+              <i>👤</i>
+              <span>
+                ورود به‌عنوان مشتری نمونه
+                <small>با سفارش‌ها و تیکت‌های نمونه؛ بدون فرم</small>
+              </span>
+            </button>
+          )}
+          <button type="button" role="menuitem" onClick={pick(onAdmin)}>
+            <i>🛍</i>
+            <span>
+              ورود به پنل مدیر
+              <small>سفارش‌ها، تیکت‌ها، نظرها و گزارش‌ها</small>
+            </span>
+          </button>
+          <button type="button" role="menuitem" onClick={pick(onReset)}>
+            <i>↺</i>
+            <span>
+              شروع دوباره‌ی نمونه‌ها
+              <small>همه‌ی تغییرها پاک و نمونه‌ها از نو ساخته می‌شوند</small>
+            </span>
+          </button>
+          <p className="demo-pop-foot">تغییرها فقط در همین مرورگر می‌مانند، کاربر دیگری آن‌ها را نمی‌بیند و بعد از ۳۰ دقیقه دوری خودشان تازه می‌شوند. سایت منتشرشده اطلاعات واقعی خودش را دارد.</p>
+        </div>
+      )}
+    </div>
   );
 }

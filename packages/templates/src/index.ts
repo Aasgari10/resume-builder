@@ -22,6 +22,7 @@ import { CODE_BLOCKS, CodePortfolio, codePages, codeSample } from "./web/code";
 import { SIMPLE_BLOCKS, SimplePortfolio, simplePages, simpleSample } from "./web/simple";
 import { SEPID_BLOCKS, SEPID_OPTIONAL_PAGES, SepidPortfolio, sepidPages, sepidSample } from "./web/sepid";
 import { BOUTIQUE_BLOCKS, BoutiqueShop, boutiquePages, boutiqueSample } from "./web/boutique";
+import { HOMEMART_BLOCKS, HomeMartShop, homemartPages, homemartSample } from "./web/homemart";
 import type { ResumeData } from "@rb/schema";
 import type { TemplateDefinition, TemplateTag } from "./types";
 
@@ -85,6 +86,7 @@ export const PORTFOLIO_TEMPLATES: readonly TemplateDefinition[] = [
   { ...web("simple-portfolio", "ساده", SimplePortfolio), pages: simplePages, sample: simpleSample, blocks: SIMPLE_BLOCKS },
   { ...web("sepid-portfolio", "سپید", SepidPortfolio), pages: sepidPages, sample: sepidSample, optionalPages: SEPID_OPTIONAL_PAGES, blocks: SEPID_BLOCKS },
   { ...web("boutique-shop", "بوتیک (فروشگاه)", BoutiqueShop), pages: boutiquePages, sample: boutiqueSample, blocks: BOUTIQUE_BLOCKS, shop: true },
+  { ...web("homemart-shop", "هوم‌مارت (فروشگاه لوازم خانگی)", HomeMartShop), pages: homemartPages, sample: homemartSample, blocks: HOMEMART_BLOCKS, shop: true },
   minimalPortfolio,
   web("studio-portfolio", "استودیو", StudioPortfolio),
   web("split-portfolio", "دوستونه", SplitPortfolio),
@@ -142,6 +144,8 @@ const PAGE_TITLES: Record<string, Record<ResumeData["locale"], string>> = {
   "/search": { fa: "جست‌وجو", en: "Search" },
   "/checkout": { fa: "ثبت سفارش", en: "Checkout" },
   "/thanks": { fa: "سفارش ثبت شد", en: "Order placed" },
+  "/account": { fa: "حساب کاربری", en: "My account" },
+  "/faq": { fa: "سؤالات متداول", en: "FAQ" },
 };
 
 /** Title of an inner page for the browser tab ("About", a project's name); empty for the home page. */
@@ -150,6 +154,7 @@ export function pageTitle(data: ResumeData, page: string): string {
     return data.projects.find((p) => `/projects/${encodeURIComponent(p.id)}` === page)?.title ?? "";
   }
   if (page.startsWith("/product/")) return data.site?.shop?.products.find((p) => `/product/${p.id}` === page)?.name ?? "";
+  if (page.startsWith("/page/")) return data.site?.shop?.pages?.find((p) => `/page/${p.slug}` === page)?.title ?? "";
   if (page.startsWith("/category/")) return data.site?.shop?.categories.find((c) => `/category/${c.id}` === page)?.name ?? "";
   return PAGE_TITLES[page]?.[data.locale] ?? "";
 }

@@ -2,8 +2,8 @@
 // The page ships no JavaScript: templates are pure components rendered to static markup.
 
 import { renderToStaticMarkup } from "react-dom/server";
-import { applyHiddenFields, type ResumeData, type Theme, type Visitor } from "@rb/schema";
-import { buildSeo, getTemplate, type SeoOverrides, pageTitle } from "@rb/templates";
+import { applyHiddenFields, saleEnded, unitPrice, type ResumeData, type Theme, type Visitor } from "@rb/schema";
+import { buildSeo, getTemplate, type SeoOverrides, pageTitle, truncate } from "@rb/templates";
 import { env } from "../env";
 
 /** Escapes text for HTML element content and quoted attribute values. */
@@ -66,6 +66,30 @@ export function renderSitePage(input: {
   const seo = buildSeo(data, input.seo, url);
   const inner = pageTitle(data, page);
   if (inner) seo.title = `${inner} | ${seo.title}`;
+  // A product page describes the product: its own search title and text, its picture and price.
+  const product = page.startsWith("/product/") ? data.site?.shop?.products.find((p) => `/product/${p.id}` === page) : undefined;
+  if (product) {
+    if (product.seoTitle?.trim()) seo.title = product.seoTitle.trim();
+    const about = product.seoDescription?.trim() || (product.description ? truncate(product.description, 160) : "");
+    if (about) seo.description = about;
+    const picture = product.images[0];
+    if (picture) seo.image = /^https?:/.test(picture) || !input.url ? picture : new URL(picture, input.url).href;
+    seo.jsonLd = {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: product.name,
+      ...(about ? { description: about } : {}),
+      ...(seo.image ? { image: seo.image } : {}),
+      offers: {
+        "@type": "Offer",
+        priceCurrency: "IRR",
+        price: unitPrice(product) * 10,
+        availability: product.stock === 0 ? "https://schema.org/OutOfStock" : "https://schema.org/InStock",
+        ...(product.salePrice !== undefined && product.saleEndsAt && !saleEnded(product) ? { priceValidUntil: product.saleEndsAt.slice(0, 10) } : {}),
+        ...(url ? { url } : {}),
+      },
+    };
+  }
   // Project rule: placeholder links (example.com) on a published page lead to the top of the page.
   const body = renderToStaticMarkup(<Template data={data} theme={input.theme} page={page} link={input.link} visitor={input.visitor} />).replace(
     /href="https?:\/\/([\w-]+\.)*example\.(com|ir|org)(\/[^"]*)?"( target="_blank")?/gi,

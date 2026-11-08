@@ -150,6 +150,9 @@ model Site {
 
   downloadTokens DownloadToken[]
   shopOrders     ShopOrder[]
+  shopCustomers  ShopCustomer[]
+  shopReviews    ShopReview[]
+  shopTickets    ShopTicket[]
 
   @@index([userId])
 }
@@ -171,14 +174,78 @@ model ShopOrder {
   note         String?
   items        Json // [{ id, name, size, qty, unit, total }]
   subtotal     Int // tomans
+  discount     Int             @default(0) // taken off by a discount code
+  couponCode   String?
   shipping     Int
   total        Int
+  customerId   String? // set when a signed-in customer ordered
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
 
-  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  site     Site          @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  customer ShopCustomer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
 
   @@index([siteId, createdAt])
+  @@index([customerId])
+}
+
+// A customer account of one shop (each shop has its own customers).
+model ShopCustomer {
+  id           String   @id @default(cuid())
+  siteId       String
+  name         String
+  phone        String // Iranian mobile number, the login name
+  passwordHash String
+  addresses    Json     @default("[]") // [{ id, title, city, address, postalCode }]
+  createdAt    DateTime @default(now())
+
+  site    Site         @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  orders  ShopOrder[]
+  reviews ShopReview[]
+  tickets ShopTicket[]
+
+  @@unique([siteId, phone])
+}
+
+// A customer's rating and comment on a product; shown once the shop approves it.
+model ShopReview {
+  id         String   @id @default(cuid())
+  siteId     String
+  productId  String
+  customerId String
+  rating     Int // 1..5
+  text       String
+  approved   Boolean  @default(false)
+  reply      String? // the shop's answer
+  createdAt  DateTime @default(now())
+
+  site     Site         @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  customer ShopCustomer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([siteId, productId])
+}
+
+// A support conversation between a customer and the shop.
+model ShopTicket {
+  id         String           @id @default(cuid())
+  siteId     String
+  customerId String
+  subject    String
+  status     ShopTicketStatus @default(OPEN)
+  messages   Json             @default("[]") // [{ from: "customer" | "shop", text, at }]
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  site     Site         @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  customer ShopCustomer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([siteId, updatedAt])
+}
+
+enum ShopTicketStatus {
+  OPEN // waiting for the shop
+  ANSWERED // the shop replied
+  CLOSED
 }
 
 enum ShopOrderStatus {

@@ -4,7 +4,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import type { Prisma, Site } from "@prisma/client";
-import { SHOP_ORDER_STATUSES, checkPublishable, defaultTheme, themeSchema } from "@rb/schema";
+import { checkPublishable, defaultTheme, themeSchema } from "@rb/schema";
 import { DEFAULT_PORTFOLIO_TEMPLATE_ID, TEMPLATES } from "@rb/templates";
 import { prisma } from "../db";
 import { siteUrl } from "../env";
@@ -12,6 +12,7 @@ import { HttpError, asyncHandler, parseBody } from "../lib/http";
 import { canUseTemplate } from "../lib/ownership";
 import { validateSubdomain } from "../lib/subdomain";
 import { currentUserId, requireAuth } from "../middleware/auth";
+import { shopAdminRouter } from "./shopAdmin";
 
 export const sitesRouter = Router({ mergeParams: true });
 sitesRouter.use(requireAuth);
@@ -176,29 +177,5 @@ sitesRouter.post(
   })
 );
 
-/* ───────────── Shop orders ───────────── */
-
-/** GET /api/resumes/:resumeId/site/orders — orders placed on this site's shop, newest first. */
-sitesRouter.get(
-  "/orders",
-  asyncHandler(async (req, res) => {
-    const resume = await findOwnResume(req);
-    if (!resume.site) return void res.json({ orders: [] });
-    const orders = await prisma.shopOrder.findMany({ where: { siteId: resume.site.id }, orderBy: { createdAt: "desc" }, take: 200 });
-    res.json({ orders });
-  })
-);
-
-const orderStatusBody = z.object({ status: z.enum(SHOP_ORDER_STATUSES) });
-
-/** PATCH /api/resumes/:resumeId/site/orders/:orderId — the owner moves an order along (confirmed, sent…). */
-sitesRouter.patch(
-  "/orders/:orderId",
-  asyncHandler(async (req, res) => {
-    const resume = await findOwnResume(req);
-    const { status } = parseBody(orderStatusBody, req.body);
-    const order = resume.site ? await prisma.shopOrder.findFirst({ where: { id: req.params.orderId!, siteId: resume.site.id } }) : null;
-    if (!order) throw new HttpError(404, "NOT_FOUND", "سفارش پیدا نشد");
-    res.json({ order: await prisma.shopOrder.update({ where: { id: order.id }, data: { status } }) });
-  })
-);
+// Shop management (orders, customers, comments, tickets) lives in its own file.
+sitesRouter.use(shopAdminRouter);

@@ -13,7 +13,7 @@ import { env, siteUrl } from "../env";
 import { asyncHandler } from "../lib/http";
 import { subdomainFromHost, validateSubdomain } from "../lib/subdomain";
 import { FONT_ASSETS_PATH, SITE_CSP, renderNotFoundPage, renderSitePage } from "../render/sitePage";
-import { readVisitor } from "./shop";
+import { loadVisitor } from "./shop";
 
 export const publicRouter = Router();
 
@@ -84,7 +84,7 @@ async function renderSite(req: Request, res: Response, rawSubdomain: string, pat
     url,
     page,
     link: (p) => (p === "/" ? base || "/" : base + p),
-    visitor: shop ? readVisitor(req) : undefined,
+    visitor: shop ? await loadVisitor(req, site.id, page) : undefined,
   });
   sendPage(res, 200, html, shop);
 }
