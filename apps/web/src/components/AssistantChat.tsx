@@ -1,8 +1,10 @@
-// Chat that restyles the site from a Persian sentence. Changes apply to the preview immediately
-// and are saved by the editor's autosave; each change can be undone.
+// Chat that changes the site from a Persian sentence: its look, and where the template allows,
+// which pages and sections it shows and which items it has. Changes apply to the preview
+// immediately and are saved by the editor's autosave; each change can be undone.
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { defaultTheme, type Theme } from "@rb/schema";
+import { defaultTheme, type ResumeData, type Theme } from "@rb/schema";
+import { applySiteChanges, suggestionsFor, welcomeFor, type Capabilities } from "./site-edit/assistantSite";
 import { ApiError, api, type AssistantQuota, type AssistantTurn } from "../api";
 
 type Message = {
@@ -11,23 +13,28 @@ type Message = {
   content: string;
   /** Theme before this reply's change, for undo. */
   before?: Theme;
+  /** Site content before this reply's change, for undo. */
+  beforeData?: ResumeData;
   undone?: boolean;
   error?: boolean;
   /** Created in the browser (e.g. reset); not sent to the model as history. */
   local?: boolean;
 };
 
-const WELCOME =
-  "سلام! می‌توانم ظاهر سایتت را با یک جمله عوض کنم: رنگ‌ها، فونت، اندازه‌ی نوشته‌ها، فاصله‌ها، گردی کادرها و ترتیب یا نمایش بخش‌ها. بگو چه می‌خواهی.";
-
-const SUGGESTIONS = ["رسمی‌ترش کن", "حالت تیره", "رنگ‌ها گرم‌تر", "فاصله‌ها بیشتر", "پروژه‌ها اول بیاد"];
-
 const MAX_LENGTH = 300;
 const fa = (n: number) => n.toLocaleString("fa-IR");
 
-type Props = { theme: Theme; locale: "fa" | "en"; onChange: (theme: Theme) => void };
+type Props = {
+  theme: Theme;
+  locale: "fa" | "en";
+  onChange: (theme: Theme) => void;
+  /** What the template lets the assistant show, hide or add, with the site content it changes. */
+  capabilities: Capabilities;
+  data: ResumeData;
+  onData: (data: ResumeData) => void;
+};
 
-export function AssistantChat({ theme, locale, onChange }: Props) {
+export function AssistantChat({ theme, locale, onChange, capabilities, data, onData }: Props) {
   const [quota, setQuota] = useState<AssistantQuota | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -46,7 +53,13 @@ export function AssistantChat({ theme, locale, onChange }: Props) {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, busy]);
 
-  if (quota && !quota.enabled) return null;
+  if (quota && !quota.enabled)
+    return (
+      <section className="card stack assistant">
+        <h2>دستیار هوشمند ✨</h2>
+        <p className="muted">دستیار هوشمند فعلاً در دسترس نیست. متن‌ها و عکس‌ها را با کلیک روی خودشان در صفحه ویرایش کنید.</p>
+      </section>
+    );
 
   const exhausted = quota !== null && quota.remainingPercent <= 0;
 
@@ -63,9 +76,12 @@ export function AssistantChat({ theme, locale, onChange }: Props) {
     setBusy(true);
     try {
       const before = theme;
-      const r = await api.askAssistant({ message, history, theme, locale });
+      const beforeData = data;
+      const r = await api.askAssistant({ message, history, theme, locale, capabilities });
       if (r.theme) onChange(r.theme);
-      add({ role: "assistant", content: r.reply, before: r.theme ? before : undefined });
+      if (r.site) onData(applySiteChanges(data, r.site));
+      const changed = Boolean(r.theme || r.site);
+      add({ role: "assistant", content: r.reply, before: changed ? before : undefined, beforeData: r.site ? beforeData : undefined });
       setQuota((q) => (q ? { ...q, remainingPercent: r.remainingPercent } : q));
     } catch (e) {
       if (e instanceof ApiError && e.code === "AI_DAILY_LIMIT") setQuota((q) => (q ? { ...q, remainingPercent: 0 } : q));
@@ -79,6 +95,9 @@ export function AssistantChat({ theme, locale, onChange }: Props) {
     const target = messages.find((m) => m.id === id);
     if (!target?.before) return;
     onChange(target.before);
+    // Content goes back to before the earliest undone change that touched it.
+    const firstData = messages.find((m) => m.id >= id && m.beforeData && !m.undone)?.beforeData;
+    if (firstData) onData(firstData);
     // Later changes were built on top of this one, so they are undone too.
     setMessages((list) => list.map((m) => (m.id >= id && m.before ? { ...m, undone: true } : m)));
   }
@@ -101,12 +120,12 @@ export function AssistantChat({ theme, locale, onChange }: Props) {
   return (
     <section className="card stack assistant">
       <div className="row gap assistant-head">
-        <h2 className="grow">دستیار ظاهر ✨</h2>
+        <h2 className="grow">دستیار هوشمند ✨</h2>
         {quota?.demo && <span className="badge">حالت آزمایشی</span>}
       </div>
 
       <div className="assistant-messages" ref={listRef}>
-        <div className="bubble assistant-bubble">{WELCOME}</div>
+        <div className="bubble assistant-bubble">{welcomeFor(capabilities)}</div>
         {messages.map((m) => (
           <div key={m.id} className={`bubble ${m.role === "user" ? "user-bubble" : "assistant-bubble"}${m.error ? " error-bubble" : ""}`}>
             {m.content}
@@ -125,7 +144,7 @@ export function AssistantChat({ theme, locale, onChange }: Props) {
 
       {messages.length === 0 && (
         <div className="row gap wrap">
-          {SUGGESTIONS.map((s) => (
+          {suggestionsFor(capabilities).map((s) => (
             <button key={s} type="button" className="chip" disabled={busy || exhausted} onClick={() => void send(s)}>
               {s}
             </button>
@@ -145,7 +164,7 @@ export function AssistantChat({ theme, locale, onChange }: Props) {
           value={input}
           maxLength={MAX_LENGTH}
           disabled={exhausted}
-          placeholder={exhausted ? "اعتبار امروز تمام شده است" : "مثلاً: رنگ‌ها را سبز کن و فاصله‌ها را کمتر"}
+          placeholder={exhausted ? "اعتبار امروز تمام شده است" : "مثلاً: رنگ‌ها را سبز کن یا یک بخش را حذف کن"}
           onChange={(e) => setInput(e.target.value)}
         />
         <button className="btn" disabled={busy || exhausted || !input.trim()}>

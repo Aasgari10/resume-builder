@@ -8,6 +8,7 @@ import type { FieldIssue } from "../api";
 import { Preview } from "../components/Preview";
 import { PublishPanel } from "../components/PublishPanel";
 import { SAVE_LABELS, useResumeDoc } from "../components/editor/useResumeDoc";
+import { toast } from "../lib/toast";
 
 export function Editor() {
   const { id } = useParams<{ id: string }>();
@@ -28,25 +29,33 @@ export function Editor() {
 
   const bar = (
     <>
-      <Link to="/resume/mine" className="btn small ghost">
-        → رزومه‌های من
+      <Link to="/resume/mine" className="ws-icon" title="رزومه‌های من" aria-label="رزومه‌های من">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M9 6l6 6-6 6" />
+        </svg>
       </Link>
-      <input className="ws-title" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={80} aria-label="عنوان" />
-      <span className={`save-badge ${saveState}`}>{SAVE_LABELS[saveState]}</span>
+      <input className="ws-title" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={80} aria-label="نام سایت" />
+      {SAVE_LABELS[saveState] && <span className={`save-badge ${saveState}`}>{SAVE_LABELS[saveState]}</span>}
       {isDraft ? (
-        <button className="btn small" onClick={() => void save()} disabled={saveState === "saving"}>
-          ذخیره در رزومه‌های من
+        <button
+          className="btn small"
+          onClick={async () => {
+            if (await save()) toast("✓ در «رزومه‌های من» ذخیره شد");
+          }}
+          disabled={saveState === "saving"}
+        >
+          ذخیره
         </button>
       ) : (
-        <Link to={`/resumes/${id}/pdf`} className="btn small ghost">
-          نسخه‌ی پی‌دی‌اف
+        <Link to={`/resumes/${id}/pdf`} className="ws-chip" title="نسخه‌ی پی‌دی‌اف رزومه">
+          PDF
         </Link>
       )}
     </>
   );
 
   const publish = isDraft ? (
-    <p className="muted">برای انتشار، اول سایت را با دکمه‌ی «ذخیره در رزومه‌های من» ذخیره کنید.</p>
+    <p className="muted">برای انتشار، اول سایت را با دکمه‌ی «ذخیره» بالای صفحه ذخیره کنید.</p>
   ) : (
     <div className="stack">
       {issues !== null &&

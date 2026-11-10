@@ -13,6 +13,8 @@ const LINK_TYPES: { value: string; label: string; hint: string }[] = [
   { value: "whatsapp", label: "واتس‌اپ", hint: "شماره، مثلاً ۰۹۱۲۰۰۰۰۰۰۰" },
   { value: "telegram", label: "تلگرام", hint: "نام کاربری، مثلاً ‎@sara" },
   { value: "instagram", label: "اینستاگرام", hint: "نام کاربری، مثلاً ‎@sara" },
+  { value: "eitaa", label: "ایتا", hint: "نام کاربری، مثلاً ‎@sara" },
+  { value: "rubika", label: "روبیکا", hint: "نام کاربری، مثلاً ‎@sara" },
   { value: "github", label: "گیت‌هاب", hint: "https://github.com/..." },
   { value: "linkedin", label: "لینکدین", hint: "https://linkedin.com/in/..." },
   { value: "behance", label: "بیهنس", hint: "https://behance.net/..." },
@@ -37,6 +39,8 @@ export function normalizeLink(type: string, raw: string): string | null {
   const user = v.replace(/^@/, "");
   if (type === "telegram" && /^\w{4,}$/.test(user)) return `https://t.me/${user}`;
   if (type === "instagram" && /^[\w.]{2,}$/.test(user)) return `https://instagram.com/${user}`;
+  if (type === "eitaa" && /^\w{3,}$/.test(user)) return `https://eitaa.com/${user}`;
+  if (type === "rubika" && /^[\w.]{3,}$/.test(user)) return `https://rubika.ir/${user}`;
   return /^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(v) ? `https://${v}` : null;
 }
 

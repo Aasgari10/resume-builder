@@ -43,6 +43,8 @@ export const SITE_CSP = [
   // Shop buttons post to the site itself; contact forms open the visitor's mail app.
   "form-action 'self' mailto:",
   "frame-ancestors 'none'",
+  // Map views of the contact page (they run their own scripts on their own site, not on ours).
+  "frame-src https://www.openstreetmap.org",
 ].join("; ");
 
 export function renderSitePage(input: {

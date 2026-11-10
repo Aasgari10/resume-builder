@@ -187,42 +187,7 @@ export function AccountPage({ link, visitor }: Base) {
     return (
       <div className="sk-account">
         {notes}
-        <div className="sk-two">
-          <form method="post" action={link("/_account")} className="sk-card sk-form">
-            <h2>ورود</h2>
-            <input type="hidden" name="op" value="login" />
-            <label>
-              شماره‌ی موبایل
-              <input name="phone" required inputMode="tel" dir="ltr" autoComplete="tel" placeholder="09xx xxx xxxx" />
-            </label>
-            <label>
-              رمز عبور
-              <input name="password" type="password" required autoComplete="current-password" />
-            </label>
-            <button type="submit" className="sk-btn">
-              ورود
-            </button>
-          </form>
-          <form method="post" action={link("/_account")} className="sk-card sk-form">
-            <h2>ثبت‌نام</h2>
-            <input type="hidden" name="op" value="register" />
-            <label>
-              نام و نام خانوادگی
-              <input name="name" required maxLength={80} autoComplete="name" />
-            </label>
-            <label>
-              شماره‌ی موبایل
-              <input name="phone" required inputMode="tel" dir="ltr" autoComplete="tel" placeholder="09xx xxx xxxx" />
-            </label>
-            <label>
-              رمز عبور (دست‌کم ۶ نویسه)
-              <input name="password" type="password" required minLength={6} autoComplete="new-password" />
-            </label>
-            <button type="submit" className="sk-btn">
-              ساخت حساب
-            </button>
-          </form>
-        </div>
+        <SignInForms link={link} />
       </div>
     );
   const acc = visitor.account ?? { orders: [], addresses: [], tickets: [] };
@@ -320,51 +285,14 @@ export function AccountPage({ link, visitor }: Base) {
         </details>
       </section>
 
-      <section className="sk-card">
+      <section className="sk-card sk-help">
         <h2>پشتیبانی</h2>
-        {acc.tickets.map((t) => (
-          <details key={t.id} className="sk-ticket" open={open === t.id}>
-            <summary>
-              <b>{t.subject}</b>
-              <span className={`sk-status tk-${t.status.toLowerCase()}`}>{t.status === "OPEN" ? "در انتظار پاسخ" : t.status === "ANSWERED" ? "پاسخ داده شد" : "بسته شد"}</span>
-            </summary>
-            {t.messages.map((m, k) => (
-              <p key={k} className={`sk-msg ${m.from}`}>
-                {m.text}
-                <small>
-                  {m.from === "shop" ? "فروشگاه" : "شما"} · {date(m.at)}
-                </small>
-              </p>
-            ))}
-            {t.status !== "CLOSED" && (
-              <form method="post" action={link("/_account")} className="sk-form">
-                <input type="hidden" name="op" value="ticket-reply" />
-                <input type="hidden" name="ticketId" value={t.id} />
-                <textarea name="text" required maxLength={2000} rows={2} placeholder="پاسخ شما..." aria-label="پاسخ" />
-                <button type="submit" className="sk-btn">
-                  ارسال
-                </button>
-              </form>
-            )}
-          </details>
-        ))}
-        <details className="sk-more">
-          <summary>+ تیکت جدید</summary>
-          <form method="post" action={link("/_account")} className="sk-form">
-            <input type="hidden" name="op" value="ticket-new" />
-            <label>
-              موضوع
-              <input name="subject" required maxLength={120} />
-            </label>
-            <label>
-              پیام
-              <textarea name="text" required maxLength={2000} rows={3} />
-            </label>
-            <button type="submit" className="sk-btn">
-              ارسال تیکت
-            </button>
-          </form>
-        </details>
+        <span className="sk-muted">
+          {acc.tickets.length ? `${acc.tickets.length.toLocaleString("fa-IR")} تیکت دارید${acc.tickets.some((t) => t.status === "ANSWERED") ? "؛ پاسخ تازه رسیده است." : "."}` : "سؤال یا مشکلی دارید؟ برای ما تیکت بفرستید."}
+        </span>
+        <PageLink to="/support/tickets" link={link} className="sk-btn">
+          تیکت‌ها و پشتیبانی
+        </PageLink>
       </section>
     </div>
   );
@@ -509,13 +437,16 @@ const answered = (shop: Shop | undefined) => (shop?.faq ?? []).filter((x) => x.q
 
 /** The extra pages a shop has: contact always, questions and text pages when written. */
 export function infoPages(shop: Shop | undefined): string[] {
-  return ["/contact", ...(answered(shop).length ? ["/faq"] : []), ...visiblePages(shop).map((p) => `/page/${p.slug}`)];
+  return ["/support", "/support/tickets", "/contact", ...(answered(shop).length ? ["/faq"] : []), ...visiblePages(shop).map((p) => `/page/${p.slug}`)];
 }
 
 /** Footer links to the questions and text pages. */
 export function InfoLinks({ shop, link }: { shop: Shop | undefined; link: Link }) {
   return (
     <>
+      <PageLink to="/support" link={link}>
+        پشتیبانی
+      </PageLink>
       <PageLink to="/contact" link={link}>
         تماس با ما
       </PageLink>
@@ -542,7 +473,8 @@ const paragraphs = (text: string) =>
     .map((x, k) => <p key={k}>{x}</p>);
 
 /** The contact page, the questions page or a text page; null for other paths. */
-export function InfoPage({ data, page, link, editing }: { data: ResumeData; page: string; link: Link; editing: boolean }) {
+export function InfoPage({ data, page, link, editing, visitor }: { data: ResumeData; page: string; link: Link; editing: boolean; visitor: Visitor }) {
+  if (page === "/support" || page === "/support/tickets") return <SupportPage data={data} page={page} link={link} visitor={visitor} />;
   const shop = data.site?.shop;
   const site = data.site;
   const b = data.basics;
@@ -640,7 +572,217 @@ export function InfoPage({ data, page, link, editing }: { data: ResumeData; page
   return null;
 }
 
+/** Sign-in and sign-up forms; `back` is the page to return to afterwards. */
+function SignInForms({ link, back }: { link: Link; back?: string }) {
+  return (
+        <div className="sk-two">
+          <form method="post" action={link("/_account")} className="sk-card sk-form">
+            <h2>ورود</h2>
+            <input type="hidden" name="op" value="login" />
+            {back && <input type="hidden" name="back" value={back} />}
+            <label>
+              شماره‌ی موبایل
+              <input name="phone" required inputMode="tel" dir="ltr" autoComplete="tel" placeholder="09xx xxx xxxx" />
+            </label>
+            <label>
+              رمز عبور
+              <input name="password" type="password" required autoComplete="current-password" />
+            </label>
+            <button type="submit" className="sk-btn">
+              ورود
+            </button>
+          </form>
+          <form method="post" action={link("/_account")} className="sk-card sk-form">
+            <h2>ثبت‌نام</h2>
+            <input type="hidden" name="op" value="register" />
+            {back && <input type="hidden" name="back" value={back} />}
+            <label>
+              نام و نام خانوادگی
+              <input name="name" required maxLength={80} autoComplete="name" />
+            </label>
+            <label>
+              شماره‌ی موبایل
+              <input name="phone" required inputMode="tel" dir="ltr" autoComplete="tel" placeholder="09xx xxx xxxx" />
+            </label>
+            <label>
+              رمز عبور (دست‌کم ۶ نویسه)
+              <input name="password" type="password" required minLength={6} autoComplete="new-password" />
+            </label>
+            <button type="submit" className="sk-btn">
+              ساخت حساب
+            </button>
+          </form>
+        </div>
+  );
+}
+
+type Tickets = NonNullable<Visitor["account"]>["tickets"];
+
+/** The customer's tickets (newest open first) with replies, closing, and a new-ticket form. */
+function TicketsBlock({ link, tickets }: { link: Link; tickets: Tickets }) {
+  return (
+    <>
+        <div className="sk-new" id="sk-new">
+          <h2>➕ ثبت تیکت جدید</h2>
+          <form method="post" action={link("/_account")} className="sk-form">
+            <input type="hidden" name="op" value="ticket-new" />
+            <input type="hidden" name="back" value="/support/tickets" />
+            <label>
+              موضوع
+              <input name="subject" required maxLength={120} />
+            </label>
+            <label>
+              پیام
+              <textarea name="text" required maxLength={2000} rows={3} />
+            </label>
+            <button type="submit" className="sk-btn">
+              ارسال تیکت
+            </button>
+          </form>
+        </div>
+        {tickets.length > 0 && <h2 className="sk-list-title">تیکت‌های قبلی</h2>}
+        {tickets.map((t, k) => (
+          <details key={t.id} className="sk-ticket" open={k === 0 || undefined}>
+            <summary>
+              <b>{t.subject}</b>
+              <span className={`sk-status tk-${t.status.toLowerCase()}`}>{t.status === "OPEN" ? "در انتظار پاسخ" : t.status === "ANSWERED" ? "پاسخ داده شد" : "بسته شد"}</span>
+            </summary>
+            {t.messages.map((m, k) => (
+              <p key={k} className={`sk-msg ${m.from}`}>
+                {m.text}
+                <small>
+                  {m.from === "shop" ? "فروشگاه" : "شما"} · {date(m.at)}
+                </small>
+              </p>
+            ))}
+            {t.status !== "CLOSED" && (
+              <form method="post" action={link("/_account")} className="sk-form">
+                <input type="hidden" name="op" value="ticket-reply" />
+                <input type="hidden" name="back" value="/support/tickets" />
+                <input type="hidden" name="ticketId" value={t.id} />
+                <textarea name="text" required maxLength={2000} rows={2} placeholder="پاسخ شما..." aria-label="پاسخ" />
+                <button type="submit" className="sk-btn">
+                  ارسال پاسخ
+                </button>
+              </form>
+            )}
+            {t.status === "CLOSED" ? (
+              <p className="sk-muted">این تیکت بسته شده است.</p>
+            ) : (
+              <form method="post" action={link("/_account")} className="sk-close">
+                <input type="hidden" name="op" value="ticket-close" />
+                <input type="hidden" name="ticketId" value={t.id} />
+                <input type="hidden" name="back" value="/support/tickets" />
+                <button type="submit" className="sk-link">
+                  بستن تیکت
+                </button>
+              </form>
+            )}
+          </details>
+        ))}
+    </>
+  );
+}
+
+/** The support page (/support) and the tickets page (/support/tickets), as on the original HomeMart. */
+export function SupportPage({ data, page, link, visitor }: { data: ResumeData; page: string; link: Link; visitor: Visitor }) {
+  const c = visitor.customer;
+  const shop = data.site?.shop;
+  const msg = visitor.query.msg;
+  const error = visitor.query.error;
+  if (page === "/support/tickets") {
+    return (
+      <div className="sk-info sk-support">
+        <div className="sk-support-head">
+          <h1>تیکت‌های من</h1>
+          <PageLink to="/support" link={link} className="sk-link">
+            بازگشت به پشتیبانی
+          </PageLink>
+        </div>
+        {msg && <p className="sk-ok">{msg}</p>}
+        {error && <p className="sk-err">{error}</p>}
+        {c ? (
+          <section className="sk-card">
+            <TicketsBlock link={link} tickets={visitor.account?.tickets ?? []} />
+          </section>
+        ) : (
+          <>
+            <div className="sk-card sk-help sk-locked">
+              <b>🔒 برای ارسال تیکت اول باید وارد حساب خود شوید</b>
+              <span className="sk-muted">برای استفاده از سیستم پشتیبانی، وارد حساب کاربری خود شوید یا یک حساب تازه بسازید.</span>
+            </div>
+            <SignInForms link={link} back="/support/tickets" />
+          </>
+        )}
+      </div>
+    );
+  }
+  const faq = answered(shop).slice(0, 4);
+  return (
+    <div className="sk-info sk-support">
+      <h1>پشتیبانی</h1>
+      <p className="sk-muted">سؤال یا مشکلی دارید؟ تیکت بفرستید تا همکاران ما پاسخ بدهند؛ پاسخ را در همین بخش می‌بینید.</p>
+      <div className="sk-support-cards">
+        <PageLink to="/support/tickets" link={link} className="sk-card sk-support-card">
+          <i>✉️</i>
+          <b>ثبت تیکت جدید</b>
+          <span className="sk-muted">ارسال سؤال یا مشکل</span>
+        </PageLink>
+        <PageLink to="/support/tickets" link={link} className="sk-card sk-support-card">
+          <i>🎫</i>
+          <b>تیکت‌های من</b>
+          <span className="sk-muted">{c && visitor.account?.tickets.length ? `${visitor.account.tickets.length.toLocaleString("fa-IR")} تیکت · مشاهده و پیگیری` : "مشاهده و پیگیری"}</span>
+        </PageLink>
+        <PageLink to="/contact" link={link} className="sk-card sk-support-card">
+          <i>📞</i>
+          <b>تماس با ما</b>
+          <span className="sk-muted">تلفن، نشانی و ساعت کاری</span>
+        </PageLink>
+      </div>
+      {!c && (
+        <p className="sk-card sk-help">
+          <span>
+            برای ثبت تیکت یا مشاهده‌ی تیکت‌های قبلی، لطفاً{" "}
+            <PageLink to="/support/tickets" link={link} className="sk-link">
+              وارد شوید یا ثبت‌نام کنید
+            </PageLink>
+            .
+          </span>
+        </p>
+      )}
+      {faq.length > 0 && (
+        <section className="sk-faq">
+          <h2>سؤالات متداول</h2>
+          {faq.map((x) => (
+            <details key={x.id}>
+              <summary>{x.q}</summary>
+              <div>{paragraphs(x.a)}</div>
+            </details>
+          ))}
+          {answered(shop).length > faq.length && (
+            <PageLink to="/faq" link={link} className="sk-link">
+              همه‌ی سؤالات
+            </PageLink>
+          )}
+        </section>
+      )}
+    </div>
+  );
+}
+
 export const shopkitCss = /* css */ `
+/* Support */
+.sk-support-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.sk-support-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
+.sk-support-card { display: grid; justify-items: center; gap: 6px; padding: 24px 16px; text-align: center; color: inherit !important; text-decoration: none; transition: transform .2s, border-color .2s; }
+.sk-support-card:hover { transform: translateY(-3px); border-color: var(--sk-accent, #111); }
+.sk-support-card i { font-style: normal; font-size: 1.8em; }
+.sk-support .sk-faq h2 { margin: 0; font-size: 1.15em; }
+.sk-locked { border-color: var(--sk-accent, #111); }
+.sk-close { display: flex; justify-content: flex-end; }
+.sk-new { display: grid; gap: 10px; margin-bottom: 18px; padding-bottom: 18px; border-bottom: 1px solid var(--sk-line, #EEE); }
+.sk-new h2, .sk-list-title { margin: 0; font-size: 1.1em; }
+.sk-list-title { margin-bottom: 6px; }
 /* Filters and specifications */
 .sk-filters { display: grid; gap: 14px; align-content: start; }
 .sk-filters label, .sk-filters fieldset { display: grid; gap: 6px; font-size: .9em; font-weight: 600; }
@@ -661,7 +803,8 @@ export const shopkitCss = /* css */ `
 .sk-info h1 { margin: 0; font-size: clamp(1.4em, 3cqi, 2em); }
 .sk-info p { margin: 0; line-height: 2; }
 .sk-contact { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
-.sk-info .sk-btn { color: #fff !important; text-decoration: none; }
+/* Links styled as buttons keep the button's text color whatever the template does to links. */
+a.sk-btn, a.sk-btn:hover, a.sk-btn:visited { color: #fff !important; text-decoration: none; }
 .sk-contact .sk-card { display: grid; gap: 8px; align-content: start; }
 .sk-contact a { color: inherit; text-decoration: none; }
 .sk-contact .sk-btn { color: #fff; margin-top: 4px; }

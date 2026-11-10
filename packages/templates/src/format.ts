@@ -65,6 +65,8 @@ export const LABELS: Record<Locale, Labels> = {
       telegram: "تلگرام",
       whatsapp: "واتس‌اپ",
       instagram: "اینستاگرام",
+      eitaa: "ایتا",
+      rubika: "روبیکا",
       behance: "Behance",
       dribbble: "Dribbble",
     },
@@ -106,6 +108,8 @@ export const LABELS: Record<Locale, Labels> = {
       telegram: "Telegram",
       whatsapp: "WhatsApp",
       instagram: "Instagram",
+      eitaa: "Eitaa",
+      rubika: "Rubika",
       behance: "Behance",
       dribbble: "Dribbble",
     },
@@ -170,7 +174,8 @@ export function safeUrl(url: string | undefined): string | undefined {
 }
 
 /** Placeholder addresses used in sample content; they lead nowhere real. */
-export const isDummyUrl = (href: string) => href === "#" || /^https?:\/\/([\w-]+\.)*example\.(com|ir|org)(\/|$)/i.test(href);
+export const isDummyUrl = (href: string) =>
+  href === "#" || /^https?:\/\/([\w-]+\.)*example\.(com|ir|org)(\/|$)/i.test(href) || /^https?:\/\/[^/]+\/example\/?$/i.test(href);
 
 export function linkLabel(link: { type: LinkType; label?: string; url: string }, locale: Locale): string {
   if (link.type === "other") return link.label?.trim() || hostname(link.url);

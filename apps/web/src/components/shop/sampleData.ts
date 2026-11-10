@@ -527,6 +527,13 @@ const mobile = (v: unknown) => text(v, 20).replace(/[۰-۹]/g, (d) => String("۰
 export function sampleAccountAction(shop: Shop, fields: Record<string, string>, autoApprove: boolean): Result {
   const s = storeFor(shop);
   const op = fields.op;
+  // Forms of the support page come back to it, as on the published site.
+  const home = fields.back === "/support/tickets" ? "/support/tickets" : "/account";
+  const r = sampleAccountStep(s, shop, op, fields, autoApprove);
+  return r.page === "/account" ? { ...r, page: home } : r;
+}
+
+function sampleAccountStep(s: Store, shop: Shop, op: string | undefined, fields: Record<string, string>, autoApprove: boolean): Result {
   if (op === "login" || op === "register") {
     const phone = mobile(fields.phone);
     if (!/^09\d{9}$/.test(phone)) return { error: "شماره‌ی موبایل درست نیست.", page: "/account" };
@@ -580,6 +587,12 @@ export function sampleAccountAction(shop: Shop, fields: Record<string, string>, 
     });
     changed();
     return { msg: autoApprove ? "نظر شما ثبت شد. ممنون!" : "نظر شما ثبت شد و پس از تأیید فروشگاه نمایش داده می‌شود. (در پنل مدیریت، بخش «نظرات»، تأییدش کنید.)", page: back };
+  }
+  if (op === "ticket-close") {
+    const t = s.tickets.find((x) => x.id === fields.ticketId && x.customerId === me.id);
+    if (t) t.status = "CLOSED";
+    changed();
+    return { msg: "تیکت بسته شد.", page: "/account" };
   }
   if (op === "ticket-new" || op === "ticket-reply") {
     const message = text(fields.text, 2000);

@@ -6,7 +6,7 @@ import { themeSchema, type Theme } from "@rb/schema";
 import { chatModel } from "../ai";
 import { ModelError, type ChatMessage, type ChatResult } from "../ai/models";
 import { SYSTEM_PROMPT, userTurn } from "../ai/prompt";
-import { applyThemePatch, ensureReadable, parseAssistantReply } from "../ai/themePatch";
+import { allowedSiteChanges, applyThemePatch, capabilitiesSchema, ensureReadable, forTemplate, parseAssistantReply, type SiteChanges } from "../ai/themePatch";
 import { prisma } from "../db";
 import { HttpError, asyncHandler, parseBody } from "../lib/http";
 import { getSettings, startOfTehranDay } from "../lib/settings";
@@ -17,7 +17,7 @@ assistantRouter.use(requireAuth);
 
 const MAX_MESSAGE = 300;
 const MAX_HISTORY = 6;
-const MAX_REPLY_TOKENS = 600;
+const MAX_REPLY_TOKENS = 700;
 const MAX_PER_MINUTE = 6;
 
 const requestBody = z.object({
@@ -28,6 +28,8 @@ const requestBody = z.object({
     .default([]),
   theme: themeSchema,
   locale: z.enum(["fa", "en"]).default("fa"),
+  /** What this template lets the assistant show, hide or add (older editors send none). */
+  capabilities: capabilitiesSchema.optional(),
 });
 
 async function quota(userId: string) {
@@ -56,7 +58,10 @@ assistantRouter.get(
   })
 );
 
-/** POST /api/assistant/theme  { message, history, theme, locale } — returns a reply and the changed theme (not saved). */
+/**
+ * POST /api/assistant/theme  { message, history, theme, locale, capabilities } — returns a reply, the changed
+ * theme and the allowed site changes (pages, blocks, new items); nothing is saved here.
+ */
 assistantRouter.post(
   "/theme",
   asyncHandler(async (req, res) => {
@@ -78,7 +83,7 @@ assistantRouter.post(
         role: m.role,
         content: m.role === "user" ? `(earlier request) ${m.content}` : JSON.stringify({ reply: m.content }),
       })),
-      { role: "user", content: userTurn(body.theme, body.locale, body.message) },
+      { role: "user", content: userTurn(body.theme, body.locale, body.message, body.capabilities) },
     ];
 
     let result: ChatResult;
@@ -92,9 +97,11 @@ assistantRouter.post(
     const parsed = parseAssistantReply(result.content);
     let theme: Theme | null = null;
     let adjusted = false;
+    const caps = body.capabilities ?? capabilitiesSchema.parse({});
+    const site: SiteChanges | null = body.capabilities ? allowedSiteChanges(parsed?.site, caps) : null;
     if (parsed?.changes) {
       try {
-        const readable = ensureReadable(applyThemePatch(body.theme, parsed.changes));
+        const readable = ensureReadable(applyThemePatch(body.theme, forTemplate(parsed.changes, caps)));
         theme = readable.theme;
         adjusted = readable.adjusted;
       } catch {
@@ -121,6 +128,6 @@ assistantRouter.post(
         ? `${parsed!.reply} رنگ متن را هم کمی تغییر دادم تا خوانا بماند.`
         : parsed!.reply;
 
-    res.json({ reply, theme, remainingPercent: (await quota(userId)).remainingPercent });
+    res.json({ reply, theme, site: ok ? site : null, remainingPercent: (await quota(userId)).remainingPercent });
   })
 );

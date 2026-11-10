@@ -1,6 +1,7 @@
 // Typed API client. The session cookie is httpOnly and sent automatically by the browser.
 
 import type { ResumeData, ShopOrderStatus, Theme } from "@rb/schema";
+import type { Capabilities, SiteChanges } from "./components/site-edit/assistantSite";
 
 export type FieldIssue = { path: string; message: string };
 
@@ -168,7 +169,7 @@ const qs = (params: Record<string, string | number | undefined>) => {
 
 export type AssistantTurn = { role: "user" | "assistant"; content: string };
 export type AssistantQuota = { enabled: boolean; remainingPercent: number; demo: boolean };
-export type AssistantResponse = { reply: string; theme: Theme | null; remainingPercent: number };
+export type AssistantResponse = { reply: string; theme: Theme | null; site?: SiteChanges | null; remainingPercent: number };
 
 export type AdminAiUsage = {
   provider: "openai" | "fake" | "disabled";
@@ -309,7 +310,7 @@ export const api = {
   uploadAvatar: (dataUrl: string) => request<{ url: string }>("POST", "/uploads/avatar", { dataUrl }),
   uploadImage: (dataUrl: string) => request<{ url: string }>("POST", "/uploads/image", { dataUrl }),
   assistantQuota: () => request<AssistantQuota>("GET", "/assistant/quota"),
-  askAssistant: (body: { message: string; history: AssistantTurn[]; theme: Theme; locale: "fa" | "en" }) =>
+  askAssistant: (body: { message: string; history: AssistantTurn[]; theme: Theme; locale: "fa" | "en"; capabilities?: Capabilities }) =>
     request<AssistantResponse>("POST", "/assistant/theme", body),
   getOrder: (id: string) => request<{ order: Order }>("GET", `/orders/${encodeURIComponent(id)}`),
 };

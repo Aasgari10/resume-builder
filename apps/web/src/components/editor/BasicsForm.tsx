@@ -15,6 +15,8 @@ const LINK_TYPES: readonly { value: Link["type"]; label: string }[] = [
   { value: "telegram", label: "تلگرام" },
   { value: "whatsapp", label: "واتس‌اپ" },
   { value: "instagram", label: "اینستاگرام" },
+  { value: "eitaa", label: "ایتا" },
+  { value: "rubika", label: "روبیکا" },
   { value: "behance", label: "Behance" },
   { value: "dribbble", label: "Dribbble" },
   { value: "other", label: "سایر" },
@@ -26,6 +28,8 @@ const LINK_HOSTS: readonly [RegExp, Link["type"]][] = [
   [/(^|\.)(t\.me|telegram\.me)$/, "telegram"],
   [/(^|\.)(wa\.me|whatsapp\.com)$/, "whatsapp"],
   [/(^|\.)instagram\.com$/, "instagram"],
+  [/(^|\.)eitaa\.com$/, "eitaa"],
+  [/(^|\.)rubika\.ir$/, "rubika"],
   [/(^|\.)behance\.net$/, "behance"],
   [/(^|\.)dribbble\.com$/, "dribbble"],
 ];

@@ -1,6 +1,6 @@
 // Chat model clients: any OpenAI-compatible API, and a keyword-based fake for development.
 
-import { extractRequest } from "./prompt";
+import { TEMPLATE_INFO, extractRequest } from "./prompt";
 
 export type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
 
@@ -132,6 +132,34 @@ const FAKE_RULES: FakeRule[] = [
   },
 ];
 
+type FakeInfo = { pages?: { path: string; label: string }[]; blocks?: { key: string; label: string }[]; add?: { kind: string; label: string }[] };
+
+/** Showing, hiding or adding by the names in the template info, e.g. «سوالات متداول را حذف کن». */
+function fakeSiteChange(turn: string, request: string): { reply: string; site: Record<string, unknown> } | null {
+  const line = turn.split("\n").find((l) => l.startsWith(TEMPLATE_INFO));
+  if (!line) return null;
+  let info: FakeInfo;
+  try {
+    info = JSON.parse(line.slice(TEMPLATE_INFO.length)) as FakeInfo;
+  } catch {
+    return null;
+  }
+  // «حراج (کالاهای تخفیف‌دار)» is named by «حراج»; «بخش X» and «صفحه‌ی X» by X.
+  const named = (label: string) => request.includes(label.replace(/\s*\(.*\)\s*/, "").replace(/^(بخش|صفحه‌ی)\s+/, "").replace(/[«»]/g, "").trim());
+  if (/اضافه|بیفزا|جدید/.test(request)) {
+    const kind = info.add?.find((a) => named(a.label));
+    if (kind) return { reply: `یک ${kind.label} جدید اضافه کردم؛ روی آن در صفحه کلیک کن تا ویرایشش کنی.`, site: { add: [{ kind: kind.kind, count: 1 }] } };
+  }
+  const hide = /حذف|بردار|پاک|پنهان|نمی‌خوام|نمیخوام/.test(request);
+  const show = /نشان|نمایش|برگردان|بیاد|بیار/.test(request);
+  if (!hide && !show) return null;
+  const page = info.pages?.find((p) => named(p.label));
+  if (page) return { reply: `${page.label} را ${hide ? "پنهان کردم" : "دوباره نمایش دادم"}.`, site: { pages: { [page.path]: !hide } } };
+  const block = info.blocks?.find((b) => named(b.label));
+  if (block) return { reply: `${block.label} را ${hide ? "پنهان کردم" : "دوباره نمایش دادم"}.`, site: { blocks: { [block.key]: !hide } } };
+  return null;
+}
+
 /** Deterministic stand-in that understands a few Persian keywords; used when no API key is configured. */
 export function createFakeModel(): ChatModel {
   return {
@@ -140,9 +168,12 @@ export function createFakeModel(): ChatModel {
     async complete(messages) {
       const last = [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
       const request = extractRequest(last);
-      const rule = FAKE_RULES.find((r) => r.match.test(request));
+      const site = fakeSiteChange(last, request);
+      const rule = site ? undefined : FAKE_RULES.find((r) => r.match.test(request));
       const content = JSON.stringify(
-        rule
+        site
+          ? { reply: `${site.reply} (پاسخ آزمایشی)`, changes: null, site: site.site }
+          : rule
           ? { reply: `${rule.reply} (پاسخ آزمایشی)`, changes: rule.changes }
           : { reply: "در حالت آزمایشی فقط چند درخواست ساده را می‌فهمم؛ مثلاً «حالت تیره»، «رسمی‌تر کن» یا «فاصله‌ها بیشتر».", changes: null }
       );

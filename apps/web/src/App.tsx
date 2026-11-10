@@ -90,8 +90,11 @@ export function App() {
     );
   }
 
+  // The site editor uses the whole screen; its own bar has the way back.
+  const bare = /^\/resumes\/[^/]+$/.test(pathname);
   return (
     <>
+      {!bare && (
       <header className="topbar">
         <Link to="/" className="brand">
           رزومه‌ساز
@@ -110,8 +113,9 @@ export function App() {
           </div>
         )}
       </header>
+      )}
 
-      <main className={wide ? "container wide" : "container"}>
+      <main className={bare ? "editor-main" : wide ? "container wide" : "container"}>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<Navigate to="/resume/mine" replace />} />

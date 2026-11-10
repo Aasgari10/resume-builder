@@ -22,7 +22,8 @@ function draftFromParams(params: URLSearchParams) {
   const color = HEX.test(requested) ? requested : PRIMARY_SWATCHES[0].value;
   const base = defaultTheme(site?.id ?? DEFAULT_PORTFOLIO_TEMPLATE_ID, "fa");
   return {
-    title: site ? `سایت با قالب ${site.name}` : `رزومه با قالب ${pdf.name}`,
+    // A site starts with its template's short name ("بوتیک", not "سایت با قالب بوتیک (فروشگاه)").
+    title: site ? site.name.replace(/\s*\(.*\)\s*$/, "") : `رزومه با قالب ${pdf.name}`,
     theme: { ...base, pdfTemplateId: pdf.id, colors: { ...base.colors, primary: color } } satisfies Theme,
   };
 }
@@ -132,7 +133,7 @@ export function useResumeDoc(id: string | undefined, editorPath: (id: string) =>
 
 export const SAVE_LABELS: Record<SaveState, string> = {
   idle: "",
-  draft: "هنوز ذخیره نشده",
+  draft: "",
   pending: "تغییرات ذخیره نشده",
   saving: "در حال ذخیره…",
   saved: "✓ ذخیره شد",

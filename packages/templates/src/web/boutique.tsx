@@ -61,7 +61,7 @@ export function BoutiqueShop(props: TemplateProps) {
   else
     body = (
       <div className="bq-wrap">
-        <InfoPage data={ctx.data} page={page} link={view.link} editing={view.editing} />
+        <InfoPage data={ctx.data} page={page} link={view.link} editing={view.editing} visitor={view.visitor} />
       </div>
     );
   return (
@@ -259,17 +259,12 @@ function Title({ title, text, path, editKind = "text" }: { title?: string; text?
   );
 }
 
-/** Wide picture with the page name and a "home / page" trail, at the top of inner pages. */
-function Banner({ view, title, trail }: { view: BView; title: string; trail?: { label: string; to?: string }[] }) {
-  const img = safeUrl(view.ctx.data.site?.accentImage);
+/** The top of inner pages: a light band with the "home / page" trail and the page name. */
+function Banner({ view, title, trail, note }: { view: BView; title: string; trail?: { label: string; to?: string }[]; note?: string }) {
   return (
     <section className="bq-banner">
-      <span className="bq-banner-pic" {...ed("site.accentImage", "image", "تصویر سربرگ صفحه‌ها")}>
-        {img && <img src={img} alt="" />}
-      </span>
-      <div>
-        <h1>{title}</h1>
-        <nav className="bq-trail">
+      <div className="bq-wrap">
+        <nav className="bq-trail" aria-label="مسیر صفحه">
           <PageLink to="/" link={view.link}>
             خانه
           </PageLink>
@@ -281,11 +276,15 @@ function Banner({ view, title, trail }: { view: BView; title: string; trail?: { 
                   {t.label}
                 </PageLink>
               ) : (
-                t.label
+                <b aria-current="page">{t.label}</b>
               )}
             </span>
           ))}
         </nav>
+        <h1>
+          {title}
+          {note && <small>{note}</small>}
+        </h1>
       </div>
     </section>
   );
@@ -422,6 +421,12 @@ function Header(view: BView) {
               <PageLink to="/search" link={link} current={view.page === "/search"}>
                 جست‌وجو
               </PageLink>
+              <PageLink to="/support" link={link} current={view.page.startsWith("/support")}>
+                پشتیبانی
+              </PageLink>
+              <PageLink to="/account" link={link} current={view.page === "/account"}>
+                حساب من
+              </PageLink>
             </nav>
           </details>
         </div>
@@ -512,8 +517,10 @@ function Hero({ shop, link, editing }: BView) {
   const at = (id: string, f: string) => (own ? `${item("site.shop.slides", id)}.${f}` : `site.shop.hero${f.charAt(0).toUpperCase()}${f.slice(1)}`);
   const n = slides.length;
   return (
-    <section className="bq-hero">
-      {n > 1 && slides.map((s, k) => <input key={s.id} type="radio" name="bq-hero" id={`bq-hero-${k}`} className="bq-dot" defaultChecked={k === 0} aria-label={`اسلاید ${fa(k + 1)}`} />)}
+    <section className={`bq-hero bq-n${n}`}>
+      {n > 1 && slides.map((s, k) => <input key={s.id} type="radio" name="bq-hero" id={`bq-hero-${k}`} className="bq-dot" aria-label={`اسلاید ${fa(k + 1)}`} />)}
+      {/* Checked until an arrow is used: the slides then turn by themselves (paused under the pointer). */}
+      {n > 1 && <input type="radio" name="bq-hero" className="bq-dot bq-auto" defaultChecked aria-label="نمایش خودکار اسلایدها" />}
       <div className="bq-slides">
         {slides.map((s, k) => {
           const img = safeUrl(s.image);
@@ -840,9 +847,10 @@ function Listing(view: BView & { categoryId?: string }) {
   const here = categoryId ? `/category/${categoryId}` : "/shop";
   return (
     <>
-      <Banner view={view} title={title} trail={cat ? [{ label: "فروشگاه", to: "/shop" }, { label: cat.name }] : undefined} />
-      <section className="bq-wrap bq-sec">
-        <nav className="bq-chips">
+      <Banner view={view} title={title} trail={cat ? [{ label: "فروشگاه", to: "/shop" }, { label: cat.name }] : undefined} note={`${fa(list.length)} محصول`} />
+      <section className="bq-wrap bq-plp">
+        <div className="bq-plp-bar">
+        <nav className="bq-chips" aria-label="دسته‌ها">
           <PageLink to="/shop" link={link} current={!cat}>
             همه
           </PageLink>
@@ -853,6 +861,7 @@ function Listing(view: BView & { categoryId?: string }) {
           ))}
         </nav>
         <Filters view={view} here={here} cats={cats} fixedCategory={Boolean(categoryId)} active={active} count={list.length} />
+        </div>
         {list.length ? (
           <div className="bq-grid">
             {list.map((p, k) => (
@@ -1280,7 +1289,13 @@ export function boutiqueSample(locale: ResumeData["locale"]): ResumeData {
       phone: "021 1234 5678",
       location: "تهران، خیابان ولیعصر، پلاک ۵۸",
       summary: "لباس‌های روزمره و مجلسی زنانه با دوخت خوب و قیمت منصفانه؛ ارسال سریع به سراسر کشور.",
-      links: [{ id: "bl1", type: "instagram", url: "https://instagram.com/example" }],
+      links: [
+        { id: "bl1", type: "instagram", url: "https://instagram.com/example" },
+        { id: "bl2", type: "telegram", url: "https://t.me/example" },
+        { id: "bl3", type: "whatsapp", url: "https://wa.me/example" },
+        { id: "bl4", type: "eitaa", url: "https://eitaa.com/example" },
+        { id: "bl5", type: "rubika", url: "https://rubika.ir/example" },
+      ],
     },
     site: {
       ...base.site,
@@ -1407,6 +1422,17 @@ const css = /* css */ `
 .bq-slides { display: grid; }
 .bq-slide { grid-area: 1 / 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); height: var(--bq-hero-h); opacity: 0; visibility: hidden; transition: opacity .7s, visibility .7s; }
 .bq-slide:only-child, ${[1, 2, 3, 4, 5].map((n) => `.bq-dot:nth-of-type(${n}):checked ~ .bq-slides > .bq-slide:nth-child(${n})`).join(", ")} { opacity: 1; visibility: visible; }
+/* Turning by itself: each slide shows for 6 seconds of a loop of all of them. */
+${[2, 3, 4, 5]
+  .map((n) => {
+    const show = 100 / n;
+    return `@keyframes bq-cycle${n} { 0% { opacity: 0; visibility: visible; } ${(show * 0.12).toFixed(2)}% { opacity: 1; visibility: visible; } ${(show * 0.9).toFixed(2)}% { opacity: 1; visibility: visible; } ${show.toFixed(2)}%, 100% { opacity: 0; visibility: hidden; } }
+.bq-n${n} .bq-auto:checked ~ .bq-slides > .bq-slide { animation: bq-cycle${n} ${n * 6}s infinite both; }
+${Array.from({ length: n }, (_, k) => `.bq-n${n} .bq-auto:checked ~ .bq-slides > .bq-slide:nth-child(${k + 1}) { animation-delay: ${k * 6 - 0.4}s; }`).join("\n")}`;
+  })
+  .join("\n")}
+.bq-hero:hover .bq-slide, .bq-hero:focus-within .bq-slide { animation-play-state: paused !important; }
+@media (prefers-reduced-motion: reduce) { .bq-auto:checked ~ .bq-slides > .bq-slide { animation: none !important; } .bq-auto:checked ~ .bq-slides > .bq-slide:first-child { opacity: 1; visibility: visible; } }
 .bq-slide-pic { position: relative; display: flex; justify-content: center; align-items: flex-end; min-height: 0; }
 /* The picture is never stretched past its own size, and its edges fade into the background. */
 .bq-slide-pic img { display: block; height: 100%; max-width: 100%; object-fit: contain; object-position: bottom; -webkit-mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent); mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent); }
@@ -1581,19 +1607,31 @@ ${[1, 2, 3, 4].map((n) => `.bq-look:has(.bq-spot:nth-of-type(${n}) input:not(:ch
 .bq-top .bq-ico { transform: rotate(90deg); }
 
 /* Inner pages */
-.bq-banner { position: relative; display: grid; place-items: center; min-height: clamp(200px, 22cqi, 310px); overflow: hidden; color: #fff; text-align: center; }
-.bq-banner-pic, .bq-banner-pic img { position: absolute; inset: 0; width: 100%; height: 100%; }
-.bq-banner-pic img { object-fit: cover; object-position: center 30%; filter: brightness(.6); }
-.bq-banner > div { position: relative; display: grid; gap: 12px; }
-.bq-banner h1 { font-size: clamp(2em, 5cqi, 3.4em); font-weight: 600; }
-.bq-trail { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; font-weight: 600; }
-.bq-trail i { font-style: normal; margin-inline: 8px; opacity: .6; }
+.bq-banner { padding-block: clamp(16px, 2.2cqi, 26px); border-bottom: 1px solid var(--bq-line); background: var(--bq-soft); }
+.bq-banner .bq-wrap { display: grid; gap: 6px; }
+.bq-banner h1 { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; font-size: clamp(1.35em, 2.4cqi, 1.9em); font-weight: 600; letter-spacing: -.01em; }
+.bq-banner h1 small { color: var(--color-muted); font-size: .5em; font-weight: 400; letter-spacing: 0; }
+.bq-trail { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; color: var(--color-muted); font-size: .85em; }
+.bq-trail a { color: inherit; transition: color .2s; }
+.bq-trail a:hover { color: var(--bq-ink); }
+.bq-trail i { font-style: normal; margin-inline: 8px; opacity: .5; }
+.bq-trail b { color: var(--bq-ink); font-weight: 600; }
 .bq-trail.dark { justify-content: flex-start; color: var(--color-muted); font-weight: 400; font-size: .9em; }
 .bq-empty { display: grid; justify-items: start; gap: 30px; padding-block: clamp(40px, 6cqi, 80px); }
 .bq-empty .bq-notice { justify-self: stretch; }
 .bq-big { padding-top: clamp(30px, 5cqi, 60px); font-size: clamp(1.8em, 4cqi, 2.8em); font-weight: 500; }
-.bq-chips { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 34px; }
-.bq-chips a { padding: 9px 20px; border: 1px solid var(--bq-line); border-radius: 999px; transition: background .2s, color .2s, border-color .2s; }
+.bq-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+.bq-chips a { padding: 7px 16px; border: 1px solid var(--bq-line); border-radius: 999px; font-size: .9em; white-space: nowrap; transition: background .2s, color .2s, border-color .2s; }
+/* Shop listing: categories and the filter button share one slim row right above the products */
+.bq-plp { padding-block: 14px clamp(40px, 6cqi, 80px); }
+.bq-plp-bar { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px 16px; margin-bottom: 20px; }
+.bq-plp-bar .bq-chips { flex-wrap: nowrap; overflow-x: auto; margin: 0; padding-block: 2px; scrollbar-width: none; }
+.bq-plp-bar .bq-chips::-webkit-scrollbar { display: none; }
+.bq-plp-bar .bq-filter { margin: 0; border-radius: 999px; }
+.bq-plp-bar .bq-filter > summary { padding: 7px 16px; font-size: .9em; }
+.bq-plp-bar .bq-filter > summary small { display: none; }
+.bq-plp-bar .bq-filter[open] { grid-column: 1 / -1; border-radius: 0; }
+.bq-plp-bar .bq-filter[open] > summary small { display: inline; }
 .bq-chips a:hover { border-color: var(--bq-ink); }
 .bq-chips a[aria-current="page"] { background: var(--bq-dark); border-color: var(--bq-dark); color: #fff; }
 

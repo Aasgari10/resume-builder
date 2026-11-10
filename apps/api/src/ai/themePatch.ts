@@ -15,8 +15,65 @@ export const themePatchSchema = z.object({
   sectionVisibility: z.record(sectionKey, z.boolean()).optional(),
   /** Custom headings; an empty string restores the template's default heading. */
   sectionTitles: z.record(sectionKey, z.string().max(60)).optional(),
-  display: z.object({ showAvatar: z.boolean(), showSkillLevel: z.boolean() }).partial().optional(),
+  display: z.object({ showAvatar: z.boolean(), showSkillLevel: z.boolean(), dateFormat: z.enum(["jalali", "gregorian"]) }).partial().optional(),
 });
+
+/* ───────────── Site content: pages, blocks and new items ───────────── */
+
+/** Kinds of item the assistant can add, when the template allows them. */
+export const ADD_KINDS = ["project", "experience", "education", "certificate", "skill", "testimonial"] as const;
+export type AddKind = (typeof ADD_KINDS)[number];
+
+/**
+ * What the current template lets the assistant change besides the theme. Sent by the editor with
+ * every request; the model is told about it and its answer is checked against it.
+ */
+export const capabilitiesSchema = z.object({
+  templateName: z.string().max(60).default(""),
+  shop: z.boolean().default(false),
+  /** Whether the template follows the theme's section order, visibility and headings. */
+  sections: z.boolean().default(true),
+  pages: z.array(z.object({ path: z.string().max(60), label: z.string().max(60), visible: z.boolean() })).max(20).default([]),
+  blocks: z.array(z.object({ key: z.string().max(40), label: z.string().max(60), visible: z.boolean() })).max(30).default([]),
+  add: z.array(z.object({ kind: z.enum(ADD_KINDS), label: z.string().max(60) })).max(10).default([]),
+  contactVia: z.boolean().default(false),
+});
+export type Capabilities = z.infer<typeof capabilitiesSchema>;
+
+export const siteChangesSchema = z.object({
+  /** Optional pages to show (true) or hide (false), by path. */
+  pages: z.record(z.string(), z.boolean()).optional(),
+  /** Template blocks to show or hide, by key. */
+  blocks: z.record(z.string(), z.boolean()).optional(),
+  /** New items with placeholder text; the user then edits them on the page. */
+  add: z.array(z.object({ kind: z.enum(ADD_KINDS), count: z.number().int().min(1).max(5).default(1) })).max(6).optional(),
+  contactVia: z.enum(["email", "whatsapp", "telegram", "phone", "about"]).optional(),
+});
+export type SiteChanges = z.infer<typeof siteChangesSchema>;
+
+/** Keeps only the site changes this template allows; null when nothing is left. */
+export function allowedSiteChanges(changes: SiteChanges | null | undefined, caps: Capabilities): SiteChanges | null {
+  if (!changes) return null;
+  const pick = (rec: Record<string, boolean> | undefined, keys: string[]) => {
+    const out = Object.fromEntries(Object.entries(rec ?? {}).filter(([k]) => keys.includes(k)));
+    return Object.keys(out).length ? out : undefined;
+  };
+  const kinds = caps.add.map((a) => a.kind);
+  const add = changes.add?.filter((a) => kinds.includes(a.kind));
+  const out: SiteChanges = {
+    pages: pick(changes.pages, caps.pages.map((p) => p.path)),
+    blocks: pick(changes.blocks, caps.blocks.map((b) => b.key)),
+    add: add?.length ? add : undefined,
+    contactVia: caps.contactVia ? changes.contactVia : undefined,
+  };
+  return Object.values(out).some((v) => v !== undefined) ? out : null;
+}
+
+/** Drops the section fields of a patch for templates that do not use theme sections (shops). */
+export function forTemplate(patch: ThemePatch, caps: Capabilities): ThemePatch {
+  if (caps.sections) return patch;
+  return { ...patch, sectionOrder: undefined, sectionVisibility: undefined, sectionTitles: undefined };
+}
 
 export type ThemePatch = z.infer<typeof themePatchSchema>;
 
@@ -24,6 +81,8 @@ export type ThemePatch = z.infer<typeof themePatchSchema>;
 export const assistantReplySchema = z.object({
   reply: z.string().trim().min(1).max(500),
   changes: themePatchSchema.nullish(),
+  // A malformed site part is dropped rather than failing the whole reply.
+  site: siteChangesSchema.nullish().catch(null),
 });
 
 export type AssistantReply = z.infer<typeof assistantReplySchema>;

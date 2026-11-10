@@ -354,6 +354,8 @@ const ICONS: Record<string, string> = {
   instagram: "M5 5h14v14H5z M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z M16.5 7.5h.01",
   github: "M9 18l-6-6 6-6 M15 6l6 6-6 6",
   linkedin: "M4 8h16v12H4z M9 8V5h6v3",
+  eitaa: "M5 5h14v14H5z M15 10.5a3 3 0 1 0-1 4 M9.5 11.5h5.5",
+  rubika: "M12 3l8 4.5v9L12 21l-8-4.5v-9z M12 8l4 2.3v4.4L12 17l-4-2.3v-4.4z",
   behance: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z M3 12h18 M12 3c3 3 3 15 0 18",
   dribbble: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z M5 7c4 3 10 4 15 3 M8 20c1-6 5-10 12-10 M7 4c3 4 6 10 7 17",
   website: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z M3 12h18 M12 3a14 14 0 0 1 0 18 M12 3a14 14 0 0 0 0 18",

@@ -56,7 +56,7 @@ export function HomeMartShop(props: TemplateProps) {
   else
     body = (
       <div className="hm-wrap">
-        <InfoPage data={ctx.data} page={page} link={view.link} editing={view.editing} />
+        <InfoPage data={ctx.data} page={page} link={view.link} editing={view.editing} visitor={view.visitor} />
       </div>
     );
   return (
@@ -78,6 +78,7 @@ const SVG: Record<string, string> = {
   search: "M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14z M16 16l4.5 4.5",
   heart: "M12 20s-7.5-4.6-7.5-10A4.2 4.2 0 0 1 12 7.4 4.2 4.2 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z",
   user: "M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8z M4.5 20.5a7.5 7.5 0 0 1 15 0",
+  chat: "M4 5h16v11H9l-5 4z M8 9.5h8 M8 12.5h5",
   home: "M4 11l8-7 8 7 M6 9.5V20h12V9.5 M10 20v-5h4v5",
   bag: "M5.5 8h13l-1 12h-11z M9 8V6.5a3 3 0 0 1 6 0V8",
   trash: "M5 7h14 M10 7V5h4v2 M7 7l1 13h8l1-13",
@@ -234,6 +235,9 @@ function Header(view: View) {
           <PageLink to="/contact" link={link} current={view.page === "/contact"}>
             تماس با ما
           </PageLink>
+          <PageLink to="/support" link={link} current={view.page.startsWith("/support")}>
+            پشتیبانی
+          </PageLink>
           <PageLink to="/cart" link={link} current={view.page === "/cart"}>
             سبد خرید
           </PageLink>
@@ -376,13 +380,13 @@ function BottomNav({ link, page, visitor, shop }: View) {
     ["/", "home", "خانه"],
     ["/shop", "bag", "فروشگاه"],
     ["/cart", "cart", "سبد خرید"],
-    ["/wishlist", "heart", "علاقه‌مندی"],
+    ["/support", "chat", "پشتیبانی"],
     ["/account", "user", "حساب"],
   ];
   return (
     <nav className="hm-tabbar" aria-label="منوی پایین">
       {items.map(([to, icon, label]) => (
-        <PageLink key={to} to={to} link={link} current={page === to}>
+        <PageLink key={to} to={to} link={link} current={page === to || (to === "/support" && page.startsWith("/support"))}>
           <Svg name={icon} />
           {to === "/cart" && count > 0 && <b>{fa(count)}</b>}
           <span>{label}</span>

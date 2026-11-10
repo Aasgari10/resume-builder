@@ -22,6 +22,7 @@ import { CODE_BLOCKS, CodePortfolio, codePages, codeSample } from "./web/code";
 import { SIMPLE_BLOCKS, SimplePortfolio, simplePages, simpleSample } from "./web/simple";
 import { SEPID_BLOCKS, SEPID_OPTIONAL_PAGES, SepidPortfolio, sepidPages, sepidSample } from "./web/sepid";
 import { BOUTIQUE_BLOCKS, BoutiqueShop, boutiquePages, boutiqueSample } from "./web/boutique";
+import { GOLSARA_BLOCKS, GOLSARA_OPTIONAL_PAGES, GolsaraShop, golsaraPages, golsaraSample } from "./web/golsara";
 import { HOMEMART_BLOCKS, HomeMartShop, homemartPages, homemartSample } from "./web/homemart";
 import type { ResumeData } from "@rb/schema";
 import type { TemplateDefinition, TemplateTag } from "./types";
@@ -86,6 +87,7 @@ export const PORTFOLIO_TEMPLATES: readonly TemplateDefinition[] = [
   { ...web("simple-portfolio", "ساده", SimplePortfolio), pages: simplePages, sample: simpleSample, blocks: SIMPLE_BLOCKS },
   { ...web("sepid-portfolio", "سپید", SepidPortfolio), pages: sepidPages, sample: sepidSample, optionalPages: SEPID_OPTIONAL_PAGES, blocks: SEPID_BLOCKS },
   { ...web("boutique-shop", "بوتیک (فروشگاه)", BoutiqueShop), pages: boutiquePages, sample: boutiqueSample, blocks: BOUTIQUE_BLOCKS, shop: true },
+  { ...web("golsara-shop", "گل‌سرا (گل‌فروشی)", GolsaraShop), pages: golsaraPages, sample: golsaraSample, blocks: GOLSARA_BLOCKS, optionalPages: GOLSARA_OPTIONAL_PAGES, shop: true },
   { ...web("homemart-shop", "هوم‌مارت (فروشگاه لوازم خانگی)", HomeMartShop), pages: homemartPages, sample: homemartSample, blocks: HOMEMART_BLOCKS, shop: true },
   minimalPortfolio,
   web("studio-portfolio", "استودیو", StudioPortfolio),
@@ -145,6 +147,8 @@ const PAGE_TITLES: Record<string, Record<ResumeData["locale"], string>> = {
   "/checkout": { fa: "ثبت سفارش", en: "Checkout" },
   "/thanks": { fa: "سفارش ثبت شد", en: "Order placed" },
   "/account": { fa: "حساب کاربری", en: "My account" },
+  "/support": { fa: "پشتیبانی", en: "Support" },
+  "/support/tickets": { fa: "تیکت‌های من", en: "My tickets" },
   "/faq": { fa: "سؤالات متداول", en: "FAQ" },
 };
 

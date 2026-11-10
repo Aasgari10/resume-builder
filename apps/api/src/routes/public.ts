@@ -27,6 +27,9 @@ const here = dirname(fileURLToPath(import.meta.url));
 const sampleDir = [resolve(here, "../../assets/samples"), resolve(here, "../assets/samples")].find((d) => existsSync(d));
 // No long caching: browsers check for a newer file each time (a cheap 304 when unchanged), so replaced
 // pictures show up at once. The ?v= in sample links also forces a fresh copy after an update.
+// Extra font files of some templates (OFL licensed, see the text files next to them).
+const fontsDir = sampleDir && resolve(sampleDir, "../fonts");
+if (fontsDir && existsSync(fontsDir)) publicRouter.use("/_assets/fonts", express.static(fontsDir, { maxAge: "30d", index: false }));
 if (sampleDir) publicRouter.use(SAMPLE_ASSETS_PATH, express.static(sampleDir, { maxAge: 0, index: false }));
 else console.warn("Sample pictures folder (apps/api/assets/samples) not found; previews will show placeholders.");
 

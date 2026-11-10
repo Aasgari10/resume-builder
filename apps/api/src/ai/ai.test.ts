@@ -94,3 +94,20 @@ test("ai: user request is delimited, cannot close the delimiter, and is followed
   assert.ok(turn.endsWith("reply in Persian."), "reminder comes last");
   assert.equal((turn.match(/<<</g) ?? []).length, 1);
 });
+
+test("site changes keep only what the template allows", async () => {
+  const { allowedSiteChanges, capabilitiesSchema, forTemplate } = await import("./themePatch");
+  const shop = capabilitiesSchema.parse({ shop: true, sections: false, blocks: [{ key: "sale", label: "حراج", visible: true }] });
+  // A shop cannot get resume items, and only its own blocks can be hidden.
+  assert.equal(allowedSiteChanges({ add: [{ kind: "experience", count: 1 }] }, shop), null);
+  assert.deepEqual(allowedSiteChanges({ blocks: { sale: false, nope: false } }, shop), { blocks: { sale: false }, pages: undefined, add: undefined, contactVia: undefined });
+  assert.deepEqual(forTemplate({ sectionOrder: ["projects"], layout: { radius: "lg" } }, shop), { layout: { radius: "lg" }, sectionOrder: undefined, sectionVisibility: undefined, sectionTitles: undefined });
+  const site = capabilitiesSchema.parse({ add: [{ kind: "project", label: "پروژه" }] });
+  assert.deepEqual(allowedSiteChanges({ add: [{ kind: "project", count: 2 }] }, site)?.add, [{ kind: "project", count: 2 }]);
+});
+
+test("fake model hides a block named in the template info", async () => {
+  const caps = { templateName: "بوتیک", shop: true, sections: false, pages: [], blocks: [{ key: "sale", label: "حراج (کالاهای تخفیف‌دار)", visible: true }], add: [], contactVia: false };
+  const out = parseAssistantReply((await createFakeModel().complete([{ role: "user", content: userTurn(base(), "fa", "حراج رو حذف کن", caps) }], { maxTokens: 100 })).content);
+  assert.deepEqual(out?.site, { blocks: { sale: false } });
+});

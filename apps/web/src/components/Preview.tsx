@@ -5,24 +5,13 @@
 import { useEffect, useMemo, useState, type FormEvent, type MouseEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { applyHiddenFields, changeCart, emptyVisitor, toggleWishlist, variantKey, type ResumeData, type Theme, type Visitor } from "@rb/schema";
-import { SITE_TEMPLATES, getTemplate, isDummyUrl, pageTitle, resolvePage, siteTheme, withPlaceholders } from "@rb/templates";
+import { getTemplate, isDummyUrl, pageTitle, resolvePage, siteTheme, withPlaceholders } from "@rb/templates";
 import { newId } from "./editor/list";
 import { EditPopover, type EditTarget } from "./site-edit/EditPopover";
 import { SitePanel, type PanelTab } from "./site-edit/SitePanel";
 import { getAt, isItemPath, removeItem, setAt } from "./site-edit/paths";
 import { ShopManager } from "./shop/ShopManager";
-import { onSampleChange, resetSample, sampleAccountAction, sampleMe, sampleOrder, sampleShopFor, sampleSignIn, sampleSignOut, sampleVisitor, touchSample } from "./shop/sampleData";
-import { SHOWCASE_COLORS, showcaseColor } from "../hub/showcase";
-
-/**
- * Another template keeps the user's own main color, but a color that only came with the previous
- * template (its designed color, or the starting default) is swapped for the new template's own.
- */
-function switchTemplate(theme: Theme, templateId: string): Theme {
-  const now = theme.colors.primary.toUpperCase();
-  const designed = new Set([...Object.values(SHOWCASE_COLORS), "#1E3A5F"].map((c) => c.toUpperCase()));
-  return designed.has(now) ? { ...theme, templateId, colors: { ...theme.colors, primary: showcaseColor(templateId) } } : { ...theme, templateId };
-}
+import { onSampleChange, sampleAccountAction, sampleOrder, sampleShopFor, sampleVisitor, touchSample } from "./shop/sampleData";
 
 type Device = "desktop" | "mobile";
 
@@ -72,8 +61,11 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
   };
   const [editing, setEditing] = useState(true);
   const [full, setFull] = useState(false);
+  // In full-screen view the bar hides behind a small button.
+  const [barOpen, setBarOpen] = useState(false);
+  useEffect(() => setBarOpen(false), [full]);
   const [panel, setPanel] = useState(true);
-  const [tab, setTab] = useState<PanelTab>("settings");
+  const [tab, setTab] = useState<PanelTab>("assistant");
   const [target, setTarget] = useState<EditTarget | null>(null);
   const [device, setDevice] = useState<Device>("desktop");
   const [requestedPage, setPage] = useState("/");
@@ -83,6 +75,12 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
   const [shopFocus, setShopFocus] = useState<string | undefined>();
   const pages = site.pages?.(data) ?? ["/"];
   const page = resolvePage(site, data, requestedPage) ?? "/";
+
+  // HomeMart's own color is burgundy: a site still on the starting navy gets it (a color the user picked stays).
+  useEffect(() => {
+    if (theme.templateId === "homemart-shop" && theme.colors.primary.toUpperCase() === "#1E3A5F") onThemeChange({ ...theme, colors: { ...theme.colors, primary: "#800E2F" } });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [theme.templateId, theme.colors.primary]);
 
   // Shop templates: the customer's side (signing in, orders, tickets, comments) runs on the sample
   // shop activity that the shop manager shows too, kept in this browser only.
@@ -200,26 +198,33 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
     setPanel(true);
   };
 
+  const icon = (d: string) => (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d={d} />
+    </svg>
+  );
   const workspace = (
-    <div className={`ws${full ? " full" : ""}`} dir="rtl">
+    <div className={`ws${full ? " full" : ""}${full && barOpen ? " bar-open" : ""}`} dir="rtl">
+      {full && !barOpen && (
+        <button type="button" className="ws-float" title="نمایش ابزارها" aria-label="نمایش ابزارها" onClick={() => setBarOpen(true)}>
+          {icon("M4 7h16 M4 12h16 M4 17h16")}
+        </button>
+      )}
+      {(!full || barOpen) && (
       <div className="ws-bar">
         {full ? (
-          <button type="button" className="btn small" onClick={() => setFull(false)}>
-            → بازگشت
-          </button>
+          <>
+            <button type="button" className="ws-icon" title="پایان نمایش" aria-label="پایان نمایش" onClick={() => setFull(false)}>
+              {icon("M9 6l6 6-6 6")}
+            </button>
+            <button type="button" className="ws-icon" title="پنهان کردن ابزارها" aria-label="پنهان کردن ابزارها" onClick={() => setBarOpen(false)}>
+              {icon("M6 6l12 12 M18 6L6 18")}
+            </button>
+          </>
         ) : (
           bar
         )}
         <span className="ws-gap" />
-        {SITE_TEMPLATES.length > 1 && (
-          <select className="ws-select" value={site.id} onChange={(e) => onThemeChange(switchTemplate(theme, e.target.value))} aria-label="قالب">
-            {SITE_TEMPLATES.map((t) => (
-              <option key={t.id} value={t.id}>
-                قالب {t.name}
-              </option>
-            ))}
-          </select>
-        )}
         {pages.length > 1 && (
           <select className="ws-select" value={page} onChange={(e) => setPage(e.target.value)} aria-label="صفحه">
             {pages.map((p) => (
@@ -229,12 +234,12 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
             ))}
           </select>
         )}
-        <div className="segmented" role="group" aria-label="اندازه‌ی نمایش">
-          <button aria-pressed={device === "desktop"} onClick={() => setDevice("desktop")}>
-            دسکتاپ
+        <div className="ws-seg" role="group" aria-label="اندازه‌ی نمایش">
+          <button type="button" aria-pressed={device === "desktop"} title="دسکتاپ" aria-label="دسکتاپ" onClick={() => setDevice("desktop")}>
+            {icon("M3.5 5h17v11h-17z M9 20h6 M12 16v4")}
           </button>
-          <button aria-pressed={device === "mobile"} onClick={() => setDevice("mobile")}>
-            موبایل
+          <button type="button" aria-pressed={device === "mobile"} title="موبایل" aria-label="موبایل" onClick={() => setDevice("mobile")}>
+            {icon("M8 3h8a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z M11 18h2")}
           </button>
         </div>
         <button
@@ -249,52 +254,32 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
             <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4z" />
             <path d="M13.5 6.5l4 4" />
           </svg>
-          {editing ? "ویرایش روشن" : "ویرایش خاموش"}
+          ویرایش
           <i aria-hidden="true" />
         </button>
-        <button type="button" className="btn small ghost" aria-pressed={panel && tab === "assistant"} onClick={() => (panel && tab === "assistant" ? setPanel(false) : openPanel("assistant"))}>
-          ✨ دستیار هوشمند
-        </button>
-        <button type="button" className="btn small ghost" aria-pressed={panel && tab !== "assistant"} onClick={() => (panel && tab !== "assistant" ? setPanel(false) : openPanel("settings"))}>
-          تنظیمات
+        <button
+          type="button"
+          className="ws-chip"
+          aria-pressed={panel}
+          title={panel ? "بستن کشوی دستیار هوشمند و انتشار" : "باز کردن کشوی دستیار هوشمند و انتشار"}
+          onClick={() => (panel ? setPanel(false) : openPanel("assistant"))}
+        >
+          {icon("M4 4.5h16v15H4z M9.5 4.5v15 M6 8h1.5 M6 11h1.5")}
+          دستیار
         </button>
         {site.shop && (
-          <DemoMenu
-            customer={sampleMe(sampleShop)}
-            onSignIn={() => {
-              sampleSignIn(sampleShop);
-              setVisitor((v) => ({ ...v, query: {} }));
-              setEditing(false);
-              setPage("/account");
-            }}
-            onSignOut={() => {
-              sampleSignOut(sampleShop);
-              setPage("/");
-            }}
-            onAdmin={() => {
-              setShopFocus(undefined);
-              setShopOpen(true);
-            }}
-            onReset={() => {
-              if (!window.confirm("سفارش‌ها، تیکت‌ها و نظرهای نمونه به حالت اول برگردند؟")) return;
-              resetSample(sampleShop);
-              setVisitor(emptyVisitor());
-              setPage("/");
-            }}
-          />
-        )}
-        {site.shop && (
-          <button type="button" className="btn small" onClick={() => { setShopFocus(undefined); setShopOpen(true); }}>
-            🛍 مدیریت فروشگاه
+          <button type="button" className="ws-chip" title="مدیریت فروشگاه: سفارش‌ها، محصولات، تیکت‌ها و گزارش‌ها" onClick={() => { setShopFocus(undefined); setShopOpen(true); }}>
+            🛍 فروشگاه
           </button>
         )}
         {!full && (
-          <button type="button" className="btn small" onClick={() => setFull(true)}>
+          <button type="button" className="ws-chip primary" title="دیدن سایت در کل صفحه" onClick={() => setFull(true)}>
+            {icon("M2.5 12s3.5-6.5 9.5-6.5S21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z M12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z")}
             نمایش
           </button>
         )}
       </div>
-
+      )}
       <div className="ws-body">
         <div className="ws-view">
           <div
@@ -306,7 +291,7 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
             <site.component data={data} theme={effective} page={page} editing={editing} visitor={shownVisitor} />
           </div>
         </div>
-        {panel && (
+        {panel && (!full || barOpen) && (
           <SitePanel
             tab={tab}
             onTab={setTab}
@@ -315,8 +300,6 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
             template={site}
             onData={onDataChange}
             onTheme={changeTheme}
-            onResetColors={() => onThemeChange({ ...theme, colorsFor: undefined })}
-            ownColors={theme.colorsFor === theme.templateId}
             onClose={() => setPanel(false)}
             publish={publish}
           />
@@ -383,72 +366,3 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
   );
 }
 
-/**
- * The "demo mode" menu of shop templates: try the shop as a customer (signed in with a sample
- * account) or as its manager, and start the sample over.
- */
-function DemoMenu({ customer, onSignIn, onSignOut, onAdmin, onReset }: { customer?: string; onSignIn: () => void; onSignOut: () => void; onAdmin: () => void; onReset: () => void }) {
-  const [open, setOpen] = useState(false);
-  useEffect(() => {
-    if (!open) return;
-    const close = (e: Event) => !(e.target as Element).closest?.(".demo-menu") && setOpen(false);
-    const esc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    document.addEventListener("pointerdown", close);
-    document.addEventListener("keydown", esc);
-    return () => {
-      document.removeEventListener("pointerdown", close);
-      document.removeEventListener("keydown", esc);
-    };
-  }, [open]);
-  const pick = (f: () => void) => () => {
-    setOpen(false);
-    f();
-  };
-  return (
-    <div className="demo-menu">
-      <button type="button" className={`demo-chip${customer ? " on" : ""}`} aria-expanded={open} onClick={() => setOpen(!open)}>
-        🧪 حالت نمایشی{customer && <small>: {customer}</small>}
-      </button>
-      {open && (
-        <div className="demo-pop" role="menu">
-          <p className="demo-pop-head">
-            <b>فروشگاه را از هر دو طرف امتحان کنید</b>
-            <span>به‌عنوان مشتری سفارش بدهید، تیکت بفرستید و نظر بنویسید؛ بعد در پنل مدیریت ببینید و جواب بدهید.</span>
-          </p>
-          {customer ? (
-            <button type="button" role="menuitem" onClick={pick(onSignOut)}>
-              <i>👤</i>
-              <span>
-                خروج از حساب مشتری
-                <small>الان به‌عنوان «{customer}» وارد شده‌اید</small>
-              </span>
-            </button>
-          ) : (
-            <button type="button" role="menuitem" onClick={pick(onSignIn)}>
-              <i>👤</i>
-              <span>
-                ورود به‌عنوان مشتری نمونه
-                <small>با سفارش‌ها و تیکت‌های نمونه؛ بدون فرم</small>
-              </span>
-            </button>
-          )}
-          <button type="button" role="menuitem" onClick={pick(onAdmin)}>
-            <i>🛍</i>
-            <span>
-              ورود به پنل مدیر
-              <small>سفارش‌ها، تیکت‌ها، نظرها و گزارش‌ها</small>
-            </span>
-          </button>
-          <button type="button" role="menuitem" onClick={pick(onReset)}>
-            <i>↺</i>
-            <span>
-              شروع دوباره‌ی نمونه‌ها
-              <small>همه‌ی تغییرها پاک و نمونه‌ها از نو ساخته می‌شوند</small>
-            </span>
-          </button>
-          <p className="demo-pop-foot">تغییرها فقط در همین مرورگر می‌مانند، کاربر دیگری آن‌ها را نمی‌بیند و بعد از ۳۰ دقیقه دوری خودشان تازه می‌شوند. سایت منتشرشده اطلاعات واقعی خودش را دارد.</p>
-        </div>
-      )}
-    </div>
-  );
-}

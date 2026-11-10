@@ -201,7 +201,9 @@ async function placeOrder(req: Request, res: Response, subdomain: string, base: 
 
 /* ───────────── Customer accounts ───────────── */
 
-const account = (base: string, msg: string, error = false) => `${to(base, "/account")}?${error ? "error" : "msg"}=${encodeURIComponent(msg)}`;
+const account = (base: string, msg: string, error = false, page = "/account") => `${to(base, page)}?${error ? "error" : "msg"}=${encodeURIComponent(msg)}`;
+/** Pages an account form may come back to (the support page sends its own forms there). */
+const BACK_PAGES = ["/account", "/support/tickets"];
 const mobile = (v: string | undefined) => (v ?? "").replace(/[۰-۹]/g, (d) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d))).replace(/[\s-]/g, "").replace(/^\+98/, "0");
 
 /** The signed-in customer's id for this shop, if the cookie is valid. */
@@ -223,30 +225,31 @@ async function accountAction(req: Request, res: Response, subdomain: string, bas
   const op = body.op;
   const go = (path: string) => res.redirect(303, path);
   const text = (v: string | undefined, max: number) => (v ?? "").trim().slice(0, max);
+  const home = BACK_PAGES.includes(body.back ?? "") ? body.back! : "/account";
 
   if (op === "register" || op === "login") {
-    if (tooMany(`acct:${req.ip}`)) return go(account(base, "تلاش‌ها زیاد است؛ کمی بعد دوباره امتحان کنید.", true));
+    if (tooMany(`acct:${req.ip}`)) return go(account(base, "تلاش‌ها زیاد است؛ کمی بعد دوباره امتحان کنید.", true, home));
     const phone = mobile(body.phone);
-    if (!/^09\d{9}$/.test(phone)) return go(account(base, "شماره‌ی موبایل درست نیست.", true));
+    if (!/^09\d{9}$/.test(phone)) return go(account(base, "شماره‌ی موبایل درست نیست.", true, home));
     const password = body.password ?? "";
     if (op === "register") {
       const name = text(body.name, 80);
-      if (name.length < 2) return go(account(base, "نام را وارد کنید.", true));
-      if (password.length < 6) return go(account(base, "رمز باید دست‌کم ۶ نویسه باشد.", true));
+      if (name.length < 2) return go(account(base, "نام را وارد کنید.", true, home));
+      if (password.length < 6) return go(account(base, "رمز باید دست‌کم ۶ نویسه باشد.", true, home));
       const exists = await prisma.shopCustomer.findUnique({ where: { siteId_phone: { siteId, phone } } });
-      if (exists) return go(account(base, "با این شماره قبلاً ثبت‌نام شده است؛ وارد شوید.", true));
+      if (exists) return go(account(base, "با این شماره قبلاً ثبت‌نام شده است؛ وارد شوید.", true, home));
       const c = await prisma.shopCustomer.create({ data: { siteId, name, phone, passwordHash: hashPassword(password) } });
       setCustomer(res, base, customerToken(c.id, siteId, env.sessionSecret));
-      return go(account(base, "ثبت‌نام انجام شد؛ خوش آمدید!"));
+      return go(account(base, "ثبت‌نام انجام شد؛ خوش آمدید!", false, home));
     }
     const c = await prisma.shopCustomer.findUnique({ where: { siteId_phone: { siteId, phone } } });
-    if (!c || !checkPassword(password, c.passwordHash)) return go(account(base, "شماره یا رمز درست نیست.", true));
+    if (!c || !checkPassword(password, c.passwordHash)) return go(account(base, "شماره یا رمز درست نیست.", true, home));
     setCustomer(res, base, customerToken(c.id, siteId, env.sessionSecret));
-    return go(to(base, "/account"));
+    return go(to(base, home));
   }
 
   const customerId = await signedInCustomer(req, siteId);
-  if (!customerId) return go(account(base, "اول وارد حساب خود شوید.", true));
+  if (!customerId) return go(account(base, "اول وارد حساب خود شوید.", true, home));
   if (op === "logout") {
     setCustomer(res, base, null);
     return go(to(base, "/"));
@@ -263,9 +266,9 @@ async function accountAction(req: Request, res: Response, subdomain: string, bas
       op === "address-remove"
         ? list.filter((a) => a.id !== body.id)
         : [...list, { id: randomInt(1e9).toString(36), title: text(body.title, 40), city: text(body.city, 60), address: text(body.address, 400), postalCode: text(body.postalCode, 20) }].slice(-10);
-    if (op === "address-add" && !text(body.address, 400)) return go(account(base, "نشانی را وارد کنید.", true));
+    if (op === "address-add" && !text(body.address, 400)) return go(account(base, "نشانی را وارد کنید.", true, home));
     await prisma.shopCustomer.update({ where: { id: customer.id }, data: { addresses: next as Prisma.InputJsonValue } });
-    return go(account(base, op === "address-add" ? "نشانی ذخیره شد." : "نشانی حذف شد."));
+    return go(account(base, op === "address-add" ? "نشانی ذخیره شد." : "نشانی حذف شد.", false, home));
   }
 
   if (op === "review") {
@@ -281,21 +284,26 @@ async function accountAction(req: Request, res: Response, subdomain: string, bas
     return go(`${back}?msg=${encodeURIComponent(auto ? "نظر شما ثبت شد. ممنون!" : "نظر شما ثبت شد و پس از تأیید فروشگاه نمایش داده می‌شود.")}`);
   }
 
+  if (op === "ticket-close") {
+    const ticket = await prisma.shopTicket.findFirst({ where: { id: text(body.ticketId, 40), siteId, customerId: customer.id } });
+    if (ticket && ticket.status !== "CLOSED") await prisma.shopTicket.update({ where: { id: ticket.id }, data: { status: "CLOSED" } });
+    return go(account(base, "تیکت بسته شد.", false, home));
+  }
   if (op === "ticket-new" || op === "ticket-reply") {
     const message = text(body.text, 2000);
-    if (message.length < 2) return go(account(base, "متن پیام را بنویسید.", true));
+    if (message.length < 2) return go(account(base, "متن پیام را بنویسید.", true, home));
     const entry = { from: "customer", text: message, at: new Date().toISOString() };
     if (op === "ticket-new") {
       const open = await prisma.shopTicket.count({ where: { siteId, customerId: customer.id, status: { not: "CLOSED" } } });
-      if (open >= 10) return go(account(base, "تیکت‌های باز زیادی دارید.", true));
+      if (open >= 10) return go(account(base, "تیکت‌های باز زیادی دارید.", true, home));
       await prisma.shopTicket.create({ data: { siteId, customerId: customer.id, subject: text(body.subject, 120) || "بدون عنوان", messages: [entry] } });
-      return go(account(base, "تیکت شما ثبت شد."));
+      return go(account(base, "تیکت شما ثبت شد.", false, home));
     }
     const ticket = await prisma.shopTicket.findFirst({ where: { id: text(body.ticketId, 40), siteId, customerId: customer.id } });
-    if (!ticket || ticket.status === "CLOSED") return go(account(base, "این تیکت بسته شده است.", true));
+    if (!ticket || ticket.status === "CLOSED") return go(account(base, "این تیکت بسته شده است.", true, home));
     const messages = [...((ticket.messages as unknown[]) ?? []), entry].slice(-100);
     await prisma.shopTicket.update({ where: { id: ticket.id }, data: { messages: messages as Prisma.InputJsonValue, status: "OPEN" } });
-    return go(account(base, "پیام شما ارسال شد."));
+    return go(account(base, "پیام شما ارسال شد.", false, home));
   }
   return go(to(base, "/account"));
 }
@@ -326,7 +334,7 @@ export async function loadVisitor(req: Request, siteId: string, page: string): P
     const c = await prisma.shopCustomer.findFirst({ where: { id: customerId, siteId } });
     if (c) {
       visitor.customer = { id: c.id, name: c.name, phone: c.phone };
-      if (page === "/account" || page === "/checkout") {
+      if (page === "/account" || page === "/checkout" || page === "/support/tickets") {
         const [orders, tickets] = await Promise.all([
           prisma.shopOrder.findMany({ where: { siteId, customerId: c.id }, orderBy: { createdAt: "desc" }, take: 50 }),
           prisma.shopTicket.findMany({ where: { siteId, customerId: c.id }, orderBy: { updatedAt: "desc" }, take: 30 }),
