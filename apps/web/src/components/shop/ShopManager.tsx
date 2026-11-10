@@ -14,13 +14,14 @@ import { AdBanners, Coupons, Trash } from "./ShopManagerMore";
 import { Reports } from "./ShopReports";
 import { Pages, Quotes } from "./ShopPages";
 import { Blog } from "./ShopBlog";
+import { Extras } from "./ShopExtras";
 import { Customers, Reviews, Tickets } from "./ShopPeople";
 import { Dashboard, Orders } from "./ShopOrders";
 import { Products, stockOf } from "./ShopProducts";
 import { resetSample, sampleShopApi, sampleShopFor } from "./sampleData";
 import { ShopApiContext } from "./shopApi";
 
-type Tab = "dashboard" | "quotes" | "pages" | "blog" | "products" | "categories" | "banners" | "coupons" | "orders" | "reports" | "reviews" | "tickets" | "customers" | "trash" | "settings";
+type Tab = "dashboard" | "quotes" | "pages" | "blog" | "extras" | "products" | "categories" | "banners" | "coupons" | "orders" | "reports" | "reviews" | "tickets" | "customers" | "trash" | "settings";
 
 type Props = {
   data: ResumeData;
@@ -117,6 +118,7 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
               ["coupons", "🏷 کدهای تخفیف"],
               ["banners", "🖼 بنرها و اسلایدها"],
               ["quotes", "⭐ نظرات صفحه‌ی اول"],
+              ["extras", "✨ ویژگی‌ها، برندها و آرم‌ها"],
               ["pages", "📄 صفحه‌ها و تماس"],
               ["blog", "📰 بلاگ", shop.posts?.length ? <i key="n" className="shm-count">{showNumber(shop.posts.length)}</i> : null],
               ["reports", "📈 گزارش‌ها"],
@@ -132,7 +134,7 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
         </nav>
       <ShopApiContext.Provider value={source}>
       <div className="shm-body">
-        {mode === "sample" && !["products", "categories", "banners", "coupons", "quotes", "pages", "blog", "trash", "settings"].includes(tab) && (
+        {mode === "sample" && !["products", "categories", "banners", "coupons", "quotes", "pages", "blog", "extras", "trash", "settings"].includes(tab) && (
           <p className="shm-sample">
             <span>
               🧪 <b>این‌ها اطلاعات نمونه است</b> تا ببینید پنل چه کارهایی می‌کند. تغییرهای شما فقط در همین مرورگر است و کاربر دیگری آن‌ها را نمی‌بیند؛ بعد از ۳۰ دقیقه دوری خودش تازه می‌شود. با اولین سفارش یا مشتری واقعی، اطلاعات خود فروشگاه‌تان این‌جا می‌آید.
@@ -160,6 +162,7 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
         {tab === "coupons" && <Coupons shop={shop} setShop={setShop} />}
         {tab === "orders" && <Orders resumeId={rid} onChanged={refreshCounts} />}
         {tab === "quotes" && <Quotes data={data} onData={onData} />}
+        {tab === "extras" && <Extras data={data} onData={onData} shop={shop} setShop={setShop} />}
         {tab === "blog" && <Blog shop={shop} setShop={setShop} hasBlog={Boolean(hasBlog)} />}
         {tab === "pages" && <Pages data={data} onData={onData} shop={shop} setShop={setShop} />}
         {tab === "reports" && <Reports resumeId={rid} shop={namesShop} />}

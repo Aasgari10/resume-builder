@@ -742,11 +742,20 @@ function Footer(view: View) {
           <span>
             © {fa(new Date().getFullYear())} {b.fullName}. همه‌ی حقوق محفوظ است.
           </span>
-          {blockOn(data, "payments") && (
+          {blockOn(data, "payments") && (shop.trustLogos ?? []).some((x) => safeUrl(x.image)) && (
             <span className="gg-pays">
-              {[1, 2, 3, 4, 5].map((n) => (
-                <img key={n} src={sampleImage(`gg-pay${n}`, "svg")} alt="" loading="lazy" />
-              ))}
+              {shop.trustLogos!.filter((x) => safeUrl(x.image)).map((x) => {
+                const href = safeUrl(x.link);
+                const at = `${item("site.shop.trustLogos", x.id)}.image`;
+                const img = <img src={safeUrl(x.image)} alt={x.title ?? ""} loading="lazy" {...ed(at, "image", "آرم")} />;
+                return href ? (
+                  <a key={x.id} href={href} {...outside(href)}>
+                    {img}
+                  </a>
+                ) : (
+                  <span key={x.id}>{img}</span>
+                );
+              })}
             </span>
           )}
         </div>
@@ -2013,6 +2022,7 @@ export function groginSample(locale: ResumeData["locale"]): ResumeData {
         ],
         paymentNote: "پس از ثبت سفارش، برای هماهنگی پرداخت (کارت به کارت یا پرداخت در محل) با شما تماس می‌گیریم.",
         orderNote: "سفارش شما ثبت شد و به‌زودی برای هماهنگی ارسال با شما تماس می‌گیریم.",
+        trustLogos: [1, 2, 3, 4, 5].map((n) => ({ id: `t${n}`, image: icon(`pay${n}`) })),
       },
     },
   };
@@ -2344,7 +2354,8 @@ ${[1, 2, 3, 4, 5].map((n) => `.gg-dot:nth-of-type(${n}):checked ~ .gg-dots label
 .gg-foot-end nav { display: flex; gap: 14px; }
 .gg-foot-end nav a { color: var(--gg-ink); }
 .gg-pays { display: flex; align-items: center; gap: 14px; }
-.gg-pays img { height: 16px; width: auto; }
+.gg-pays a, .gg-pays span { display: contents; }
+.gg-pays img { height: 16px; max-width: 90px; width: auto; object-fit: contain; }
 .gg-top { position: absolute; bottom: 24px; inset-inline-end: 24px; display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid var(--gg-line); border-radius: 50%; background: #fff; }
 .gg-top .gg-ico { width: 18px; height: 18px; }
 

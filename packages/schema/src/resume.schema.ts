@@ -196,7 +196,7 @@ function buildResumeSchemas(strict: boolean) {
     rating: z.number().int().min(1).max(5).optional(), // stars shown by shop templates (5 when empty)
     hidden: z.boolean().optional(), // kept but not shown
   });
-  const clientLogo = z.object({ id, name: z.string().max(80), image: url(), text: z.string().max(200).optional() }); // text: a line under the name (some shop templates)
+  const clientLogo = z.object({ id, name: z.string().max(80), image: optionalUrl.default(""), text: z.string().max(200).optional() }); // text: a line under the name (some shop templates)
 
   // Online shop (shop templates). Prices are whole tomans. Shown by shop templates only.
   const price = z.number().int().min(0).max(10_000_000_000);
@@ -301,6 +301,8 @@ function buildResumeSchemas(strict: boolean) {
       .array(z.object({ id, slug: z.string().regex(/^[a-z0-9-]{1,30}$/), title: z.string().max(80), text: z.string().max(8000), hidden: z.boolean().optional() }))
       .max(8)
       .optional(),
+    // Small logos at the bottom of the page: payment methods, trust seals (e.g. Enamad), each with an optional link.
+    trustLogos: z.array(z.object({ id, image: optionalUrl, link: optionalUrl, title: z.string().max(60).optional() })).max(8).optional(),
     // Blog posts (the "/blog" page of templates that have one); managed in the shop panel.
     posts: z
       .array(
