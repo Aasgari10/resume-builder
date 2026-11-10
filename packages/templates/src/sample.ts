@@ -1,7 +1,7 @@
 import { SAMPLE_ASSETS_PATH, SAMPLE_ASSETS_VERSION, type ResumeData } from "@rb/schema";
 
 /** Sample picture bundled with the app (apps/api/assets/samples), so previews work without outside sites. */
-export const sampleImage = (name: string, ext: "jpg" | "png" = "jpg") => `${SAMPLE_ASSETS_PATH}${name}.${ext}?v=${SAMPLE_ASSETS_VERSION}`;
+export const sampleImage = (name: string, ext: "jpg" | "png" | "svg" = "jpg") => `${SAMPLE_ASSETS_PATH}${name}.${ext}?v=${SAMPLE_ASSETS_VERSION}`;
 
 /** Complete example resumes for previews and template development. Valid against resumeDataSchema. */
 export function sampleResume(locale: ResumeData["locale"]): ResumeData {
