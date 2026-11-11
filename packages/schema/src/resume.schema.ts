@@ -227,7 +227,7 @@ function buildResumeSchemas(strict: boolean) {
     variants: z.array(z.object({ key: z.string().max(70), price: price.optional(), stock: z.number().int().min(0).max(100000).optional() })).max(144).optional(),
     trashed: z.boolean().optional(), // in the panel's trash (also hidden); can be restored
   });
-  const perk = z.object({ id, title: z.string().max(60), text: z.string().max(200).optional() });
+  const perk = z.object({ id, title: z.string().max(60), text: z.string().max(200).optional(), image: optionalUrl }); // image: an icon some templates show
   // One picture of the home page slider, with its own heading and line of text.
   const slide = z.object({ id, title: z.string().max(120).optional(), text: z.string().max(400).optional(), image: optionalUrl });
   const shop = z.object({

@@ -44,12 +44,13 @@ export function Extras({ data, onData, shop, setShop }: Props) {
   return (
     <div className="shm-cats">
       <h3>✨ ویژگی‌های فروشگاه</h3>
-      <p className="muted">جمله‌های کوتاه مثل «ارسال رایگان» یا «تضمین کیفیت» (حداکثر ۴ تا).</p>
+      <p className="muted">جمله‌های کوتاه مثل «ارسال رایگان» یا «تضمین کیفیت» (حداکثر ۴ تا). بعضی قالب‌ها کنار هرکدام آیکون هم نشان می‌دهند.</p>
       {perks.map((x, k) => (
         <div key={x.id} className="shm-faq">
           <input value={x.title} maxLength={60} placeholder="عنوان" aria-label="عنوان ویژگی" onChange={(e) => savePerks(perks.map((p) => (p.id === x.id ? { ...p, title: e.target.value } : p)))} />
           <input value={x.text ?? ""} maxLength={200} placeholder="توضیح کوتاه (اختیاری)" aria-label="توضیح ویژگی" onChange={(e) => savePerks(perks.map((p) => (p.id === x.id ? { ...p, text: e.target.value || undefined } : p)))} />
-          <div className="row gap">
+          <div className="row gap wrap">
+            <ImagePicker value={x.image} label="آیکون (اختیاری)" onChange={(url) => savePerks(perks.map((p) => (p.id === x.id ? { ...p, image: url } : p)))} />
             <Order k={k} count={perks.length} onMove={(by) => savePerks(moved(perks, k, by))} />
             <button type="button" className="btn ghost small danger" onClick={() => savePerks(perks.filter((p) => p.id !== x.id))}>
               حذف
