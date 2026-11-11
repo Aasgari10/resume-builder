@@ -925,7 +925,7 @@ const css = /* css */ `
 .kf-beans svg { width: 24px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.3; }
 
 /* Header: over the hero on the home page, a dark bar on the others */
-.kf-head { --kf-head-bg: var(--kf-dark); position: sticky; top: 0; z-index: 30; background: var(--kf-head-bg); }
+.kf-head { --kf-head-bg: var(--kf-dark); --kf-head-solid: rgb(18 18 18 / .97); position: sticky; top: 0; z-index: 30; background: var(--kf-head-bg); }
 .kf-home .kf-head { --kf-head-bg: transparent; margin-bottom: -104px; }
 /* While scrolling down the header slips away, then slides back in from the top on a dark bar
    (scroll-driven: no script; where unsupported it simply stays at the top of the page). */
@@ -933,8 +933,8 @@ const css = /* css */ `
   .kf-head { animation: kf-head linear both; animation-timeline: scroll(); animation-range: 0 560px; }
   @keyframes kf-head {
     0% { transform: none; opacity: 1; background: var(--kf-head-bg); box-shadow: none; }
-    22%, 55% { transform: translateY(-100%); opacity: 0; background: rgb(18 18 18 / .97); }
-    100% { transform: none; opacity: 1; background: rgb(18 18 18 / .97); box-shadow: 0 10px 30px -18px rgb(0 0 0 / .6); }
+    22%, 55% { transform: translateY(-100%); opacity: 0; background: var(--kf-head-solid); }
+    100% { transform: none; opacity: 1; background: var(--kf-head-solid); box-shadow: 0 10px 30px -18px rgb(0 0 0 / .6); }
   }
   .kf-head .kf-head-in { animation: kf-head-in linear both; animation-timeline: scroll(); animation-range: 0 560px; }
   @keyframes kf-head-in { 0%, 55% { min-height: 104px; } 100% { min-height: 78px; } }
@@ -1043,6 +1043,7 @@ ${Array.from({ length: n }, (_, k) => `.kf-n${n} .kf-auto:checked ~ .kf-slides >
 
 /* Logos and call to contact */
 .kf-logos { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-around; gap: 30px; padding-block: 90px 100px; }
+.kf-sec + .kf-logos { padding-top: 10px; }
 .kf-logos span { display: flex; align-items: center; justify-content: center; width: 140px; height: 90px; }
 .kf-logos img { display: block; max-width: 100%; max-height: 100%; object-fit: contain; opacity: .85; transition: opacity .3s, transform .4s; }
 .kf-logos span:hover img { opacity: 1; transform: scale(1.08); }
@@ -1182,23 +1183,29 @@ ${[1, 2, 3, 4, 5, 6].map((n) => `.kf-dot:nth-of-type(${n}):checked ~ .kf-qdots l
   .kf-wrap { padding-inline: 18px; }
   .kf-sec { padding-block: 64px; }
   .kf-title { margin-bottom: 40px; }
-  .kf-head-in { min-height: 76px; }
-  .kf-home .kf-head { margin-bottom: -76px; }
+  /* Phone header as in the reference: a white bar, the menu button then a dark logo, a white menu. */
+  .kf-head, .kf-home .kf-head { --kf-head-bg: #fff; --kf-head-solid: #fff; margin-bottom: 0; border-bottom: 1px solid #EEE7DE; }
+  .kf-head-in { flex-direction: row; justify-content: flex-end; gap: 18px; min-height: 76px; }
+  .kf-head .kf-logo img { filter: brightness(0) invert(.18) sepia(.5); }
+  .kf-head .kf-logo b { color: var(--kf-ink); }
   .kf-logo img { height: 44px; }
   .kf-nav { display: none; }
   .kf-burger { display: block; }
   .kf-burger summary { display: grid; place-items: center; width: 40px; height: 40px; list-style: none; cursor: pointer; }
   .kf-burger summary::-webkit-details-marker { display: none; }
-  .kf-burger summary span, .kf-burger summary span::before, .kf-burger summary span::after { position: relative; display: block; width: 24px; height: 2px; background: #fff; transition: transform .3s, background .3s; }
+  .kf-burger summary span, .kf-burger summary span::before, .kf-burger summary span::after { position: relative; display: block; width: 24px; height: 2px; background: var(--kf-ink); transition: transform .3s, background .3s; }
   .kf-burger summary span::before, .kf-burger summary span::after { content: ""; position: absolute; inset-inline: 0; }
   .kf-burger summary span::before { top: -7px; }
   .kf-burger summary span::after { top: 7px; }
   .kf-burger[open] summary span { background: transparent; }
   .kf-burger[open] summary span::before { top: 0; transform: rotate(45deg); }
   .kf-burger[open] summary span::after { top: 0; transform: rotate(-45deg); }
-  .kf-drawer { position: absolute; inset-inline: 0; top: 100%; display: grid; padding: 8px 18px 18px; background: var(--kf-dark); animation: kf-drop .35s ease both; }
+  .kf-drawer { position: absolute; z-index: 2; inset-inline: 0; top: 100%; display: grid; padding: 8px 18px 18px; background: #fff; border-bottom: 1px solid #EEE7DE; box-shadow: 0 20px 30px -22px rgb(0 0 0 / .35); animation: kf-drop .35s ease both; }
+  /* A tap anywhere outside the open menu closes it: the open summary spreads an invisible layer over the page. */
+  .kf-burger[open] summary::before { content: ""; position: absolute; z-index: 1; inset: 0 0 auto; height: 100vh; cursor: default; }
+  .kf-burger summary span { z-index: 2; }
   @keyframes kf-drop { from { opacity: 0; transform: translateY(-10px); } }
-  .kf-drawer a { padding: 13px 4px; border-top: 1px solid rgb(255 255 255 / .08); color: #fff; font-weight: 600; }
+  .kf-drawer a { position: relative; z-index: 2; padding: 13px 4px; border-top: 1px solid #F1EAE1; color: var(--kf-ink); font-weight: 600; }
   .kf-drawer a[aria-current="page"] { color: var(--kf-tan); }
   .kf-head-in { position: relative; }
   .kf-slide { min-height: 560px; }
