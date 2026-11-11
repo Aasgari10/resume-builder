@@ -28,6 +28,7 @@ export const SHOWCASE_COLORS: Record<string, string> = {
   "homemart-shop": "#800E2F",
   "grogin-shop": "#634C9F",
   "juno-shop": "#12AEE0",
+  "kafe-site": "#BE9C79",
 };
 
 export const showcaseColor = (id: string) => SHOWCASE_COLORS[id] ?? "#1E3A5F";
