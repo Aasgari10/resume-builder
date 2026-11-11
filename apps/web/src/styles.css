@@ -1364,6 +1364,10 @@ select {
 
 /* Panel: quotes, pages, discount-code scope */
 .shm-slide.off, .shm-page.off { opacity: .6; }
+.shm-trash-row { flex-wrap: nowrap; }
+.shm-trash-text { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.shm-trash-text small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 560px) { .shm-trash-row { flex-wrap: wrap; } }
 .shm-avatar { flex: none; display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: var(--notice-bg); color: var(--primary); font-weight: 700; font-size: 1.2rem; overflow: hidden; }
 .shm-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .shm-slide-fields select { padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font: inherit; background: #fff; }

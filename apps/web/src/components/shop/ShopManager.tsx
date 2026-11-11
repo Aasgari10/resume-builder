@@ -10,7 +10,8 @@ import { type Product, type ResumeData, type Shop } from "@rb/schema";
 import { api, type ShopSummary } from "../../api";
 import { newId } from "../editor/list";
 import { Field, ImagePicker, MoneyInput, readNumber, showNumber } from "./fields";
-import { AdBanners, Coupons, Trash } from "./ShopManagerMore";
+import { AdBanners, Coupons } from "./ShopManagerMore";
+import { TrashTabs } from "./ShopTrash";
 import { Reports } from "./ShopReports";
 import { Pages, Quotes } from "./ShopPages";
 import { Blog } from "./ShopBlog";
@@ -169,7 +170,7 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
         {tab === "reviews" && <Reviews resumeId={rid} shop={namesShop} setShop={setShop} onChanged={refreshCounts} />}
         {tab === "tickets" && <Tickets resumeId={rid} onChanged={refreshCounts} />}
         {tab === "customers" && <Customers resumeId={rid} />}
-        {tab === "trash" && <Trash shop={shop} setShop={setShop} />}
+        {tab === "trash" && <TrashTabs shop={shop} setShop={setShop} resumeId={rid} onChanged={refreshCounts} />}
         {tab === "settings" && <Settings shop={shop} setShop={setShop} />}
           </>
         )}
