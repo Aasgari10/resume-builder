@@ -133,6 +133,7 @@ const SVG: Record<string, string> = {
   up: "M6 15l6-6 6 6",
   filter: "M4 6h16 M7 12h10 M10 18h4",
   send: "M21 3 10 14 M21 3l-7 18-4-8-8-4z",
+  clock: "M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16z M12 8v4l3 2",
   heartBig: "M12 21s-9.5-5.8-9.5-12.6A5.3 5.3 0 0 1 12 5.2a5.3 5.3 0 0 1 9.5 3.2C21.5 15.2 12 21 12 21z",
 };
 const BAND_ICONS = ["tag", "truck", "shield", "chat"];
@@ -418,6 +419,7 @@ function Footer(view: View) {
   const b = ctx.data.basics;
   const site = ctx.data.site;
   const pages = (shop.pages ?? []).filter((p) => !p.hidden);
+  const cats = (shop.categories ?? []).filter((c) => visible(shop).some((p) => p.categoryId === c.id));
   return (
     <>
       <Newsletter view={view} />
@@ -428,46 +430,83 @@ function Footer(view: View) {
               {site?.bandText}
             </h2>
           </Opt>
+          {/* Four columns of the same height; each has a heading on one line and about five rows. */}
           <div className="jn-foot-cols">
-            <div>
-              <h4>نشانی</h4>
-              <Opt value={site?.address} editing={editing} edit={ed("site.address", "multiline", "نشانی")}>
-                <p {...ed("site.address", "multiline", "نشانی")}>{site?.address}</p>
+            <div className="jn-foot-brand">
+              <h4>درباره‌ی {b.fullName}</h4>
+              <Opt value={b.summary} editing={editing} edit={ed("basics.summary", "multiline", "معرفی کوتاه فروشگاه")}>
+                <p {...ed("basics.summary", "multiline", "معرفی کوتاه فروشگاه")}>{b.summary}</p>
               </Opt>
+              <Socials ctx={ctx} editing={editing} className="jn-foot-socials" />
             </div>
             <div>
-              <h4>سلام کنید</h4>
-              <Opt value={b.email} editing={editing} edit={ed("basics.email", "text", "ایمیل")}>
-                <a href={b.email ? `mailto:${b.email}` : "#"} className="jn-u" dir="ltr" {...ed("basics.email", "text", "ایمیل")}>
-                  {b.email}
-                </a>
-              </Opt>
-              <Opt value={b.phone} editing={editing} edit={ed("basics.phone", "text", "تلفن")}>
-                <a href={b.phone ? `tel:${b.phone.replace(/[^\d+]/g, "")}` : "#"} className="jn-strong" dir="ltr" {...ed("basics.phone", "text", "تلفن")}>
-                  {b.phone}
-                </a>
-              </Opt>
-            </div>
-            <div>
-              <h4>صفحه‌ها</h4>
+              <h4>دسترسی سریع</h4>
               <PageLink to="/shop" link={link}>
-                فروشگاه
+                همه‌ی محصولات
               </PageLink>
+              {cats.slice(0, 3).map((c) => (
+                <PageLink key={c.id} to={`/category/${c.id}`} link={link}>
+                  {c.name}
+                </PageLink>
+              ))}
+              {hasBlog(ctx.data) && (
+                <PageLink to="/blog" link={link}>
+                  بلاگ
+                </PageLink>
+              )}
+            </div>
+            <div>
+              <h4>خدمات مشتریان</h4>
               <PageLink to="/account" link={link}>
-                حساب من
+                حساب من و پیگیری سفارش
+              </PageLink>
+              <PageLink to="/wishlist" link={link}>
+                علاقه‌مندی‌ها
               </PageLink>
               <PageLink to="/support" link={link}>
-                پشتیبانی
+                پشتیبانی و تیکت
               </PageLink>
+              {answered(shop).length > 0 && (
+                <PageLink to="/faq" link={link}>
+                  سؤالات متداول
+                </PageLink>
+              )}
               {pages.map((p) => (
                 <PageLink key={p.id} to={`/page/${p.slug}`} link={link}>
                   {p.title}
                 </PageLink>
               ))}
             </div>
-            <div>
-              <h4>ما را دنبال کنید</h4>
-              <Socials ctx={ctx} editing={editing} className="jn-foot-socials" />
+            <div className="jn-foot-contact">
+              <h4>راه‌های ارتباط</h4>
+              <Opt value={site?.address} editing={editing} edit={ed("site.address", "multiline", "نشانی")}>
+                <span>
+                  <Svg name="pin" />
+                  <span {...ed("site.address", "multiline", "نشانی")}>{site?.address}</span>
+                </span>
+              </Opt>
+              <Opt value={b.phone} editing={editing} edit={ed("basics.phone", "text", "تلفن")}>
+                <a href={b.phone ? `tel:${b.phone.replace(/[^\d+]/g, "")}` : "#"}>
+                  <Svg name="phone" />
+                  <bdi dir="ltr" {...ed("basics.phone", "text", "تلفن")}>
+                    {b.phone}
+                  </bdi>
+                </a>
+              </Opt>
+              <Opt value={b.email} editing={editing} edit={ed("basics.email", "text", "ایمیل")}>
+                <a href={b.email ? `mailto:${b.email}` : "#"}>
+                  <Svg name="mail" />
+                  <bdi dir="ltr" {...ed("basics.email", "text", "ایمیل")}>
+                    {b.email}
+                  </bdi>
+                </a>
+              </Opt>
+              <Opt value={b.location} editing={editing} edit={ed("basics.location", "text", "ساعت کاری")}>
+                <span>
+                  <Svg name="clock" />
+                  <span {...ed("basics.location", "text", "ساعت کاری")}>{b.location}</span>
+                </span>
+              </Opt>
             </div>
           </div>
           <div className="jn-foot-end">
@@ -1753,7 +1792,7 @@ export function junoSample(locale: ResumeData["locale"]): ResumeData {
   ];
   return {
     ...base,
-    basics: { ...base.basics, fullName: "Juno", jobTitle: "اسباب‌بازی و سرگرمی", avatarUrl: png("logo"), email: "info@example.com", phone: "1 800 458 56 97", summary: "",
+    basics: { ...base.basics, fullName: "Juno", jobTitle: "اسباب‌بازی و سرگرمی", avatarUrl: png("logo"), email: "info@example.com", phone: "1 800 458 56 97", location: "شنبه تا پنجشنبه، ۹ تا ۲۱", summary: "فروشگاه اسباب‌بازی جونو؛ اسباب‌بازی‌های شاد، آموزشی و بی‌خطر برای همه‌ی سنین، با ارسال سریع به سراسر کشور.",
       links: [
         { id: "sl1", type: "instagram", url: "https://instagram.com/example" },
         { id: "sl2", type: "telegram", url: "https://t.me/example" },
@@ -2107,17 +2146,23 @@ ${[1, 2, 3, 4, 5, 6].map((n) => `.jn-dot:nth-of-type(${n}):checked ~ .jn-qdots l
 /* Footer */
 .jn-foot { padding-block: 80px 26px; background: var(--jn-navy); color: #fff; }
 .jn-foot h2 { max-width: 13em; margin-bottom: 50px; font-size: clamp(26px, 3cqi, 40px); font-weight: 800; line-height: 1.4; }
-.jn-foot-cols { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 40px; padding-bottom: 40px; border-bottom: 1px solid rgb(255 255 255 / .14); }
-.jn-foot-cols > div { display: grid; align-content: start; gap: 12px; font-size: 14px; }
-.jn-foot-cols h4 { margin-bottom: 6px; font-size: 16px; font-weight: 700; }
-.jn-foot-cols p { line-height: 1.9; opacity: .85; white-space: pre-line; }
-.jn-foot-cols a { opacity: .85; transition: opacity .2s, color .2s; justify-self: start; }
-.jn-foot-cols a:hover { opacity: 1; color: var(--jn-blue); }
+.jn-foot-cols { display: grid; grid-template-columns: 1.3fr 1fr 1fr 1.2fr; gap: 0; align-items: stretch; padding-bottom: 40px; border-bottom: 1px solid rgb(255 255 255 / .14); }
+.jn-foot-cols > div { display: flex; flex-direction: column; gap: 13px; padding-inline: 28px; border-inline-start: 1px solid rgb(255 255 255 / .1); font-size: 14px; }
+.jn-foot-cols > div:first-child { padding-inline-start: 0; border-inline-start: none; }
+.jn-foot-cols > div:last-child { padding-inline-end: 0; }
+.jn-foot-cols h4 { margin-bottom: 6px; font-size: 16px; font-weight: 700; line-height: 1.6; }
+.jn-foot-cols p { line-height: 1.9; opacity: .8; white-space: pre-line; }
+.jn-foot-cols a { opacity: .82; transition: opacity .2s, color .2s, transform .2s; align-self: flex-start; }
+.jn-foot-cols a:hover { opacity: 1; color: var(--jn-blue); transform: translateX(-3px); }
+.jn-foot-brand .jn-foot-socials { margin-top: auto; }
+.jn-foot-contact > span, .jn-foot-contact > a { display: flex; align-items: flex-start; gap: 10px; line-height: 1.7; }
+.jn-foot-contact > span { opacity: .82; }
+.jn-foot-contact .jn-ico { width: 18px; height: 18px; flex: none; margin-top: 3px; color: var(--jn-blue); }
+.jn-foot-contact span span { white-space: pre-line; }
 .jn-u { text-decoration: underline !important; text-underline-offset: 5px; }
-.jn-strong { font-weight: 800; opacity: 1 !important; font-size: 16px; }
 .jn-foot-socials { display: flex; flex-wrap: wrap; gap: 8px; }
 .jn-foot-socials a { width: 38px !important; height: 38px !important; border-radius: 50%; background: rgb(255 255 255 / .08); opacity: 1 !important; }
-.jn-foot-socials a:hover { background: var(--jn-blue); color: #fff !important; transform: translateY(-3px); }
+.jn-foot-socials a:hover { background: var(--jn-blue); color: #fff !important; transform: translateY(-3px) !important; }
 .jn-foot-socials .p-ico { width: 16px; height: 16px; }
 .jn-foot-end { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-top: 24px; font-size: 13px; opacity: .9; }
 .jn-trust { display: flex; gap: 14px; }
@@ -2197,7 +2242,7 @@ ${[1, 2, 3, 4, 5, 6].map((n) => `.jn-dot:nth-of-type(${n}):checked ~ .jn-qrow-fa
 .jn-feats .jn-ico { width: 28px; height: 28px; color: var(--jn-blue); }
 
 /* Contact: a tall photo beside the form, rounded fields in pairs, a large map, then one quiet row */
-.jn-contact { display: grid; grid-template-columns: 1fr 1fr; min-height: clamp(560px, 81cqi, 1040px); }
+.jn-contact { display: grid; grid-template-columns: 1fr 1fr; min-height: clamp(540px, 70cqi, 900px); }
 .jn-contact-pic { position: relative; display: block; overflow: hidden; background: var(--jn-navy); }
 .jn-contact-pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center top; }
 .jn-ring { position: absolute; bottom: 14%; inset-inline-start: -26px; width: 52px; height: 52px; border: 9px solid var(--jn-green); border-radius: 50%; animation: jn-float2 5s ease-in-out infinite; }
@@ -2215,7 +2260,7 @@ ${[1, 2, 3, 4, 5, 6].map((n) => `.jn-dot:nth-of-type(${n}):checked ~ .jn-qrow-fa
 .jn-contact-form .jn-agree { height: auto; padding: 0; border: none; background: none; box-shadow: none !important; color: var(--jn-muted); font-size: 13px; }
 .jn-contact-form .jn-agree input { flex: none; width: 17px; height: 17px; accent-color: var(--jn-blue); }
 .jn-contact-form .jn-btn { justify-self: start; height: 52px; padding: 0 30px; }
-.jn-map { height: clamp(320px, 52cqi, 680px); }
+.jn-map { height: clamp(300px, 42cqi, 560px); }
 .jn-map iframe { width: 100%; height: 100%; border: none; filter: saturate(.85); }
 .jn-contact-row { display: grid; grid-template-columns: 1.2fr 1fr auto auto; gap: 30px; align-items: center; padding-block: 34px; font-size: 14px; }
 .jn-contact-row .jn-social-round { flex-wrap: nowrap; }
@@ -2243,12 +2288,15 @@ ${[1, 2, 3, 4, 5, 6].map((n) => `.jn-dot:nth-of-type(${n}):checked ~ .jn-qrow-fa
 .jn-faq-pic img { width: 100%; height: 100%; object-fit: cover; }
 
 /* Shop page: HomeMart's shape (a filter form beside the products) in Juno's look */
-.jn-shop { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 34px; align-items: start; padding-block: 50px 80px; }
+.jn-wrap.jn-shop { max-width: 1340px; }
+.jn-shop { display: grid; grid-template-columns: 330px minmax(0, 1fr); gap: 34px; align-items: start; padding-block: 50px 80px; }
 .jn-filters { position: sticky; top: 20px; display: grid; gap: 16px; padding: 26px; border-radius: 22px; background: #fff; box-shadow: 0 24px 50px -36px rgb(24 35 82 / .55); font-size: 14px; }
 .jn-filters h2 { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 800; }
 .jn-filters h2 .jn-ico { width: 20px; height: 20px; color: var(--jn-blue); }
 .jn-filters label { display: grid; gap: 6px; font-weight: 600; }
 .jn-filters select, .jn-filters label > input:not([type="checkbox"]), .jn-filters fieldset input { width: 100%; height: 44px; box-sizing: border-box; padding: 0 16px; border: 1px solid var(--jn-line); border-radius: 999px; background: #fff; font: inherit; font-weight: 400; color: inherit; transition: border-color .2s, box-shadow .2s; }
+.jn-filters select { -webkit-appearance: none; appearance: none; padding-inline-end: 44px; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23181D4E' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 10l5 5 5-5'/%3E%3C/svg%3E") no-repeat; background-size: 16px; background-position: left 18px center; cursor: pointer; }
+[dir="ltr"] .jn-filters select { background-position: right 18px center; }
 .jn-filters select:focus, .jn-filters input:focus { outline: none; border-color: var(--jn-blue); box-shadow: 0 0 0 3px color-mix(in srgb, var(--jn-blue) 18%, transparent); }
 .jn-filters fieldset { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0; padding: 0; border: none; }
 .jn-filters legend { margin-bottom: 6px; padding: 0; font-weight: 600; }
@@ -2379,7 +2427,8 @@ ${[1, 2, 3, 4, 5, 6].map((n) => `.jn-gallery:has(.jn-thumb:nth-child(${n}) input
 @container (max-width: 1050px) {
   .jn-grid.four, .jn-team.four { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .jn-services { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .jn-foot-cols { grid-template-columns: 1fr 1fr; }
+  .jn-foot-cols { grid-template-columns: 1fr 1fr; row-gap: 34px; }
+  .jn-foot-cols > div:nth-child(3) { padding-inline-start: 0; border-inline-start: none; }
   .jn-shop, .jn-blog { grid-template-columns: 1fr; }
   .jn-filters, .jn-blog-side { position: static; }
   .jn-filters { grid-template-columns: 1fr 1fr; padding: 20px; }
@@ -2439,7 +2488,8 @@ ${[1, 2, 3, 4, 5, 6].map((n) => `.jn-gallery:has(.jn-thumb:nth-child(${n}) input
   .jn-tab-heads label { padding: 12px 18px; }
   .jn-news { padding-block: 50px; }
   .jn-foot { padding-block: 56px 90px; }
-  .jn-foot-cols { grid-template-columns: 1fr; gap: 26px; }
+  .jn-foot-cols { grid-template-columns: 1fr; gap: 28px; }
+  .jn-foot-cols > div { padding-inline: 0; border-inline-start: none; }
   .jn-foot-end { flex-wrap: wrap; }
   .jn-line { grid-template-columns: 64px minmax(0, 1fr) auto; }
   .jn-line-pic img { width: 64px; height: 64px; }
