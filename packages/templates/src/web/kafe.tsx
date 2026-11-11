@@ -844,7 +844,7 @@ export function kafeSample(locale: ResumeData["locale"]): ResumeData {
           { id: "b6", image: img("tile3") },
           { id: "b7", image: img("tile4") },
         ],
-        lookImage: "",
+        lookImage: img("band"),
         trendImage: png("badge2"),
         stats: [
           { id: "t1", value: "۲۵۰", label: "نوع قهوه", text: "از مزرعه‌های مختلف دنیا" },
@@ -1007,7 +1007,7 @@ ${Array.from({ length: n }, (_, k) => `.kf-n${n} .kf-auto:checked ~ .kf-slides >
 /* Badge band */
 .kf-band { position: relative; display: grid; place-items: center; min-height: clamp(360px, 36cqi, 520px); overflow: hidden; isolation: isolate; background-color: #241E1B; background-image: radial-gradient(ellipse at 50% 40%, transparent 30%, rgb(0 0 0 / .45)), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .55 0 0 0 0 .38 0 0 0 0 .28 0 0 0 .32 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2800' height='1000'%3E%3Cfilter id='m'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.008 .02' numOctaves='3' seed='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .2 0 0 0 0 .16 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23m)'/%3E%3C/svg%3E"); }
 .kf-band-pic { position: absolute; inset: 0; z-index: -1; }
-.kf-band-pic img { width: 100%; height: 100%; object-fit: cover; }
+.kf-band-pic img { width: 100%; height: 100%; object-fit: cover; object-position: right center; }
 .kf-band-badge img { display: block; width: clamp(180px, 15cqi, 250px); height: auto; transition: transform .8s cubic-bezier(.2, .8, .2, 1.3); }
 .kf-band:hover .kf-band-badge img { transform: scale(1.06) rotate(-3deg); }
 
@@ -1037,8 +1037,8 @@ ${Array.from({ length: n }, (_, k) => `.kf-n${n} .kf-auto:checked ~ .kf-slides >
 
 /* Logos and call to contact */
 .kf-logos { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-around; gap: 30px; padding-block: 90px 100px; }
-.kf-logos span { display: grid; place-items: center; width: 170px; height: 120px; }
-.kf-logos img { max-width: 100%; max-height: 100%; object-fit: contain; opacity: .85; transition: opacity .3s, transform .4s; }
+.kf-logos span { display: flex; align-items: center; justify-content: center; width: 140px; height: 90px; }
+.kf-logos img { display: block; max-width: 100%; max-height: 100%; object-fit: contain; opacity: .85; transition: opacity .3s, transform .4s; }
 .kf-logos span:hover img { opacity: 1; transform: scale(1.08); }
 .kf-cta { display: flex; align-items: center; justify-content: space-between; gap: 30px; padding-block: 64px; }
 .kf-cta p { font-family: var(--kf-head); font-size: clamp(20px, 2cqi, 26px); line-height: 1.5; }
@@ -1145,12 +1145,12 @@ ${[1, 2, 3, 4, 5, 6].map((n) => `.kf-dot:nth-of-type(${n}):checked ~ .kf-qdots l
 .kf-full { grid-column: 1 / -1; }
 .kf-form .kf-btn { justify-self: start; }
 .kf-where { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: stretch; padding-bottom: 100px; }
-.kf-where-text { display: grid; align-content: center; justify-items: start; gap: 16px; padding: 34px 38px; background: var(--kf-paper); }
+.kf-where-text { display: grid; align-content: center; justify-items: start; gap: 16px; padding: 34px clamp(22px, 3cqi, 40px); background: var(--kf-paper); }
 .kf-where-text h2 { font-family: var(--kf-head); font-size: clamp(26px, 2.6cqi, 34px); font-weight: 500; }
 .kf-where-text .kf-beans::before { display: none; }
-.kf-where-text dl { display: grid; grid-template-columns: auto 1fr; gap: 14px 26px; margin: 4px 0 8px; font-size: 14px; line-height: 1.9; }
+.kf-where-text dl { display: grid; grid-template-columns: 110px 1fr; gap: 14px 20px; width: 100%; margin: 4px 0 8px; font-size: 14px; line-height: 1.9; }
 .kf-where-text dt { font-family: var(--kf-head); font-size: 18px; color: var(--kf-ink); }
-.kf-where-text dd { display: grid; margin: 0; color: var(--kf-muted); white-space: pre-line; }
+.kf-where-text dd { display: grid; justify-items: start; margin: 0; color: var(--kf-muted); white-space: pre-line; }
 .kf-where-text dd a:hover { color: var(--kf-tan); }
 .kf-map { display: grid; place-items: center; min-height: 340px; border: 1px solid #E6DCCF; background: var(--kf-paper); color: var(--kf-muted); font-size: 13px; text-align: center; overflow: hidden; }
 .kf-map iframe { width: 100%; height: 100%; border: 0; filter: sepia(.35) saturate(.7); }
@@ -1205,7 +1205,7 @@ ${[1, 2, 3, 4, 5, 6].map((n) => `.kf-dot:nth-of-type(${n}):checked ~ .kf-qdots l
   .kf-fav b, .kf-icon-card b { font-size: 19px; }
   .kf-gallery { grid-template-columns: repeat(2, 1fr); }
   .kf-logos { grid-template-columns: repeat(2, 1fr); padding-block: 50px; }
-  .kf-logos span { width: 130px; height: 90px; }
+  .kf-logos span { width: 110px; height: 70px; }
   .kf-cta { flex-direction: column; text-align: center; padding-block: 50px; }
   .kf-tiles { grid-template-columns: 1fr 1fr; }
   .kf-tile-text { padding: 16px; font-size: 13px; }
