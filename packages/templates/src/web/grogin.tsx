@@ -1927,7 +1927,15 @@ export function groginSample(locale: ResumeData["locale"]): ResumeData {
   const banner = (id: string, image: string, kicker: string, title: string, text: string) => ({ id, image: img(image), kicker, title, text });
   return {
     ...base,
-    basics: { ...base.basics, fullName: "Grogin", jobTitle: "فروشگاه آنلاین مواد غذایی", avatarUrl: sampleImage("gg-logo", "png"), location: "همه‌ی شهرها", email: "info@example.com", phone: "021 0000 0000", summary: "" },
+    basics: { ...base.basics, fullName: "Grogin", jobTitle: "فروشگاه آنلاین مواد غذایی", avatarUrl: sampleImage("gg-logo", "png"), location: "همه‌ی شهرها", email: "info@example.com", phone: "021 0000 0000", summary: "",
+      links: [
+        { id: "sl1", type: "instagram", url: "https://instagram.com/example" },
+        { id: "sl2", type: "telegram", url: "https://t.me/example" },
+        { id: "sl3", type: "whatsapp", url: "https://wa.me/example" },
+        { id: "sl4", type: "eitaa", url: "https://eitaa.com/example" },
+        { id: "sl5", type: "rubika", url: "https://rubika.ir/example" },
+      ],
+    },
     site: {
       ...base.site,
       gallery: [],
