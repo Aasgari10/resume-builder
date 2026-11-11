@@ -26,6 +26,20 @@ async function siteOf(req: Request) {
 
 const ids = z.array(z.string().max(40)).min(1).max(500);
 
+/** Rows that are not in the trash. */
+const live = { deletedAt: null };
+/** Days a deleted row stays in the trash before it is removed for good. */
+export const TRASH_DAYS = 30;
+
+/** Removes for good what has been in this shop's trash longer than TRASH_DAYS. */
+async function emptyOldTrash(siteId: string) {
+  const where = { siteId, deletedAt: { lt: new Date(Date.now() - TRASH_DAYS * 86400000) } };
+  await prisma.shopOrder.deleteMany({ where });
+  await prisma.shopReview.deleteMany({ where });
+  await prisma.shopTicket.deleteMany({ where });
+  await prisma.shopCustomer.deleteMany({ where });
+}
+
 /* ───────────── Overview ───────────── */
 
 /** GET …/site/shop-summary — the numbers on the overview tab and the "new" marks on the tabs. */
@@ -34,7 +48,8 @@ shopAdminRouter.get(
   asyncHandler(async (req, res) => {
     const site = await ownSite(req);
     if (!site) return void res.json({ summary: null });
-    const where = { siteId: site.id };
+    void emptyOldTrash(site.id).catch(() => undefined);
+    const where = { siteId: site.id, ...live };
     const since = new Date(Date.now() - 30 * 86400000);
     const [customers, orders, newOrders, openTickets, waitingReviews, sold, soldMonth, recent] = await Promise.all([
       prisma.shopCustomer.count({ where }),
@@ -69,8 +84,8 @@ shopAdminRouter.get(
     const site = await ownSite(req);
     if (!site) return void res.json({ stats: {} });
     const [orders, ratings] = await Promise.all([
-      prisma.shopOrder.findMany({ where: { siteId: site.id, status: { not: "CANCELED" } }, select: { items: true }, orderBy: { createdAt: "desc" }, take: 20000 }),
-      prisma.shopReview.groupBy({ by: ["productId"], where: { siteId: site.id, approved: true }, _avg: { rating: true }, _count: true }),
+      prisma.shopOrder.findMany({ where: { siteId: site.id, ...live, status: { not: "CANCELED" } }, select: { items: true }, orderBy: { createdAt: "desc" }, take: 20000 }),
+      prisma.shopReview.groupBy({ by: ["productId"], where: { siteId: site.id, ...live, approved: true }, _avg: { rating: true }, _count: true }),
     ]);
     const stats: Record<string, { sold: number; revenue: number; rating?: number; reviews?: number }> = {};
     for (const o of orders) {
@@ -111,6 +126,7 @@ shopAdminRouter.get(
     const { status, q, from, to, take, skip } = query.data;
     const where: Prisma.ShopOrderWhereInput = {
       siteId: site.id,
+      ...live,
       status,
       createdAt: from || to ? { gte: from ? new Date(from) : undefined, lte: to ? new Date(to) : undefined } : undefined,
       OR: q ? [{ code: { contains: q } }, { customerName: { contains: q, mode: "insensitive" } }, { phone: { contains: q } }, { city: { contains: q } }] : undefined,
@@ -122,12 +138,13 @@ shopAdminRouter.get(
 
 /**
  * Moves an order to a new status. Cancelling gives the goods (and the discount-code use) back;
- * un-cancelling takes them again. Deleting a live order also gives them back.
+ * un-cancelling takes them again. Moving a live order to the trash ("DELETE") also gives them back,
+ * and taking it out of the trash ("RESTORE") takes them again.
  */
-async function setOrderStatus(order: ShopOrder, status: ShopOrder["status"] | "DELETE") {
+async function setOrderStatus(order: ShopOrder, status: ShopOrder["status"] | "DELETE" | "RESTORE") {
   const was = order.status === "CANCELED";
-  const will = status === "CANCELED" || (status === "DELETE" && !was);
-  const sign = will && !was ? 1 : was && !will && status !== "DELETE" ? -1 : 0;
+  const sign =
+    status === "DELETE" ? (was ? 0 : 1) : status === "RESTORE" ? (was ? 0 : -1) : status === "CANCELED" ? (was ? 0 : 1) : was ? -1 : 0;
   return prisma.$transaction(async (tx) => {
     if (sign) {
       await tx.$queryRaw`SELECT id FROM "Site" WHERE id = ${order.siteId} FOR UPDATE`;
@@ -139,10 +156,7 @@ async function setOrderStatus(order: ShopOrder, status: ShopOrder["status"] | "D
       await tx.site.update({ where: { id: site.id }, data: { publishedData: published.data as Prisma.InputJsonValue } });
       await tx.resume.update({ where: { id: site.resume.id }, data: { data: draft.data as Prisma.InputJsonValue } });
     }
-    if (status === "DELETE") {
-      await tx.shopOrder.delete({ where: { id: order.id } });
-      return null;
-    }
+    if (status === "DELETE" || status === "RESTORE") return tx.shopOrder.update({ where: { id: order.id }, data: { deletedAt: status === "DELETE" ? new Date() : null } });
     return tx.shopOrder.update({ where: { id: order.id }, data: { status } });
   });
 }
@@ -155,18 +169,18 @@ shopAdminRouter.patch(
   asyncHandler(async (req, res) => {
     const site = await siteOf(req);
     const { status } = parseBody(orderStatusBody, req.body);
-    const order = await prisma.shopOrder.findFirst({ where: { id: req.params.orderId!, siteId: site.id } });
+    const order = await prisma.shopOrder.findFirst({ where: { id: req.params.orderId!, siteId: site.id, ...live } });
     if (!order) throw new HttpError(404, "NOT_FOUND", "سفارش پیدا نشد");
     res.json({ order: await setOrderStatus(order, status) });
   })
 );
 
-/** DELETE …/site/orders/:orderId — removes an order for good (its goods go back to stock). */
+/** DELETE …/site/orders/:orderId — moves an order to the trash (its goods go back to stock). */
 shopAdminRouter.delete(
   "/orders/:orderId",
   asyncHandler(async (req, res) => {
     const site = await siteOf(req);
-    const order = await prisma.shopOrder.findFirst({ where: { id: req.params.orderId!, siteId: site.id } });
+    const order = await prisma.shopOrder.findFirst({ where: { id: req.params.orderId!, siteId: site.id, ...live } });
     if (order) await setOrderStatus(order, "DELETE");
     res.json({ ok: true });
   })
@@ -180,7 +194,7 @@ shopAdminRouter.post(
   asyncHandler(async (req, res) => {
     const site = await siteOf(req);
     const body = parseBody(orderBatchBody, req.body);
-    const orders = await prisma.shopOrder.findMany({ where: { id: { in: body.ids }, siteId: site.id } });
+    const orders = await prisma.shopOrder.findMany({ where: { id: { in: body.ids }, siteId: site.id, ...live } });
     const failed: string[] = [];
     for (const order of orders) {
       if (order.status === body.status) continue;
@@ -202,8 +216,8 @@ shopAdminRouter.get(
   asyncHandler(async (req, res) => {
     const site = await siteOf(req);
     const [customers, spent] = await Promise.all([
-      prisma.shopCustomer.findMany({ where: { siteId: site.id }, orderBy: { createdAt: "desc" }, take: 2000, select: { id: true, name: true, phone: true, createdAt: true, _count: { select: { orders: true } } } }),
-      prisma.shopOrder.groupBy({ by: ["customerId"], where: { siteId: site.id, customerId: { not: null }, status: { not: "CANCELED" } }, _sum: { total: true }, _max: { createdAt: true } }),
+      prisma.shopCustomer.findMany({ where: { siteId: site.id, ...live }, orderBy: { createdAt: "desc" }, take: 2000, select: { id: true, name: true, phone: true, createdAt: true, _count: { select: { orders: { where: live } } } } }),
+      prisma.shopOrder.groupBy({ by: ["customerId"], where: { siteId: site.id, ...live, customerId: { not: null }, status: { not: "CANCELED" } }, _sum: { total: true }, _max: { createdAt: true } }),
     ]);
     const byId = new Map(spent.map((s) => [s.customerId, s]));
     res.json({
@@ -218,16 +232,16 @@ shopAdminRouter.get(
   asyncHandler(async (req, res) => {
     const site = await siteOf(req);
     const customer = await prisma.shopCustomer.findFirst({
-      where: { id: req.params.id!, siteId: site.id },
+      where: { id: req.params.id!, siteId: site.id, ...live },
       select: {
         id: true,
         name: true,
         phone: true,
         addresses: true,
         createdAt: true,
-        orders: { orderBy: { createdAt: "desc" }, take: 100 },
-        reviews: { orderBy: { createdAt: "desc" }, take: 50 },
-        tickets: { orderBy: { updatedAt: "desc" }, take: 50, select: { id: true, subject: true, status: true, updatedAt: true } },
+        orders: { where: live, orderBy: { createdAt: "desc" }, take: 100 },
+        reviews: { where: live, orderBy: { createdAt: "desc" }, take: 50 },
+        tickets: { where: live, orderBy: { updatedAt: "desc" }, take: 50, select: { id: true, subject: true, status: true, updatedAt: true } },
       },
     });
     if (!customer) throw new HttpError(404, "NOT_FOUND", "مشتری پیدا نشد");
@@ -235,12 +249,24 @@ shopAdminRouter.get(
   })
 );
 
-/** DELETE …/site/customers/:id — removes the account (with its comments and tickets); its orders stay. */
+/**
+ * DELETE …/site/customers/:id — moves the account to the trash with its comments and tickets (same
+ * time stamp, so restoring the account brings them back too); its orders stay.
+ */
 shopAdminRouter.delete(
   "/customers/:id",
   asyncHandler(async (req, res) => {
     const site = await siteOf(req);
-    await prisma.shopCustomer.deleteMany({ where: { id: req.params.id!, siteId: site.id } });
+    const customer = await prisma.shopCustomer.findFirst({ where: { id: req.params.id!, siteId: site.id, ...live }, select: { id: true } });
+    if (customer) {
+      const at = new Date();
+      const mine = { siteId: site.id, customerId: customer.id, ...live };
+      await prisma.$transaction([
+        prisma.shopReview.updateMany({ where: mine, data: { deletedAt: at } }),
+        prisma.shopTicket.updateMany({ where: mine, data: { deletedAt: at } }),
+        prisma.shopCustomer.update({ where: { id: customer.id }, data: { deletedAt: at } }),
+      ]);
+    }
     res.json({ ok: true });
   })
 );
@@ -252,7 +278,7 @@ shopAdminRouter.get(
   "/reviews",
   asyncHandler(async (req, res) => {
     const site = await siteOf(req);
-    const reviews = await prisma.shopReview.findMany({ where: { siteId: site.id }, orderBy: { createdAt: "desc" }, take: 1000, include: { customer: { select: { name: true, phone: true } } } });
+    const reviews = await prisma.shopReview.findMany({ where: { siteId: site.id, ...live }, orderBy: { createdAt: "desc" }, take: 1000, include: { customer: { select: { name: true, phone: true } } } });
     res.json({ reviews });
   })
 );
@@ -270,7 +296,7 @@ shopAdminRouter.patch(
   asyncHandler(async (req, res) => {
     const site = await siteOf(req);
     const body = parseBody(reviewBody, req.body);
-    const found = await prisma.shopReview.findFirst({ where: { id: req.params.id!, siteId: site.id } });
+    const found = await prisma.shopReview.findFirst({ where: { id: req.params.id!, siteId: site.id, ...live } });
     if (!found) throw new HttpError(404, "NOT_FOUND", "نظر پیدا نشد");
     const review = await prisma.shopReview.update({
       where: { id: found.id },
@@ -280,12 +306,12 @@ shopAdminRouter.patch(
   })
 );
 
-/** DELETE …/site/reviews/:id */
+/** DELETE …/site/reviews/:id — moves a comment to the trash. */
 shopAdminRouter.delete(
   "/reviews/:id",
   asyncHandler(async (req, res) => {
     const site = await siteOf(req);
-    await prisma.shopReview.deleteMany({ where: { id: req.params.id!, siteId: site.id } });
+    await prisma.shopReview.updateMany({ where: { id: req.params.id!, siteId: site.id, ...live }, data: { deletedAt: new Date() } });
     res.json({ ok: true });
   })
 );
@@ -298,8 +324,8 @@ shopAdminRouter.post(
   asyncHandler(async (req, res) => {
     const site = await siteOf(req);
     const { ids: list, action } = parseBody(reviewBatchBody, req.body);
-    const where = { id: { in: list }, siteId: site.id };
-    const done = action === "delete" ? await prisma.shopReview.deleteMany({ where }) : await prisma.shopReview.updateMany({ where, data: { approved: action === "approve" } });
+    const where = { id: { in: list }, siteId: site.id, ...live };
+    const done = await prisma.shopReview.updateMany({ where, data: action === "delete" ? { deletedAt: new Date() } : { approved: action === "approve" } });
     res.json({ done: done.count });
   })
 );
@@ -311,7 +337,7 @@ shopAdminRouter.get(
   "/tickets",
   asyncHandler(async (req, res) => {
     const site = await siteOf(req);
-    const tickets = await prisma.shopTicket.findMany({ where: { siteId: site.id }, orderBy: { updatedAt: "desc" }, take: 1000, include: { customer: { select: { name: true, phone: true } } } });
+    const tickets = await prisma.shopTicket.findMany({ where: { siteId: site.id, ...live }, orderBy: { updatedAt: "desc" }, take: 1000, include: { customer: { select: { name: true, phone: true } } } });
     res.json({ tickets });
   })
 );
@@ -324,7 +350,7 @@ shopAdminRouter.patch(
   asyncHandler(async (req, res) => {
     const site = await siteOf(req);
     const body = parseBody(ticketBody, req.body);
-    const ticket = await prisma.shopTicket.findFirst({ where: { id: req.params.id!, siteId: site.id } });
+    const ticket = await prisma.shopTicket.findFirst({ where: { id: req.params.id!, siteId: site.id, ...live } });
     if (!ticket) throw new HttpError(404, "NOT_FOUND", "تیکت پیدا نشد");
     const messages = body.text ? [...((ticket.messages as unknown[]) ?? []), { from: "shop", text: body.text, at: new Date().toISOString() }].slice(-100) : undefined;
     const status = body.status ?? (body.text ? "ANSWERED" : undefined);
@@ -332,12 +358,12 @@ shopAdminRouter.patch(
   })
 );
 
-/** DELETE …/site/tickets/:id */
+/** DELETE …/site/tickets/:id — moves a ticket to the trash. */
 shopAdminRouter.delete(
   "/tickets/:id",
   asyncHandler(async (req, res) => {
     const site = await siteOf(req);
-    await prisma.shopTicket.deleteMany({ where: { id: req.params.id!, siteId: site.id } });
+    await prisma.shopTicket.updateMany({ where: { id: req.params.id!, siteId: site.id, ...live }, data: { deletedAt: new Date() } });
     res.json({ ok: true });
   })
 );
@@ -350,8 +376,93 @@ shopAdminRouter.post(
   asyncHandler(async (req, res) => {
     const site = await siteOf(req);
     const { ids: list, action } = parseBody(ticketBatchBody, req.body);
-    const where = { id: { in: list }, siteId: site.id };
-    const done = action === "delete" ? await prisma.shopTicket.deleteMany({ where }) : await prisma.shopTicket.updateMany({ where, data: { status: "CLOSED" } });
+    const where = { id: { in: list }, siteId: site.id, ...live };
+    const done = await prisma.shopTicket.updateMany({ where, data: action === "delete" ? { deletedAt: new Date() } : { status: "CLOSED" } });
     res.json({ done: done.count });
+  })
+);
+
+/* ───────────── Trash ───────────── */
+
+const trashed = { deletedAt: { not: null } };
+
+/**
+ * GET …/site/trash — deleted orders, customers, comments and tickets (newest first). Comments and
+ * tickets of a deleted customer are listed with the customer, not on their own.
+ */
+shopAdminRouter.get(
+  "/trash",
+  asyncHandler(async (req, res) => {
+    const site = await ownSite(req);
+    if (!site) return void res.json({ orders: [], customers: [], reviews: [], tickets: [], days: TRASH_DAYS });
+    await emptyOldTrash(site.id);
+    const where = { siteId: site.id, ...trashed };
+    const ofLive = { ...where, customer: live };
+    const [orders, customers, reviews, tickets] = await Promise.all([
+      prisma.shopOrder.findMany({ where, orderBy: { deletedAt: "desc" }, take: 500 }),
+      prisma.shopCustomer.findMany({ where, orderBy: { deletedAt: "desc" }, take: 500, select: { id: true, name: true, phone: true, createdAt: true, deletedAt: true, _count: { select: { reviews: true, tickets: true } } } }),
+      prisma.shopReview.findMany({ where: ofLive, orderBy: { deletedAt: "desc" }, take: 500, include: { customer: { select: { name: true, phone: true } } } }),
+      prisma.shopTicket.findMany({ where: ofLive, orderBy: { deletedAt: "desc" }, take: 500, include: { customer: { select: { name: true, phone: true } } } }),
+    ]);
+    res.json({ orders, customers: customers.map(({ _count, ...c }) => ({ ...c, reviews: _count.reviews, tickets: _count.tickets })), reviews, tickets, days: TRASH_DAYS });
+  })
+);
+
+const trashBody = z.object({ kind: z.enum(["orders", "customers", "reviews", "tickets"]), ids });
+
+/** POST …/site/trash/restore { kind, ids } — takes rows out of the trash; reports the ones that could not come back. */
+shopAdminRouter.post(
+  "/trash/restore",
+  asyncHandler(async (req, res) => {
+    const site = await siteOf(req);
+    const { kind, ids: list } = parseBody(trashBody, req.body);
+    const where = { id: { in: list }, siteId: site.id, ...trashed };
+    const failed: string[] = [];
+    let done = 0;
+    if (kind === "orders") {
+      for (const order of await prisma.shopOrder.findMany({ where })) {
+        try {
+          await setOrderStatus(order, "RESTORE");
+          done++;
+        } catch (e) {
+          failed.push(e instanceof HttpError ? e.message : order.code);
+        }
+      }
+    } else if (kind === "customers") {
+      for (const c of await prisma.shopCustomer.findMany({ where, select: { id: true, deletedAt: true } })) {
+        // The comments and tickets that went to the trash with the account come back with it.
+        const mine = { siteId: site.id, customerId: c.id, deletedAt: c.deletedAt };
+        await prisma.$transaction([
+          prisma.shopReview.updateMany({ where: mine, data: { deletedAt: null } }),
+          prisma.shopTicket.updateMany({ where: mine, data: { deletedAt: null } }),
+          prisma.shopCustomer.update({ where: { id: c.id }, data: { deletedAt: null } }),
+        ]);
+        done++;
+      }
+    } else {
+      const ofLive = { ...where, customer: live };
+      const r = kind === "reviews" ? await prisma.shopReview.updateMany({ where: ofLive, data: { deletedAt: null } }) : await prisma.shopTicket.updateMany({ where: ofLive, data: { deletedAt: null } });
+      done = r.count;
+    }
+    res.json({ done, failed });
+  })
+);
+
+/** POST …/site/trash/purge { kind, ids } — removes rows of the trash for good (a customer with its comments and tickets). */
+shopAdminRouter.post(
+  "/trash/purge",
+  asyncHandler(async (req, res) => {
+    const site = await siteOf(req);
+    const { kind, ids: list } = parseBody(trashBody, req.body);
+    const where = { id: { in: list }, siteId: site.id, ...trashed };
+    const r =
+      kind === "orders"
+        ? await prisma.shopOrder.deleteMany({ where })
+        : kind === "customers"
+          ? await prisma.shopCustomer.deleteMany({ where })
+          : kind === "reviews"
+            ? await prisma.shopReview.deleteMany({ where })
+            : await prisma.shopTicket.deleteMany({ where });
+    res.json({ done: r.count });
   })
 );

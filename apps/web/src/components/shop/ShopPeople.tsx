@@ -96,7 +96,7 @@ export function Reviews({ resumeId, shop, setShop, onChanged }: { resumeId?: str
     }
   };
   const remove = async (r: ShopReview) => {
-    if (!window.confirm("این نظر برای همیشه حذف شود؟")) return;
+    if (!window.confirm("این نظر به سطل زباله برود؟")) return;
     try {
       await api.deleteShopReview(resumeId, r.id);
       setItems((list) => list?.filter((x) => x.id !== r.id) ?? null);
@@ -107,7 +107,7 @@ export function Reviews({ resumeId, shop, setShop, onChanged }: { resumeId?: str
   };
   const batch = async (action: "approve" | "hide" | "delete") => {
     const n = sel.picked.size;
-    if (action === "delete" && !window.confirm(`${showNumber(n)} نظر برای همیشه حذف شوند؟`)) return;
+    if (action === "delete" && !window.confirm(`${showNumber(n)} نظر به سطل زباله بروند؟`)) return;
     try {
       await api.batchShopReviews(resumeId, [...sel.picked], action);
       sel.clear();
@@ -282,7 +282,7 @@ export function Tickets({ resumeId, onChanged }: { resumeId?: string; onChanged?
     }
   };
   const remove = async (t: ShopTicket) => {
-    if (!window.confirm(`تیکت «${t.subject}» برای همیشه حذف شود؟`)) return;
+    if (!window.confirm(`تیکت «${t.subject}» به سطل زباله برود؟`)) return;
     try {
       await api.deleteShopTicket(resumeId, t.id);
       setItems((list) => list?.filter((x) => x.id !== t.id) ?? null);
@@ -292,7 +292,7 @@ export function Tickets({ resumeId, onChanged }: { resumeId?: string; onChanged?
     }
   };
   const batch = async (action: "close" | "delete") => {
-    if (!window.confirm(`${showNumber(sel.picked.size)} تیکت ${action === "close" ? "بسته" : "برای همیشه حذف"} شوند؟`)) return;
+    if (!window.confirm(`${showNumber(sel.picked.size)} تیکت ${action === "close" ? "بسته" : "به سطل زباله منتقل"} شوند؟`)) return;
     try {
       await api.batchShopTickets(resumeId, [...sel.picked], action);
       sel.clear();
@@ -491,7 +491,7 @@ function CustomerPage({ resumeId, id, onBack, onDeleted, onError }: { resumeId: 
   if (!c) return <p className="muted shm-hint">در حال دریافت…</p>;
   const live = c.orders.filter((o) => o.status !== "CANCELED");
   const remove = async () => {
-    if (!window.confirm(`حساب «${c.name}» حذف شود؟ نظرها و تیکت‌هایش هم حذف می‌شوند؛ سفارش‌هایش در فهرست سفارش‌ها می‌مانند.`)) return;
+    if (!window.confirm(`حساب «${c.name}» به سطل زباله برود؟ نظرها و تیکت‌هایش هم همراهش می‌روند؛ سفارش‌هایش در فهرست سفارش‌ها می‌مانند. تا ۳۰ روز می‌توانید برش گردانید.`)) return;
     try {
       await api.deleteShopCustomer(resumeId, c.id);
       onDeleted();
