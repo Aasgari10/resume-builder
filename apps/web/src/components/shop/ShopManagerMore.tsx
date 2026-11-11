@@ -213,7 +213,11 @@ export function AdBanners({ shop, setShop }: ShopProps) {
         <div key={b.id} className="shm-slide">
           <span className="shm-thumb wide">{b.image ? <img src={b.image} alt="" /> : "🖼"}</span>
           <div className="shm-slide-fields">
-            <input value={b.title ?? ""} maxLength={80} placeholder="عنوان بنر (برای گوگل و نابینایان، اختیاری)" aria-label="عنوان بنر" onChange={(e) => update(b.id, { title: e.target.value || undefined })} />
+            <input value={b.title ?? ""} maxLength={80} placeholder="عنوان بنر (در بعضی قالب‌ها روی عکس نوشته می‌شود؛ اختیاری)" aria-label="عنوان بنر" onChange={(e) => update(b.id, { title: e.target.value || undefined })} />
+            <div className="row gap wrap">
+              <input value={b.kicker ?? ""} maxLength={40} placeholder="خط کوچک روی بنر (اختیاری)" aria-label="خط کوچک روی بنر" onChange={(e) => update(b.id, { kicker: e.target.value || undefined })} />
+              <input value={b.text ?? ""} maxLength={160} placeholder="متن زیر عنوان (اختیاری)" aria-label="متن روی بنر" onChange={(e) => update(b.id, { text: e.target.value || undefined })} />
+            </div>
             <input dir="ltr" value={b.link ?? ""} maxLength={500} placeholder="https://… (لینک بنر، اختیاری)" aria-label="لینک بنر" onChange={(e) => update(b.id, { link: e.target.value || undefined })} />
             <div className="row gap wrap">
               <ImagePicker value={b.image} onChange={(url) => update(b.id, { image: url })} />
@@ -245,7 +249,7 @@ export function AdBanners({ shop, setShop }: ShopProps) {
           </div>
         </div>
       ))}
-      {banners.length < 8 && (
+      {banners.length < 12 && (
         <button type="button" className="btn small" onClick={() => save([...banners, { id: newId(), image: "", wide: banners.length === 0 || undefined }])}>
           + بنر جدید
         </button>

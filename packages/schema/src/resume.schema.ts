@@ -16,7 +16,7 @@ const YEAR_MONTH_OR_EMPTY = /^(\d{4}-(0[1-9]|1[0-2]))?$/;
 export const SAMPLE_ASSETS_PATH = "/_assets/samples/";
 /** Bumped when the pictures change, so browsers fetch the new files instead of cached ones. */
 export const SAMPLE_ASSETS_VERSION = 10;
-export const isSampleAsset = (v: string) => /^\/_assets\/samples\/[a-z0-9-]+\.(jpg|png)(\?v=\d+)?$/.test(v);
+export const isSampleAsset = (v: string) => /^\/_assets\/samples\/[a-z0-9-]+\.(jpg|png|svg)(\?v=\d+)?$/.test(v);
 
 function buildResumeSchemas(strict: boolean) {
   /* ───────────── Primitives ───────────── */
@@ -196,7 +196,7 @@ function buildResumeSchemas(strict: boolean) {
     rating: z.number().int().min(1).max(5).optional(), // stars shown by shop templates (5 when empty)
     hidden: z.boolean().optional(), // kept but not shown
   });
-  const clientLogo = z.object({ id, name: z.string().max(80), image: url() });
+  const clientLogo = z.object({ id, name: z.string().max(80), image: optionalUrl.default(""), text: z.string().max(200).optional() }); // text: a line under the name (some shop templates)
 
   // Online shop (shop templates). Prices are whole tomans. Shown by shop templates only.
   const price = z.number().int().min(0).max(10_000_000_000);
@@ -277,7 +277,11 @@ function buildResumeSchemas(strict: boolean) {
       .max(50)
       .optional(),
     heroKicker: z.string().max(120).optional(), // short line above the hero heading
-    banners: z.array(z.object({ id, image: optionalUrl, link: optionalUrl, wide: z.boolean().optional(), title: z.string().max(80).optional(), hidden: z.boolean().optional() })).max(8).optional(), // ad pictures between sections
+    // Ad pictures between sections; some templates write the kicker, title and text over the picture.
+    banners: z
+      .array(z.object({ id, image: optionalUrl, link: optionalUrl, wide: z.boolean().optional(), title: z.string().max(80).optional(), kicker: z.string().max(40).optional(), text: z.string().max(160).optional(), hidden: z.boolean().optional() }))
+      .max(12)
+      .optional(),
     bestTitle: z.string().max(120).optional(),
     bestText: z.string().max(200).optional(),
     discountTitle: z.string().max(120).optional(),
@@ -296,6 +300,25 @@ function buildResumeSchemas(strict: boolean) {
     pages: z
       .array(z.object({ id, slug: z.string().regex(/^[a-z0-9-]{1,30}$/), title: z.string().max(80), text: z.string().max(8000), hidden: z.boolean().optional() }))
       .max(8)
+      .optional(),
+    // Small logos at the bottom of the page: payment methods, trust seals (e.g. Enamad), each with an optional link.
+    trustLogos: z.array(z.object({ id, image: optionalUrl, link: optionalUrl, title: z.string().max(60).optional() })).max(8).optional(),
+    // Blog posts (the "/blog" page of templates that have one); managed in the shop panel.
+    posts: z
+      .array(
+        z.object({
+          id,
+          title: text(1, 160),
+          image: optionalUrl,
+          date: z.string().max(40).optional(), // ISO date shown under the title
+          author: z.string().max(60).optional(),
+          category: z.string().max(40).optional(),
+          excerpt: z.string().max(400).optional(), // the short text in the list; the start of the text when empty
+          text: z.string().max(20000).default(""),
+          hidden: z.boolean().optional(),
+        }),
+      )
+      .max(60)
       .optional(),
     paymentNote: z.string().max(600).optional(), // how to pay for now (card-to-card, on delivery…)
     orderNote: z.string().max(300).optional(), // shown after an order is placed
