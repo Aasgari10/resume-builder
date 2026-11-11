@@ -131,6 +131,8 @@ const SVG: Record<string, string> = {
   shield: "M12 3l7.5 3v5.5c0 4.6-3.2 7.9-7.5 9.5-4.3-1.6-7.5-4.9-7.5-9.5V6z M9 12l2 2 4-4",
   chat: "M4 5h16v11H9l-5 4z",
   up: "M6 15l6-6 6 6",
+  filter: "M4 6h16 M7 12h10 M10 18h4",
+  send: "M21 3 10 14 M21 3l-7 18-4-8-8-4z",
   heartBig: "M12 21s-9.5-5.8-9.5-12.6A5.3 5.3 0 0 1 12 5.2a5.3 5.3 0 0 1 9.5 3.2C21.5 15.2 12 21 12 21z",
 };
 const BAND_ICONS = ["tag", "truck", "shield", "chat"];
@@ -220,15 +222,9 @@ function ProductCard({ view, p, i = 0 }: { view: View; p: Product; i?: number; m
   );
 }
 
-/** The grey title band at the top of inner pages: the page name and a small bouncing arrow. */
-function Band({ view, title }: { view: View; title: string }) {
-  void view;
-  return (
-    <section className="jn-band">
-      <h1>{title}</h1>
-      <Svg name="down" className="jn-ico jn-band-arrow" />
-    </section>
-  );
+/** Inner pages carry no page-name strip at the top (the owner's choice); kept as a no-op for shared code. */
+function Band(_: { view: View; title: string }) {
+  return null;
 }
 
 /* ───────────── Header, menu drawer, footer ───────────── */
@@ -417,13 +413,14 @@ function Newsletter({ view }: { view: View }) {
 }
 
 function Footer(view: View) {
+  if (view.page === "/contact") return <ContactFoot view={view} />;
   const { ctx, link, editing, shop } = view;
   const b = ctx.data.basics;
   const site = ctx.data.site;
   const pages = (shop.pages ?? []).filter((p) => !p.hidden);
   return (
     <>
-      {view.page !== "/contact" && <Newsletter view={view} />}
+      <Newsletter view={view} />
       <footer className="jn-foot">
         <div className="jn-wrap">
           <Opt value={site?.bandText} editing={editing} edit={ed("site.bandText", "text", "تیتر پایین صفحه")}>
@@ -995,6 +992,7 @@ function Contact(view: View) {
       <section className="jn-contact">
         <span className="jn-contact-pic" {...ed("site.heroImage", "image", "عکس صفحه‌ی تماس")}>
           {photo && <img src={photo} alt="" />}
+          <i className="jn-ring" aria-hidden="true" />
         </span>
         <div className={`jn-contact-form ${rise}`}>
           <small className="jn-kicker">تماس با ما</small>
@@ -1011,18 +1009,29 @@ function Contact(view: View) {
             <form method="get" action={`mailto:${b.email}`}>
               <label>
                 <Svg name="user2" />
-                <input name="subject" placeholder="نام شما" aria-label="نام شما" />
+                <input name="subject" placeholder="نام" aria-label="نام شما" />
+              </label>
+              <label>
+                <Svg name="mail" />
+                <input name="cc" type="email" placeholder="ایمیل" aria-label="ایمیل شما" dir="auto" />
               </label>
               <label>
                 <Svg name="phone" />
-                <input name="cc" placeholder="تلفن" aria-label="تلفن" dir="auto" />
+                <input name="bcc" placeholder="تلفن" aria-label="تلفن" dir="auto" />
               </label>
-              <label className="full">
+              <label>
+                <Svg name="chat" />
+                <input name="title" placeholder="موضوع" aria-label="موضوع" />
+              </label>
+              <label className="full tall">
                 <Svg name="pen" />
-                <textarea name="body" required rows={3} placeholder="چطور می‌توانیم کمکتان کنیم؟" aria-label="پیام شما" />
+                <textarea name="body" required rows={4} placeholder="چطور می‌توانیم کمکتان کنیم؟ راحت با ما در میان بگذارید!" aria-label="پیام شما" />
+              </label>
+              <label className="full jn-agree">
+                <input type="checkbox" required /> با ثبت پیام، قوانین و حریم خصوصی فروشگاه را می‌پذیرم.
               </label>
               <button type="submit" className="jn-btn blue">
-                <Svg name="mail" /> ارسال پیام
+                <Svg name="send" /> ارسال پیام
               </button>
             </form>
           ) : (
@@ -1043,25 +1052,37 @@ function Contact(view: View) {
           </section>
         </Opt>
       )}
-      <section className="jn-wrap jn-contact-row">
-        <Opt value={site?.address} editing={editing} edit={ed("site.address", "multiline", "نشانی")}>
-          <p {...ed("site.address", "multiline", "نشانی")}>{site?.address}</p>
-        </Opt>
-        <div>
-          {b.email && (
-            <a href={`mailto:${b.email}`} dir="ltr" {...ed("basics.email", "text", "ایمیل")}>
-              {b.email}
-            </a>
-          )}
-          {b.phone && (
-            <a href={`tel:${b.phone.replace(/[^\d+]/g, "")}`} dir="ltr" {...ed("basics.phone", "text", "تلفن")}>
-              {b.phone}
-            </a>
-          )}
-        </div>
-        <Socials ctx={ctx} editing={editing} className="jn-social-round" />
-      </section>
     </>
+  );
+}
+
+/** The contact page ends with one quiet row instead of the newsletter and the navy footer (as in the reference). */
+function ContactFoot({ view }: { view: View }) {
+  const { ctx, editing } = view;
+  const b = ctx.data.basics;
+  const site = ctx.data.site;
+  return (
+    <footer className="jn-wrap jn-contact-row">
+      <Opt value={site?.address} editing={editing} edit={ed("site.address", "multiline", "نشانی")}>
+        <p {...ed("site.address", "multiline", "نشانی")}>{site?.address}</p>
+      </Opt>
+      <div>
+        {b.email && (
+          <a href={`mailto:${b.email}`} dir="ltr" {...ed("basics.email", "text", "ایمیل")}>
+            {b.email}
+          </a>
+        )}
+        {b.phone && (
+          <a href={`tel:${b.phone.replace(/[^\d+]/g, "")}`} dir="ltr" {...ed("basics.phone", "text", "تلفن")}>
+            {b.phone}
+          </a>
+        )}
+      </div>
+      <Socials ctx={ctx} editing={editing} className="jn-social-round" />
+      <a href="#" className="jn-top dark" aria-label="بالای صفحه">
+        <Svg name="up" />
+      </a>
+    </footer>
   );
 }
 
@@ -1099,108 +1120,74 @@ function Listing(view: View & { categoryId?: string }) {
   const q = visitor.query;
   const { list, cats, cat, active } = filterProducts(visible(shop), shop.categories ?? [], q, view.categoryId);
   const here = view.categoryId ? `/category/${view.categoryId}` : "/shop";
-  const sort = SORTS.find(([k]) => k === (q.sort ?? "new")) ?? SORTS[0]!;
-  const cart = priceCart(shop, visitor.cart);
-  const side = (
-    <>
-      <div className="jn-widget">
-        <h3>سبد خرید</h3>
-        {cart.count ? (
-          <p>
-            {fa(cart.count)} کالا · {money(view, cart.subtotal)}{" "}
-            <PageLink to="/cart" link={link}>
-              دیدن سبد
-            </PageLink>
-          </p>
-        ) : (
-          <p className="jn-muted">سبد خرید شما خالی است.</p>
-        )}
-        <form method="get" action={link("/search")} className="jn-side-search">
-          <Svg name="search" />
-          <input name="q" placeholder="جستجوی محصول..." aria-label="جستجوی محصول" />
-        </form>
-      </div>
-      <div className="jn-widget">
-        <h3>دسته‌بندی محصولات</h3>
-        <ul className="jn-cats">
-          {cats.map((c) => (
-            <li key={c.id}>
-              <PageLink to={`/category/${c.id}`} link={link} current={cat?.id === c.id}>
-                {c.name} <small>({fa(visible(shop).filter((p) => p.categoryId === c.id).length)})</small>
-              </PageLink>
-            </li>
-          ))}
-        </ul>
-      </div>
-      <PriceFilter view={view} here={here} />
-      <form method="get" action={link(here)} className="jn-widget jn-checks">
-        <h3>وضعیت</h3>
-        <Keep query={q} skip={["sale", "stock"]} />
-        <label>
-          <input type="checkbox" name="stock" value="1" defaultChecked={Boolean(q.stock)} /> موجود
-        </label>
-        <label>
-          <input type="checkbox" name="sale" value="1" defaultChecked={Boolean(q.sale)} /> تخفیف‌دار
-        </label>
-        <button type="submit" className="jn-btn blue jn-small">
-          اعمال
-        </button>
-      </form>
-    </>
-  );
   return (
-    <>
-      <Band view={view} title={cat?.name ?? "فروشگاه"} />
-      <section className="jn-wrap jn-shop">
-        <div>
-          <div className="jn-toolbar">
-            <small>
-              نمایش {fa(list.length)} محصول
-              {active && (
-                <>
-                  {" · "}
-                  <PageLink to={here} link={link}>
-                    حذف فیلترها
-                  </PageLink>
-                </>
-              )}
-            </small>
-            <details className="jn-sort">
-              <summary>
-                {sort[1]} <Svg name="down" />
-              </summary>
-              <div>
-                {SORTS.map(([k, label]) => (
-                  <form key={k} method="get" action={link(here)}>
-                    <Keep query={q} skip={["sort"]} />
-                    <input type="hidden" name="sort" value={k} />
-                    <button type="submit" aria-current={k === sort[0] || undefined}>
-                      {label}
-                    </button>
-                  </form>
-                ))}
-              </div>
-            </details>
-          </div>
-          {list.length ? (
-            <div className="jn-grid two">
-              {list.map((p, k) => (
-                <ProductCard key={p.id} view={view} p={p} i={k} />
+    <section className="jn-wrap jn-shop">
+      {/* As in HomeMart: one filter form beside the products; it sends a plain GET form (no script). */}
+      <form method="get" action={link(here)} className="jn-filters">
+        <h2>
+          <Svg name="filter" /> فیلترها
+        </h2>
+        <label>
+          مرتب‌سازی
+          <select name="sort" defaultValue={q.sort ?? "new"}>
+            {SORTS.map(([v, l]) => (
+              <option key={v} value={v}>
+                {l}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          جستجو
+          <input name="q" defaultValue={q.q} placeholder="نام محصول..." />
+        </label>
+        {!view.categoryId && (
+          <label>
+            دسته‌بندی
+            <select name="cat" defaultValue={q.cat ?? ""}>
+              <option value="">همه</option>
+              {cats.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
               ))}
-            </div>
-          ) : (
-            <p className="jn-notice">{active ? "محصولی با این فیلترها پیدا نشد." : "هنوز محصولی اضافه نشده است."}</p>
-          )}
+            </select>
+          </label>
+        )}
+        <fieldset>
+          <legend>محدوده‌ی قیمت (تومان)</legend>
+          <input name="min" inputMode="numeric" defaultValue={q.min} placeholder="از" aria-label="کمترین قیمت" />
+          <input name="max" inputMode="numeric" defaultValue={q.max} placeholder="تا" aria-label="بیشترین قیمت" />
+        </fieldset>
+        <label className="jn-check">
+          <input type="checkbox" name="sale" value="1" defaultChecked={Boolean(q.sale)} /> فقط تخفیف‌دارها
+        </label>
+        <label className="jn-check">
+          <input type="checkbox" name="stock" value="1" defaultChecked={Boolean(q.stock)} /> فقط کالاهای موجود
+        </label>
+        <button type="submit" className="jn-btn blue">
+          اعمال فیلترها
+        </button>
+        <PageLink to={here} link={link} className="jn-btn ghost">
+          حذف همه‌ی فیلترها
+        </PageLink>
+      </form>
+      <div className="jn-shop-main">
+        <div className="jn-shop-head">
+          <b>{cat?.name ?? "همه‌ی محصولات"}</b>
+          <small>{fa(list.length)} محصول</small>
         </div>
-        <aside className="jn-side">
-          <details className="jn-filter-sm">
-            <summary>فیلتر محصولات</summary>
-            {side}
-          </details>
-          <div className="jn-side-lg">{side}</div>
-        </aside>
-      </section>
-    </>
+        {list.length ? (
+          <div className="jn-grid three">
+            {list.map((p, k) => (
+              <ProductCard key={p.id} view={view} p={p} i={k} />
+            ))}
+          </div>
+        ) : (
+          <p className="jn-notice">{active ? "محصولی با این فیلترها وجود ندارد؛ فیلترها را تغییر دهید." : "هنوز محصولی اضافه نشده است."}</p>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -1356,62 +1343,7 @@ function Act({ view, op, id, children, className, qty, size, label }: { view: Vi
 
 /** Section heading of the reference: bold title, a grey line beside it, "view all" on the other side. */
 
-function Keep({ query, skip }: { query: Record<string, string>; skip: string[] }) {
-  return (
-    <>
-      {Object.entries(query)
-        .filter(([k, v]) => v && !skip.includes(k))
-        .map(([k, v]) => (
-          <input key={k} type="hidden" name={k} value={v} />
-        ))}
-    </>
-  );
-}
-
 /** Price filter of the side column: two boxes, two handles on one line (plain range inputs) and a button. */
-
-function PriceFilter({ view, here }: { view: View; here: string }) {
-  const prices = visible(view.shop).map(unitPrice);
-  if (!prices.length) return null;
-  const step = 10000;
-  const lo = Math.floor(Math.min(...prices) / step) * step;
-  const hi = Math.max(lo + step, Math.ceil(Math.max(...prices) / step) * step);
-  const q = view.visitor.query;
-  const read = (v: string | undefined, d: number) => {
-    const n = Number(String(v ?? "").replace(/[۰-۹]/g, (x) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(x))).replace(/[^\d]/g, ""));
-    return n ? Math.min(hi, Math.max(lo, n)) : d;
-  };
-  const min = read(q.min, lo);
-  const max = read(q.max, hi);
-  return (
-    <form method="get" action={view.link(here)} className="jn-widget jn-price-filter">
-      <h3>فیلتر قیمت</h3>
-      <Keep query={q} skip={["min", "max"]} />
-      <div className="jn-minmax">
-        <label>
-          <small>کمترین قیمت</small>
-          <input name="min" inputMode="numeric" defaultValue={String(min)} aria-label="کمترین قیمت" />
-        </label>
-        <i>-</i>
-        <label>
-          <small>بیشترین قیمت</small>
-          <input name="max" inputMode="numeric" defaultValue={String(max)} aria-label="بیشترین قیمت" />
-        </label>
-      </div>
-      <div className="jn-range" aria-hidden="true">
-        <input type="range" min={lo} max={hi} step={step} defaultValue={min} tabIndex={-1} disabled />
-        <input type="range" min={lo} max={hi} step={step} defaultValue={max} tabIndex={-1} disabled />
-      </div>
-      <div className="jn-range-foot">
-        <small>
-          قیمت: {money(view, min)} — {money(view, max)}
-        </small>
-        <button type="submit">فیلتر</button>
-      </div>
-    </form>
-  );
-}
-
 
 function PageHead({ title, view }: { title: string; view: View; trail?: { label: string; to?: string }[] }) {
   return <Band view={view} title={title} />;
@@ -2195,12 +2127,10 @@ ${[1, 2, 3, 4, 5, 6].map((n) => `.jn-dot:nth-of-type(${n}):checked ~ .jn-qdots l
 .jn-top:hover { background: var(--jn-blue); transform: translateY(-4px); }
 
 /* Inner pages */
-.jn-band { display: grid; justify-items: center; gap: 10px; padding-block: 70px 50px; background: var(--jn-grey); text-align: center; }
-.jn-band h1 { font-size: clamp(32px, 3.8cqi, 50px); font-weight: 800; }
-.jn-band-arrow { width: 22px; height: 22px; animation: jn-bob 1.8s ease-in-out infinite; }
-@keyframes jn-bob { 50% { transform: translateY(6px); } }
-.jn-inner { padding-bottom: 70px; }
-.jn-inner > .jn-band:first-child, .jn-inner > div > .jn-band:first-child { margin-inline: calc(50% - 50cqi); margin-bottom: 50px; }
+.jn-inner { padding-block: 50px 70px; }
+/* No page-name strip: inner pages start with a little air under the header (not the home and contact pages). */
+.jn-main:not(.jn-home .jn-main) > .jn-what-wrap:first-child, .jn-main > .jn-services:first-child, .jn-main > .jn-team-top:first-child { padding-top: 60px; }
+.jn-main > .jn-faq:first-child { padding-top: 60px; }
 .jn-notice { padding: 30px; border-radius: 18px; background: var(--jn-grey); color: var(--jn-muted); text-align: center; }
 .jn-box { padding: 26px; border-radius: 22px; background: #fff; box-shadow: 0 20px 40px -32px rgb(24 35 82 / .5); border: 1px solid var(--jn-line); box-sizing: border-box; }
 
@@ -2266,28 +2196,36 @@ ${[1, 2, 3, 4, 5, 6].map((n) => `.jn-dot:nth-of-type(${n}):checked ~ .jn-qrow-fa
 .jn-feats span { display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 14px; }
 .jn-feats .jn-ico { width: 28px; height: 28px; color: var(--jn-blue); }
 
-/* Contact */
-.jn-contact { display: grid; grid-template-columns: 1fr 1fr; min-height: 560px; }
+/* Contact: a tall photo beside the form, rounded fields in pairs, a large map, then one quiet row */
+.jn-contact { display: grid; grid-template-columns: 1fr 1fr; min-height: clamp(560px, 81cqi, 1040px); }
 .jn-contact-pic { position: relative; display: block; overflow: hidden; background: var(--jn-navy); }
 .jn-contact-pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center top; }
-.jn-contact-form { display: grid; align-content: center; gap: 16px; padding: 60px clamp(24px, 6cqi, 90px); }
-.jn-contact-form h1 { font-size: clamp(28px, 3.2cqi, 42px); font-weight: 800; line-height: 1.35; }
-.jn-contact-form form { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 24px; margin-top: 10px; }
-.jn-contact-form label { display: flex; align-items: flex-start; gap: 10px; border-bottom: 1px solid var(--jn-line); transition: border-color .3s; }
-.jn-contact-form label:focus-within { border-color: var(--jn-blue); }
-.jn-contact-form label .jn-ico { width: 18px; height: 18px; margin-top: 13px; color: var(--jn-muted); }
+.jn-ring { position: absolute; bottom: 14%; inset-inline-start: -26px; width: 52px; height: 52px; border: 9px solid var(--jn-green); border-radius: 50%; animation: jn-float2 5s ease-in-out infinite; }
+.jn-contact-form { display: grid; align-content: center; gap: 18px; padding: 60px clamp(24px, 6cqi, 90px); }
+.jn-contact-form h1 { max-width: 14em; font-size: clamp(30px, 3.6cqi, 48px); font-weight: 800; line-height: 1.3; }
+.jn-contact-form form { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+.jn-contact-form label { display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 20px; box-sizing: border-box; border: 1px solid var(--jn-line); border-radius: 999px; background: #fff; transition: border-color .3s, box-shadow .3s; }
+.jn-contact-form label.tall { align-items: flex-start; height: auto; min-height: 120px; padding-block: 14px; border-radius: 26px; }
+.jn-contact-form label:focus-within { border-color: var(--jn-blue); box-shadow: 0 0 0 4px color-mix(in srgb, var(--jn-blue) 14%, transparent); }
+.jn-contact-form label .jn-ico { width: 18px; height: 18px; color: var(--jn-muted); }
+.jn-contact-form label.tall .jn-ico { margin-top: 2px; }
 .jn-contact-form .full { grid-column: 1 / -1; }
-.jn-contact-form input, .jn-contact-form textarea { flex: 1; min-width: 0; padding: 12px 0; border: none; background: none; font: inherit; outline: none; resize: vertical; }
-.jn-contact-form .jn-btn { justify-self: start; }
-.jn-map { height: 400px; }
+.jn-contact-form input, .jn-contact-form textarea { flex: 1; min-width: 0; padding: 0; border: none; background: none; font: inherit; font-size: 14px; outline: none; resize: vertical; }
+.jn-contact-form textarea { min-height: 80px; }
+.jn-contact-form .jn-agree { height: auto; padding: 0; border: none; background: none; box-shadow: none !important; color: var(--jn-muted); font-size: 13px; }
+.jn-contact-form .jn-agree input { flex: none; width: 17px; height: 17px; accent-color: var(--jn-blue); }
+.jn-contact-form .jn-btn { justify-self: start; height: 52px; padding: 0 30px; }
+.jn-map { height: clamp(320px, 52cqi, 680px); }
 .jn-map iframe { width: 100%; height: 100%; border: none; filter: saturate(.85); }
-.jn-contact-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 30px; align-items: center; padding-block: 34px; font-size: 14px; }
+.jn-contact-row { display: grid; grid-template-columns: 1.2fr 1fr auto auto; gap: 30px; align-items: center; padding-block: 34px; font-size: 14px; }
+.jn-contact-row .jn-social-round { flex-wrap: nowrap; }
 .jn-contact-row p { white-space: pre-line; color: var(--jn-muted); line-height: 1.9; }
-.jn-contact-row > div { display: grid; gap: 4px; color: var(--jn-muted); }
+.jn-contact-row > div:not(.p-socials) { display: grid; gap: 4px; color: var(--jn-muted); }
 .jn-social-round { display: flex; flex-wrap: wrap; gap: 8px; }
-.jn-social-round a { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--jn-grey); transition: background .2s, color .2s; }
-.jn-social-round a:hover { background: var(--jn-blue); color: #fff !important; }
+.jn-social-round a { display: grid; place-items: center; width: 40px !important; height: 40px !important; border-radius: 50%; border: 1px solid var(--jn-line); transition: background .2s, color .2s, border-color .2s, transform .3s; }
+.jn-social-round a:hover { background: var(--jn-blue); border-color: var(--jn-blue); color: #fff !important; transform: translateY(-3px); }
 .jn-social-round .p-ico { width: 15px; height: 15px; }
+.jn-top.dark { background: var(--jn-navy); color: #fff; }
 
 /* Questions */
 .jn-faq { display: grid; gap: 4px; max-width: 760px; padding-block: 60px 80px; }
@@ -2304,47 +2242,22 @@ ${[1, 2, 3, 4, 5, 6].map((n) => `.jn-dot:nth-of-type(${n}):checked ~ .jn-qrow-fa
 .jn-faq-pic { display: block; height: clamp(260px, 30cqi, 440px); overflow: hidden; }
 .jn-faq-pic img { width: 100%; height: 100%; object-fit: cover; }
 
-/* Shop page */
-.jn-shop { display: grid; grid-template-columns: minmax(0, 1fr) 290px; gap: 40px; align-items: start; padding-block: 50px 80px; }
-.jn-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 24px; color: var(--jn-muted); font-size: 14px; }
-.jn-toolbar a { color: var(--jn-blue); }
-.jn-sort { position: relative; }
-.jn-sort summary { display: flex; align-items: center; gap: 6px; list-style: none; cursor: pointer; color: var(--jn-ink); }
-.jn-sort summary::-webkit-details-marker { display: none; }
-.jn-sort summary .jn-ico { width: 16px; height: 16px; }
-.jn-sort > div { position: absolute; top: calc(100% + 8px); inset-inline-end: 0; z-index: 20; display: grid; min-width: 170px; padding: 8px; background: #fff; border-radius: 14px; box-shadow: 0 20px 40px -18px rgb(24 35 82 / .35); }
-.jn-sort button { width: 100%; padding: 9px 12px; border: none; border-radius: 8px; background: none; text-align: start; }
-.jn-sort button:hover, .jn-sort button[aria-current] { background: var(--jn-grey); color: var(--jn-blue); }
-.jn-side { position: sticky; top: 20px; display: grid; gap: 0; padding: 28px; border-radius: 22px; background: #fff; box-shadow: 0 24px 50px -36px rgb(24 35 82 / .55); }
-.jn-widget { display: grid; gap: 14px; padding-bottom: 24px; margin-bottom: 24px; border-bottom: 1px solid var(--jn-line); font-size: 14px; }
-.jn-side-lg > .jn-widget:last-child, .jn-filter-sm .jn-widget:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-.jn-widget h3 { font-size: 17px; font-weight: 700; }
-.jn-widget a { color: var(--jn-blue); }
-.jn-side-search { display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 16px; border: 1px solid var(--jn-line); border-radius: 999px; }
-.jn-side-search .jn-ico { width: 17px; height: 17px; color: var(--jn-muted); }
-.jn-side-search input { flex: 1; min-width: 0; border: none; background: none; font: inherit; outline: none; }
-.jn-cats { display: grid; gap: 10px; margin: 0; padding-inline-start: 18px; }
-.jn-cats a { color: var(--jn-ink) !important; transition: color .2s; }
-.jn-cats a:hover, .jn-cats a[aria-current="page"] { color: var(--jn-blue) !important; }
-.jn-cats small { color: var(--jn-muted); }
-.jn-minmax { display: flex; align-items: flex-end; gap: 8px; }
-.jn-minmax label { flex: 1; display: grid; gap: 4px; }
-.jn-minmax small { color: var(--jn-muted); font-size: 11px; }
-.jn-minmax input { width: 100%; height: 40px; box-sizing: border-box; padding: 0 12px; border: 1px solid var(--jn-line); border-radius: 12px; font: inherit; }
-.jn-minmax i { padding-bottom: 10px; font-style: normal; }
-.jn-range { position: relative; height: 18px; }
-.jn-range input { position: absolute; inset: 0; width: 100%; margin: 0; background: none; pointer-events: none; -webkit-appearance: none; appearance: none; }
-.jn-range input:first-child { background: linear-gradient(var(--jn-yellow), var(--jn-yellow)) center / 100% 4px no-repeat; }
-.jn-range input::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--jn-yellow); }
-.jn-range input::-moz-range-thumb { width: 14px; height: 14px; border: none; border-radius: 50%; background: var(--jn-yellow); }
-.jn-range-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.jn-range-foot small { color: var(--jn-muted); font-size: 12px; }
-.jn-range-foot button { height: 38px; padding: 0 22px; border: none; border-radius: 999px; background: var(--jn-blue); color: #fff; font-weight: 700; font-size: 13px; transition: transform .3s; }
-.jn-range-foot button:hover { transform: translateY(-2px); }
-.jn-checks label { display: flex; align-items: center; gap: 10px; }
-.jn-checks input { width: 16px; height: 16px; accent-color: var(--jn-blue); }
-.jn-checks .jn-btn { justify-self: start; }
-.jn-filter-sm { display: none; }
+/* Shop page: HomeMart's shape (a filter form beside the products) in Juno's look */
+.jn-shop { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 34px; align-items: start; padding-block: 50px 80px; }
+.jn-filters { position: sticky; top: 20px; display: grid; gap: 16px; padding: 26px; border-radius: 22px; background: #fff; box-shadow: 0 24px 50px -36px rgb(24 35 82 / .55); font-size: 14px; }
+.jn-filters h2 { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 800; }
+.jn-filters h2 .jn-ico { width: 20px; height: 20px; color: var(--jn-blue); }
+.jn-filters label { display: grid; gap: 6px; font-weight: 600; }
+.jn-filters select, .jn-filters label > input:not([type="checkbox"]), .jn-filters fieldset input { width: 100%; height: 44px; box-sizing: border-box; padding: 0 16px; border: 1px solid var(--jn-line); border-radius: 999px; background: #fff; font: inherit; font-weight: 400; color: inherit; transition: border-color .2s, box-shadow .2s; }
+.jn-filters select:focus, .jn-filters input:focus { outline: none; border-color: var(--jn-blue); box-shadow: 0 0 0 3px color-mix(in srgb, var(--jn-blue) 18%, transparent); }
+.jn-filters fieldset { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0; padding: 0; border: none; }
+.jn-filters legend { margin-bottom: 6px; padding: 0; font-weight: 600; }
+.jn-filters .jn-check { display: flex; align-items: center; gap: 10px; font-weight: 400; cursor: pointer; }
+.jn-filters .jn-check input { width: 18px; height: 18px; accent-color: var(--jn-blue); }
+.jn-filters .jn-btn { width: 100%; }
+.jn-shop-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 22px; }
+.jn-shop-head b { font-size: 20px; font-weight: 800; }
+.jn-shop-head small { color: var(--jn-muted); font-size: 14px; }
 
 /* Product page */
 .jn-product { display: grid; grid-template-columns: 1.1fr 1fr; gap: 50px; align-items: start; padding-block: 50px; }
@@ -2400,6 +2313,8 @@ ${[1, 2, 3, 4, 5, 6].map((n) => `.jn-gallery:has(.jn-thumb:nth-child(${n}) input
 .jn-post > p { color: var(--jn-muted); line-height: 2; }
 .jn-post-text { display: grid; gap: 14px; color: #474B6B; line-height: 2.1; font-size: 16px; }
 .jn-blog-side { position: sticky; top: 20px; padding: 28px; border-radius: 22px; background: #fff; box-shadow: 0 24px 50px -36px rgb(24 35 82 / .55); }
+.jn-widget { display: grid; gap: 14px; padding-bottom: 24px; margin-bottom: 24px; border-bottom: 1px solid var(--jn-line); font-size: 14px; }
+.jn-widget h3 { font-size: 17px; font-weight: 700; }
 .jn-blog-side .jn-widget:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
 .jn-mini-post { display: flex; align-items: center; gap: 12px; }
 .jn-mini-pic { width: 56px; height: 56px; flex: none; border-radius: 14px; overflow: hidden; background: var(--jn-grey); }
@@ -2466,13 +2381,9 @@ ${[1, 2, 3, 4, 5, 6].map((n) => `.jn-gallery:has(.jn-thumb:nth-child(${n}) input
   .jn-services { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .jn-foot-cols { grid-template-columns: 1fr 1fr; }
   .jn-shop, .jn-blog { grid-template-columns: 1fr; }
-  .jn-side, .jn-blog-side { position: static; }
-  .jn-side-lg { display: none; }
-  .jn-filter-sm { display: block; }
-  .jn-filter-sm summary { padding: 4px 0 16px; list-style: none; cursor: pointer; font-weight: 700; }
-  .jn-filter-sm summary::-webkit-details-marker { display: none; }
-  .jn-side { order: -1; padding: 18px 22px; }
-  .jn-shop > div { order: 1; }
+  .jn-filters, .jn-blog-side { position: static; }
+  .jn-filters { grid-template-columns: 1fr 1fr; padding: 20px; }
+  .jn-filters h2, .jn-filters fieldset { grid-column: 1 / -1; }
   .jn-cart { grid-template-columns: 1fr; }
 }
 @container (max-width: 820px) {
@@ -2518,6 +2429,10 @@ ${[1, 2, 3, 4, 5, 6].map((n) => `.jn-gallery:has(.jn-thumb:nth-child(${n}) input
   .jn-contact-pic { min-height: 320px; }
   .jn-contact-form { padding: 40px 18px; }
   .jn-contact-form form { grid-template-columns: 1fr; }
+  .jn-contact-row { grid-template-columns: 1fr; gap: 16px; }
+  .jn-filters { gap: 12px; }
+  .jn-filters label:nth-of-type(2), .jn-filters .jn-btn { grid-column: 1 / -1; }
+  .jn-filters select, .jn-filters label > input:not([type="checkbox"]), .jn-filters fieldset input { height: 40px; }
   .jn-map { height: 300px; }
   .jn-gallery { flex-direction: column-reverse; }
   .jn-thumbs { display: flex; }
@@ -2530,7 +2445,6 @@ ${[1, 2, 3, 4, 5, 6].map((n) => `.jn-gallery:has(.jn-thumb:nth-child(${n}) input
   .jn-line-pic img { width: 64px; height: 64px; }
   .jn-line-total { grid-column: 2; text-align: start; min-width: 0; }
   .jn-checkout { grid-template-columns: 1fr; }
-  .jn-band { padding-block: 46px 34px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .jn *, .jn *::before, .jn *::after { animation: none !important; transition: none !important; }
