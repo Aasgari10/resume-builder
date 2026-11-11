@@ -715,15 +715,21 @@ function Contact(view: View) {
           <h2>نشانی و راه‌های ارتباط</h2>
           <Beans />
           <dl>
-            <dt>نشانی</dt>
+            <dt>
+              <svg viewBox="0 0 24 24" className="kf-ico" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-10.6a6.5 6.5 0 1 1 13 0C18.5 15.4 12 21 12 21z M12 7.8a2.6 2.6 0 1 0 0 5.2 2.6 2.6 0 0 0 0-5.2z" /></svg> نشانی
+            </dt>
             <Opt value={site?.address} editing={editing} edit={ed("site.address", "multiline", "نشانی")}>
               <dd {...ed("site.address", "multiline", "نشانی")}>{site?.address}</dd>
             </Opt>
-            <dt>ساعات کاری</dt>
+            <dt>
+              <svg viewBox="0 0 24 24" className="kf-ico" aria-hidden="true"><path d="M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16z M12 8v4l3 2" /></svg> ساعات کاری
+            </dt>
             <Opt value={site?.contactNote} editing={editing} edit={ed("site.contactNote", "multiline", "ساعات کاری")}>
               <dd {...ed("site.contactNote", "multiline", "ساعات کاری")}>{site?.contactNote}</dd>
             </Opt>
-            <dt>تلفن و ایمیل</dt>
+            <dt>
+              <svg viewBox="0 0 24 24" className="kf-ico" aria-hidden="true"><path d="M6.5 3.5h3.2l1.6 4.2-2.2 1.5a10 10 0 0 0 5.7 5.7l1.5-2.2 4.2 1.6v3.2a2 2 0 0 1-2 2A16.5 16.5 0 0 1 4.5 5.5a2 2 0 0 1 2-2z" /></svg> تلفن و ایمیل
+            </dt>
             <dd>
               {b.phone && (
                 <a href={`tel:${b.phone.replace(/[^\d+]/g, "")}`} dir="ltr" {...ed("basics.phone", "text", "تلفن")}>
@@ -806,8 +812,8 @@ export function kafeSample(locale: ResumeData["locale"]): ResumeData {
       signatureImage: png("branch"),
       heroImage: img("about1"),
       accentImage: img("about2"),
-      contactNote: "شنبه تا چهارشنبه: ۹ تا ۲۳\nپنجشنبه و جمعه: ۱۰ تا ۱\nروزهای تعطیل رسمی: بسته",
-      address: "تهران، خیابان ولیعصر، پلاک ۱۲۳\nتهران، خیابان شریعتی، پلاک ۴۵",
+      contactNote: "ما از شنبه تا چهارشنبه از ساعت ۹ صبح تا ۱۱ شب، و پنجشنبه و جمعه از ساعت ۱۰ صبح تا ۱ بامداد در خدمت شما هستیم.",
+      address: "شعبه‌ی ونک: تهران، خیابان ولیعصر، بالاتر از میدان ونک، کوچه‌ی گلستان، پلاک ۱۲۳\nشعبه‌ی شریعتی: تهران، خیابان شریعتی، نرسیده به پل صدر، روبه‌روی پارک، پلاک ۴۵",
       mapUrl: "https://www.openstreetmap.org/?mlat=35.7000&mlon=51.4000",
       bandText: "میز دلخواهتان را رزرو کنید یا برای مهمانی‌ها با ما هماهنگ کنید",
       contactTitle: "با ما در تماس باشید",
@@ -1148,8 +1154,9 @@ ${[1, 2, 3, 4, 5, 6].map((n) => `.kf-dot:nth-of-type(${n}):checked ~ .kf-qdots l
 .kf-where-text { display: grid; align-content: center; justify-items: start; gap: 16px; padding: 34px clamp(22px, 3cqi, 40px); background: var(--kf-paper); }
 .kf-where-text h2 { font-family: var(--kf-head); font-size: clamp(26px, 2.6cqi, 34px); font-weight: 500; }
 .kf-where-text .kf-beans::before { display: none; }
-.kf-where-text dl { display: grid; grid-template-columns: 110px 1fr; gap: 14px 20px; width: 100%; margin: 4px 0 8px; font-size: 14px; line-height: 1.9; }
-.kf-where-text dt { font-family: var(--kf-head); font-size: 18px; color: var(--kf-ink); }
+.kf-where-text dl { display: grid; grid-template-columns: 140px 1fr; gap: 16px 18px; width: 100%; margin: 4px 0 8px; font-size: 14px; line-height: 1.9; }
+.kf-where-text dt { display: flex; align-items: center; gap: 8px; align-self: start; font-family: var(--kf-head); font-size: 18px; line-height: 1.6; color: var(--kf-ink); }
+.kf-where-text dt .kf-ico { width: 19px; height: 19px; color: var(--kf-tan); }
 .kf-where-text dd { display: grid; justify-items: start; margin: 0; color: var(--kf-muted); white-space: pre-line; }
 .kf-where-text dd a:hover { color: var(--kf-tan); }
 .kf-map { display: grid; place-items: center; min-height: 340px; border: 1px solid #E6DCCF; background: var(--kf-paper); color: var(--kf-muted); font-size: 13px; text-align: center; overflow: hidden; }
@@ -1167,6 +1174,8 @@ ${[1, 2, 3, 4, 5, 6].map((n) => `.kf-dot:nth-of-type(${n}):checked ~ .kf-qdots l
   .kf-contact { grid-template-columns: 1fr; gap: 46px; }
   .kf-where { grid-template-columns: 1fr; }
   .kf-map { min-height: 300px; }
+  .kf-where-text dl { grid-template-columns: 1fr; gap: 4px; }
+  .kf-where-text dd { margin-bottom: 12px; }
 }
 @container (max-width: 760px) {
   .kf { font-size: 14px; }
