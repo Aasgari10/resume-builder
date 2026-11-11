@@ -17,7 +17,12 @@ const LABELS: Record<Kind, string> = { products: "محصولات", orders: "سف
 /** Days left before the server removes a row deleted at `deletedAt`. */
 const daysLeft = (deletedAt: string, days: number) => Math.max(0, Math.ceil(days - (Date.now() - Date.parse(deletedAt)) / 86400000));
 
-export function TrashTabs({ shop, setShop, resumeId, onChanged }: { shop: Shop; setShop: (s: Partial<Shop>) => void; resumeId?: string; onChanged?: () => void }) {
+export function TrashTabs({ shop, setShop, resumeId, onChanged, productsOnly }: { shop: Shop; setShop: (s: Partial<Shop>) => void; resumeId?: string; onChanged?: () => void; productsOnly?: boolean }) {
+  if (productsOnly) return <ProductTrash shop={shop} setShop={setShop} />;
+  return <ServerTrash shop={shop} setShop={setShop} resumeId={resumeId} onChanged={onChanged} />;
+}
+
+function ServerTrash({ shop, setShop, resumeId, onChanged }: { shop: Shop; setShop: (s: Partial<Shop>) => void; resumeId?: string; onChanged?: () => void }) {
   const api = useShopApi();
   const [kind, setKind] = useState<Kind>("products");
   const [trash, setTrash] = useState<ShopTrash | null>(null);

@@ -16,13 +16,14 @@ import { Reports } from "./ShopReports";
 import { Pages, Quotes } from "./ShopPages";
 import { Blog } from "./ShopBlog";
 import { Extras } from "./ShopExtras";
+import { MenuQr } from "./MenuQr";
 import { Customers, Reviews, Tickets } from "./ShopPeople";
 import { Dashboard, Orders } from "./ShopOrders";
 import { Products, stockOf } from "./ShopProducts";
 import { resetSample, sampleShopApi, sampleShopFor } from "./sampleData";
 import { ShopApiContext } from "./shopApi";
 
-type Tab = "dashboard" | "quotes" | "pages" | "blog" | "extras" | "products" | "categories" | "banners" | "coupons" | "orders" | "reports" | "reviews" | "tickets" | "customers" | "trash" | "settings";
+type Tab = "qr" | "dashboard" | "quotes" | "pages" | "blog" | "extras" | "products" | "categories" | "banners" | "coupons" | "orders" | "reports" | "reviews" | "tickets" | "customers" | "trash" | "settings";
 
 type Props = {
   data: ResumeData;
@@ -35,13 +36,18 @@ type Props = {
   focusProductId?: string;
   /** Whether the site's template has a blog page (the blog tab says so when it has not). */
   hasBlog?: boolean;
+  /** A menu site (cafe): only the menu, the page texts and pictures and the QR code; no orders or accounts. */
+  menu?: boolean;
   onClose: () => void;
 };
 
+/** Tabs of a menu site, in this order. */
+const MENU_TABS: Tab[] = ["products", "categories", "qr", "banners", "extras", "quotes", "pages", "trash"];
+
 const EMPTY_SHOP: Shop = { categories: [], products: [] };
 
-export function ShopManager({ data, sample, onData, resumeId, focusProductId, hasBlog, onClose }: Props) {
-  const [tab, setTab] = useState<Tab>(focusProductId ? "products" : "dashboard");
+export function ShopManager({ data, sample, onData, resumeId, focusProductId, hasBlog, menu, onClose }: Props) {
+  const [tab, setTab] = useState<Tab>(focusProductId || menu ? "products" : "dashboard");
   // Counts for the "new" marks on the tabs; read again after changes in those tabs.
   const [counts, setCounts] = useState<Pick<ShopSummary, "newOrders" | "openTickets" | "waitingReviews"> | null>(null);
   const shop = data.site?.shop ?? EMPTY_SHOP;
@@ -98,9 +104,9 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
   };
 
   return (
-    <div className="shm" dir="rtl" role="dialog" aria-label="مدیریت فروشگاه">
+    <div className="shm" dir="rtl" role="dialog" aria-label={menu ? "مدیریت سایت" : "مدیریت فروشگاه"}>
       <header className="shm-head">
-        <h2>🛍 مدیریت فروشگاه</h2>
+        <h2>{menu ? "☕ مدیریت سایت" : "🛍 مدیریت فروشگاه"}</h2>
         <button type="button" className="btn small" onClick={onClose}>
           بستن و برگشت به سایت
         </button>
@@ -110,7 +116,8 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
           {(
             [
               ["dashboard", "📊 داشبورد"],
-              ["products", "📦 محصولات", <i key="n" className="shm-count">{showNumber(live.length)}</i>],
+              ["products", menu ? "☕ منو" : "📦 محصولات", <i key="n" className="shm-count">{showNumber(live.length)}</i>],
+              ["qr", "▦ QR کد منو"],
               ["categories", "📂 دسته‌ها"],
               ["orders", "📋 سفارش‌ها", badge(counts?.newOrders)],
               ["customers", "👥 مشتریان"],
@@ -126,7 +133,10 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
               ["trash", "🗑 سطل زباله", trashCount ? <i key="n" className="shm-count">{showNumber(trashCount)}</i> : null],
               ["settings", "⚙️ تنظیمات فروشگاه"],
             ] as [Tab, string, ReactNode?][]
-          ).map(([id, label, extra]) => (
+          )
+            .filter(([id]) => (menu ? MENU_TABS.includes(id) : id !== "qr"))
+            .sort(([a], [b]) => (menu ? MENU_TABS.indexOf(a) - MENU_TABS.indexOf(b) : 0))
+            .map(([id, label, extra]) => (
             <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)}>
               <span>{label}</span>
               {extra}
@@ -135,7 +145,7 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
         </nav>
       <ShopApiContext.Provider value={source}>
       <div className="shm-body">
-        {mode === "sample" && !["products", "categories", "banners", "coupons", "quotes", "pages", "blog", "extras", "trash", "settings"].includes(tab) && (
+        {mode === "sample" && !["products", "categories", "banners", "coupons", "quotes", "pages", "blog", "extras", "trash", "settings", "qr"].includes(tab) && (
           <p className="shm-sample">
             <span>
               🧪 <b>این‌ها اطلاعات نمونه است</b> تا ببینید پنل چه کارهایی می‌کند. تغییرهای شما فقط در همین مرورگر است و کاربر دیگری آن‌ها را نمی‌بیند؛ بعد از ۳۰ دقیقه دوری خودش تازه می‌شود. با اولین سفارش یا مشتری واقعی، اطلاعات خود فروشگاه‌تان این‌جا می‌آید.
@@ -163,14 +173,15 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
         {tab === "coupons" && <Coupons shop={shop} setShop={setShop} />}
         {tab === "orders" && <Orders resumeId={rid} onChanged={refreshCounts} />}
         {tab === "quotes" && <Quotes data={data} onData={onData} />}
-        {tab === "extras" && <Extras data={data} onData={onData} shop={shop} setShop={setShop} />}
+        {tab === "extras" && <Extras data={data} onData={onData} shop={shop} setShop={setShop} menu={menu} />}
         {tab === "blog" && <Blog shop={shop} setShop={setShop} hasBlog={Boolean(hasBlog)} />}
         {tab === "pages" && <Pages data={data} onData={onData} shop={shop} setShop={setShop} />}
         {tab === "reports" && <Reports resumeId={rid} shop={namesShop} />}
         {tab === "reviews" && <Reviews resumeId={rid} shop={namesShop} setShop={setShop} onChanged={refreshCounts} />}
         {tab === "tickets" && <Tickets resumeId={rid} onChanged={refreshCounts} />}
         {tab === "customers" && <Customers resumeId={rid} />}
-        {tab === "trash" && <TrashTabs shop={shop} setShop={setShop} resumeId={rid} onChanged={refreshCounts} />}
+        {tab === "trash" && <TrashTabs shop={shop} setShop={setShop} resumeId={rid} onChanged={refreshCounts} productsOnly={menu} />}
+        {tab === "qr" && <MenuQr resumeId={resumeId} name={data.basics.fullName} />}
         {tab === "settings" && <Settings shop={shop} setShop={setShop} />}
           </>
         )}

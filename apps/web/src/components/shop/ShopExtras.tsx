@@ -10,7 +10,8 @@ type Site = NonNullable<ResumeData["site"]>;
 type Perk = NonNullable<Shop["perks"]>[number];
 type Brand = NonNullable<Site["clients"]>[number];
 type Logo = NonNullable<Shop["trustLogos"]>[number];
-type Props = { data: ResumeData; onData: (d: ResumeData) => void; shop: Shop; setShop: (s: Partial<Shop>) => void };
+type Stat = NonNullable<Shop["stats"]>[number];
+type Props = { data: ResumeData; onData: (d: ResumeData) => void; shop: Shop; setShop: (s: Partial<Shop>) => void; menu?: boolean };
 
 function moved<T>(list: T[], k: number, by: -1 | 1): T[] {
   const next = [...list];
@@ -33,7 +34,9 @@ function Order({ k, count, onMove }: { k: number; count: number; onMove: (by: -1
   );
 }
 
-export function Extras({ data, onData, shop, setShop }: Props) {
+export function Extras({ data, onData, shop, setShop, menu }: Props) {
+  const stats = shop.stats ?? [];
+  const saveStats = (next: Stat[]) => setShop({ stats: next.length ? next : undefined });
   const perks = shop.perks ?? [];
   const savePerks = (next: Perk[]) => setShop({ perks: next.length ? next : undefined });
   const brands = data.site?.clients ?? [];
@@ -64,8 +67,35 @@ export function Extras({ data, onData, shop, setShop }: Props) {
         </button>
       )}
 
-      <h3>🏷 برندهای محبوب</h3>
-      <p className="muted">آرم و نام برندهایی که می‌فروشید.</p>
+      {menu && (
+        <>
+          <h3>🔢 اعداد</h3>
+          <p className="muted">ردیف اعداد صفحه‌ها، مثل «۲۵۰ نوع قهوه» (حداکثر ۶ تا).</p>
+          {stats.map((x, k) => (
+            <div key={x.id} className="shm-faq">
+              <div className="row gap">
+                <input value={x.value} maxLength={20} placeholder="عدد" aria-label="عدد" style={{ maxWidth: 110 }} onChange={(e) => saveStats(stats.map((t) => (t.id === x.id ? { ...t, value: e.target.value } : t)))} />
+                <input value={x.label} maxLength={60} placeholder="عنوان" aria-label="عنوان" onChange={(e) => saveStats(stats.map((t) => (t.id === x.id ? { ...t, label: e.target.value } : t)))} />
+              </div>
+              <input value={x.text ?? ""} maxLength={160} placeholder="توضیح کوتاه (اختیاری)" aria-label="توضیح" onChange={(e) => saveStats(stats.map((t) => (t.id === x.id ? { ...t, text: e.target.value || undefined } : t)))} />
+              <div className="row gap">
+                <Order k={k} count={stats.length} onMove={(by) => saveStats(moved(stats, k, by))} />
+                <button type="button" className="btn ghost small danger" onClick={() => saveStats(stats.filter((t) => t.id !== x.id))}>
+                  حذف
+                </button>
+              </div>
+            </div>
+          ))}
+          {stats.length < 6 && (
+            <button type="button" className="btn small" onClick={() => saveStats([...stats, { id: newId(), value: "۱۰۰", label: "عنوان" }])}>
+              + عدد جدید
+            </button>
+          )}
+        </>
+      )}
+
+      <h3>🏷 {menu ? "آرم همکاران" : "برندهای محبوب"}</h3>
+      <p className="muted">{menu ? "آرم کافه‌ها، برندهای قهوه یا همکارانی که با آن‌ها کار می‌کنید." : "آرم و نام برندهایی که می‌فروشید."}</p>
       {brands.map((x, k) => (
         <div key={x.id} className="shm-slide">
           <span className="shm-thumb">{x.image ? <img src={x.image} alt="" /> : "🏷"}</span>

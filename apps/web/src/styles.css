@@ -1376,6 +1376,9 @@ select {
 .shm-faq input { font-weight: 600; }
 .shm-page { display: grid; gap: 10px; padding: 10px; border: 1px solid var(--border); border-radius: 8px; }
 .shm-page-head { display: flex; align-items: center; gap: 6px; }
+.shm-qr-card { display: grid; justify-items: center; gap: 10px; padding: 20px; border: 1px solid var(--border); border-radius: 12px; background: #fff; }
+.shm-qr-card img { width: 240px; height: 240px; }
+.shm-qr-card a { font-size: .85rem; word-break: break-all; }
 .shm-search { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font: inherit; background: #fff; }
 .shm-page-title { flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 4px; border: none; background: none; font: inherit; text-align: start; cursor: pointer; }
 .shm-scope { display: grid; gap: 8px; padding: 10px; border-radius: 8px; background: var(--surface); border: 1px solid var(--border); }

@@ -301,6 +301,8 @@ function buildResumeSchemas(strict: boolean) {
       .array(z.object({ id, slug: z.string().regex(/^[a-z0-9-]{1,30}$/), title: z.string().max(80), text: z.string().max(8000), hidden: z.boolean().optional() }))
       .max(8)
       .optional(),
+    // Numbers shown in a row (e.g. "250 kinds of coffee"); used by some templates such as the cafe.
+    stats: z.array(z.object({ id, value: z.string().max(20), label: z.string().max(60), text: z.string().max(160).optional() })).max(6).optional(),
     // Small logos at the bottom of the page: payment methods, trust seals (e.g. Enamad), each with an optional link.
     trustLogos: z.array(z.object({ id, image: optionalUrl, link: optionalUrl, title: z.string().max(60).optional() })).max(8).optional(),
     // Blog posts (the "/blog" page of templates that have one); managed in the shop panel.
