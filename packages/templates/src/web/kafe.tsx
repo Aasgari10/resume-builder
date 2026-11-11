@@ -23,7 +23,7 @@ export const KAFE_BLOCKS = [
   { key: "stories", label: "سه کارت با عکس" },
   { key: "badge", label: "نوار عکس با نشان" },
   { key: "stats", label: "اعداد" },
-  { key: "favorites", label: "محبوب‌های منو" },
+  { key: "favorites", label: "دانه‌های قهوه (محصولات یک دسته)" },
   { key: "gallery", label: "گالری عکس" },
   { key: "logos", label: "آرم همکاران" },
   { key: "cta", label: "نوار دعوت به تماس" },
@@ -373,7 +373,9 @@ function Home(view: View) {
   const on = (k: string) => blockOn(data, k);
   const stories = (shop.banners ?? []).filter((x) => !x.hidden).slice(0, 3);
   const products = visible(shop);
-  const favorites = [...products.filter((p) => p.featured), ...products.filter((p) => !p.featured)].slice(0, 4);
+  // The reference's "online coffee shop": the products of one chosen category (packs of beans).
+  const packCat = shop.categories.find((c) => c.id === shop.showcaseCategoryId);
+  const favorites = (packCat ? products.filter((p) => p.categoryId === packCat.id) : products.filter((p) => p.featured)).slice(0, 4);
   const gallery = (data.site?.gallery ?? []).filter((g) => safeUrl(g.image)).slice(0, 8);
   const band = safeUrl(shop.lookImage);
   const badge2 = safeUrl(shop.trendImage);
@@ -430,7 +432,7 @@ function Home(view: View) {
             <div className="kf-favs">
               {favorites.map((p, k) => (
                 <PageLink key={p.id} to="/menu" link={link} className="kf-fav kf-rise" product={p.id}>
-                  <span className="kf-fav-pic" style={{ "--i": k } as CSSProperties}>
+                  <span className="kf-fav-pic" style={{ "--i": k } as CSSProperties} {...ed(`${item("site.shop.products", p.id)}.images[0]`, "image", "عکس")}>
                     {safeUrl(p.images[0]) && <img src={safeUrl(p.images[0])} alt={p.name} loading="lazy" />}
                   </span>
                   <b>{p.name}</b>
@@ -708,19 +710,43 @@ function Contact(view: View) {
           <p className="kf-empty">برای فعال شدن فرم، ایمیل کافه را وارد کنید.</p>
         )}
       </section>
-      {embed ? (
-        <section className="kf-map" {...ed("site.mapUrl", "url", "لینک نقشه (گوگل‌مپ، نشان، بلد یا اوپن‌استریت‌مپ)")}>
-          <iframe src={embed} title="نقشه‌ی کافه" loading="lazy" referrerPolicy="no-referrer" />
-        </section>
-      ) : (
-        <Opt value={map} editing={editing} edit={ed("site.mapUrl", "url", "لینک نقشه")}>
-          <section className="kf-wrap kf-sec">
-            <a href={map ?? "#"} {...outside(map)} className="kf-btn" {...ed("site.mapUrl", "url", "لینک نقشه")}>
-              مسیریابی روی نقشه
+      <section className="kf-wrap kf-where">
+        <div className="kf-where-text kf-rise">
+          <h2>نشانی و راه‌های ارتباط</h2>
+          <Beans />
+          <dl>
+            <dt>نشانی</dt>
+            <Opt value={site?.address} editing={editing} edit={ed("site.address", "multiline", "نشانی")}>
+              <dd {...ed("site.address", "multiline", "نشانی")}>{site?.address}</dd>
+            </Opt>
+            <dt>ساعات کاری</dt>
+            <Opt value={site?.contactNote} editing={editing} edit={ed("site.contactNote", "multiline", "ساعات کاری")}>
+              <dd {...ed("site.contactNote", "multiline", "ساعات کاری")}>{site?.contactNote}</dd>
+            </Opt>
+            <dt>تلفن و ایمیل</dt>
+            <dd>
+              {b.phone && (
+                <a href={`tel:${b.phone.replace(/[^\d+]/g, "")}`} dir="ltr" {...ed("basics.phone", "text", "تلفن")}>
+                  {b.phone}
+                </a>
+              )}
+              {b.email && (
+                <a href={`mailto:${b.email}`} dir="ltr" {...ed("basics.email", "text", "ایمیل")}>
+                  {b.email}
+                </a>
+              )}
+            </dd>
+          </dl>
+          {map && (
+            <a href={map} {...outside(map)} className="kf-btn">
+              مسیریابی
             </a>
-          </section>
-        </Opt>
-      )}
+          )}
+        </div>
+        <div className="kf-map" {...ed("site.mapUrl", "url", "لینک نقشه (گوگل‌مپ، نشان، بلد یا اوپن‌استریت‌مپ)")}>
+          {embed ? <iframe src={embed} title="نقشه‌ی کافه" loading="lazy" referrerPolicy="no-referrer" /> : <span>برای نمایش نقشه، لینک مکان کافه را بگذارید.</span>}
+        </div>
+      </section>
     </>
   );
 }
@@ -754,6 +780,7 @@ export function kafeSample(locale: ResumeData["locale"]): ResumeData {
     dish("m10", "c2", "فراپه", 180000, 4, { description: "قهوه، شیر و یخ خردشده با خامه" }),
     dish("m11", "c3", "کروسان کره‌ای", 120000, 3, { description: "کروسان تازه با کره‌ی فرانسوی" }),
     dish("m12", "c3", "چیزکیک", 185000, 2, { description: "چیزکیک نیویورکی با سس توت‌فرنگی" }),
+    ...(["اتیوپی", "کنیا", "کلمبیا", "گواتمالا"] as const).map((n, k) => ({ id: `b${k + 1}`, name: `قهوه‌ی ${n}`, categoryId: "c4", price: [650000, 780000, 910000, 1050000][k]!, images: [png(`pack${k + 1}`)], description: "۲۵۰ گرم دانه‌ی تازه‌برشته" })),
   ];
   return {
     ...base,
@@ -799,7 +826,7 @@ export function kafeSample(locale: ResumeData["locale"]): ResumeData {
         ],
         newImage: png("badge"),
         newTitle: "پیشنهادهای خوشمزه‌ی ما",
-        newText: "هر روز صبح دانه‌ها را تازه آسیاب می‌کنیم و کیک‌ها را تازه می‌پزیم.",
+        newText: "هر روز صبح دانه‌ها را تازه آسیاب می‌کنیم و کیک‌ها را تازه می‌پزیم؛ از اسپرسوی غلیظ تا شیرینی‌های خانگی، همه‌چیز برای یک لحظه‌ی خوب آماده است.",
         perks: [
           { id: "p1", title: "انواع قهوه", text: "از اسپرسو تا دمی، با دانه‌های تازه.", image: png("icon1") },
           { id: "p2", title: "دانه‌های متنوع", text: "عربیکا و روبوستا از بهترین مزرعه‌ها.", image: png("icon2") },
@@ -807,7 +834,7 @@ export function kafeSample(locale: ResumeData["locale"]): ResumeData {
           { id: "p4", title: "قهوه‌ی بیرون‌بر", text: "فنجان همراه برای مسیرهای شما.", image: png("icon4") },
         ],
         bestTitle: "قصه‌های قهوه",
-        bestText: "کمی درباره‌ی روش‌هایی که قهوه‌ی شما را با آن‌ها آماده می‌کنیم.",
+        bestText: "کمی درباره‌ی روش‌هایی که قهوه‌ی شما را با آن‌ها آماده می‌کنیم؛ از دمای آب و درجه‌ی آسیاب تا زمان دم کشیدن هر فنجان.",
         banners: [
           { id: "b1", image: img("story1"), title: "اسپرسوی دقیق", text: "دما، فشار و زمان؛ سه چیزی که یک اسپرسوی خوب را می‌سازند و باریستاهای ما هر روز تمرینشان می‌کنند." },
           { id: "b2", image: img("story2"), title: "فرنچ‌پرس", text: "دمی آرام و پرطعم برای کسانی که قهوه را با حوصله و در گفت‌وگو با دوستان می‌نوشند." },
@@ -825,10 +852,10 @@ export function kafeSample(locale: ResumeData["locale"]): ResumeData {
           { id: "t3", value: "۳۲۱", label: "مهمان هر روز", text: "که با لبخند می‌روند" },
           { id: "t4", value: "۲۲۰", label: "برند قهوه", text: "که با آن‌ها کار کرده‌ایم" },
         ],
-        showcaseTitle: "محبوب‌های منو",
-        showcaseText: "نوشیدنی‌هایی که مهمانان ما بیشتر از همه سفارش می‌دهند.",
+        showcaseTitle: "دانه‌های قهوه‌ی ما",
+        showcaseText: "دانه‌هایی که خودمان برشته می‌کنیم، در بسته‌های ۲۵۰ گرمی؛ برای این‌که طعم قهوه‌ی کافه را در خانه هم داشته باشید.",
         discountTitle: "گالری ما",
-        promoText: "گوشه‌ای از روزهای کافه، فنجان‌ها و آدم‌هایش.",
+        promoText: "گوشه‌ای از روزهای کافه، فنجان‌ها و آدم‌هایش؛ لحظه‌هایی که هر روز در کنار مهمانانمان می‌سازیم و دوستشان داریم.",
         heroImage: img("foot"),
         heroText: "فضای کافه را برای گفت‌وگو، کار و استراحت ساخته‌ایم؛ نور گرم، صندلی‌های راحت و اینترنت پرسرعت.\nبرای جمع‌های دوستانه هم میزهای بزرگ داریم.",
         discoverImage: img("foot"),
@@ -839,7 +866,9 @@ export function kafeSample(locale: ResumeData["locale"]): ResumeData {
           { id: "c1", name: "نوشیدنی‌های گرم", image: "" },
           { id: "c2", name: "نوشیدنی‌های سرد", image: "" },
           { id: "c3", name: "کیک و شیرینی", image: "" },
+          { id: "c4", name: "دانه‌ی قهوه", image: "" },
         ],
+        showcaseCategoryId: "c4",
         products,
       },
     },
@@ -890,8 +919,20 @@ const css = /* css */ `
 .kf-beans svg { width: 24px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.3; }
 
 /* Header: over the hero on the home page, a dark bar on the others */
-.kf-head { position: relative; z-index: 30; background: var(--kf-dark); }
-.kf-home .kf-head { position: absolute; inset-inline: 0; top: 0; background: none; }
+.kf-head { --kf-head-bg: var(--kf-dark); position: sticky; top: 0; z-index: 30; background: var(--kf-head-bg); }
+.kf-home .kf-head { --kf-head-bg: transparent; margin-bottom: -104px; }
+/* While scrolling down the header slips away, then slides back in from the top on a dark bar
+   (scroll-driven: no script; where unsupported it simply stays at the top of the page). */
+@supports (animation-timeline: scroll()) {
+  .kf-head { animation: kf-head linear both; animation-timeline: scroll(); animation-range: 0 560px; }
+  @keyframes kf-head {
+    0% { transform: none; opacity: 1; background: var(--kf-head-bg); box-shadow: none; }
+    22%, 55% { transform: translateY(-100%); opacity: 0; background: rgb(18 18 18 / .97); }
+    100% { transform: none; opacity: 1; background: rgb(18 18 18 / .97); box-shadow: 0 10px 30px -18px rgb(0 0 0 / .6); }
+  }
+  .kf-head .kf-head-in { animation: kf-head-in linear both; animation-timeline: scroll(); animation-range: 0 560px; }
+  @keyframes kf-head-in { 0%, 55% { min-height: 104px; } 100% { min-height: 78px; } }
+}
 .kf-head-in { display: flex; align-items: center; justify-content: space-between; gap: 30px; min-height: 104px; }
 .kf-logo img { display: block; height: 56px; width: auto; }
 .kf-logo b { font-family: var(--kf-head); font-size: 30px; color: #fff; }
@@ -917,14 +958,16 @@ ${Array.from({ length: n }, (_, k) => `.kf-n${n} .kf-auto:checked ~ .kf-slides >
   .join("\n")}
 .kf-hero:hover .kf-slide, .kf-hero:focus-within .kf-slide { animation-play-state: paused !important; }
 /* The picture keeps to the left (as in the reference) and fades into the dark wood on the right. */
-.kf-slide-pic { position: absolute; inset-block: 0; left: 0; width: min(100%, max(52%, 760px)); background: #1E1A17; }
-.kf-slide-pic img { width: 100%; height: 100%; object-fit: cover; object-position: left center; -webkit-mask-image: linear-gradient(to right, #000 62%, transparent); mask-image: linear-gradient(to right, #000 62%, transparent); animation: kf-zoom 14s ease-out infinite alternate; }
-@keyframes kf-zoom { from { transform: scale(1.08); } }
+.kf-slide-pic { position: absolute; inset-block: 0; left: 0; width: min(100%, max(50%, 760px)); overflow: hidden; -webkit-mask-image: linear-gradient(to right, #000 55%, transparent 98%); mask-image: linear-gradient(to right, #000 55%, transparent 98%); }
+.kf-slide-pic img { width: 100%; height: 100%; object-fit: cover; object-position: left center; transform-origin: 30% 50%; animation: kf-zoom 32s ease-in-out infinite alternate; }
+/* A very slow zoom (the "Ken Burns" look) so the picture feels alive. */
+@keyframes kf-zoom { from { transform: scale(1); } to { transform: scale(1.09); } }
+.kf-band-pic img { animation: kf-zoom 40s ease-in-out infinite alternate; }
 .kf-slide::before { content: ""; position: absolute; inset: 0; background: url("${sampleImage("kf-band")}") center / cover; opacity: .55; }
 .kf-slide-pic::after { content: ""; position: absolute; inset: 0; background: rgb(0 0 0 / .18); }
-.kf-slide-text { position: relative; display: grid; justify-items: center; gap: 18px; max-width: 640px; padding: 120px 24px 70px; text-align: center; }
-.kf-hero-badge img { display: block; width: 116px; height: auto; animation: kf-spin 40s linear infinite; }
-@keyframes kf-spin { to { transform: rotate(360deg); } }
+.kf-slide { justify-items: start; }
+.kf-slide-text { position: relative; display: grid; justify-items: center; gap: 18px; width: min(640px, 100%); box-sizing: border-box; margin-inline-start: clamp(20px, 11cqi, 230px); padding: 120px 24px 70px; text-align: center; }
+.kf-hero-badge img { display: block; width: 116px; height: auto; }
 .kf-slide-text h1, .kf-slide-text h2 { font-family: var(--kf-head); font-size: clamp(42px, 5.6cqi, 78px); font-weight: 500; line-height: 1.15; }
 .kf-slide-text .kf-beans { color: #fff; }
 .kf-slide-text p { color: rgb(255 255 255 / .9); font-size: 16px; line-height: 2; }
@@ -977,10 +1020,10 @@ ${Array.from({ length: n }, (_, k) => `.kf-n${n} .kf-auto:checked ~ .kf-slides >
 /* Favourites */
 .kf-favs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 30px; }
 .kf-fav { display: grid; justify-items: center; gap: 8px; text-align: center; }
-.kf-fav-pic { display: grid; place-items: center; width: 100%; aspect-ratio: 1; }
-.kf-fav-pic img { width: 72%; height: 72%; object-fit: contain; border-radius: 50%; box-shadow: 0 24px 40px -26px rgb(60 40 20 / .6); transition: transform .7s cubic-bezier(.2, .8, .2, 1.3); }
-.kf-fav:hover .kf-fav-pic img { transform: translateY(-8px) rotate(6deg); }
-.kf-fav b { font-family: var(--kf-head); font-size: 22px; font-weight: 500; }
+.kf-fav-pic { display: flex; align-items: center; justify-content: center; width: 100%; height: 280px; }
+.kf-fav-pic img { display: block; width: auto; height: 100%; max-width: 100%; object-fit: contain; filter: drop-shadow(0 22px 22px rgb(70 45 20 / .25)); transition: transform .7s cubic-bezier(.2, .8, .2, 1.3); }
+.kf-fav:hover .kf-fav-pic img { transform: translateY(-10px); }
+.kf-fav b { margin-top: 14px; font-family: var(--kf-head); font-size: 22px; font-weight: 500; }
 .kf-price { display: inline-flex; gap: 8px; align-items: baseline; color: var(--kf-tan); font-size: 15px; white-space: nowrap; }
 .kf-price s { color: var(--kf-muted); font-size: 13px; }
 .kf-price b { font-weight: 600; }
@@ -992,8 +1035,8 @@ ${Array.from({ length: n }, (_, k) => `.kf-n${n} .kf-auto:checked ~ .kf-slides >
 .kf-gal:hover img { transform: scale(1.08); filter: brightness(.85); }
 
 /* Logos and call to contact */
-.kf-logos { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); align-items: center; justify-items: center; gap: 30px; padding-block: 80px; }
-.kf-logos span { display: grid; place-items: center; width: 180px; height: 110px; }
+.kf-logos { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-around; gap: 30px; padding-block: 90px 100px; }
+.kf-logos span { display: grid; place-items: center; width: 170px; height: 120px; }
 .kf-logos img { max-width: 100%; max-height: 100%; object-fit: contain; opacity: .85; transition: opacity .3s, transform .4s; }
 .kf-logos span:hover img { opacity: 1; transform: scale(1.08); }
 .kf-cta { display: flex; align-items: center; justify-content: space-between; gap: 30px; padding-block: 64px; }
@@ -1100,8 +1143,16 @@ ${[1, 2, 3, 4, 5, 6].map((n) => `.kf-dot:nth-of-type(${n}):checked ~ .kf-qdots l
 .kf-form input:focus, .kf-form textarea:focus { outline: none; border-color: var(--kf-tan); }
 .kf-full { grid-column: 1 / -1; }
 .kf-form .kf-btn { justify-self: start; }
-.kf-map { height: clamp(320px, 34cqi, 520px); filter: sepia(.35) saturate(.7); }
-.kf-map iframe { width: 100%; height: 100%; border: 0; }
+.kf-where { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 60px; align-items: stretch; padding-bottom: 100px; }
+.kf-where-text { display: grid; align-content: center; justify-items: start; gap: 16px; }
+.kf-where-text h2 { font-family: var(--kf-head); font-size: clamp(26px, 2.6cqi, 34px); font-weight: 500; }
+.kf-where-text .kf-beans::before { display: none; }
+.kf-where-text dl { display: grid; grid-template-columns: auto 1fr; gap: 14px 26px; margin: 4px 0 8px; font-size: 14px; line-height: 1.9; }
+.kf-where-text dt { font-family: var(--kf-head); font-size: 18px; color: var(--kf-ink); }
+.kf-where-text dd { display: grid; margin: 0; color: var(--kf-muted); white-space: pre-line; }
+.kf-where-text dd a:hover { color: var(--kf-tan); }
+.kf-map { display: grid; place-items: center; aspect-ratio: 1; border: 1px solid #E6DCCF; background: var(--kf-paper); color: var(--kf-muted); font-size: 13px; text-align: center; overflow: hidden; }
+.kf-map iframe { width: 100%; height: 100%; border: 0; filter: sepia(.35) saturate(.7); }
 
 /* Reveal on scroll where the browser supports scroll timelines */
 @supports (animation-timeline: view()) {
@@ -1113,6 +1164,8 @@ ${[1, 2, 3, 4, 5, 6].map((n) => `.kf-dot:nth-of-type(${n}):checked ~ .kf-qdots l
   .kf-icons, .kf-stats, .kf-favs { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 50px; }
   .kf-tiles { grid-template-columns: repeat(2, 1fr); }
   .kf-contact { grid-template-columns: 1fr; gap: 46px; }
+  .kf-where { grid-template-columns: 1fr; }
+  .kf-map { max-width: 420px; width: 100%; justify-self: center; }
 }
 @container (max-width: 760px) {
   .kf { font-size: 14px; }
@@ -1120,6 +1173,7 @@ ${[1, 2, 3, 4, 5, 6].map((n) => `.kf-dot:nth-of-type(${n}):checked ~ .kf-qdots l
   .kf-sec { padding-block: 64px; }
   .kf-title { margin-bottom: 40px; }
   .kf-head-in { min-height: 76px; }
+  .kf-home .kf-head { margin-bottom: -76px; }
   .kf-logo img { height: 44px; }
   .kf-nav { display: none; }
   .kf-burger { display: block; }
@@ -1138,8 +1192,9 @@ ${[1, 2, 3, 4, 5, 6].map((n) => `.kf-dot:nth-of-type(${n}):checked ~ .kf-qdots l
   .kf-drawer a[aria-current="page"] { color: var(--kf-tan); }
   .kf-head-in { position: relative; }
   .kf-slide { min-height: 560px; }
-  .kf-slide-pic { width: 100%; }
-  .kf-slide-pic img { -webkit-mask-image: none; mask-image: none; opacity: .55; }
+  .kf-slide { justify-items: center; }
+  .kf-slide-text { margin-inline: auto; }
+  .kf-slide-pic { width: 100%; -webkit-mask-image: none; mask-image: none; opacity: .55; }
   .kf-slide-text { padding-top: 110px; }
   .kf-hero-badge img { width: 88px; }
   .kf-arrow { display: none; }
