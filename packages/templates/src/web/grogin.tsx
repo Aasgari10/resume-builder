@@ -2060,6 +2060,9 @@ const css = /* css */ `
   color: var(--gg-ink);
   font-size: 14px;
 }
+/* The editor app styles every input (padding, border, full width); undo that here (low weight) so the
+   preview looks like the published page. The template's own rules below still win. */
+.gg :where(input, textarea, select) { width: auto; padding: 0; border: 0; border-radius: 0; background: none; outline-offset: 2px; }
 .gg a { color: inherit; text-decoration: none; }
 .gg button { font: inherit; color: inherit; cursor: pointer; }
 .gg h1, .gg h2, .gg h3, .gg h4 { margin: 0; }

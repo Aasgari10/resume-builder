@@ -166,7 +166,7 @@ const shopLine = (view: View) => `فروشگاه ${view.ctx.data.basics.fullName
 
 function Title({ kicker, title, path, center, light, view }: { kicker?: string; title?: string; path?: string; center?: boolean; light?: boolean; view: View }) {
   return (
-    <div className={`jn-title${center ? " center" : ""}${light ? " light" : ""} ${rise}`}>
+    <div className={`jn-title${center ? " jn-center" : ""}${light ? " jn-light" : ""} ${rise}`}>
       {kicker && <small>{kicker}</small>}
       <Opt value={title} editing={view.editing} edit={ed(path ?? "", "text", "تیتر")}>
         <h2 {...(path ? ed(path, "text", "تیتر") : {})}>{title}</h2>
@@ -340,11 +340,10 @@ function Drawer({ view }: { view: View }) {
 }
 
 function Header(view: View) {
-  const { ctx, link, editing } = view;
-  const b = ctx.data.basics;
+  const { link } = view;
   if (view.page === "/")
     return (
-      <header className="jn-head home">
+      <header className="jn-head jn-head-home">
         <div className="jn-wrap jn-head-top">
           <PageLink to="/search" link={link} className="jn-icon jn-hide-sm">
             <Svg name="search" />
@@ -352,11 +351,6 @@ function Header(view: View) {
           </PageLink>
           <Logo view={view} />
           <div className="jn-head-call">
-            <Opt value={b.phone} editing={editing} edit={ed("basics.phone", "text", "تلفن")}>
-              <a href={b.phone ? `tel:${b.phone.replace(/[^\d+]/g, "")}` : "#"} className="jn-phone" dir="ltr" {...ed("basics.phone", "text", "تلفن")}>
-                {b.phone}
-              </a>
-            </Opt>
             <PageLink to="/contact" link={link} className="jn-btn blue">
               با ما حرف بزنید
             </PageLink>
@@ -528,7 +522,7 @@ function Hero({ view }: { view: View }) {
           const img = safeUrl(s.image);
           const H = k === 0 ? "h1" : "h2";
           return (
-            <div key={s.id} className={`jn-slide ${k % 2 ? "blob" : "bubble"}`}>
+            <div key={s.id} className={`jn-slide ${k % 2 ? "jn-blob" : "jn-bubble"}`}>
               <span className="jn-slide-pic" {...ed(at(s.id, "image"), "image", "عکس اسلاید")}>
                 {img && <img src={img} alt="" loading={k ? "lazy" : undefined} />}
               </span>
@@ -626,7 +620,14 @@ function Clients({ view }: { view: View }) {
           </Opt>
         </div>
         <Opt value={site?.styleText} editing={editing} edit={ed("site.styleText", "multiline", "متن مشتری‌ها")}>
-          <p {...ed("site.styleText", "multiline", "متن مشتری‌ها")}>{site?.styleText}</p>
+          <div className="jn-clients-text" {...ed("site.styleText", "multiline", "متن مشتری‌ها (برای پاراگراف تازه یک خط خالی بگذارید)")}>
+            {(site?.styleText ?? "")
+              .split(/\n\s*\n/)
+              .filter((x) => x.trim())
+              .map((x, k) => (
+                <p key={k}>{x}</p>
+              ))}
+          </div>
         </Opt>
       </div>
       <div className={`jn-logos ${rise}`}>
@@ -1141,7 +1142,7 @@ function Listing(view: View & { categoryId?: string }) {
         <label>
           <input type="checkbox" name="sale" value="1" defaultChecked={Boolean(q.sale)} /> تخفیف‌دار
         </label>
-        <button type="submit" className="jn-btn blue small">
+        <button type="submit" className="jn-btn blue jn-small">
           اعمال
         </button>
       </form>
@@ -1734,7 +1735,7 @@ function Blog(view: View) {
                 </PageLink>
                 <PostMeta p={p} />
                 <p {...ed(p.excerpt ? `${at}.excerpt` : `${at}.text`, "multiline", p.excerpt ? "خلاصه‌ی نوشته" : "متن نوشته")}>{excerptOf(p)}</p>
-                <PageLink to={`/blog/${p.id}`} link={view.link} className="jn-btn small">
+                <PageLink to={`/blog/${p.id}`} link={view.link} className="jn-btn jn-small">
                   ادامه‌ی مطلب
                 </PageLink>
               </article>
@@ -1770,7 +1771,7 @@ function Post(view: View & { id: string }) {
                 <p key={k}>{x}</p>
               ))}
           </div>
-          <PageLink to="/blog" link={view.link} className="jn-btn small ghost">
+          <PageLink to="/blog" link={view.link} className="jn-btn jn-small ghost">
             <Svg name="right" /> بازگشت به بلاگ
           </PageLink>
         </article>
@@ -1847,8 +1848,8 @@ export function junoSample(locale: ResumeData["locale"]): ResumeData {
       aboutImage: png("creative"),
       aboutCaption: "ما بهترین اسباب‌بازی‌ها را ارائه می‌دهیم",
       contactNote: "ما به کیفیت و اعتماد شما اهمیت می‌دهیم. اسباب‌بازی‌های ما از تولیدکننده‌های معتبر می‌آیند و پیش از فروش بررسی می‌شوند.",
-      styleTitle: "با مشتری‌ها و همکاران ما آشنا شوید",
-      styleText: "از اعتماد شما سپاسگزاریم. با مشتری‌های همیشگی و همکارانی آشنا شوید که ما را برای اسباب‌بازی‌های بچه‌هایشان انتخاب کرده‌اند.",
+      styleTitle: "آشنا شوید با\nمشتری‌ها و همکاران ما",
+      styleText: "از اعتماد شما سپاسگزاریم. با مشتری‌های همیشگی و همکارانی آشنا شوید که ما را برای تأمین اسباب‌بازی بچه‌هایشان انتخاب کرده‌اند و با آن‌ها کار می‌کنیم.\n\nبرای همکاری با ما، در خبرنامه عضو شوید یا با بخش فروش تماس بگیرید تا راهنمایی‌تان کنیم. به جونو خوش آمدید!",
       accentImage: img("video"),
       heroImage: img("contact"),
       signatureImage: img("faq"),
@@ -1943,6 +1944,9 @@ const css = /* css */ `
   color: var(--jn-ink);
   font-size: 15px;
 }
+/* The editor app styles every input (padding, border, full width); undo that here (low weight) so the
+   preview looks like the published page. The template's own rules below still win. */
+.jn :where(input, textarea, select) { width: auto; padding: 0; border: 0; border-radius: 0; background: none; outline-offset: 2px; }
 .jn a { color: inherit; text-decoration: none; }
 .jn button { font: inherit; color: inherit; cursor: pointer; }
 .jn h1, .jn h2, .jn h3, .jn h4, .jn p, .jn figure, .jn blockquote { margin: 0; }
@@ -1963,7 +1967,7 @@ const css = /* css */ `
 .jn-btn.green { background: var(--jn-green); box-shadow: 0 10px 22px -12px var(--jn-green); }
 .jn-btn.ghost { background: #fff; color: var(--jn-ink) !important; border: 1px solid var(--jn-line); }
 .jn-btn.dark { background: var(--jn-navy); }
-.jn-btn.small { height: 38px; padding: 0 20px; font-size: 13px; }
+.jn-btn.jn-small { height: 38px; padding: 0 20px; font-size: 13px; }
 .jn-btn.wide, .jn-btn.full { width: 100%; }
 .jn-btn:hover { transform: translateY(-3px); box-shadow: 0 16px 26px -14px var(--jn-ink); }
 .jn-kicker, .jn-title small { display: block; font-size: 12px; font-weight: 700; color: var(--jn-ink); }
@@ -1979,7 +1983,7 @@ const css = /* css */ `
 .jn-head-in { display: flex; align-items: center; justify-content: space-between; gap: 20px; min-height: 92px; }
 .jn-head-icons { display: flex; align-items: center; gap: 14px; }
 .jn-logo { display: flex; align-items: center; }
-.jn-logo img { display: block; height: 52px; width: auto; transition: transform .4s cubic-bezier(.2, .9, .3, 1.4); }
+.jn-logo img { display: block; height: 66px; width: auto; transition: transform .4s cubic-bezier(.2, .9, .3, 1.4); }
 .jn-logo:hover img { transform: rotate(-4deg) scale(1.05); }
 .jn-logo b { font-size: 30px; font-weight: 800; color: var(--jn-blue); }
 .jn-icon { position: relative; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; transition: background .2s, color .2s; }
@@ -2035,18 +2039,18 @@ ${Array.from({ length: n }, (_, k) => `.jn-n${n} .jn-auto:checked ~ .jn-slides >
 /* The speech bubble (or blue blob) that holds the title; it pops in and floats gently */
 .jn-say { position: relative; justify-self: center; display: grid; justify-items: center; align-content: center; gap: 12px; width: clamp(250px, 29cqi, 380px); aspect-ratio: 505 / 316; padding: 24px 30px 40px; box-sizing: border-box; text-align: center; translate: 0 calc(clamp(380px, 45cqi, 580px) * .18); animation: jn-float 5s ease-in-out infinite; }
 .jn-say::before { content: ""; position: absolute; inset: 0; z-index: -1; background: center / 100% 100% no-repeat; }
-.jn-slide.bubble .jn-say::before { background-image: url("${sampleImage("jn-bubble", "png")}"); }
-.jn-slide.blob .jn-say::before { background-image: url("${sampleImage("jn-blob", "png")}"); }
-.jn-slide.blob .jn-say { color: #fff; aspect-ratio: 522 / 269; }
-.jn-say h1, .jn-say h2 { font-size: clamp(24px, 3cqi, 42px); font-weight: 800; line-height: 1.3; }
+.jn-slide.jn-bubble .jn-say::before { background-image: url("${sampleImage("jn-bubble", "png")}"); }
+.jn-slide.jn-blob .jn-say::before { background-image: url("${sampleImage("jn-blob", "png")}"); }
+.jn-slide.jn-blob .jn-say { color: #fff; aspect-ratio: 522 / 269; }
+.jn-say h1, .jn-say h2 { font-size: clamp(26px, 3.8cqi, 50px); font-weight: 800; line-height: 1.3; }
 .jn-say p { font-size: 13px; }
 .jn-say .jn-btn { height: 44px; padding: 0 26px; font-size: 14px; }
-.jn-slide.blob .jn-say .jn-btn { background: #fff; color: var(--jn-blue) !important; }
+.jn-slide.jn-blob .jn-say .jn-btn { background: #fff; color: var(--jn-blue) !important; }
 .jn-slide .jn-say > * { opacity: 0; transform: scale(.7); transition: opacity .5s .35s, transform .6s .35s cubic-bezier(.2, .9, .3, 1.5); }
 .jn-slide:only-child .jn-say > *, ${[1, 2, 3, 4, 5].map((n) => `.jn-dot:nth-of-type(${n}):checked ~ .jn-slides > .jn-slide:nth-child(${n}) .jn-say > *`).join(", ")} { opacity: 1; transform: none; }
 .jn-auto:checked ~ .jn-slides .jn-say > * { opacity: 1; transform: none; }
 @keyframes jn-float { 50% { transform: translateY(-10px) rotate(-1.5deg); } }
-.jn-bear { position: absolute; bottom: -6px; inset-inline-end: 8%; z-index: 2; width: clamp(80px, 9cqi, 128px); transform-origin: bottom center; animation: jn-wave 3.2s ease-in-out infinite; }
+.jn-bear { position: absolute; bottom: -6px; inset-inline-end: 8%; z-index: 2; width: clamp(84px, 11.5cqi, 150px); transform-origin: bottom center; animation: jn-wave 3.2s ease-in-out infinite; }
 .jn-bear img { display: block; width: 100%; }
 @keyframes jn-wave { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg) translateY(-6px); } }
 .jn-dots { position: absolute; bottom: 18px; left: 50%; translate: -50% 0; z-index: 3; display: flex; gap: 8px; }
@@ -2056,7 +2060,7 @@ ${[1, 2, 3, 4, 5].map((n) => `.jn-dot:nth-of-type(${n}):checked ~ .jn-dots label
 /* Sections and titles */
 .jn-sec { padding-block: 80px; }
 .jn-title { display: grid; gap: 10px; margin-bottom: 40px; }
-.jn-title.center { justify-items: center; text-align: center; }
+.jn-title.jn-center { justify-items: center; text-align: center; }
 .jn-title h2, .jn-what-text h2, .jn-clients-head h2, .jn-care-b h2, .jn-team-top h2 { font-size: clamp(28px, 3.3cqi, 44px); font-weight: 800; line-height: 1.35; color: var(--jn-ink); }
 
 /* Product cards: soft rounded tile, the picture zooms and two round buttons rise on hover */
@@ -2066,7 +2070,6 @@ ${[1, 2, 3, 4, 5].map((n) => `.jn-dot:nth-of-type(${n}):checked ~ .jn-dots label
 .jn-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .jn-card { display: grid; justify-items: center; gap: 6px; text-align: center; min-width: 0; }
 .jn-card-pic { position: relative; width: 100%; border-radius: 18px; background: #fff; overflow: hidden; transition: box-shadow .4s, transform .4s cubic-bezier(.2, .9, .3, 1.2); }
-.jn-grid.soft .jn-card-pic, .jn-grey .jn-grid.soft .jn-card-pic { background: var(--jn-grey); }
 .jn-card:hover .jn-card-pic { transform: translateY(-6px); box-shadow: 0 26px 40px -26px rgb(24 35 82 / .45); }
 .jn-img { display: grid; place-items: center; aspect-ratio: 1; }
 .jn-img img { width: 76%; height: 76%; object-fit: contain; transition: transform .6s cubic-bezier(.2, .9, .3, 1.2); }
@@ -2093,7 +2096,7 @@ ${[1, 2, 3, 4, 5].map((n) => `.jn-dot:nth-of-type(${n}):checked ~ .jn-dots label
 .jn-what-wrap { padding-block: 20px 40px; }
 .jn-what { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 60px; }
 .jn-what-pic { position: relative; display: grid; place-items: center; }
-.jn-what-pic .jn-pic { position: relative; width: min(100%, 470px); }
+.jn-what-pic .jn-pic { position: relative; width: min(100%, 540px); }
 .jn-what-pic .jn-pic img { object-fit: contain; }
 .jn-blob-bg { position: absolute; width: 74%; aspect-ratio: 1; background: #E9ECEF; border-radius: 52% 48% 41% 59% / 46% 55% 45% 54%; animation: jn-morph 12s ease-in-out infinite; }
 .jn-white .jn-blob-bg, .jn-what-wrap:not(.jn-grey) .jn-blob-bg { background: var(--jn-grey); }
@@ -2115,9 +2118,10 @@ ${[1, 2, 3, 4, 5].map((n) => `.jn-dot:nth-of-type(${n}):checked ~ .jn-dots label
 
 /* Clients */
 .jn-clients { padding-block: 80px; }
-.jn-clients-head { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: start; margin-bottom: 44px; }
+.jn-clients-head { display: grid; grid-template-columns: .85fr 1fr; gap: 50px; align-items: start; margin-bottom: 50px; }
 .jn-clients-head > div { display: grid; gap: 10px; }
-.jn-clients-head p { color: var(--jn-muted); line-height: 2; font-size: 14px; }
+.jn-clients-head h2 { white-space: pre-line; }
+.jn-clients-text { display: grid; gap: 18px; max-width: 540px; padding-top: 26px; color: var(--jn-muted); font-size: 15px; line-height: 2; }
 .jn-logos { display: flex; flex-wrap: wrap; justify-content: space-around; align-items: center; gap: 30px; }
 .jn-logos span { display: grid; place-items: center; width: 110px; height: 70px; }
 .jn-logos img { max-width: 100%; max-height: 64px; object-fit: contain; transition: transform .4s cubic-bezier(.2, .9, .3, 1.5); }
@@ -2127,12 +2131,12 @@ ${[1, 2, 3, 4, 5].map((n) => `.jn-dot:nth-of-type(${n}):checked ~ .jn-dots label
 /* Testimonials beside a photo */
 .jn-quotes { display: grid; grid-template-columns: 1fr 1fr; min-height: clamp(460px, 52cqi, 680px); }
 .jn-quotes-text { position: relative; display: grid; justify-items: center; align-content: center; gap: 14px; padding: 60px clamp(24px, 6cqi, 90px); background: var(--jn-navy); color: #fff; text-align: center; }
-.jn-quotes-text h2 { font-size: clamp(26px, 3cqi, 40px); font-weight: 800; }
-.jn-quote-mark { width: 30px; height: 30px; fill: #fff; stroke: none; }
+.jn-quotes-text h2 { font-size: clamp(28px, 3.6cqi, 48px); font-weight: 800; }
+.jn-quote-mark { width: 38px; height: 38px; fill: #fff; stroke: none; }
 .jn-quote-stack { display: grid; }
 .jn-quote { grid-area: 1 / 1; display: grid; justify-items: center; gap: 14px; opacity: 0; visibility: hidden; transform: translateY(12px); transition: opacity .6s, transform .6s, visibility .6s; }
 .jn-quote:only-child, ${[1, 2, 3, 4, 5, 6].map((n) => `.jn-dot:nth-of-type(${n}):checked ~ .jn-quote-stack .jn-quote:nth-child(${n})`).join(", ")} { opacity: 1; visibility: visible; transform: none; }
-.jn-quote blockquote { max-width: 440px; font-size: 15px; line-height: 2; }
+.jn-quote blockquote { max-width: 470px; font-size: 17px; line-height: 2; }
 .jn-face { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; background: #fff; overflow: hidden; color: var(--jn-ink); font-weight: 800; }
 .jn-face img { width: 100%; height: 100%; object-fit: cover; }
 .jn-quote figcaption { font-weight: 700; }
@@ -2476,7 +2480,7 @@ ${[1, 2, 3, 4, 5, 6].map((n) => `.jn-gallery:has(.jn-thumb:nth-child(${n}) input
   .jn-wrap { padding-inline: 16px; }
   .jn-head-top { grid-template-columns: auto 1fr; min-height: 70px; }
   .jn-head-top .jn-logo { order: -1; }
-  .jn-head-top .jn-logo img, .jn-head-in .jn-logo img { height: 42px; }
+  .jn-head-top .jn-logo img, .jn-head-in .jn-logo img { height: 48px; }
   .jn-head-call, .jn-head-row, .jn-hide-sm, .jn-head .jn-nav { display: none; }
   .jn-sm-tools { display: flex; justify-self: end; align-items: center; gap: 4px; }
   .jn-head-in { min-height: 70px; }
