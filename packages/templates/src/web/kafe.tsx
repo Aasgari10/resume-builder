@@ -844,7 +844,7 @@ export function kafeSample(locale: ResumeData["locale"]): ResumeData {
           { id: "b6", image: img("tile3") },
           { id: "b7", image: img("tile4") },
         ],
-        lookImage: img("band"),
+        lookImage: "",
         trendImage: png("badge2"),
         stats: [
           { id: "t1", value: "۲۵۰", label: "نوع قهوه", text: "از مزرعه‌های مختلف دنیا" },
@@ -933,7 +933,7 @@ const css = /* css */ `
   .kf-head .kf-head-in { animation: kf-head-in linear both; animation-timeline: scroll(); animation-range: 0 560px; }
   @keyframes kf-head-in { 0%, 55% { min-height: 104px; } 100% { min-height: 78px; } }
 }
-.kf-head-in { display: flex; align-items: center; justify-content: space-between; gap: 30px; min-height: 104px; }
+.kf-head-in { display: flex; flex-direction: row-reverse; align-items: center; justify-content: space-between; gap: 30px; min-height: 104px; }
 .kf-logo img { display: block; height: 56px; width: auto; }
 .kf-logo b { font-family: var(--kf-head); font-size: 30px; color: #fff; }
 .kf-nav { display: flex; gap: 38px; }
@@ -959,11 +959,12 @@ ${Array.from({ length: n }, (_, k) => `.kf-n${n} .kf-auto:checked ~ .kf-slides >
 .kf-hero:hover .kf-slide, .kf-hero:focus-within .kf-slide { animation-play-state: paused !important; }
 /* The picture keeps to the left (as in the reference) and fades into the dark wood on the right. */
 .kf-slide-pic { position: absolute; inset-block: 0; left: 0; width: min(100%, max(50%, 760px)); overflow: hidden; -webkit-mask-image: linear-gradient(to right, #000 55%, transparent 98%); mask-image: linear-gradient(to right, #000 55%, transparent 98%); }
-.kf-slide-pic img { width: 100%; height: 100%; object-fit: cover; object-position: left center; transform-origin: 30% 50%; animation: kf-zoom 32s ease-in-out infinite alternate; }
+.kf-slide-pic img { width: 100%; height: 100%; object-fit: cover; object-position: left center; transform-origin: 30% 50%; animation: kf-zoom 20s ease-in-out infinite alternate; }
 /* A very slow zoom (the "Ken Burns" look) so the picture feels alive. */
-@keyframes kf-zoom { from { transform: scale(1); } to { transform: scale(1.09); } }
+@keyframes kf-zoom { from { transform: scale(1); } to { transform: scale(1.15); } }
 .kf-band-pic img { animation: kf-zoom 40s ease-in-out infinite alternate; }
-.kf-slide::before { content: ""; position: absolute; inset: 0; background: url("${sampleImage("kf-band")}") center / cover; opacity: .55; }
+/* Dark stone texture drawn by the browser (sharp at any size), shared with the badge band. */
+.kf-slide::before { content: ""; position: absolute; inset: 0; background-color: #241E1B; background-image: radial-gradient(ellipse at 50% 40%, transparent 30%, rgb(0 0 0 / .45)), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .55 0 0 0 0 .38 0 0 0 0 .28 0 0 0 .32 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2800' height='1000'%3E%3Cfilter id='m'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.008 .02' numOctaves='3' seed='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .2 0 0 0 0 .16 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23m)'/%3E%3C/svg%3E"); }
 .kf-slide-pic::after { content: ""; position: absolute; inset: 0; background: rgb(0 0 0 / .18); }
 .kf-slide { justify-items: start; }
 .kf-slide-text { position: relative; display: grid; justify-items: center; gap: 18px; width: min(640px, 100%); box-sizing: border-box; margin-inline-start: clamp(20px, 11cqi, 230px); padding: 120px 24px 70px; text-align: center; }
@@ -1004,7 +1005,7 @@ ${Array.from({ length: n }, (_, k) => `.kf-n${n} .kf-auto:checked ~ .kf-slides >
 .kf-story p { color: var(--kf-muted); font-size: 14px; line-height: 1.9; }
 
 /* Badge band */
-.kf-band { position: relative; display: grid; place-items: center; min-height: clamp(360px, 36cqi, 520px); overflow: hidden; isolation: isolate; background: var(--kf-dark); }
+.kf-band { position: relative; display: grid; place-items: center; min-height: clamp(360px, 36cqi, 520px); overflow: hidden; isolation: isolate; background-color: #241E1B; background-image: radial-gradient(ellipse at 50% 40%, transparent 30%, rgb(0 0 0 / .45)), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .55 0 0 0 0 .38 0 0 0 0 .28 0 0 0 .32 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2800' height='1000'%3E%3Cfilter id='m'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.008 .02' numOctaves='3' seed='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .2 0 0 0 0 .16 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23m)'/%3E%3C/svg%3E"); }
 .kf-band-pic { position: absolute; inset: 0; z-index: -1; }
 .kf-band-pic img { width: 100%; height: 100%; object-fit: cover; }
 .kf-band-badge img { display: block; width: clamp(180px, 15cqi, 250px); height: auto; transition: transform .8s cubic-bezier(.2, .8, .2, 1.3); }
@@ -1143,15 +1144,15 @@ ${[1, 2, 3, 4, 5, 6].map((n) => `.kf-dot:nth-of-type(${n}):checked ~ .kf-qdots l
 .kf-form input:focus, .kf-form textarea:focus { outline: none; border-color: var(--kf-tan); }
 .kf-full { grid-column: 1 / -1; }
 .kf-form .kf-btn { justify-self: start; }
-.kf-where { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 60px; align-items: stretch; padding-bottom: 100px; }
-.kf-where-text { display: grid; align-content: center; justify-items: start; gap: 16px; }
+.kf-where { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: stretch; padding-bottom: 100px; }
+.kf-where-text { display: grid; align-content: center; justify-items: start; gap: 16px; padding: 34px 38px; background: var(--kf-paper); }
 .kf-where-text h2 { font-family: var(--kf-head); font-size: clamp(26px, 2.6cqi, 34px); font-weight: 500; }
 .kf-where-text .kf-beans::before { display: none; }
 .kf-where-text dl { display: grid; grid-template-columns: auto 1fr; gap: 14px 26px; margin: 4px 0 8px; font-size: 14px; line-height: 1.9; }
 .kf-where-text dt { font-family: var(--kf-head); font-size: 18px; color: var(--kf-ink); }
 .kf-where-text dd { display: grid; margin: 0; color: var(--kf-muted); white-space: pre-line; }
 .kf-where-text dd a:hover { color: var(--kf-tan); }
-.kf-map { display: grid; place-items: center; aspect-ratio: 1; border: 1px solid #E6DCCF; background: var(--kf-paper); color: var(--kf-muted); font-size: 13px; text-align: center; overflow: hidden; }
+.kf-map { display: grid; place-items: center; min-height: 340px; border: 1px solid #E6DCCF; background: var(--kf-paper); color: var(--kf-muted); font-size: 13px; text-align: center; overflow: hidden; }
 .kf-map iframe { width: 100%; height: 100%; border: 0; filter: sepia(.35) saturate(.7); }
 
 /* Reveal on scroll where the browser supports scroll timelines */
@@ -1165,7 +1166,7 @@ ${[1, 2, 3, 4, 5, 6].map((n) => `.kf-dot:nth-of-type(${n}):checked ~ .kf-qdots l
   .kf-tiles { grid-template-columns: repeat(2, 1fr); }
   .kf-contact { grid-template-columns: 1fr; gap: 46px; }
   .kf-where { grid-template-columns: 1fr; }
-  .kf-map { max-width: 420px; width: 100%; justify-self: center; }
+  .kf-map { min-height: 300px; }
 }
 @container (max-width: 760px) {
   .kf { font-size: 14px; }
