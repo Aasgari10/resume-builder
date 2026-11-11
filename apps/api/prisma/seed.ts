@@ -37,6 +37,7 @@ const templates = [
   { id: "sepid-portfolio", name: "سپید", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
   { id: "golsara-shop", name: "گل‌سرا (گل‌فروشی)", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
   { id: "boutique-shop", name: "بوتیک (فروشگاه)", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
+  { id: "juno-shop", name: "جونو (اسباب‌بازی)", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
   { id: "grogin-shop", name: "گروگین (سوپرمارکت)", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
   { id: "homemart-shop", name: "هوم‌مارت (فروشگاه لوازم خانگی)", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
 ];

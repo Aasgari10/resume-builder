@@ -9,3 +9,7 @@ project-music, project-portfolio. The certificate pictures were drawn for this p
 
 Grogin (`gg-*`): every picture, icon and the logo come from the Grogin theme demo (KLBTheme) and are
 only for local development. Replace all of them, and the name and logo, before the template is published.
+
+Juno (`jn-*`): every picture, the logo and the decorations come from the Juno theme demo (ThemeREX) or
+were cut from its screenshots; only for local development. Replace all of them, and the name and logo,
+before the template is published.
