@@ -136,6 +136,8 @@ export function Footer({ data }: { data: ResumeData }) {
 const webStyles = /* css */ `
 .w-shell { display: contents; }
 .w-page {
+  /* Anything a template places absolutely stays inside the page (in the editor too). */
+  position: relative;
   container-type: inline-size;
   --w-space: calc(var(--space-factor, 1) * 1rem);
   --k-space: var(--w-space);

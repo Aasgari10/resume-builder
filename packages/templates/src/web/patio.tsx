@@ -1443,7 +1443,8 @@ const css = /* css */ `
 
 /* Header: menu, logo in the middle, socials, bag and the order button */
 .pt-header { position: sticky; top: 0; z-index: 30; background: rgb(11 11 11 / .96); border-bottom: 1px solid var(--pt-line); }
-.pt-home .pt-header { position: absolute; inset-inline: 0; background: linear-gradient(rgb(0 0 0 / .55), transparent); border-color: transparent; }
+/* On the home page the header lies over the hero (sticky, pulled over it), never outside the page. */
+.pt-home .pt-header { margin-bottom: -97px; background: linear-gradient(rgb(0 0 0 / .55), transparent); border-color: transparent; }
 .pt-header-in { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 20px; min-height: 96px; }
 .pt-nav { display: flex; gap: 28px; font-size: 14px; font-weight: 600; }
 .pt-nav a { position: relative; padding: 6px 0; }
@@ -1731,6 +1732,7 @@ section[id^="pt-cat-"] { scroll-margin-top: 160px; }
   .pt-head-block { margin-bottom: 36px; }
   /* Phone header as in the reference: menu button, logo in the middle, bag */
   .pt-header-in { min-height: 70px; grid-template-columns: 1fr auto 1fr; }
+  .pt-home .pt-header { margin-bottom: -71px; }
   .pt-nav, .pt-order { display: none; }
   .pt-logo img { height: 42px; }
   .pt-burger { display: block; position: static; }
