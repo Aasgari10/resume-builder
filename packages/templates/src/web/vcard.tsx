@@ -10,7 +10,7 @@ import { WebPage, webCtx } from "./kit";
 import { formatNumber, formatPeriod, formatYearMonth, safeUrl } from "../format";
 import { sampleImage, sampleResume } from "../sample";
 import type { TemplateProps } from "../types";
-import { Certificates, Icon, Opt, PageLink, SERVICE_ICONS, Socials, ToPage, ed, item, outside, pagesOf, paragraphs, partsCss, type View } from "./parts";
+import { Certificates, FormMeta, Icon, Opt, PageLink, SERVICE_ICONS, Socials, ToPage, ed, item, outside, pagesOf, paragraphs, partsCss, type View } from "./parts";
 
 export const VCARD_OPTIONAL_PAGES = [
   { path: "/resume", label: "رزومه" },
@@ -268,13 +268,13 @@ function Works({ ctx, editing }: View) {
   );
 }
 
-function Contact({ ctx }: View) {
-  const email = ctx.data.basics.email?.trim();
+function Contact({ link }: View) {
   return (
     <>
       <p className="vc-text">برای همکاری، سفارش یا هر سؤالی پیام بگذارید؛ زود جواب می‌دهم.</p>
-      {/* No server needed: the visitor's mail app opens with the message filled in. */}
-      <form className="vc-form" action={email ? `mailto:${email}` : undefined} method="post" encType="text/plain">
+      {/* Saved for the owner's inbox in the panel. */}
+      <form className="vc-form" action={link("/_form")} method="post">
+        <FormMeta kind="contact" back="/contact" />
         <div>
           <input name="name" placeholder="نام شما" required />
           <input name="email" type="email" placeholder="ایمیل شما" required />

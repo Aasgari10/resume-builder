@@ -11,7 +11,7 @@ import { WebPage, webCtx, type Ctx } from "./kit";
 import { safeUrl } from "../format";
 import { sampleImage, sampleResume } from "../sample";
 import type { TemplateProps } from "../types";
-import { Icon, Opt, PageLink, Socials, blockOn, ed, item, outside, partsCss } from "./parts";
+import { FormMeta, Icon, Opt, PageLink, Socials, blockOn, ed, item, outside, partsCss } from "./parts";
 import { ZoomOpen } from "./zoom";
 import { AccountPage, CouponBox, InfoLinks, InfoPage, OptionPicker, Reviews, SORTS, Stars, filterProducts, infoPages, onSale, percentOff, shopkitCss, timeLeft } from "./shopkit";
 
@@ -273,12 +273,12 @@ function Header(view: View) {
   );
 }
 
-function Footer({ ctx, link, editing, shop }: View) {
+function Footer({ ctx, link, editing, shop, page }: View) {
   const b = ctx.data.basics;
   const site = ctx.data.site;
   return (
     <footer className="hm-foot" id="hm-contact">
-      {blockOn(ctx.data, "newsletter") && b.email && (
+      {blockOn(ctx.data, "newsletter") && (
         <div className="hm-news">
           <div className="hm-wrap hm-news-in">
             <div>
@@ -289,10 +289,9 @@ function Footer({ ctx, link, editing, shop }: View) {
                 <p {...ed("site.shop.newsletterText", "text", "متن خبرنامه")}>{shop.newsletterText}</p>
               </Opt>
             </div>
-            {/* No server mailbox yet: joining opens an email to the shop with the visitor's address. */}
-            <form method="get" action={`mailto:${b.email}`} className="hm-news-form">
-              <input type="hidden" name="subject" value="عضویت در خبرنامه" />
-              <input name="body" type="email" required placeholder="ایمیل خود را وارد کنید..." aria-label="ایمیل" dir="ltr" />
+            <form method="post" action={link("/_form")} className="hm-news-form">
+<FormMeta kind="newsletter" back={page} />
+              <input name="email" type="email" required placeholder="ایمیل خود را وارد کنید..." aria-label="ایمیل" dir="ltr" />
               <button type="submit">عضویت</button>
             </form>
           </div>

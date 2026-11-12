@@ -14,7 +14,7 @@ import { WebPage, webCtx, type Ctx } from "./kit";
 import { safeUrl } from "../format";
 import { sampleImage, sampleResume } from "../sample";
 import type { TemplateProps } from "../types";
-import { Opt, PageLink, Socials, blockOn, ed, item, outside, partsCss } from "./parts";
+import { FormMeta, Opt, PageLink, Socials, blockOn, ed, item, outside, partsCss } from "./parts";
 import { ZoomOpen } from "./zoom";
 import { AccountPage, CouponBox, hasChoices, InfoPage, infoPages, onSale, OptionPicker, percentOff, Reviews, SORTS, SpecsTable, Stars, filterProducts, shopkitCss } from "./shopkit";
 import { mapEmbed } from "./golsara";
@@ -397,10 +397,9 @@ function Newsletter({ view }: { view: View }) {
             {shop.newsletterTitle}
           </h2>
         </Opt>
-        {/* No server mailbox yet: joining opens an email to the shop with the visitor's address. */}
-        <form method="get" action={`mailto:${email}`} className="jn-news-form">
-          <input type="hidden" name="subject" value="عضویت در خبرنامه" />
-          <input name="body" type="email" required placeholder="ایمیل خود را وارد کنید" aria-label="ایمیل" dir="ltr" />
+        <form method="post" action={view.link("/_form")} className="jn-news-form">
+<FormMeta kind="newsletter" back={view.page} />
+          <input name="email" type="email" required placeholder="ایمیل خود را وارد کنید" aria-label="ایمیل" dir="ltr" />
           <button type="submit">
             <Svg name="mail" /> عضویت
           </button>
@@ -1043,24 +1042,23 @@ function Contact(view: View) {
               {site?.contactText}
             </p>
           </Opt>
-          {b.email ? (
-            // No server mailbox yet: sending opens an email to the shop.
-            <form method="get" action={`mailto:${b.email}`}>
+          <form method="post" action={view.link("/_form")}>
+<FormMeta kind="contact" back={view.page} />
               <label>
                 <Svg name="user2" />
-                <input name="subject" placeholder="نام" aria-label="نام شما" />
+                <input name="name" placeholder="نام" aria-label="نام شما" />
               </label>
               <label>
                 <Svg name="mail" />
-                <input name="cc" type="email" placeholder="ایمیل" aria-label="ایمیل شما" dir="auto" />
+                <input name="email" type="email" placeholder="ایمیل" aria-label="ایمیل شما" dir="auto" />
               </label>
               <label>
                 <Svg name="phone" />
-                <input name="bcc" placeholder="تلفن" aria-label="تلفن" dir="auto" />
+                <input name="phone" placeholder="تلفن" aria-label="تلفن" dir="auto" />
               </label>
               <label>
                 <Svg name="chat" />
-                <input name="title" placeholder="موضوع" aria-label="موضوع" />
+                <input name="subject" placeholder="موضوع" aria-label="موضوع" />
               </label>
               <label className="full tall">
                 <Svg name="pen" />
@@ -1073,9 +1071,6 @@ function Contact(view: View) {
                 <Svg name="send" /> ارسال پیام
               </button>
             </form>
-          ) : (
-            <p className="jn-muted">برای فعال شدن فرم، ایمیل فروشگاه را وارد کنید.</p>
-          )}
         </div>
       </section>
       {embed ? (

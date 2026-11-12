@@ -12,7 +12,7 @@ import { WebPage, webCtx, type Ctx } from "./kit";
 import { safeUrl } from "../format";
 import { sampleImage, sampleResume } from "../sample";
 import type { TemplateProps } from "../types";
-import { Icon, Opt, PageLink, Socials, blockOn, ed, item, outside, partsCss } from "./parts";
+import { FormMeta, Icon, Opt, PageLink, Socials, blockOn, ed, item, outside, partsCss } from "./parts";
 import { ZoomOpen } from "./zoom";
 import { AccountPage, CouponBox, hasChoices, InfoPage, infoPages, onSale, OptionPicker, percentOff, Reviews, SORTS, SpecsTable, Stars, filterProducts, shopkitCss } from "./shopkit";
 import { mapEmbed } from "./golsara";
@@ -361,16 +361,15 @@ function Footer(view: View) {
           <SocialIcons view={view} className="pt-foot-socials" />
         </div>
         <div>
-          {blockOn(ctx.data, "newsletter") && b.email && (
+          {blockOn(ctx.data, "newsletter") && (
             <>
               <h4>خبرنامه</h4>
               <Opt value={shop.newsletterText} editing={editing} edit={ed("site.shop.newsletterText", "text", "متن خبرنامه")}>
                 <p {...ed("site.shop.newsletterText", "text", "متن خبرنامه")}>{shop.newsletterText}</p>
               </Opt>
-              {/* No server mailbox yet: joining opens an email to the restaurant with the visitor's address. */}
-              <form method="get" action={`mailto:${b.email}`} className="pt-news">
-                <input type="hidden" name="subject" value="عضویت در خبرنامه" />
-                <input name="body" type="email" required placeholder="ایمیل شما" aria-label="ایمیل" dir="ltr" />
+              <form method="post" action={view.link("/_form")} className="pt-news">
+<FormMeta kind="newsletter" back={view.page} />
+                <input name="email" type="email" required placeholder="ایمیل شما" aria-label="ایمیل" dir="ltr" />
                 <button type="submit" aria-label="عضویت">
                   <Svg name="arrow" />
                 </button>
@@ -908,16 +907,15 @@ function Contact(view: View) {
           <small className="pt-kicker">در تماس باشید</small>
           <h2>تماس با ما</h2>
           <p className="pt-body">برای پرسش‌های عمومی، فرم زیر را پر کنید؛ ظرف ۴۸ ساعت به شما پاسخ می‌دهیم.</p>
-          {b.email ? (
-            // No server mailbox yet: sending opens an email to the restaurant.
-            <form method="get" action={`mailto:${b.email}`} className="pt-form">
+          <form method="post" action={view.link("/_form")} className="pt-form">
+<FormMeta kind="contact" back={view.page} />
               <label>
                 نام شما
-                <input name="cc" />
+                <input name="name" />
               </label>
               <label>
                 ایمیل شما
-                <input name="bcc" type="email" dir="auto" />
+                <input name="email" type="email" dir="auto" />
               </label>
               <label className="pt-full">
                 موضوع
@@ -931,9 +929,6 @@ function Contact(view: View) {
                 ارسال
               </button>
             </form>
-          ) : (
-            <p className="pt-muted">برای فعال شدن فرم، ایمیل رستوران را وارد کنید.</p>
-          )}
         </div>
       </section>
     </>
@@ -965,17 +960,15 @@ function Reservation(view: View) {
         )}
       </div>
       <div className="pt-contact-text pt-res-form pt-rise">
-        {b.email ? (
-          // No server mailbox yet: the booking opens an email to the restaurant with the details.
-          <form method="get" action={`mailto:${b.email}`} className="pt-form">
-            <input type="hidden" name="subject" value="درخواست رزرو میز" />
+        <form method="post" action={view.link("/_form")} className="pt-form">
+<FormMeta kind="booking" back={view.page} />
             <label>
               نام و نام خانوادگی
-              <input name="cc" required />
+              <input name="name" required />
             </label>
             <label>
               شماره‌ی تماس
-              <input name="bcc" inputMode="tel" dir="ltr" required />
+              <input name="phone" inputMode="tel" dir="ltr" required />
             </label>
             <label>
               تاریخ
@@ -1003,9 +996,6 @@ function Reservation(view: View) {
               ثبت درخواست رزرو
             </button>
           </form>
-        ) : (
-          <p className="pt-muted">برای فعال شدن فرم رزرو، ایمیل رستوران را وارد کنید.</p>
-        )}
       </div>
     </section>
   );
@@ -1572,7 +1562,7 @@ export function patioSample(locale: ResumeData["locale"]): ResumeData {
       aboutCaption: "طعم و تغذیه",
       aboutTitle: "غذای باکیفیت و متعادل",
       aboutText: "غذا، هماهنگی و خنده سرو می‌کنیم. از سال ۱۳۷۷ تا امروز، هر روز غذای خوشمزه و تجربه‌ای دلپذیر برای مهمانانمان ساخته‌ایم.",
-      bandText: "مواد اولیه را هر صبح از بازار محلی می‌خریم و نانمان در تنور خودمان پخته می‌شود.\n\nمشتری‌ها مهمان ما هستند و ما میزبانشان. کار ما این است که هر لحظه از تجربه‌ی مهمانان را کمی بهتر کنیم؛ از خوشامد گرم دم در تا آخرین فنجان قهوه بعد از غذا، تا هر بار با لبخند برگردید.",
+      bandText: "مواد اولیه را هر صبح از بازار محلی می‌خریم و نانمان در تنور خودمان پخته می‌شود؛ از خوشامد گرم دم در تا آخرین فنجان قهوه، کارمان این است که هر بار با لبخند برگردید.",
       aboutImage: img("photo2"),
       styleTitle: "فلسفه‌ی ما",
       styleText: "ساده و متعادل. سرآشپز ما طعم‌ها و غذاهای ویژه‌ی ایتالیا و فراتر از آن را با هنری غافلگیرکننده کنار هم می‌گذارد؛ خمیر پیتزا ۴۸ ساعت استراحت می‌کند، سس‌ها هر روز تازه پخته می‌شوند و هیچ بشقابی بدون چشیدن از آشپزخانه بیرون نمی‌رود.\n\n«در همه‌ی دنیا سفر کرده‌ام و طعم‌های محلی را چشیده‌ام. هر آشپز فلسفه و روش خودش را دارد و من از همه‌شان یاد گرفته‌ام.»",

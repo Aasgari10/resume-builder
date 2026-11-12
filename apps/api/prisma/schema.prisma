@@ -153,6 +153,7 @@ model Site {
   shopCustomers  ShopCustomer[]
   shopReviews    ShopReview[]
   shopTickets    ShopTicket[]
+  messages       SiteMessage[]
 
   @@index([userId])
 }
@@ -256,6 +257,50 @@ enum ShopOrderStatus {
   NEW
   CONFIRMED
   SENT
+  DONE
+  CANCELED
+}
+
+// ───────────── What visitors send through a site's forms ─────────────
+
+// A booking (salon appointment, restaurant table), a contact message or a newsletter sign-up, sent
+// through a form of a published site; the owner sees and manages them in the panel's inbox.
+model SiteMessage {
+  id        String            @id @default(cuid())
+  siteId    String
+  kind      SiteMessageKind
+  status    SiteMessageStatus @default(NEW)
+  code      String?           @unique // tracking code of a booking, shown to the visitor
+  name      String?
+  phone     String?
+  email     String?
+  subject   String?
+  text      String?
+  service   String? // the chosen service of a booking
+  date      String? // as the visitor entered it (yyyy-mm-dd)
+  time      String? // hh:mm
+  guests    Int?
+  page      String? // the page the form was sent from
+  ownerNote String? // the owner's own note, never shown to the visitor
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  deletedAt DateTime? // in the panel's trash since then; removed for good after 30 days
+
+  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@index([siteId, kind, createdAt])
+}
+
+enum SiteMessageKind {
+  BOOKING
+  CONTACT
+  NEWSLETTER
+}
+
+enum SiteMessageStatus {
+  NEW
+  SEEN // read (a message) or under review (a booking)
+  CONFIRMED // a booking the owner accepted
   DONE
   CANCELED
 }

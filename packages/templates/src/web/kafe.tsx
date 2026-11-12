@@ -13,7 +13,7 @@ import { WebPage, webCtx, type Ctx } from "./kit";
 import { safeUrl } from "../format";
 import { sampleImage, sampleResume } from "../sample";
 import type { TemplateProps } from "../types";
-import { Opt, PageLink, Socials, blockOn, ed, item, outside, partsCss } from "./parts";
+import { FormMeta, Opt, PageLink, Socials, blockOn, ed, item, outside, partsCss } from "./parts";
 import { ZoomOpen } from "./zoom";
 import { InfoPage, hasChoices, infoPages, onSale, shopkitCss } from "./shopkit";
 import { AccountView, Act, AddedToast, BagLink, CartView, CheckoutView, KIcon, ProductView, ShopList, ThanksView, kafeShopCss, soldCategories, soldProducts } from "./kafeShop";
@@ -229,13 +229,12 @@ function Footer(view: View) {
             {site?.address}
           </p>
         </Opt>
-        {blockOn(ctx.data, "newsletter") && b.email && (
+        {blockOn(ctx.data, "newsletter") && (
           <>
             <h4>خبرها به تازگی قهوه‌ی ما</h4>
-            {/* No server mailbox yet: joining opens an email to the cafe with the visitor's address. */}
-            <form method="get" action={`mailto:${b.email}`} className="kf-news">
-              <input type="hidden" name="subject" value="عضویت در خبرنامه" />
-              <input name="body" type="email" required placeholder="ایمیل شما..." aria-label="ایمیل" dir="ltr" />
+            <form method="post" action={view.link("/_form")} className="kf-news">
+<FormMeta kind="newsletter" back={view.page} />
+              <input name="email" type="email" required placeholder="ایمیل شما..." aria-label="ایمیل" dir="ltr" />
               <button type="submit" aria-label="عضویت">
                 <svg viewBox="0 0 24 24" className="kf-ico">
                   <path d="M3.5 6h17v12h-17z M3.5 7l8.5 6.2L20.5 7" />
@@ -747,20 +746,16 @@ function Contact(view: View) {
           )}
           <Socials ctx={ctx} editing={editing} className="kf-contact-socials" />
         </div>
-        {b.email ? (
-          // No server mailbox yet: sending opens an email to the cafe.
-          <form method="get" action={`mailto:${b.email}`} className="kf-form kf-rise">
-            <input name="cc" placeholder="نام شما" aria-label="نام شما" />
-            <input name="bcc" type="email" placeholder="ایمیل شما" aria-label="ایمیل شما" dir="auto" />
+        <form method="post" action={view.link("/_form")} className="kf-form kf-rise">
+<FormMeta kind="contact" back={view.page} />
+            <input name="name" placeholder="نام شما" aria-label="نام شما" />
+            <input name="email" type="email" placeholder="ایمیل شما" aria-label="ایمیل شما" dir="auto" />
             <input name="subject" placeholder="موضوع" aria-label="موضوع" className="kf-full" />
             <textarea name="body" required rows={5} placeholder="پیام شما..." aria-label="پیام شما" className="kf-full" />
             <button type="submit" className="kf-btn">
               ارسال پیام
             </button>
           </form>
-        ) : (
-          <p className="kf-empty">برای فعال شدن فرم، ایمیل کافه را وارد کنید.</p>
-        )}
       </section>
       <section className="kf-wrap kf-where">
         <div className="kf-where-text kf-rise">

@@ -10,6 +10,7 @@ import type { CSSProperties, ReactNode } from "react";
 import type { ResumeData } from "@rb/schema";
 import { WebPage, webCtx, type Ctx } from "./kit";
 import { ZoomOpen } from "./zoom";
+import { FormMeta } from "./parts";
 import { formatNumber, formatPeriod, formatYearMonth, isDummyUrl, linkLabel, safeUrl } from "../format";
 import { sampleImage, sampleResume } from "../sample";
 import type { TemplateProps } from "../types";
@@ -878,8 +879,9 @@ function Contact(view: View) {
         <h2>
           {t.lets} <em>{t.together}</em>
         </h2>
-        {/* No server needed: the visitor's mail app opens with the message filled in. */}
-        <form action={email ? `mailto:${email}` : undefined} method="post" encType="text/plain">
+        {/* Saved for the owner's inbox in the panel. */}
+        <form action={view.link("/_form")} method="post">
+          <FormMeta kind="contact" back="/contact" />
           <input name="name" placeholder={`${t.name} *`} required />
           <input name="email" type="email" placeholder={`${t.email} *`} required />
           <input name="subject" placeholder={`${t.subject} *`} required />

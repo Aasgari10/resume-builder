@@ -14,7 +14,7 @@ import { WebPage, webCtx, type Ctx } from "./kit";
 import { safeUrl } from "../format";
 import { sampleImage, sampleResume } from "../sample";
 import type { TemplateProps } from "../types";
-import { Opt, PageLink, Socials, blockOn, ed, item, outside, partsCss } from "./parts";
+import { FormMeta, Opt, PageLink, Socials, blockOn, ed, item, outside, partsCss } from "./parts";
 import { ZoomOpen } from "./zoom";
 import { InfoPage, infoPages, onSale, shopkitCss } from "./shopkit";
 import { AccountView, AddedToast, BagLink, CartView, CheckoutView, KIcon, ProductCard, ProductView, ShopList, ThanksView, kafeShopCss, soldCategories, soldProducts } from "./kafeShop";
@@ -386,10 +386,9 @@ function Header(view: View) {
 function BookingForm({ view, className, full, button = "ثبت درخواست نوبت" }: { view: View; className?: string; full?: boolean; button?: string }) {
   const b = view.ctx.data.basics;
   const services = servicesOf(view.shop);
-  if (!b.email) return <p className="ld-muted">برای فعال شدن فرم نوبت، ایمیل سالن را وارد کنید.</p>;
   return (
-    <form method="get" action={`mailto:${b.email}`} className={`ld-form ${className ?? ""}`}>
-      <input type="hidden" name="subject" value="درخواست نوبت" />
+    <form method="post" action={view.link("/_form")} className={`ld-form ${className ?? ""}`}>
+<FormMeta kind="booking" back={view.page} />
       {full && (
         <label className="ld-field ld-full">
           <span>خدمت</span>
@@ -405,11 +404,11 @@ function BookingForm({ view, className, full, button = "ثبت درخواست ن
       )}
       <label className="ld-field">
         <span>نام شما</span>
-        <input name="cc" required autoComplete="name" />
+        <input name="name" required autoComplete="name" />
       </label>
       <label className="ld-field">
         <span>شماره‌ی تماس</span>
-        <input name="bcc" required inputMode="tel" dir="ltr" autoComplete="tel" />
+        <input name="phone" required inputMode="tel" dir="ltr" autoComplete="tel" />
       </label>
       {full ? (
         <>
@@ -510,13 +509,12 @@ function Footer(view: View) {
               )}
             </div>
           </div>
-          {blockOn(ctx.data, "newsletter") && b.email && (
+          {blockOn(ctx.data, "newsletter") && (
             <div className="ld-news">
               <h3>از تازه‌ها باخبر شوید</h3>
-              {/* No server mailbox yet: joining opens an email to the salon with the visitor's address. */}
-              <form method="get" action={`mailto:${b.email}`}>
-                <input type="hidden" name="subject" value="عضویت در خبرنامه" />
-                <input name="body" type="email" required placeholder="ایمیل شما" aria-label="ایمیل" dir="ltr" />
+              <form method="post" action={view.link("/_form")}>
+<FormMeta kind="newsletter" back={view.page} />
+                <input name="email" type="email" required placeholder="ایمیل شما" aria-label="ایمیل" dir="ltr" />
                 <button type="submit" className="ld-btn line">
                   عضویت
                 </button>
@@ -865,9 +863,10 @@ function Home(view: View) {
 
       {on("banners") && banners.length > 0 && (
         <section className="ld-wrap ld-banners">
-          {banners.map((x) => {
+          {banners.map((x, k) => {
             const at = item("site.shop.banners", x.id);
-            const href = safeUrl(x.link);
+            // Without a link of its own, the first banner opens the contact page, the second the shop.
+            const href = safeUrl(x.link) ?? (k === 0 ? "/contact" : soldProducts(shop).length ? "/shop" : "/services");
             const inner = (
               <>
                 <Pic src={x.image} path={`${at}.image`} label="عکس بنر" className="ld-banner-pic" />
@@ -1282,16 +1281,15 @@ function Contact(view: View) {
             <Fancy text="سؤالی *دارید*؟" />
           </h2>
           <p className="ld-body">سؤالتان را بنویسید؛ با کمال میل راهنمایی‌تان می‌کنیم.</p>
-          {b.email ? (
-            // No server mailbox yet: sending opens an email to the salon.
-            <form method="get" action={`mailto:${b.email}`} className="ld-form ld-form-wide">
+          <form method="post" action={view.link("/_form")} className="ld-form ld-form-wide">
+<FormMeta kind="contact" back={view.page} />
               <label className="ld-field">
                 <span>نام شما</span>
-                <input name="cc" />
+                <input name="name" />
               </label>
               <label className="ld-field">
                 <span>ایمیل شما</span>
-                <input name="bcc" type="email" dir="ltr" />
+                <input name="email" type="email" dir="ltr" />
               </label>
               <label className="ld-field ld-full">
                 <span>پیام شما</span>
@@ -1301,9 +1299,6 @@ function Contact(view: View) {
                 ارسال پیام
               </button>
             </form>
-          ) : (
-            <p className="ld-muted">برای فعال شدن فرم، ایمیل سالن را وارد کنید.</p>
-          )}
         </div>
       </section>
     </>
@@ -1533,8 +1528,8 @@ export function ladivaSample(locale: ResumeData["locale"]): ResumeData {
           { id: "st2", value: "۱۳۲۵", label: "طرح ناخن منحصربه‌فرد", text: "هر طرحی که دوست دارید را می‌توانیم اجرا کنیم یا طرحی تازه برایتان بسازیم." },
         ],
         banners: [
-          { id: "bn1", image: img("salon"), title: "شعبه‌های ما", kicker: "برنامه‌ی بازدید", link: "/contact" },
-          { id: "bn2", image: img("gift"), title: "کارت هدیه و محصولات", kicker: "خرید آنلاین", link: "/shop" },
+          { id: "bn1", image: img("salon"), title: "شعبه‌های ما", kicker: "برنامه‌ی بازدید" },
+          { id: "bn2", image: img("gift"), title: "کارت هدیه و محصولات", kicker: "خرید آنلاین" },
         ],
         perks: [
           { id: "pk1", title: "شعبه‌ی ولیعصر", text: "تهران، خیابان ولیعصر، بالاتر از پارک ساعی، پلاک ۴۵ · شنبه تا پنجشنبه ۹ تا ۲۰", image: img("salon") },

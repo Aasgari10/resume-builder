@@ -14,7 +14,7 @@ import { WebPage, webCtx, type Ctx } from "./kit";
 import { safeUrl } from "../format";
 import { sampleImage, sampleResume } from "../sample";
 import type { TemplateProps } from "../types";
-import { Icon, Opt, PageLink, Socials, blockOn, ed, item, outside, partsCss } from "./parts";
+import { FormMeta, Icon, Opt, PageLink, Socials, blockOn, ed, item, outside, partsCss } from "./parts";
 import { ZoomOpen } from "./zoom";
 import { AccountPage, CouponBox, hasChoices, InfoPage, infoPages, onSale, OptionPicker, percentOff, Reviews, SORTS, SpecsTable, Stars, filterProducts, saleProducts, shopkitCss, timeLeft } from "./shopkit";
 import { mapEmbed } from "./golsara";
@@ -614,7 +614,7 @@ function Footer(view: View) {
   const pages = (shop.pages ?? []).filter((p) => !p.hidden);
   return (
     <footer className="gg-foot">
-      {blockOn(data, "newsletter") && b.email && (
+      {blockOn(data, "newsletter") && (
         <div className="gg-wrap gg-news">
           <div>
             <Opt value={shop.newsletterTitle} editing={editing} edit={ed("site.shop.newsletterTitle", "text", "عنوان خبرنامه")}>
@@ -625,11 +625,10 @@ function Footer(view: View) {
             </Opt>
           </div>
           <div>
-            {/* No server mailbox yet: joining opens an email to the shop with the visitor's address. */}
-            <form method="get" action={`mailto:${b.email}`} className="gg-news-form">
-              <input type="hidden" name="subject" value="عضویت در خبرنامه" />
+            <form method="post" action={view.link("/_form")} className="gg-news-form">
+<FormMeta kind="newsletter" back={view.page} />
               <Svg name="mail" />
-              <input name="body" type="email" required placeholder="ایمیل خود را وارد کنید" aria-label="ایمیل" dir="ltr" />
+              <input name="email" type="email" required placeholder="ایمیل خود را وارد کنید" aria-label="ایمیل" dir="ltr" />
               <button type="submit">عضویت</button>
             </form>
             <small>با عضویت، قوانین و حریم خصوصی فروشگاه را می‌پذیرید.</small>
@@ -1573,18 +1572,14 @@ function Contact(view: View) {
         </div>
         <div className="gg-contact-form">
           <h2>پیام خود را بفرستید</h2>
-          {b.email ? (
-            // No server mailbox yet: sending opens an email to the shop.
-            <form method="get" action={`mailto:${b.email}`}>
-              <input name="subject" placeholder="نام شما" aria-label="نام شما" />
+          <form method="post" action={view.link("/_form")}>
+<FormMeta kind="contact" back={view.page} />
+              <input name="name" placeholder="نام شما" aria-label="نام شما" />
               <textarea name="body" required rows={5} placeholder="پیام شما" aria-label="پیام شما" />
               <button type="submit" className="gg-btn">
                 ارسال پیام
               </button>
             </form>
-          ) : (
-            <p className="gg-muted">برای فعال شدن فرم، ایمیل فروشگاه را وارد کنید.</p>
-          )}
         </div>
       </section>
       {embed ? (

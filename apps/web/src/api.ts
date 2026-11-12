@@ -214,6 +214,29 @@ export type ShopTrash = {
   tickets: (ShopTicket & { deletedAt: string })[];
   days: number;
 };
+/** Something a visitor sent through a form of the published site: a booking, a message or a newsletter sign-up. */
+export type SiteMessageKind = "BOOKING" | "CONTACT" | "NEWSLETTER";
+export type SiteMessageStatus = "NEW" | "SEEN" | "CONFIRMED" | "DONE" | "CANCELED";
+export type SiteMessage = {
+  id: string;
+  kind: SiteMessageKind;
+  status: SiteMessageStatus;
+  code: string | null;
+  name: string | null;
+  phone: string | null;
+  email: string | null;
+  subject: string | null;
+  text: string | null;
+  service: string | null;
+  date: string | null;
+  time: string | null;
+  guests: number | null;
+  page: string | null;
+  ownerNote: string | null;
+  createdAt: string;
+  deletedAt: string | null;
+};
+export type SiteMessages = { messages: SiteMessage[]; newCounts: { booking: number; contact: number; newsletter: number }; days: number };
 export type ShopOrderQuery = { status?: ShopOrderStatus; q?: string; from?: string; to?: string; take?: number; skip?: number };
 export type ShopReview = { id: string; productId: string; rating: number; text: string; approved: boolean; reply: string | null; createdAt: string; customer: { name: string; phone: string } };
 export type ShopTicket = {
@@ -295,6 +318,11 @@ export const api = {
     request<{ ticket: ShopTicket }>("PATCH", `/resumes/${resumeId}/site/tickets/${encodeURIComponent(id)}`, patch),
   deleteShopTicket: (resumeId: string, id: string) => request<{ ok: true }>("DELETE", `/resumes/${resumeId}/site/tickets/${encodeURIComponent(id)}`),
   batchShopTickets: (resumeId: string, ids: string[], action: "close" | "delete") => request<{ done: number }>("POST", `/resumes/${resumeId}/site/tickets/batch`, { ids, action }),
+  siteMessages: (resumeId: string, trash = false) => request<SiteMessages>("GET", `/resumes/${resumeId}/site/messages${trash ? "?trash=1" : ""}`),
+  updateSiteMessage: (resumeId: string, id: string, patch: { status?: SiteMessageStatus; ownerNote?: string | null; date?: string; time?: string }) =>
+    request<{ message: SiteMessage }>("PATCH", `/resumes/${resumeId}/site/messages/${encodeURIComponent(id)}`, patch),
+  batchSiteMessages: (resumeId: string, ids: string[], action: "seen" | "confirm" | "done" | "cancel" | "delete" | "restore" | "purge") =>
+    request<{ done: number }>("POST", `/resumes/${resumeId}/site/messages/batch`, { ids, action }),
   shopTrash: (resumeId: string) => request<ShopTrash>("GET", `/resumes/${resumeId}/site/trash`),
   restoreShopTrash: (resumeId: string, kind: ShopTrashKind, ids: string[]) => request<{ done: number; failed: string[] }>("POST", `/resumes/${resumeId}/site/trash/restore`, { kind, ids }),
   purgeShopTrash: (resumeId: string, kind: ShopTrashKind, ids: string[]) => request<{ done: number }>("POST", `/resumes/${resumeId}/site/trash/purge`, { kind, ids }),

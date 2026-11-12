@@ -12,7 +12,7 @@ import { WebPage, webCtx, type Ctx } from "./kit";
 import { safeUrl } from "../format";
 import { sampleImage, sampleResume } from "../sample";
 import type { TemplateProps } from "../types";
-import { Icon, Opt, PageLink, Socials, blockOn, ed, item, outside, partsCss } from "./parts";
+import { FormMeta, Icon, Opt, PageLink, Socials, blockOn, ed, item, outside, partsCss } from "./parts";
 import { ZoomOpen } from "./zoom";
 import { AccountPage, CouponBox, FilterForm, filterProducts, hasChoices, InfoPage, infoPages, onSale, OptionPicker, percentOff, Reviews, saleProducts, shopkitCss, SORTS, SpecsTable, timeLeft } from "./shopkit";
 
@@ -435,11 +435,10 @@ function Footer(view: GView) {
             {b.summary}
           </p>
         </Opt>
-        {blockOn(ctx.data, "newsletter") && b.email && (
-          // No server mailbox yet: joining opens an email to the shop with the visitor's address.
-          <form method="get" action={`mailto:${b.email}`} className="gs-news">
-            <input type="hidden" name="subject" value="عضویت در خبرنامه" />
-            <input name="body" type="email" required placeholder="ایمیل شما" aria-label="ایمیل" dir="ltr" />
+        {blockOn(ctx.data, "newsletter") && (
+          <form method="post" action={link("/_form")} className="gs-news">
+            <FormMeta kind="newsletter" back={view.page} />
+            <input name="email" type="email" required placeholder="ایمیل شما" aria-label="ایمیل" dir="ltr" />
             <button type="submit">عضویت</button>
           </form>
         )}
@@ -724,13 +723,12 @@ function Gallery(view: GView) {
   );
 }
 
-/** A message to the shop. No server mailbox yet: sending opens an email to the shop. */
+/** A message to the shop, saved for the owner's inbox in the panel. */
 function MessageForm({ view }: { view: GView }) {
-  const email = view.ctx.data.basics.email;
-  if (!email) return null;
   return (
-    <form method="get" action={`mailto:${email}`} className="gs-message">
-      <input name="subject" placeholder="نام شما" aria-label="نام شما" />
+    <form method="post" action={view.link("/_form")} className="gs-message">
+      <FormMeta kind="contact" back={view.page} />
+      <input name="name" placeholder="نام شما" aria-label="نام شما" />
       <textarea name="body" required rows={6} placeholder="پیام شما" aria-label="پیام شما" />
       <button type="submit" className="gs-btn">
         ارسال پیام

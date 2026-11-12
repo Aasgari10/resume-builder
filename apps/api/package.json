@@ -8,7 +8,7 @@
     "build": "tsup",
     "start": "node dist/index.js",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "tsx --test src/lib/lib.test.ts src/lib/subdomain.test.ts src/render/sitePage.test.tsx src/render/templates.test.tsx src/render/fields.test.tsx src/payments/zarinpal.test.ts src/ai/ai.test.ts",
+    "test": "tsx --test src/lib/lib.test.ts src/lib/subdomain.test.ts src/render/sitePage.test.tsx src/render/templates.test.tsx src/render/fields.test.tsx src/render/samples.test.ts src/payments/zarinpal.test.ts src/ai/ai.test.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",

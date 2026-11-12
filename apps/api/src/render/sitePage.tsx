@@ -40,8 +40,8 @@ export const SITE_CSP = [
   // The app origin is listed so uploaded photos also load in development over plain HTTP.
   `img-src 'self' https: data: ${new URL(env.appUrl).origin}`,
   "base-uri 'none'",
-  // Shop buttons post to the site itself; contact forms open the visitor's mail app.
-  "form-action 'self' mailto:",
+  // Shop buttons and the booking, contact and newsletter forms post to the site itself.
+  "form-action 'self'",
   "frame-ancestors 'none'",
   // Map views of the contact page (they run their own scripts on their own site, not on ours).
   "frame-src https://www.openstreetmap.org",
@@ -59,6 +59,8 @@ export function renderSitePage(input: {
   link?: (path: string) => string;
   /** Shop templates: the visitor's cart, wishlist and query string. */
   visitor?: Visitor;
+  /** A form of the site was just sent (?sent=…): a small notice says whether it arrived. */
+  sent?: { kind: string; code?: string };
 }): string {
   const { component: Template } = getTemplate(input.theme.templateId);
   const page = input.page ?? "/";
@@ -126,8 +128,25 @@ export function renderSitePage(input: {
   <head>
     ${head}
   </head>
-  <body>${body}</body>
+  <body>${body}${input.sent ? sentNotice(input.sent) : ""}</body>
 </html>`;
+}
+
+const SENT_TEXT: Record<string, [string, string]> = {
+  booking: ["درخواست نوبت شما ثبت شد", "پس از بررسی برای تأیید با شما تماس می‌گیریم."],
+  contact: ["پیام شما فرستاده شد", "به‌زودی پاسخ می‌دهیم."],
+  newsletter: ["عضویت شما در خبرنامه ثبت شد", "از تازه‌ها باخبرتان می‌کنیم."],
+  error: ["فرستاده نشد", "لطفاً فیلدهای لازم را کامل کنید و دوباره بفرستید."],
+};
+
+/** The notice after a form was sent: fixed at the bottom of the page, closes with a click, fades by itself. No scripts. */
+function sentNotice(sent: { kind: string; code?: string }): string {
+  const [title, text] = SENT_TEXT[sent.kind] ?? SENT_TEXT.contact!;
+  const ok = sent.kind !== "error";
+  const code = ok && sent.code ? `<br>کد پیگیری: <b dir="ltr">${escapeHtml(sent.code)}</b>` : "";
+  return `<input type="checkbox" id="rb-sent-x" style="position:absolute;opacity:0;pointer-events:none">
+<div class="rb-sent" role="status" dir="rtl"><b>${ok ? "✓ " : ""}${escapeHtml(title)}</b><span>${escapeHtml(text)}${code}</span><label for="rb-sent-x" aria-label="بستن">×</label></div>
+<style>.rb-sent{position:fixed;bottom:24px;inset-inline-start:24px;z-index:99;display:grid;grid-template-columns:1fr auto;gap:4px 16px;width:min(380px,calc(100vw - 32px));box-sizing:border-box;padding:18px 20px;background:#fff;color:#222;border-inline-start:4px solid ${ok ? "#2F7D4F" : "#B4442F"};box-shadow:0 24px 50px -20px rgb(0 0 0/.35);font:14px/1.9 Vazirmatn,Tahoma,sans-serif;animation:rb-in .5s ease both,rb-out .6s 8s ease both}.rb-sent b{color:${ok ? "#2F7D4F" : "#B4442F"}}.rb-sent span{grid-column:1;color:#555;font-size:13px}.rb-sent label{grid-row:1/3;grid-column:2;cursor:pointer;font-size:22px;line-height:1;color:#888}#rb-sent-x:checked+.rb-sent{display:none}@keyframes rb-in{from{opacity:0;transform:translateY(30px)}}@keyframes rb-out{to{opacity:0;visibility:hidden}}</style>`;
 }
 
 /** Minimal standalone page for missing or unpublished sites. */
