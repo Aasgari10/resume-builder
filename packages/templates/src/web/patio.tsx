@@ -678,7 +678,7 @@ function AboutBlock({ view, pics }: { view: View; pics?: Photo[] }) {
       {pics ? (
         <PhotoPair view={view} pics={pics} mode="stack" />
       ) : (
-        <div className="pt-pair">
+        <div className="pt-pair pt-stack">
           <Pic src={shop.lookImage} path="site.shop.lookImage" label="عکس بالا" className="pt-photo pt-rise" />
           <Pic src={site?.aboutImage} path="site.aboutImage" label="عکس پایین" className="pt-photo pt-rise" />
         </div>
@@ -772,6 +772,8 @@ function About(view: View) {
   const site = ctx.data.site;
   const team = (site?.gallery ?? []).filter((g) => safeUrl(g.image) && g.description).slice(0, 4);
   const sign = safeUrl(shop.trendImage);
+  const quotes = (site?.testimonials ?? []).filter((t) => !t.hidden).slice(0, 3);
+  const bg = safeUrl(shop.discoverImage);
   return (
     <>
       <Band view={view} title="درباره‌ی ما" src={shop.discoverImage} path="site.shop.discoverImage" label="عکس بالای صفحه" />
@@ -791,13 +793,39 @@ function About(view: View) {
             {sign && <img src={sign} alt="" loading="lazy" />}
           </span>
         </div>
-        <div className="pt-pair">
+        <div className="pt-pair pt-stack">
           <Pic src={site?.heroImage} path="site.heroImage" label="عکس بالا" className="pt-photo pt-rise" />
           <Pic src={site?.accentImage} path="site.accentImage" label="عکس پایین" className="pt-photo pt-rise" />
         </div>
       </section>
+      {quotes.length > 0 && (
+        <section className="pt-quotes">
+          <span className="pt-quotes-bg">{bg && <img src={bg} alt="" loading="lazy" />}</span>
+          <div className="pt-wrap pt-quotes-row">
+            {quotes.map((t) => {
+              const at = item("site.testimonials", t.id);
+              const face = safeUrl(t.image);
+              return (
+                <figure key={t.id} className="pt-quote pt-rise">
+                  <span className="pt-quote-mark" aria-hidden="true">
+                    ”
+                  </span>
+                  <blockquote {...ed(`${at}.text`, "multiline", "متن نظر")}>{t.text}</blockquote>
+                  <span className="pt-quote-face" {...ed(`${at}.image`, "image", "عکس")}>
+                    {face && <img src={face} alt={t.name} loading="lazy" />}
+                  </span>
+                  <figcaption>
+                    <b {...ed(`${at}.name`, "text", "نام")}>{t.name}</b>
+                    {t.role && <small {...ed(`${at}.role`, "text", "سمت")}>{t.role}</small>}
+                  </figcaption>
+                </figure>
+              );
+            })}
+          </div>
+        </section>
+      )}
       {team.length > 0 && (
-        <section className="pt-sec pt-dark">
+        <section className="pt-sec">
           <div className="pt-wrap">
             <Head view={view} kicker="درباره‌ی تیم ما" title="با سرآشپزهای ما آشنا شوید" center />
             <div className="pt-team">
@@ -812,6 +840,7 @@ function About(view: View) {
                       {g.description}
                     </small>
                     <b {...ed(`${at}.title`, "text", "نام")}>{g.title}</b>
+                    <SocialIcons view={view} className="pt-chef-socials" />
                   </figure>
                 );
               })}
@@ -1544,10 +1573,10 @@ export function patioSample(locale: ResumeData["locale"]): ResumeData {
       aboutTitle: "غذای باکیفیت و متعادل",
       aboutText: "غذا، هماهنگی و خنده سرو می‌کنیم. از سال ۱۳۷۷ تا امروز، هر روز غذای خوشمزه و تجربه‌ای دلپذیر برای مهمانانمان ساخته‌ایم.",
       bandText: "مواد اولیه را هر صبح از بازار محلی می‌خریم و نانمان در تنور خودمان پخته می‌شود.\n\nمشتری‌ها مهمان ما هستند و ما میزبانشان. کار ما این است که هر لحظه از تجربه‌ی مهمانان را کمی بهتر کنیم؛ از خوشامد گرم دم در تا آخرین فنجان قهوه بعد از غذا، تا هر بار با لبخند برگردید.",
-      aboutImage: img("about1"),
+      aboutImage: img("photo2"),
       styleTitle: "فلسفه‌ی ما",
       styleText: "ساده و متعادل. سرآشپز ما طعم‌ها و غذاهای ویژه‌ی ایتالیا و فراتر از آن را با هنری غافلگیرکننده کنار هم می‌گذارد؛ خمیر پیتزا ۴۸ ساعت استراحت می‌کند، سس‌ها هر روز تازه پخته می‌شوند و هیچ بشقابی بدون چشیدن از آشپزخانه بیرون نمی‌رود.\n\n«در همه‌ی دنیا سفر کرده‌ام و طعم‌های محلی را چشیده‌ام. هر آشپز فلسفه و روش خودش را دارد و من از همه‌شان یاد گرفته‌ام.»",
-      heroImage: img("photo1"),
+      heroImage: img("about2"),
       accentImage: img("contact"),
       signatureImage: png("bistro"),
       contactText: "رستوران ما در قلب شهر، روبه‌روی پارک ملت است؛ جایی آرام برای یک ناهار کاری، شامی دونفره یا دورهمی با دوستان. پارکینگ عمومی در چند قدمی ورودی است و ایستگاه مترو هم فاصله‌ی زیادی ندارد.\n\nبرای رزرو میز، سفارش مهمانی یا هر پرسشی درباره‌ی منو تماس بگیرید یا سری به ما بزنید؛ خوشحال می‌شویم میزبانتان باشیم.",
@@ -1561,6 +1590,12 @@ export function patioSample(locale: ResumeData["locale"]): ResumeData {
         { id: "g4", title: "کباب", image: img("photo4") },
         { id: "c1", title: "علی مرادی", description: "سرآشپز", image: img("chef1") },
         { id: "c2", title: "آیدا ویلیامز", description: "سرآشپز شیرینی", image: img("chef2") },
+        { id: "c3", title: "لیون بلانشه", description: "سرآشپز گرم", image: img("chef3") },
+      ],
+      testimonials: [
+        { id: "t1", name: "بتسی وارد", role: "منتقد غذا", image: img("av1"), text: "پیتزای مارگاریتای اینجا بهترینی است که در شهر خورده‌ام؛ خمیر نازک و تُرد، سس تازه و برخورد گرم کارکنان." },
+        { id: "t2", name: "ویل مو", role: "باریستا", image: img("av2"), text: "فضای آرام و موسیقی ملایم، قهوه‌ی خوش‌عطر و دسرهای تازه؛ جایی که دوست دارید ساعت‌ها بنشینید." },
+        { id: "t3", name: "آلیس وین", role: "بلاگر", image: img("av3"), text: "غذای خوب پایه‌ی شادی واقعی است. هر بار که به پاتیوتایم می‌آیم، با لبخند بیرون می‌روم." },
       ],
       shop: {
         heroKicker: "خوش آمدید به",
@@ -1577,7 +1612,7 @@ export function patioSample(locale: ResumeData["locale"]): ResumeData {
         discountTitle: "آلاکارت",
         discoverImage: img("foot"),
         newImage: img("slice"),
-        lookImage: img("plate"),
+        lookImage: img("about1"),
         trendImage: png("sign"),
         newsletterText: "از تازه‌ترین خبرها و پیشنهادهای ما باخبر شوید.",
         showcaseCategoryId: "pz",
@@ -1840,9 +1875,25 @@ section[id^="pt-cat-"] { scroll-margin-top: 160px; }
 .pt-menu-list { display: grid; gap: 24px; width: 100%; }
 
 /* Team */
-.pt-team { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 34px; justify-content: center; }
+.pt-team { display: grid; grid-template-columns: repeat(3, minmax(0, 330px)); gap: 26px; justify-content: center; }
+.pt-chef .pt-kicker { color: var(--pt-orange); font-size: 12px; }
+.pt-chef-socials { justify-content: center; gap: 14px; }
+.pt-chef-socials .pt-solid { width: 14px; height: 14px; }
+/* Reviews: three side by side over a dark restaurant photo */
+.pt-quotes { position: relative; isolation: isolate; overflow: hidden; padding-block: 90px; }
+.pt-quotes-bg { position: absolute; inset: 0; z-index: -1; }
+.pt-quotes-bg img { width: 100%; height: 100%; object-fit: cover; opacity: .28; }
+.pt-quotes-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 50px; }
+.pt-quote { display: grid; justify-items: center; gap: 14px; margin: 0; text-align: center; }
+.pt-quote-mark { color: var(--pt-orange); font-family: var(--pt-head); font-size: 44px; line-height: .6; }
+.pt-quote blockquote { margin: 0; font-family: var(--pt-head); font-size: 19px; line-height: 1.75; }
+.pt-quote-face { display: block; width: 76px; height: 76px; margin-top: 10px; border: 2px solid rgb(255 255 255 / .8); border-radius: 50%; overflow: hidden; }
+.pt-quote-face img { width: 100%; height: 100%; object-fit: cover; }
+.pt-quote figcaption { display: grid; gap: 2px; }
+.pt-quote figcaption b { font-size: 14px; }
+.pt-quote figcaption small { color: var(--pt-muted); font-size: 12px; }
 .pt-chef { display: grid; justify-items: center; gap: 10px; text-align: center; }
-.pt-chef-pic { display: block; width: 100%; aspect-ratio: 530 / 650; overflow: hidden; }
+.pt-chef-pic { display: block; width: 100%; aspect-ratio: 4 / 5; overflow: hidden; }
 .pt-chef-pic img { width: 100%; height: 100%; object-fit: cover; transition: transform 1s; }
 .pt-chef:hover .pt-chef-pic img { transform: scale(1.06); }
 .pt-chef .pt-kicker { margin-top: 10px; }
@@ -1852,12 +1903,14 @@ section[id^="pt-cat-"] { scroll-margin-top: 160px; }
 /* Contact */
 .pt-contact { position: relative; display: grid; grid-template-columns: 1fr 1fr; min-height: 640px; }
 /* First half: the text over a dark restaurant photo, the map beside it at the same height */
-.pt-contact-top { min-height: clamp(560px, 60cqi, 760px); }
+.pt-contact-top { min-height: 0; }
 .pt-contact-bg { position: absolute; inset: 0; z-index: -1; overflow: hidden; }
 .pt-contact-bg img { width: 100%; height: 100%; object-fit: cover; }
 .pt-contact-bg::after { content: ""; position: absolute; inset: 0; background: rgb(0 0 0 / .72); }
 .pt-contact-top > .pt-contact-text { position: relative; isolation: isolate; }
 .pt-contact-top .pt-map { align-self: stretch; min-height: 0; }
+.pt-contact-top .pt-res-form { padding-block: 50px; }
+.pt-res-form .pt-form { gap: 22px 24px; }
 .pt-contact-top .pt-map iframe { min-height: 100%; }
 .pt-lines-list { display: grid; gap: 14px; margin: 6px 0 10px; font-size: 15px; }
 .pt-lines-list li { display: flex; align-items: center; gap: 12px; }
@@ -2062,6 +2115,8 @@ section[id^="pt-cat-"] { scroll-margin-top: 160px; }
   .pt-split3, .pt-split3:not(.pt-flip) { grid-template-columns: 1fr; gap: 30px; }
   .pt-split3 .pt-split-text, .pt-flip.pt-split3 .pt-split-text { order: 2; }
   .pt-pizzas { gap: 64px; }
+  .pt-quotes-row { grid-template-columns: 1fr; gap: 56px; }
+  .pt-team { grid-template-columns: minmax(0, 360px); }
   .pt-pizza { grid-template-columns: 1fr; gap: 26px; }
   .pt-pizza-pic { order: 0; }
   .pt-pizza-text { justify-items: center; text-align: center; }
