@@ -183,3 +183,18 @@ export const partsCss = /* css */ `
 .p-cert-add { place-items: center; align-content: center; min-height: 160px; border: 1.5px dashed currentColor; border-radius: 14px; opacity: .6; cursor: pointer; }
 .p-cert-add b { font-size: 2em; font-weight: 300; line-height: 1; }
 `;
+
+/**
+ * Hidden fields of a form that sends to the site's own inbox (a booking, a contact message or a
+ * newsletter sign-up): what it is, the page to come back to, and a trap only robots fill in.
+ * The form posts to link("/_form"); the owner sees what arrives in the panel.
+ */
+export function FormMeta({ kind, back }: { kind: "booking" | "contact" | "newsletter"; back: string }) {
+  return (
+    <>
+      <input type="hidden" name="kind" value={kind} />
+      <input type="hidden" name="back" value={back} />
+      <input name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: "absolute", insetInlineStart: 0, width: 1, height: 1, opacity: 0, pointerEvents: "none" }} />
+    </>
+  );
+}

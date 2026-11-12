@@ -11,7 +11,7 @@ import { WebPage, webCtx } from "./kit";
 import { formatNumber, formatPeriod, safeUrl } from "../format";
 import { sampleImage, sampleResume } from "../sample";
 import type { TemplateProps } from "../types";
-import { Icon, Opt, PageLink, Socials, ToPage, blockOn, ed, item, outside, pagesOf, paragraphs, partsCss, type View } from "./parts";
+import { FormMeta, Icon, Opt, PageLink, Socials, ToPage, blockOn, ed, item, outside, pagesOf, paragraphs, partsCss, type View } from "./parts";
 import { ZoomOpen } from "./zoom";
 
 export const SEPID_OPTIONAL_PAGES = [
@@ -441,7 +441,7 @@ function Gallery({ ctx, editing }: SView) {
 
 /* ───────────── Contact ───────────── */
 
-function Contact({ ctx, editing }: SView) {
+function Contact({ ctx, editing, link }: SView) {
   const b = ctx.data.basics;
   const site = ctx.data.site;
   const banner = safeUrl(site?.accentImage);
@@ -484,8 +484,9 @@ function Contact({ ctx, editing }: SView) {
       </div>
       <section className="sd-sec sd-form-wrap">
         <Heading>چطور می‌توانم کمکتان کنم؟</Heading>
-        {/* No server needed: the visitor's mail app opens with the message filled in. */}
-        <form className="sd-form" action={email ? `mailto:${email}` : undefined} method="post" encType="text/plain">
+        {/* Saved for the owner's inbox in the panel. */}
+        <form className="sd-form" action={link("/_form")} method="post">
+          <FormMeta kind="contact" back="/contact" />
           <div>
             <input name="name" placeholder="نام و نام خانوادگی" required />
             <input name="email" type="email" placeholder="ایمیل" required />
