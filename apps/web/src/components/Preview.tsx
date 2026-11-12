@@ -268,7 +268,7 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
           دستیار
         </button>
         {site.shop && (
-          <button type="button" className="ws-chip" title={site.menu ? "مدیریت سایت: منو، QR کد و محتوای صفحه‌ها" : "مدیریت فروشگاه: سفارش‌ها، محصولات، تیکت‌ها و گزارش‌ها"} onClick={() => { setShopFocus(undefined); setShopOpen(true); }}>
+          <button type="button" className="ws-chip" title={site.menu && site.sells ? "مدیریت سایت: منو، فروشگاه، سفارش‌ها و QR کد" : site.menu ? "مدیریت سایت: منو، QR کد و محتوای صفحه‌ها" : "مدیریت فروشگاه: سفارش‌ها، محصولات، تیکت‌ها و گزارش‌ها"} onClick={() => { setShopFocus(undefined); setShopOpen(true); }}>
             ⚙️ مدیریت
           </button>
         )}
@@ -313,7 +313,7 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
       {full ? createPortal(workspace, document.body) : workspace}
       {shopOpen &&
         createPortal(
-          <ShopManager data={raw} sample={templateSample} onData={onDataChange} resumeId={resumeId} focusProductId={shopFocus} menu={Boolean(site.menu)} hasBlog={Boolean(site.optionalPages?.some((p) => p.path === "/blog"))} onClose={() => { setShopOpen(false); setShopFocus(undefined); }} />,
+          <ShopManager data={raw} sample={templateSample} onData={onDataChange} resumeId={resumeId} focusProductId={shopFocus} menu={Boolean(site.menu)} sells={Boolean(site.sells)} hasBlog={Boolean(site.optionalPages?.some((p) => p.path === "/blog"))} onClose={() => { setShopOpen(false); setShopFocus(undefined); }} />,
           document.body,
         )}
       {target &&
