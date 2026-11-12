@@ -13,6 +13,7 @@ import { ordersRouter } from "./routes/orders";
 import { paymentsRouter } from "./routes/payments";
 import { publicRouter } from "./routes/public";
 import { shopRouter } from "./routes/shop";
+import { siteFormsRouter } from "./routes/siteForms";
 import { resumesRouter } from "./routes/resumes";
 import { sitesRouter } from "./routes/sites";
 import { templatesRouter } from "./routes/templates";
@@ -25,6 +26,7 @@ app.set("trust proxy", 1); // behind a reverse proxy (Caddy/Nginx) in production
 
 // Public sites first: they are served by host or by /s/<subdomain> and need no session.
 app.use(shopRouter); // cart and order forms of published shops (before the JSON body parser)
+app.use(siteFormsRouter); // booking, contact and newsletter forms of published sites
 app.use(publicRouter);
 app.use(UPLOADS_PATH, uploadsStatic);
 
