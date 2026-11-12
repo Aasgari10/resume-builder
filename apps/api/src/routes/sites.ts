@@ -13,6 +13,7 @@ import { canUseTemplate } from "../lib/ownership";
 import { validateSubdomain } from "../lib/subdomain";
 import { currentUserId, requireAuth } from "../middleware/auth";
 import { shopAdminRouter } from "./shopAdmin";
+import { siteMessagesRouter } from "./siteMessages";
 
 export const sitesRouter = Router({ mergeParams: true });
 sitesRouter.use(requireAuth);
@@ -179,3 +180,4 @@ sitesRouter.post(
 
 // Shop management (orders, customers, comments, tickets) lives in its own file.
 sitesRouter.use(shopAdminRouter);
+sitesRouter.use(siteMessagesRouter);
