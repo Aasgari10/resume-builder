@@ -3,18 +3,20 @@
 // "Kafe": a cafe site rebuilt from the Corretto reference, in Persian. Dark hero slider with a round
 // badge, the cafe's offer, three stories, a badge band, numbers, favourites from the menu, a photo
 // gallery, partner logos, a call to contact and a dark footer; pages: menu (the page the printed QR
-// code opens), about us, what we offer, contact. No cart, orders or accounts: the menu is for reading.
+// code opens), about us, what we offer, contact. The menu is for reading; the categories the owner
+// marks "sold online" (beans, capsules...) make a coffee shop with cart, checkout and accounts (kafeShop.tsx).
 // Published pages run without scripts: the slider and quotes use radios, the phone menu <details>.
 
 import type { CSSProperties, ReactNode } from "react";
-import { formatToman, unitPrice, type Product, type ResumeData, type Shop } from "@rb/schema";
+import { emptyVisitor, formatToman, unitPrice, type Product, type ResumeData, type Shop, type Visitor } from "@rb/schema";
 import { WebPage, webCtx, type Ctx } from "./kit";
 import { safeUrl } from "../format";
 import { sampleImage, sampleResume } from "../sample";
 import type { TemplateProps } from "../types";
 import { Opt, PageLink, Socials, blockOn, ed, item, outside, partsCss } from "./parts";
 import { ZoomOpen } from "./zoom";
-import { onSale } from "./shopkit";
+import { InfoPage, hasChoices, infoPages, onSale, shopkitCss } from "./shopkit";
+import { AccountView, Act, BagLink, CartView, CheckoutView, KIcon, ProductView, ShopList, ThanksView, kafeShopCss, soldCategories, soldProducts } from "./kafeShop";
 import { mapEmbed } from "./golsara";
 
 export const KAFE_BLOCKS = [
@@ -39,20 +41,42 @@ const visible = (shop: Shop | undefined) => (shop?.products ?? []).filter((p) =>
 const pageOn = (data: ResumeData, path: string) => !(data.site?.hiddenPages ?? []).includes(path);
 
 export function kafePages(data: ResumeData): string[] {
-  return ["/", "/menu", ...KAFE_OPTIONAL_PAGES.map((p) => p.path).filter((p) => pageOn(data, p)), "/contact"];
+  const shop = data.site?.shop;
+  const sold = soldProducts(shop);
+  const shopPages = sold.length
+    ? ["/shop", ...soldCategories(shop).filter((c) => sold.some((p) => p.categoryId === c.id)).map((c) => `/category/${c.id}`), ...sold.map((p) => `/product/${p.id}`), "/cart", "/checkout", "/thanks", "/account", ...infoPages(shop).filter((p) => p !== "/contact")]
+    : [];
+  return ["/", "/menu", ...KAFE_OPTIONAL_PAGES.map((p) => p.path).filter((p) => pageOn(data, p)), "/contact", ...shopPages];
 }
 
-type View = { ctx: Ctx; shop: Shop; link: (p: string) => string; editing: boolean; page: string };
+type View = { ctx: Ctx; shop: Shop; link: (p: string) => string; editing: boolean; page: string; visitor: Visitor };
 
 export function KafeSite(props: TemplateProps) {
   const ctx = webCtx(props);
   const shop: Shop = ctx.data.site?.shop ?? { categories: [], products: [] };
   const page = kafePages(ctx.data).includes(props.page ?? "/") ? (props.page ?? "/") : "/";
-  const view: View = { ctx, shop, link: props.link ?? ((p) => p), editing: Boolean(props.editing), page };
+  const view: View = { ctx, shop, link: props.link ?? ((p) => p), editing: Boolean(props.editing), page, visitor: props.visitor ?? emptyVisitor() };
+  const [kind, id] = page.split("/").filter(Boolean);
   const body: ReactNode =
-    page === "/menu" ? <Menu {...view} /> : page === "/about" ? <About {...view} /> : page === "/offer" ? <Offer {...view} /> : page === "/contact" ? <Contact {...view} /> : <Home {...view} />;
+    page === "/menu" ? <Menu {...view} />
+    : page === "/about" ? <About {...view} />
+    : page === "/offer" ? <Offer {...view} />
+    : page === "/contact" ? <Contact {...view} />
+    : page === "/shop" ? <ShopList {...view} />
+    : kind === "category" ? <ShopList {...view} categoryId={id} />
+    : kind === "product" ? <ProductView {...view} id={id!} />
+    : page === "/cart" ? <CartView {...view} />
+    : page === "/checkout" ? <CheckoutView {...view} />
+    : page === "/thanks" ? <ThanksView {...view} />
+    : page === "/account" ? <AccountView {...view} />
+    : page === "/" ? <Home {...view} />
+    : (
+      <div className="kf-wrap kf-inner">
+        <InfoPage data={ctx.data} page={page} link={view.link} editing={view.editing} visitor={view.visitor} />
+      </div>
+    );
   return (
-    <WebPage ctx={ctx} className={`kf${page === "/" ? " kf-home" : ""}`} css={partsCss + css}>
+    <WebPage ctx={ctx} className={`kf${page === "/" ? " kf-home" : ""}`} css={partsCss + shopkitCss + css + kafeShopCss}>
       <Header {...view} />
       <main key={page}>{body}</main>
       <Footer {...view} />
@@ -129,6 +153,7 @@ function menuItems(view: View) {
     { to: "/menu", label: "منو" },
     ...(pageOn(data, "/about") ? [{ to: "/about", label: "درباره‌ی ما" }] : []),
     ...(pageOn(data, "/offer") ? [{ to: "/offer", label: "آنچه ارائه می‌دهیم" }] : []),
+    ...(soldProducts(view.shop).length ? [{ to: "/shop", label: "فروشگاه" }] : []),
     { to: "/contact", label: "تماس با ما" },
   ];
 }
@@ -159,6 +184,15 @@ function Header(view: View) {
       <div className="kf-wrap kf-head-in">
         <Logo view={view} />
         <nav className="kf-nav">{nav}</nav>
+        {soldProducts(view.shop).length > 0 && (
+          <div className="kf-head-tools">
+            <PageLink to="/account" link={view.link} className="kf-bag" current={view.page === "/account"}>
+              <KIcon name="user" />
+              <span className="sr-only">حساب کاربری</span>
+            </PageLink>
+            <BagLink view={view} />
+          </div>
+        )}
         {/* Phone menu without scripts: a details element whose summary turns into the close button. */}
         <details className="kf-burger">
           <summary aria-label="منو">
@@ -376,6 +410,7 @@ function Home(view: View) {
   // The reference's "online coffee shop": the products of one chosen category (packs of beans).
   const packCat = shop.categories.find((c) => c.id === shop.showcaseCategoryId);
   const favorites = (packCat ? products.filter((p) => p.categoryId === packCat.id) : products.filter((p) => p.featured)).slice(0, 4);
+  const soldIds = new Set(soldProducts(shop).map((p) => p.id));
   const gallery = (data.site?.gallery ?? []).filter((g) => safeUrl(g.image)).slice(0, 8);
   const band = safeUrl(shop.lookImage);
   const badge2 = safeUrl(shop.trendImage);
@@ -430,15 +465,31 @@ function Home(view: View) {
           <div className="kf-wrap">
             <Title view={view} title={shop.showcaseTitle} text={shop.showcaseText} titlePath="site.shop.showcaseTitle" textPath="site.shop.showcaseText" />
             <div className="kf-favs">
-              {favorites.map((p, k) => (
-                <PageLink key={p.id} to="/menu" link={link} className="kf-fav kf-rise" product={p.id}>
-                  <span className="kf-fav-pic" style={{ "--i": k } as CSSProperties} {...ed(`${item("site.shop.products", p.id)}.images[0]`, "image", "عکس")}>
-                    {safeUrl(p.images[0]) && <img src={safeUrl(p.images[0])} alt={p.name} loading="lazy" />}
-                  </span>
-                  <b>{p.name}</b>
-                  <Price view={view} p={p} />
-                </PageLink>
-              ))}
+              {favorites.map((p, k) => {
+                const sold = soldIds.has(p.id);
+                return (
+                  <div key={p.id} className="kf-fav kf-rise">
+                    <PageLink to={sold ? `/product/${p.id}` : "/menu"} link={link} className="kf-fav-link" product={p.id}>
+                      <span className="kf-fav-pic" style={{ "--i": k } as CSSProperties} {...ed(`${item("site.shop.products", p.id)}.images[0]`, "image", "عکس")}>
+                        {safeUrl(p.images[0]) && <img src={safeUrl(p.images[0])} alt={p.name} loading="lazy" />}
+                      </span>
+                      <b>{p.name}</b>
+                      <Price view={view} p={p} />
+                    </PageLink>
+                    {sold &&
+                      p.stock !== 0 &&
+                      (hasChoices(p) ? (
+                        <PageLink to={`/product/${p.id}`} link={link} className="kf-card-add">
+                          انتخاب گزینه‌ها
+                        </PageLink>
+                      ) : (
+                        <Act view={view} op="add" id={p.id} className="kf-card-add" label={`افزودن ${p.name} به سبد`}>
+                          افزودن به سبد
+                        </Act>
+                      ))}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </section>
@@ -636,15 +687,15 @@ function Offer(view: View) {
         {pic(1)}
         {text(
           "قهوه‌ی ما از کجاست",
-          <Opt value={shop.paymentNote} editing={editing} edit={ed("site.shop.paymentNote", "multiline", "منبع قهوه")}>
-            <p {...ed("site.shop.paymentNote", "multiline", "منبع قهوه")}>{shop.paymentNote}</p>
+          <Opt value={shop.lookText} editing={editing} edit={ed("site.shop.lookText", "multiline", "منبع قهوه")}>
+            <p {...ed("site.shop.lookText", "multiline", "منبع قهوه")}>{shop.lookText}</p>
           </Opt>,
         )}
         {text(
           "رزرو میز",
           <>
-            <Opt value={shop.orderNote} editing={editing} edit={ed("site.shop.orderNote", "multiline", "متن رزرو")}>
-              <p {...ed("site.shop.orderNote", "multiline", "متن رزرو")}>{shop.orderNote}</p>
+            <Opt value={shop.lookTitle} editing={editing} edit={ed("site.shop.lookTitle", "multiline", "متن رزرو")}>
+              <p {...ed("site.shop.lookTitle", "multiline", "متن رزرو")}>{shop.lookTitle}</p>
             </Opt>
             {b.phone && (
               <a href={`tel:${b.phone.replace(/[^\d+]/g, "")}`} dir="ltr" {...ed("basics.phone", "text", "تلفن")}>
@@ -786,7 +837,7 @@ export function kafeSample(locale: ResumeData["locale"]): ResumeData {
     dish("m10", "c2", "فراپه", 180000, 4, { description: "قهوه، شیر و یخ خردشده با خامه" }),
     dish("m11", "c3", "کروسان کره‌ای", 120000, 3, { description: "کروسان تازه با کره‌ی فرانسوی" }),
     dish("m12", "c3", "چیزکیک", 185000, 2, { description: "چیزکیک نیویورکی با سس توت‌فرنگی" }),
-    ...(["اتیوپی", "کنیا", "کلمبیا", "گواتمالا"] as const).map((n, k) => ({ id: `b${k + 1}`, name: `قهوه‌ی ${n}`, categoryId: "c4", price: [650000, 780000, 910000, 1050000][k]!, images: [png(`pack${k + 1}`)], description: "۲۵۰ گرم دانه‌ی تازه‌برشته" })),
+    ...(["اتیوپی", "کنیا", "کلمبیا", "گواتمالا"] as const).map((n, k) => ({ id: `b${k + 1}`, name: `قهوه‌ی ${n}`, categoryId: "c4", price: [650000, 780000, 910000, 1050000][k]!, images: [png(`pack${k + 1}`)], description: "۲۵۰ گرم دانه‌ی تازه‌برشته.\nدانه‌ها هر هفته در کافه برشته می‌شوند و همان روز بسته‌بندی و ارسال می‌شوند؛ برای اسپرسو، موکاپات و فرانسه مناسب است." })),
   ];
   return {
     ...base,
@@ -865,14 +916,19 @@ export function kafeSample(locale: ResumeData["locale"]): ResumeData {
         heroImage: img("foot"),
         heroText: "فضای کافه را برای گفت‌وگو، کار و استراحت ساخته‌ایم؛ نور گرم، صندلی‌های راحت و اینترنت پرسرعت.\nبرای جمع‌های دوستانه هم میزهای بزرگ داریم.",
         discoverImage: img("foot"),
-        paymentNote: "برزیل، کلمبیا، اتیوپی، کنیا و کاستاریکا",
-        orderNote: "برای رزرو میز تماس بگیرید:",
+        lookText: "برزیل، کلمبیا، اتیوپی، کنیا و کاستاریکا",
+        lookTitle: "برای رزرو میز تماس بگیرید:",
+        paymentNote: "پرداخت در محل هنگام تحویل، یا کارت به کارت پس از تماس ما.",
+        orderNote: "سفارش شما ثبت شد؛ دانه‌ها همان روز برشته و بسته‌بندی می‌شوند و برای هماهنگی ارسال با شما تماس می‌گیریم.",
+        shippingFee: 60000,
+        freeShippingFrom: 2000000,
+        coupons: [{ id: "k1", code: "CORRETTO10", percent: 10, maxDiscount: 200000, active: true }],
         bandItems: ["رزرو میز برای جمع‌های دوستانه", "برگزاری جشن تولد و دورهمی", "سفارش کیک و قهوه برای جلسه‌ها", "کارگاه آموزش قهوه"],
         categories: [
           { id: "c1", name: "نوشیدنی‌های گرم", image: "" },
           { id: "c2", name: "نوشیدنی‌های سرد", image: "" },
           { id: "c3", name: "کیک و شیرینی", image: "" },
-          { id: "c4", name: "دانه‌ی قهوه", image: "" },
+          { id: "c4", name: "دانه‌ی قهوه", image: "", sell: true },
         ],
         showcaseCategoryId: "c4",
         products,
@@ -947,6 +1003,10 @@ const css = /* css */ `
 .kf-nav a::after { content: ""; position: absolute; inset-inline: 0; bottom: 0; height: 2px; background: #fff; transform: scaleX(0); transition: transform .35s; }
 .kf-nav a:hover::after, .kf-nav a[aria-current="page"]::after { transform: scaleX(1); }
 .kf-burger { display: none; }
+.kf-head-tools { display: flex; align-items: center; gap: 6px; color: #fff; }
+.kf-head-tools a:hover { color: var(--kf-tan); }
+.kf-fav-link { display: grid; justify-items: center; gap: 8px; }
+.kf-fav .kf-card-add { margin-top: 6px; }
 
 /* Hero slider */
 .kf-hero { position: relative; overflow: hidden; background: #1E1A17; color: #fff; }
@@ -1191,6 +1251,7 @@ ${[1, 2, 3, 4, 5, 6].map((n) => `.kf-dot:nth-of-type(${n}):checked ~ .kf-qdots l
   .kf-logo img { height: 44px; }
   .kf-nav { display: none; }
   .kf-burger { display: block; }
+  .kf-head-tools { color: var(--kf-ink); }
   .kf-burger summary { display: grid; place-items: center; width: 40px; height: 40px; list-style: none; cursor: pointer; }
   .kf-burger summary::-webkit-details-marker { display: none; }
   .kf-burger summary span, .kf-burger summary span::before, .kf-burger summary span::after { position: relative; display: block; width: 24px; height: 2px; background: var(--kf-ink); transition: transform .3s, background .3s; }
