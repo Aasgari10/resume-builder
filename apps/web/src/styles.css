@@ -1434,3 +1434,34 @@ select {
 /* Vertical scrollbars of the editor on the right: the scrolling box runs left-to-right, its content right-to-left */
 .ws-view, .sp-assistant, .sp-publish, .assistant-messages { direction: ltr; }
 .ws-view > *, .sp-assistant > *, .sp-publish > *, .assistant-messages > * { direction: rtl; }
+
+/* Site inbox: bookings, contact messages and newsletter sign-ups */
+.ws-form-note { position: fixed; bottom: 20px; inset-inline-start: 20px; z-index: 1200; max-width: 380px; padding: 14px 16px; border-radius: 10px; background: #1f2937; color: #fff; font-size: .9rem; line-height: 1.8; box-shadow: 0 16px 40px -16px rgb(0 0 0 / .5); }
+.shm-inbox { display: grid; gap: 12px; max-width: 1000px; margin: 0 auto; }
+.shm-subtabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.shm-subtabs button { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border: 1px solid var(--border); border-radius: 99px; background: var(--surface); font: inherit; cursor: pointer; }
+.shm-subtabs button[aria-selected="true"] { background: var(--primary); border-color: var(--primary); color: var(--primary-text); }
+.shm-inbox .shm-toolbar { flex-wrap: wrap; }
+.shm-inbox .shm-toolbar select { padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font: inherit; background: #fff; }
+.shm-batch { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.shm-msgs { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.shm-msg { border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+.shm-msg.is-new { border-inline-start: 4px solid var(--primary); }
+.shm-msg-head { display: flex; align-items: center; gap: 10px; padding: 10px 12px; }
+.shm-msg-sum { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; padding: 0; border: 0; background: none; font: inherit; color: inherit; text-align: start; cursor: pointer; }
+.shm-msg-sum span { color: var(--muted); font-size: .88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.shm-msg-sum em { font-style: normal; font-size: .75rem; color: var(--muted); }
+.shm-status.s-new { background: #fdecc8; color: #8a5a00; }
+.shm-status.s-confirmed { background: var(--success-bg); color: #1d7a46; }
+.shm-status.s-done { background: #e3eefc; color: #1e5aa8; }
+.shm-status.s-canceled { background: #eee; color: var(--muted); text-decoration: line-through; }
+.shm-msg-body { display: grid; gap: 12px; padding: 4px 14px 14px; border-top: 1px dashed var(--border); }
+.shm-msg-body dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; margin: 10px 0 0; }
+.shm-msg-body dt { color: var(--muted); font-size: .85rem; }
+.shm-msg-body dd { margin: 0; }
+.shm-msg-text { white-space: pre-line; line-height: 1.9; }
+.shm-msg-edit { display: flex; flex-wrap: wrap; gap: 10px; }
+.shm-msg-edit label, .shm-msg-note { display: grid; gap: 4px; font-size: .85rem; color: var(--muted); }
+.shm-msg-edit input, .shm-msg-edit select, .shm-msg-note textarea { padding: 7px 9px; border: 1px solid var(--border); border-radius: 8px; font: inherit; background: #fff; color: var(--text); }
+.shm-row { display: flex; flex-wrap: wrap; gap: 8px; }
+@media (max-width: 640px) { .shm-msg-head { flex-wrap: wrap; } .shm-msg-body dl { grid-template-columns: 1fr; } }

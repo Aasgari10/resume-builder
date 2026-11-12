@@ -10,6 +10,7 @@ import { newId } from "./editor/list";
 import { EditPopover, type EditTarget } from "./site-edit/EditPopover";
 import { SitePanel, type PanelTab } from "./site-edit/SitePanel";
 import { getAt, isItemPath, removeItem, setAt } from "./site-edit/paths";
+import { SiteInbox } from "./shop/SiteInbox";
 import { ShopManager } from "./shop/ShopManager";
 import { onSampleChange, sampleAccountAction, sampleOrder, sampleShopFor, sampleVisitor, touchSample } from "./shop/sampleData";
 
@@ -46,6 +47,8 @@ type Props = {
 
 export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish, bar, resumeId }: Props) {
   const site = getTemplate(theme.templateId);
+  const [inboxOpen, setInboxOpen] = useState(false);
+  const [formNote, setFormNote] = useState<string | null>(null);
   // Each template may bring its own example persona and pictures.
   const templateSample = useMemo(() => site.sample?.(raw.locale), [site, raw.locale]);
   const shown = withPlaceholders(raw, templateSample);
@@ -185,6 +188,16 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
       setVisitor((v) => (r.code ? { ...v, cart: [], coupon: undefined, query } : { ...v, query }));
       if (r.page) setPage(r.page);
       frameTop(form);
+    } else if (action.endsWith("/_form")) {
+      // Bookings, messages and sign-ups are saved only from the published site; the preview says so.
+      setFormNote(
+        fields.kind === "booking"
+          ? "در سایت منتشرشده، این درخواست نوبت ثبت می‌شود و در «📥 پیام‌ها و نوبت‌ها» می‌بینیدش."
+          : fields.kind === "newsletter"
+            ? "در سایت منتشرشده، این عضویت خبرنامه ثبت می‌شود و در «📥 پیام‌ها» می‌بینیدش."
+            : "در سایت منتشرشده، این پیام ثبت می‌شود و در «📥 پیام‌ها» می‌بینیدش.",
+      );
+      window.setTimeout(() => setFormNote(null), 6000);
     } else if ((form.getAttribute("method") ?? "get").toLowerCase() === "get" && action.startsWith("/")) {
       // Search boxes and shop filters: open that page with the filled-in fields as its query.
       const query = Object.fromEntries(Object.entries(fields).filter(([, v]) => typeof v === "string" && v.trim()));
@@ -272,6 +285,11 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
             ⚙️ مدیریت
           </button>
         )}
+        {!site.shop && site.kind === "PORTFOLIO" && (
+          <button type="button" className="ws-chip" title="پیام‌هایی که بازدیدکننده‌ها از فرم تماس سایت فرستاده‌اند" onClick={() => setInboxOpen(true)}>
+            📥 پیام‌ها
+          </button>
+        )}
         {!full && (
           <button type="button" className="ws-chip primary" title="دیدن سایت در کل صفحه" onClick={() => setFull(true)}>
             {icon("M2.5 12s3.5-6.5 9.5-6.5S21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z M12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z")}
@@ -311,9 +329,29 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
   return (
     <>
       {full ? createPortal(workspace, document.body) : workspace}
+      {formNote && (
+        <div className="ws-form-note" role="status">
+          <b>پیش‌نمایش:</b> {formNote}
+        </div>
+      )}
+      {inboxOpen &&
+        createPortal(
+          <div className="shm" dir="rtl" role="dialog" aria-label="پیام‌ها">
+            <header className="shm-head">
+              <h2>📥 پیام‌های سایت</h2>
+              <button type="button" className="btn small" onClick={() => setInboxOpen(false)}>
+                بستن و برگشت به سایت
+              </button>
+            </header>
+            <div className="shm-body">
+              <SiteInbox resumeId={resumeId} />
+            </div>
+          </div>,
+          document.body,
+        )}
       {shopOpen &&
         createPortal(
-          <ShopManager data={raw} sample={templateSample} onData={onDataChange} resumeId={resumeId} focusProductId={shopFocus} menu={Boolean(site.menu)} sells={Boolean(site.sells)} services={Boolean(site.services)} hasBlog={Boolean(site.optionalPages?.some((p) => p.path === "/blog"))} onClose={() => { setShopOpen(false); setShopFocus(undefined); }} />,
+          <ShopManager data={raw} sample={templateSample} onData={onDataChange} resumeId={resumeId} focusProductId={shopFocus} menu={Boolean(site.menu)} sells={Boolean(site.sells)} services={Boolean(site.services)} bookings={Boolean(site.bookings)} hasBlog={Boolean(site.optionalPages?.some((p) => p.path === "/blog"))} onClose={() => { setShopOpen(false); setShopFocus(undefined); }} />,
           document.body,
         )}
       {target &&

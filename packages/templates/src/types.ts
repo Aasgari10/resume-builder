@@ -50,4 +50,6 @@ export type TemplateDefinition = {
    * price list; the panel says "services and products" and has no menu QR code.
    */
   services?: boolean;
+  /** The site has a booking form (salon appointment, restaurant table): the inbox shows a bookings list. */
+  bookings?: boolean;
 };

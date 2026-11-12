@@ -16,6 +16,7 @@ import { Reports } from "./ShopReports";
 import { Pages, Quotes } from "./ShopPages";
 import { Blog } from "./ShopBlog";
 import { Extras } from "./ShopExtras";
+import { SiteInbox } from "./SiteInbox";
 import { MenuQr } from "./MenuQr";
 import { Customers, Reviews, Tickets } from "./ShopPeople";
 import { Dashboard, Orders } from "./ShopOrders";
@@ -23,7 +24,7 @@ import { Products, stockOf } from "./ShopProducts";
 import { resetSample, sampleShopApi, sampleShopFor } from "./sampleData";
 import { ShopApiContext } from "./shopApi";
 
-type Tab = "qr" | "dashboard" | "quotes" | "pages" | "blog" | "extras" | "products" | "categories" | "banners" | "coupons" | "orders" | "reports" | "reviews" | "tickets" | "customers" | "trash" | "settings";
+type Tab = "inbox" | "qr" | "dashboard" | "quotes" | "pages" | "blog" | "extras" | "products" | "categories" | "banners" | "coupons" | "orders" | "reports" | "reviews" | "tickets" | "customers" | "trash" | "settings";
 
 type Props = {
   data: ResumeData;
@@ -42,15 +43,17 @@ type Props = {
   sells?: boolean;
   /** A service business (salon): services with price lists, plus products sold online; no menu QR code. */
   services?: boolean;
+  /** The site has a booking form: the inbox opens on the bookings. */
+  bookings?: boolean;
   onClose: () => void;
 };
 
 /** Tabs of a menu site, in this order. */
-const MENU_TABS: Tab[] = ["products", "categories", "qr", "banners", "extras", "quotes", "pages", "trash"];
+const MENU_TABS: Tab[] = ["products", "categories", "inbox", "qr", "banners", "extras", "quotes", "pages", "trash"];
 
 const EMPTY_SHOP: Shop = { categories: [], products: [] };
 
-export function ShopManager({ data, sample, onData, resumeId, focusProductId, hasBlog, menu: menuSite, sells: sellsMenu, services, onClose }: Props) {
+export function ShopManager({ data, sample, onData, resumeId, focusProductId, hasBlog, menu: menuSite, sells: sellsMenu, services, bookings, onClose }: Props) {
   const sells = sellsMenu || services;
   // Only a menu site that sells nothing gets the short menu panel.
   const menu = menuSite && !sells;
@@ -80,6 +83,12 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
   // Comments and reports name the products the orders were made of.
   const namesShop = mode === "sample" ? { ...shop, products: sampleShop.products, categories: sampleShop.categories } : shop;
 
+  // New bookings, messages and sign-ups sent through the site's forms (always the real site, never the sample).
+  const [inboxNew, setInboxNew] = useState(0);
+  const refreshInbox = () => {
+    if (resumeId) api.siteMessages(resumeId).then((r) => setInboxNew(r.newCounts.booking + r.newCounts.contact + r.newCounts.newsletter), () => undefined);
+  };
+  useEffect(refreshInbox, [resumeId, tab]);
   const refreshCounts = () => {
     if (rid && mode !== "loading") source.shopSummary(rid).then((r) => setCounts(r.summary), () => undefined);
   };
@@ -127,6 +136,7 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
               ["qr", "▦ QR کد منو"],
               ["categories", "📂 دسته‌ها"],
               ["orders", "📋 سفارش‌ها", badge(counts?.newOrders)],
+              ["inbox", "📥 پیام‌ها و نوبت‌ها", badge(inboxNew)],
               ["customers", "👥 مشتریان"],
               ["reviews", "💬 نظرات", badge(counts?.waitingReviews)],
               ["tickets", "🎫 تیکت‌ها", badge(counts?.openTickets)],
@@ -152,7 +162,7 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
         </nav>
       <ShopApiContext.Provider value={source}>
       <div className="shm-body">
-        {mode === "sample" && !["products", "categories", "banners", "coupons", "quotes", "pages", "blog", "extras", "trash", "settings", "qr"].includes(tab) && (
+        {mode === "sample" && !["products", "categories", "banners", "coupons", "quotes", "pages", "blog", "extras", "trash", "settings", "qr", "inbox"].includes(tab) && (
           <p className="shm-sample">
             <span>
               🧪 <b>این‌ها اطلاعات نمونه است</b> تا ببینید پنل چه کارهایی می‌کند. تغییرهای شما فقط در همین مرورگر است و کاربر دیگری آن‌ها را نمی‌بیند؛ بعد از ۳۰ دقیقه دوری خودش تازه می‌شود. با اولین سفارش یا مشتری واقعی، اطلاعات خود فروشگاه‌تان این‌جا می‌آید.
@@ -179,6 +189,7 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
         {tab === "banners" && <Banners shop={shop} setShop={setShop} />}
         {tab === "coupons" && <Coupons shop={shop} setShop={setShop} />}
         {tab === "orders" && <Orders resumeId={rid} onChanged={refreshCounts} />}
+        {tab === "inbox" && <SiteInbox resumeId={resumeId} onChanged={refreshInbox} bookings={bookings} />}
         {tab === "quotes" && <Quotes data={data} onData={onData} />}
         {tab === "extras" && <Extras data={data} onData={onData} shop={shop} setShop={setShop} menu={menu} />}
         {tab === "blog" && <Blog shop={shop} setShop={setShop} hasBlog={Boolean(hasBlog)} />}
