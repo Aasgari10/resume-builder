@@ -484,6 +484,7 @@ export function ThanksView(view: ShopView) {
 
 export const kafeShopCss = /* css */ `
 .kf-inner { padding-block: 70px 100px; }
+.kf-ico { width: 22px; height: 22px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .kf-act { display: contents; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 .kf-trap { position: absolute; inset-inline-start: 0; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }
