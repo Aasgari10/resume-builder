@@ -241,7 +241,7 @@ export function ProductView(view: ShopView & { id: string }) {
             <form method="post" action={link("/_cart")} className="kf-buy">
               <input type="hidden" name="op" value="add" />
               <input type="hidden" name="id" value={p.id} />
-              <input type="hidden" name="back" value="/cart" />
+              <input type="hidden" name="back" value={view.page} />
               <OptionPicker p={p} />
               <div className="kf-buy-row">
                 <label className="kf-qty">
@@ -482,7 +482,58 @@ export function ThanksView(view: ShopView) {
   );
 }
 
+/**
+ * After "add to cart" the page comes back with ?added=<id>: a small panel says so, with the product,
+ * a link to the cart and a close button; it also fades away by itself after a few seconds. No scripts.
+ */
+export function AddedToast({ view }: { view: ShopView }) {
+  const id = view.visitor.query.added;
+  const p = id ? live(view.shop).find((x) => x.id === id) : undefined;
+  if (!p) return null;
+  const img = pic(p);
+  const count = priceCart(view.shop, view.visitor.cart).count;
+  return (
+    <>
+      <input type="checkbox" id="kf-toast-x" className="kf-toast-x" />
+      <div className="kf-toast" role="status">
+        <span className="kf-toast-pic">{img ? <img src={img} alt="" /> : <KIcon name="check" />}</span>
+        <div className="kf-toast-text">
+          <b>
+            <KIcon name="check" className="kf-ico kf-toast-ok" /> به سبد خرید اضافه شد
+          </b>
+          <small>
+            {p.name} · {fa(count)} کالا در سبد
+          </small>
+          <PageLink to="/cart" link={view.link} className="kf-btn">
+            مشاهده‌ی سبد خرید
+          </PageLink>
+        </div>
+        <label htmlFor="kf-toast-x" className="kf-toast-close" aria-label="بستن">
+          ×
+        </label>
+      </div>
+    </>
+  );
+}
+
 export const kafeShopCss = /* css */ `
+/* "Added to cart" panel */
+.kf-toast-x { position: absolute; opacity: 0; pointer-events: none; }
+.kf-toast { position: fixed; bottom: 24px; inset-inline-start: 24px; z-index: 80; display: grid; grid-template-columns: 70px 1fr auto; gap: 14px; align-items: center; width: min(380px, calc(100vw - 32px)); box-sizing: border-box; padding: 16px; background: #fff; color: var(--kf-ink); border: 1px solid #EEE3D8; box-shadow: 0 24px 50px -20px rgb(0 0 0 / .35); animation: kf-toast-in .5s cubic-bezier(.2, .8, .2, 1.2) both, kf-toast-out .6s 6s ease both; }
+@keyframes kf-toast-in { from { opacity: 0; transform: translateY(30px); } }
+@keyframes kf-toast-out { to { opacity: 0; visibility: hidden; transform: translateY(20px); } }
+.kf-toast-x:checked + .kf-toast { display: none; }
+.kf-toast:hover { animation-play-state: running, paused; }
+.kf-toast-pic { display: grid; place-items: center; width: 70px; height: 70px; background: var(--kf-paper); }
+.kf-toast-pic img { width: 80%; height: 80%; object-fit: contain; }
+.kf-toast-text { display: grid; justify-items: start; gap: 6px; }
+.kf-toast-text b { display: flex; align-items: center; gap: 6px; font-size: 14px; }
+.kf-toast-ok { width: 18px; height: 18px; color: #2F7D4F; stroke-width: 2.4; }
+.kf-toast-text small { color: var(--kf-muted); font-size: 12px; }
+.kf-toast .kf-btn { height: 34px; margin-top: 4px; padding: 0 16px; font-size: 11px; }
+.kf-toast-close { align-self: start; padding: 0 4px; color: var(--kf-muted); font-size: 22px; line-height: 1; cursor: pointer; }
+@container (max-width: 760px) { .kf-toast { inset-inline: 16px; bottom: 16px; width: auto; } }
+
 .kf-inner { padding-block: 70px 100px; }
 .kf-ico { width: 22px; height: 22px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .kf-act { display: contents; }
@@ -529,10 +580,10 @@ export const kafeShopCss = /* css */ `
 .kf-sprice s { color: var(--kf-muted); font-size: 13px; }
 
 /* Product page */
-.kf-product { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: start; }
-.kf-gallery-p { display: grid; gap: 14px; }
+.kf-product { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 60px; align-items: start; }
+.kf-gallery-p { display: grid; gap: 14px; width: 100%; max-width: 480px; justify-self: center; }
 .kf-gal-p { display: grid; place-items: center; aspect-ratio: 1; background: var(--kf-paper); cursor: zoom-in; }
-.kf-gal-p img { width: 80%; height: 80%; object-fit: contain; }
+.kf-gal-p img { display: block; width: 72%; height: 72%; object-fit: contain; }
 .kf-pinfo { display: grid; justify-items: start; gap: 16px; position: sticky; top: 30px; }
 .kf-pcat { color: var(--kf-tan); font-size: 13px; font-weight: 700; }
 .kf-pinfo h1 { font-family: var(--kf-head); font-size: clamp(32px, 3.4cqi, 44px); font-weight: 500; line-height: 1.25; }

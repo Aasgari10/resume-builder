@@ -105,6 +105,8 @@ async function cartAction(req: Request, res: Response, subdomain: string, base: 
   const product = found.shop?.products.find((p) => p.id === id && !p.hidden && !p.trashed && sold(p));
   const visitor = readVisitor(req);
   let { cart, wishlist, coupon } = visitor;
+  // Set when something went into the cart: the page shown next says so (?added=<product id>).
+  let added: string | undefined;
   if (body.op === "coupon") {
     // Applying (or clearing) a discount code; it is checked again when the order is placed.
     coupon = String(body.code ?? "").trim().slice(0, 30) || undefined;
@@ -113,13 +115,16 @@ async function cartAction(req: Request, res: Response, subdomain: string, base: 
     // Choices come as opt0/opt1 from the product page, or as the stored key from the cart.
     const picked = body.opt0 ? variantKey([body.opt0, body.opt1].map((x) => x?.trim().slice(0, 30))) : body.size?.trim().slice(0, 70);
     const size = picked || undefined;
-    if (body.op === "add" && variantOf(product, size).stock !== 0) cart = changeCart(cart, "add", id, Math.max(1, qty), size);
+    if (body.op === "add" && variantOf(product, size).stock !== 0) {
+      cart = changeCart(cart, "add", id, Math.max(1, qty), size);
+      added = id;
+    }
     else if (body.op === "set") cart = changeCart(cart, "set", id, qty, size);
     else if (body.op === "remove") cart = changeCart(cart, "remove", id, 0, size);
     else if (body.op === "wish") wishlist = toggleWishlist(wishlist, id);
   }
   writeVisitor(res, base, cart, wishlist, coupon);
-  res.redirect(303, to(base, back));
+  res.redirect(303, to(base, back) + (added && back !== "/cart" ? `?added=${encodeURIComponent(added)}` : ""));
 }
 
 /* ───────────── Orders ───────────── */

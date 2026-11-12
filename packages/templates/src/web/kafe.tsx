@@ -16,7 +16,7 @@ import type { TemplateProps } from "../types";
 import { Opt, PageLink, Socials, blockOn, ed, item, outside, partsCss } from "./parts";
 import { ZoomOpen } from "./zoom";
 import { InfoPage, hasChoices, infoPages, onSale, shopkitCss } from "./shopkit";
-import { AccountView, Act, BagLink, CartView, CheckoutView, KIcon, ProductView, ShopList, ThanksView, kafeShopCss, soldCategories, soldProducts } from "./kafeShop";
+import { AccountView, Act, AddedToast, BagLink, CartView, CheckoutView, KIcon, ProductView, ShopList, ThanksView, kafeShopCss, soldCategories, soldProducts } from "./kafeShop";
 import { mapEmbed } from "./golsara";
 
 export const KAFE_BLOCKS = [
@@ -80,6 +80,7 @@ export function KafeSite(props: TemplateProps) {
       <Header {...view} />
       <main key={page}>{body}</main>
       <Footer {...view} />
+      <AddedToast view={view} />
     </WebPage>
   );
 }
