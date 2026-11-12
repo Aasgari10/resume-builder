@@ -1568,9 +1568,9 @@ export function patioSample(locale: ResumeData["locale"]): ResumeData {
         categories: [
           { id: "pz", name: "پیتزا", image: img("pizza2") },
           { id: "ps", name: "پاستا و اسپاگتی", image: img("pasta1") },
-          { id: "st", name: "پیش‌غذا", image: png("dish4") },
-          { id: "sd", name: "کنار غذا", image: png("dish6") },
-          { id: "mp", name: "پیتزای ویژه", image: png("dish10") },
+          { id: "st", name: "پیش‌غذا", image: img("contact") },
+          { id: "sd", name: "کنار غذا", image: img("about1") },
+          { id: "mp", name: "پیتزای ویژه", image: img("photo2") },
         ],
         products,
         shippingFee: 50000,
@@ -1808,7 +1808,7 @@ section[id^="pt-cat-"] { scroll-margin-top: 160px; }
 .pt-menu-cat { padding-block: 70px; }
 .pt-menu-cat .pt-wrap { display: grid; grid-template-columns: minmax(0, 460px) minmax(0, 620px); justify-content: center; align-items: center; gap: clamp(30px, 6cqi, 90px); }
 .pt-menu-cat:nth-of-type(even) .pt-cat-pic { order: 2; }
-.pt-cat-pic { display: block; width: 100%; aspect-ratio: 1; border-radius: 50%; overflow: hidden; box-shadow: 0 30px 50px -30px #000; }
+.pt-cat-pic { display: block; width: min(100%, 460px); justify-self: center; aspect-ratio: 1; border-radius: 50%; overflow: hidden; box-shadow: 0 30px 50px -30px #000; }
 .pt-cat-pic img { width: 100%; height: 100%; object-fit: cover; animation: pt-spin 2.6s cubic-bezier(.12, .7, .2, 1) both; }
 .pt-menu-text .pt-carte-head { margin-bottom: 34px; }
 .pt-cat-title { position: relative; padding-bottom: 14px; font-size: 28px; font-weight: 800; }
