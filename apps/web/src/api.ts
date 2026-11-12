@@ -205,6 +205,15 @@ export type ShopCustomerDetail = {
 };
 export type ShopProductStat = { sold: number; revenue: number; rating?: number; reviews?: number };
 export type ShopSummary = { customers: number; orders: number; newOrders: number; openTickets: number; waitingReviews: number; sales: number; monthSales: number; monthOrders: number; recent: ShopOrder[] };
+/** The panel's trash: deleted orders, customers, comments and tickets, removed for good after `days`. */
+export type ShopTrashKind = "orders" | "customers" | "reviews" | "tickets";
+export type ShopTrash = {
+  orders: (ShopOrder & { deletedAt: string })[];
+  customers: { id: string; name: string; phone: string; createdAt: string; deletedAt: string; reviews: number; tickets: number }[];
+  reviews: (ShopReview & { deletedAt: string })[];
+  tickets: (ShopTicket & { deletedAt: string })[];
+  days: number;
+};
 export type ShopOrderQuery = { status?: ShopOrderStatus; q?: string; from?: string; to?: string; take?: number; skip?: number };
 export type ShopReview = { id: string; productId: string; rating: number; text: string; approved: boolean; reply: string | null; createdAt: string; customer: { name: string; phone: string } };
 export type ShopTicket = {
@@ -286,6 +295,9 @@ export const api = {
     request<{ ticket: ShopTicket }>("PATCH", `/resumes/${resumeId}/site/tickets/${encodeURIComponent(id)}`, patch),
   deleteShopTicket: (resumeId: string, id: string) => request<{ ok: true }>("DELETE", `/resumes/${resumeId}/site/tickets/${encodeURIComponent(id)}`),
   batchShopTickets: (resumeId: string, ids: string[], action: "close" | "delete") => request<{ done: number }>("POST", `/resumes/${resumeId}/site/tickets/batch`, { ids, action }),
+  shopTrash: (resumeId: string) => request<ShopTrash>("GET", `/resumes/${resumeId}/site/trash`),
+  restoreShopTrash: (resumeId: string, kind: ShopTrashKind, ids: string[]) => request<{ done: number; failed: string[] }>("POST", `/resumes/${resumeId}/site/trash/restore`, { kind, ids }),
+  purgeShopTrash: (resumeId: string, kind: ShopTrashKind, ids: string[]) => request<{ done: number }>("POST", `/resumes/${resumeId}/site/trash/purge`, { kind, ids }),
 
   listTemplates: (kind?: "PDF" | "PORTFOLIO") =>
     request<{ templates: Template[] }>("GET", `/templates${kind ? `?kind=${kind}` : ""}`),

@@ -250,7 +250,7 @@ export function Orders({ resumeId, onChanged }: { resumeId?: string; onChanged?:
     }
   };
   const removeOne = async (o: ShopOrder) => {
-    if (!window.confirm(`سفارش ${o.code} برای همیشه حذف شود؟${o.status === "CANCELED" ? "" : " کالاهایش به موجودی برمی‌گردد."}`)) return;
+    if (!window.confirm(`سفارش ${o.code} به سطل زباله برود؟${o.status === "CANCELED" ? "" : " کالاهایش به موجودی برمی‌گردد."}`)) return;
     try {
       await api.deleteShopOrder(resumeId, o.id);
       load();
@@ -261,7 +261,7 @@ export function Orders({ resumeId, onChanged }: { resumeId?: string; onChanged?:
   };
   const applyBatch = async () => {
     if (!batch || !sel.picked.size) return;
-    const label = batch === "DELETE" ? "برای همیشه حذف شوند" : `به «${SHOP_ORDER_STATUS_LABELS[batch]}» تغییر کنند`;
+    const label = batch === "DELETE" ? "به سطل زباله بروند" : `به «${SHOP_ORDER_STATUS_LABELS[batch]}» تغییر کنند`;
     if (!window.confirm(`${showNumber(sel.picked.size)} سفارش ${label}؟`)) return;
     try {
       const r = await api.batchShopOrders(resumeId, [...sel.picked], batch);

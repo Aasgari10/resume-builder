@@ -360,7 +360,7 @@ function Works({ ctx, editing }: SView) {
   return (
     <div className="sd-pad">
       <PageTitle title="نمونه‌کارها" sub="کارهای من" />
-      <style>{`#${uid}-0:checked ~ .sd-filters label[for="${uid}-0"] { border-color: var(--color-primary); color: var(--color-text); }\n${rules}`}</style>
+      <style dangerouslySetInnerHTML={{ __html: `#${uid}-0:checked ~ .sd-filters label[for="${uid}-0"] { border-color: var(--color-primary); color: var(--color-text); }\n${rules}` }} />
       <input type="radio" name={uid} id={`${uid}-0`} className="sd-radio" defaultChecked />
       {cats.map((_, k) => (
         <input key={k} type="radio" name={uid} id={`${uid}-${k + 1}`} className="sd-radio" />

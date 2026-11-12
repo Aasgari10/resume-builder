@@ -237,13 +237,14 @@ async function accountAction(req: Request, res: Response, subdomain: string, bas
       if (name.length < 2) return go(account(base, "نام را وارد کنید.", true, home));
       if (password.length < 6) return go(account(base, "رمز باید دست‌کم ۶ نویسه باشد.", true, home));
       const exists = await prisma.shopCustomer.findUnique({ where: { siteId_phone: { siteId, phone } } });
-      if (exists) return go(account(base, "با این شماره قبلاً ثبت‌نام شده است؛ وارد شوید.", true, home));
+      if (exists) return go(account(base, exists.deletedAt ? "این حساب غیرفعال شده است؛ با فروشگاه تماس بگیرید." : "با این شماره قبلاً ثبت‌نام شده است؛ وارد شوید.", true, home));
       const c = await prisma.shopCustomer.create({ data: { siteId, name, phone, passwordHash: hashPassword(password) } });
       setCustomer(res, base, customerToken(c.id, siteId, env.sessionSecret));
       return go(account(base, "ثبت‌نام انجام شد؛ خوش آمدید!", false, home));
     }
     const c = await prisma.shopCustomer.findUnique({ where: { siteId_phone: { siteId, phone } } });
-    if (!c || !checkPassword(password, c.passwordHash)) return go(account(base, "شماره یا رمز درست نیست.", true, home));
+    // A customer in the shop's trash cannot sign in (the same answer as a wrong password).
+    if (!c || c.deletedAt || !checkPassword(password, c.passwordHash)) return go(account(base, "شماره یا رمز درست نیست.", true, home));
     setCustomer(res, base, customerToken(c.id, siteId, env.sessionSecret));
     return go(to(base, home));
   }
@@ -254,7 +255,7 @@ async function accountAction(req: Request, res: Response, subdomain: string, bas
     setCustomer(res, base, null);
     return go(to(base, "/"));
   }
-  const customer = await prisma.shopCustomer.findFirst({ where: { id: customerId, siteId } });
+  const customer = await prisma.shopCustomer.findFirst({ where: { id: customerId, siteId, deletedAt: null } });
   if (!customer) {
     setCustomer(res, base, null);
     return go(to(base, "/account"));
@@ -285,7 +286,7 @@ async function accountAction(req: Request, res: Response, subdomain: string, bas
   }
 
   if (op === "ticket-close") {
-    const ticket = await prisma.shopTicket.findFirst({ where: { id: text(body.ticketId, 40), siteId, customerId: customer.id } });
+    const ticket = await prisma.shopTicket.findFirst({ where: { id: text(body.ticketId, 40), siteId, customerId: customer.id, deletedAt: null } });
     if (ticket && ticket.status !== "CLOSED") await prisma.shopTicket.update({ where: { id: ticket.id }, data: { status: "CLOSED" } });
     return go(account(base, "تیکت بسته شد.", false, home));
   }
@@ -294,12 +295,12 @@ async function accountAction(req: Request, res: Response, subdomain: string, bas
     if (message.length < 2) return go(account(base, "متن پیام را بنویسید.", true, home));
     const entry = { from: "customer", text: message, at: new Date().toISOString() };
     if (op === "ticket-new") {
-      const open = await prisma.shopTicket.count({ where: { siteId, customerId: customer.id, status: { not: "CLOSED" } } });
+      const open = await prisma.shopTicket.count({ where: { siteId, customerId: customer.id, deletedAt: null, status: { not: "CLOSED" } } });
       if (open >= 10) return go(account(base, "تیکت‌های باز زیادی دارید.", true, home));
       await prisma.shopTicket.create({ data: { siteId, customerId: customer.id, subject: text(body.subject, 120) || "بدون عنوان", messages: [entry] } });
       return go(account(base, "تیکت شما ثبت شد.", false, home));
     }
-    const ticket = await prisma.shopTicket.findFirst({ where: { id: text(body.ticketId, 40), siteId, customerId: customer.id } });
+    const ticket = await prisma.shopTicket.findFirst({ where: { id: text(body.ticketId, 40), siteId, customerId: customer.id, deletedAt: null } });
     if (!ticket || ticket.status === "CLOSED") return go(account(base, "این تیکت بسته شده است.", true, home));
     const messages = [...((ticket.messages as unknown[]) ?? []), entry].slice(-100);
     await prisma.shopTicket.update({ where: { id: ticket.id }, data: { messages: messages as Prisma.InputJsonValue, status: "OPEN" } });
@@ -316,7 +317,7 @@ async function accountAction(req: Request, res: Response, subdomain: string, bas
  */
 export async function loadVisitor(req: Request, siteId: string, page: string): Promise<Visitor> {
   const visitor = readVisitor(req);
-  const reviews = await prisma.shopReview.findMany({ where: { siteId, approved: true }, select: { productId: true, rating: true } });
+  const reviews = await prisma.shopReview.findMany({ where: { siteId, approved: true, deletedAt: null }, select: { productId: true, rating: true } });
   const ratings: Record<string, { avg: number; count: number }> = {};
   for (const r of reviews) {
     const x = (ratings[r.productId] ??= { avg: 0, count: 0 });
@@ -326,18 +327,18 @@ export async function loadVisitor(req: Request, siteId: string, page: string): P
   visitor.ratings = ratings;
   const productId = page.startsWith("/product/") ? decodeURIComponent(page.slice(9)) : null;
   if (productId) {
-    const list = await prisma.shopReview.findMany({ where: { siteId, productId, approved: true }, orderBy: { createdAt: "desc" }, take: 30, include: { customer: { select: { name: true } } } });
+    const list = await prisma.shopReview.findMany({ where: { siteId, productId, approved: true, deletedAt: null }, orderBy: { createdAt: "desc" }, take: 30, include: { customer: { select: { name: true } } } });
     visitor.reviews = list.map((r) => ({ id: r.id, name: r.customer.name, rating: r.rating, text: r.text, reply: r.reply ?? undefined, at: r.createdAt.toISOString() }));
   }
   const customerId = await signedInCustomer(req, siteId);
   if (customerId) {
-    const c = await prisma.shopCustomer.findFirst({ where: { id: customerId, siteId } });
+    const c = await prisma.shopCustomer.findFirst({ where: { id: customerId, siteId, deletedAt: null } });
     if (c) {
       visitor.customer = { id: c.id, name: c.name, phone: c.phone };
       if (page === "/account" || page === "/checkout" || page === "/support/tickets") {
         const [orders, tickets] = await Promise.all([
-          prisma.shopOrder.findMany({ where: { siteId, customerId: c.id }, orderBy: { createdAt: "desc" }, take: 50 }),
-          prisma.shopTicket.findMany({ where: { siteId, customerId: c.id }, orderBy: { updatedAt: "desc" }, take: 30 }),
+          prisma.shopOrder.findMany({ where: { siteId, customerId: c.id, deletedAt: null }, orderBy: { createdAt: "desc" }, take: 50 }),
+          prisma.shopTicket.findMany({ where: { siteId, customerId: c.id, deletedAt: null }, orderBy: { updatedAt: "desc" }, take: 30 }),
         ]);
         visitor.account = {
           addresses: (Array.isArray(c.addresses) ? c.addresses : []) as NonNullable<Visitor["account"]>["addresses"],

@@ -38,4 +38,9 @@ export type TemplateDefinition = {
   blocks?: readonly { key: string; label: string }[];
   /** An online shop: has products, a cart and orders, managed in the shop panel. */
   shop?: boolean;
+  /**
+   * A menu site (cafe, restaurant): the shop panel manages the menu (products and categories), the
+   * page texts and pictures and a printable QR code; it has no cart, orders or customer accounts.
+   */
+  menu?: boolean;
 };
