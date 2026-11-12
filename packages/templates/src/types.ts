@@ -43,4 +43,6 @@ export type TemplateDefinition = {
    * page texts and pictures and a printable QR code; it has no cart, orders or customer accounts.
    */
   menu?: boolean;
+  /** A menu site that also sells the categories marked "sold online" (cart, checkout, orders, accounts). */
+  sells?: boolean;
 };
