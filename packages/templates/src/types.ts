@@ -45,4 +45,9 @@ export type TemplateDefinition = {
   menu?: boolean;
   /** A menu site that also sells the categories marked "sold online" (cart, checkout, orders, accounts). */
   sells?: boolean;
+  /**
+   * A service business (beauty salon): categories not sold online are its services and their items the
+   * price list; the panel says "services and products" and has no menu QR code.
+   */
+  services?: boolean;
 };

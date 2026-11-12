@@ -1153,6 +1153,7 @@ select {
 .shm-cat input { flex: 1; min-width: 140px; width: auto; }
 .shm-sell { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; white-space: nowrap; cursor: pointer; }
 .shm-sell input { flex: none; min-width: 0; }
+.shm-cat-text { flex-basis: 100%; width: 100%; min-height: 54px; }
 .shm-orders { max-width: 1000px; margin: 0 auto; display: grid; gap: 10px; }
 .shm-new { color: var(--danger); }
 .shm-order-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }

@@ -201,7 +201,8 @@ function buildResumeSchemas(strict: boolean) {
   // Online shop (shop templates). Prices are whole tomans. Shown by shop templates only.
   const price = z.number().int().min(0).max(10_000_000_000);
   // sell: a menu site (cafe) sells this category online (cart and checkout); the rest of the menu is for reading.
-  const shopCategory = z.object({ id, name: z.string().max(60), image: optionalUrl, sell: z.boolean().optional() });
+  // text: a description some templates show (a salon's service page).
+  const shopCategory = z.object({ id, name: z.string().max(60), image: optionalUrl, sell: z.boolean().optional(), text: z.string().max(1500).optional() });
   const product = z.object({
     id,
     name: text(1, 120),

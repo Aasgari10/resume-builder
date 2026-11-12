@@ -40,6 +40,8 @@ type Props = {
   menu?: boolean;
   /** A menu site that also sells some categories online: the full shop tabs, plus the QR code. */
   sells?: boolean;
+  /** A service business (salon): services with price lists, plus products sold online; no menu QR code. */
+  services?: boolean;
   onClose: () => void;
 };
 
@@ -48,7 +50,8 @@ const MENU_TABS: Tab[] = ["products", "categories", "qr", "banners", "extras", "
 
 const EMPTY_SHOP: Shop = { categories: [], products: [] };
 
-export function ShopManager({ data, sample, onData, resumeId, focusProductId, hasBlog, menu: menuSite, sells, onClose }: Props) {
+export function ShopManager({ data, sample, onData, resumeId, focusProductId, hasBlog, menu: menuSite, sells: sellsMenu, services, onClose }: Props) {
+  const sells = sellsMenu || services;
   // Only a menu site that sells nothing gets the short menu panel.
   const menu = menuSite && !sells;
   const [tab, setTab] = useState<Tab>(focusProductId || menu ? "products" : "dashboard");
@@ -120,7 +123,7 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
           {(
             [
               ["dashboard", "📊 داشبورد"],
-              ["products", menu ? "☕ منو" : menuSite ? "☕ منو و محصولات" : "📦 محصولات", <i key="n" className="shm-count">{showNumber(live.length)}</i>],
+              ["products", menu ? "☕ منو" : services ? "💇 خدمات و محصولات" : menuSite ? "☕ منو و محصولات" : "📦 محصولات", <i key="n" className="shm-count">{showNumber(live.length)}</i>],
               ["qr", "▦ QR کد منو"],
               ["categories", "📂 دسته‌ها"],
               ["orders", "📋 سفارش‌ها", badge(counts?.newOrders)],
@@ -138,7 +141,7 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
               ["settings", "⚙️ تنظیمات فروشگاه"],
             ] as [Tab, string, ReactNode?][]
           )
-            .filter(([id]) => (menu ? MENU_TABS.includes(id) : menuSite || id !== "qr"))
+            .filter(([id]) => (menu ? MENU_TABS.includes(id) : (menuSite && !services) || id !== "qr"))
             .sort(([a], [b]) => (menu ? MENU_TABS.indexOf(a) - MENU_TABS.indexOf(b) : 0))
             .map(([id, label, extra]) => (
             <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)}>
@@ -172,7 +175,7 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
           <>
         {tab === "dashboard" && <Dashboard resumeId={rid} products={live.length} outOfStock={outOfStock} lowStock={lowStock} onTab={(t) => setTab(t as Tab)} />}
         {tab === "products" && <Products shop={shop} setShop={setShop} onSample={sample?.site?.shop ? startFromSample : undefined} focus={focusProductId} resumeId={rid} />}
-        {tab === "categories" && <Categories shop={shop} setShop={setShop} sells={sells} />}
+        {tab === "categories" && <Categories shop={shop} setShop={setShop} sells={sells} services={services} />}
         {tab === "banners" && <Banners shop={shop} setShop={setShop} />}
         {tab === "coupons" && <Coupons shop={shop} setShop={setShop} />}
         {tab === "orders" && <Orders resumeId={rid} onChanged={refreshCounts} />}
@@ -199,7 +202,7 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
 
 /* ───────────── Categories ───────────── */
 
-function Categories({ shop, setShop, sells }: { shop: Shop; setShop: (s: Partial<Shop>) => void; sells?: boolean }) {
+function Categories({ shop, setShop, sells, services }: { shop: Shop; setShop: (s: Partial<Shop>) => void; sells?: boolean; services?: boolean }) {
   const count = (id: string) => shop.products.filter((p) => p.categoryId === id && !p.trashed).length;
   const update = (id: string, patch: Partial<Shop["categories"][number]>) => setShop({ categories: shop.categories.map((c) => (c.id === id ? { ...c, ...patch } : c)) });
   const remove = (id: string) => {
@@ -215,13 +218,22 @@ function Categories({ shop, setShop, sells }: { shop: Shop; setShop: (s: Partial
   return (
     <div className="shm-cats">
       <p className="muted">دسته‌ها در منو و صفحه‌ی اول نمایش داده می‌شوند؛ دسته‌ی بدون محصول خودش پنهان می‌شود.</p>
-      {sells && <p className="muted">«فروش آنلاین» را برای دسته‌هایی روشن کنید که مشتری می‌تواند از سایت بخرد (مثل دانه‌ی قهوه)؛ بقیه‌ی منو فقط برای دیدن است.</p>}
+      {sells && (
+        <p className="muted">
+          {services
+            ? "هر دسته یک خدمت است و آیتم‌هایش لیست قیمت آن؛ برای دسته‌هایی که محصولشان را آنلاین می‌فروشید (مثل لاک ناخن) «فروش آنلاین» را روشن کنید."
+            : "«فروش آنلاین» را برای دسته‌هایی روشن کنید که مشتری می‌تواند از سایت بخرد (مثل دانه‌ی قهوه)؛ بقیه‌ی منو فقط برای دیدن است."}
+        </p>
+      )}
       {shop.categories.map((c, k) => (
         <div key={c.id} className="shm-cat">
           <span className="shm-thumb">{c.image ? <img src={c.image} alt="" /> : "🗂"}</span>
           <input value={c.name} maxLength={60} onChange={(e) => update(c.id, { name: e.target.value })} aria-label="نام دسته" />
           <small className="muted">{showNumber(count(c.id))} محصول</small>
           <ImagePicker value={c.image} onChange={(url) => update(c.id, { image: url })} />
+          {services && !c.sell && (
+            <textarea className="shm-cat-text" value={c.text ?? ""} maxLength={1500} rows={2} placeholder="توضیح این خدمت (در صفحه‌ی خدمت نمایش داده می‌شود)" onChange={(e) => update(c.id, { text: e.target.value || undefined })} />
+          )}
           {sells && (
             <label className="shm-sell">
               <input type="checkbox" checked={Boolean(c.sell)} onChange={(e) => update(c.id, { sell: e.target.checked || undefined })} />

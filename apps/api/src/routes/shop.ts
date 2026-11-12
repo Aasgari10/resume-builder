@@ -82,7 +82,7 @@ async function findShop(rawSubdomain: string) {
   if (!data.success || !theme.success) return null;
   const template = getTemplate(theme.data.templateId);
   if (!template.shop) return null;
-  return { site, shop: data.data.site?.shop, menuSite: Boolean(template.menu) };
+  return { site, shop: data.data.site?.shop, menuSite: Boolean(template.menu || template.services) };
 }
 
 /** A page path inside the site to come back to; anything odd falls back to the home page. */
@@ -100,7 +100,7 @@ async function cartAction(req: Request, res: Response, subdomain: string, base: 
   const body = req.body as Record<string, string | undefined>;
   const back = backPath(body.back);
   const id = String(body.id ?? "").slice(0, 40);
-  // A menu site (cafe) sells only the categories marked "sold online"; the rest of its menu is for reading.
+  // A menu site (cafe) or a salon sells only the categories marked "sold online"; the rest of its menu is for reading.
   const sold = (p: { categoryId?: string }) => !found.menuSite || Boolean(found.shop?.categories.some((c) => c.id === p.categoryId && c.sell));
   const product = found.shop?.products.find((p) => p.id === id && !p.hidden && !p.trashed && sold(p));
   const visitor = readVisitor(req);
