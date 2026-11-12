@@ -143,6 +143,7 @@ export function resolvePage(template: TemplateDefinition, data: ResumeData, path
 const PAGE_TITLES: Record<string, Record<ResumeData["locale"], string>> = {
   "/gallery": { fa: "گالری", en: "Gallery" },
   "/about": { fa: "درباره‌ی من", en: "About" },
+  "/reservation": { fa: "رزرو میز", en: "Reservation" },
   "/resume": { fa: "رزومه", en: "Resume" },
   "/credentials": { fa: "سوابق", en: "Credentials" },
   "/works": { fa: "نمونه‌کارها", en: "Works" },

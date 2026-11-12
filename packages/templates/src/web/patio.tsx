@@ -12,7 +12,7 @@ import { WebPage, webCtx, type Ctx } from "./kit";
 import { safeUrl } from "../format";
 import { sampleImage, sampleResume } from "../sample";
 import type { TemplateProps } from "../types";
-import { Opt, PageLink, Socials, blockOn, ed, item, outside, partsCss } from "./parts";
+import { Icon, Opt, PageLink, Socials, blockOn, ed, item, outside, partsCss } from "./parts";
 import { ZoomOpen } from "./zoom";
 import { AccountPage, CouponBox, hasChoices, InfoPage, infoPages, onSale, OptionPicker, percentOff, Reviews, SORTS, SpecsTable, Stars, filterProducts, shopkitCss } from "./shopkit";
 import { mapEmbed } from "./golsara";
@@ -36,7 +36,7 @@ export function patioPages(data: ResumeData): string[] {
   const products = visible(shop);
   const cats = (shop?.categories ?? []).filter((c) => products.some((p) => p.categoryId === c.id));
   const info = infoPages(shop).filter((p) => p !== "/contact");
-  return ["/", "/menu", "/shop", ...(pageOn(data, "/about") ? ["/about"] : []), "/contact", ...cats.map((c) => `/category/${c.id}`), ...products.map((p) => `/product/${p.id}`), "/cart", "/wishlist", "/search", "/checkout", "/thanks", "/account", ...info];
+  return ["/", "/menu", "/shop", ...(pageOn(data, "/about") ? ["/about"] : []), "/reservation", "/contact", ...cats.map((c) => `/category/${c.id}`), ...products.map((p) => `/product/${p.id}`), "/cart", "/wishlist", "/search", "/checkout", "/thanks", "/account", ...info];
 }
 
 type View = { ctx: Ctx; shop: Shop; link: (p: string) => string; editing: boolean; visitor: Visitor; page: string };
@@ -55,6 +55,7 @@ export function PatioShop(props: TemplateProps) {
   else if (kind === "product") body = <ProductPage {...view} id={id!} />;
   else if (kind === "about") body = <About {...view} />;
   else if (kind === "contact") body = <Contact {...view} />;
+  else if (kind === "reservation") body = <Reservation {...view} />;
   else if (kind === "cart") body = <Cart {...view} />;
   else if (kind === "wishlist") body = <Wishlist {...view} />;
   else if (kind === "search") body = <Search {...view} />;
@@ -70,7 +71,9 @@ export function PatioShop(props: TemplateProps) {
   return (
     <WebPage ctx={ctx} className={`pt${page === "/" ? " pt-home" : ""}`} css={partsCss + shopkitCss + css}>
       <Header {...view} />
-      <main key={page}>{body}</main>
+      <main key={page} className={kind === "menu" || page === "/" ? "pt-tex" : undefined}>
+        {body}
+      </main>
       <Footer {...view} />
     </WebPage>
   );
@@ -97,6 +100,43 @@ const SVG: Record<string, string> = {
   trash: "M5 7h14 M10 7V5h4v2 M7 7l1 13h8l1-13",
   star: "M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z",
 };
+
+/** Solid social icons as in the reference header; other kinds fall back to the shared line icons. */
+const SOLID: Record<string, string> = {
+  instagram: "M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5zm0 2a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3zm5 3.5a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9zm0 2a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zm5.3-4.1a1.3 1.3 0 1 1 0 2.6 1.3 1.3 0 0 1 0-2.6z",
+  telegram: "M21.5 3.3 2.9 10.5c-1 .4-1 1.8.1 2.1l4.7 1.5 1.8 5.6c.3.8 1.3 1 1.9.4l2.6-2.5 4.9 3.6c.7.5 1.7.1 1.9-.7l3.3-15.5c.2-1-.8-1.8-1.7-1.4zM9.6 14l8.2-7.3-6.6 8.5-.4 3.4z",
+  whatsapp: "M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-3.3-.8-2.8-1.1-4.5-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.6-.4.8-.4h.6c.2 0 .4 0 .6.5l.9 2.1c.1.2.1.4 0 .6l-.4.6-.4.4c-.1.2-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.4 2.4 1.5.3.1.5.1.6-.1l.9-1.1c.2-.3.4-.2.6-.1l2 1c.3.1.5.2.5.3.1.2.1.7-.1 1.2z",
+  linkedin: "M4 3a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM2.5 8.5h3V21h-3zM9 8.5h3v1.7c.5-1 1.7-2 3.6-2 3.4 0 4 2.2 4 5.1V21h-3v-6.6c0-1.6 0-3.6-2.2-3.6s-2.4 1.7-2.4 3.5V21H9z",
+};
+const BAG_SOLID = "M7 7V6a5 5 0 0 1 10 0v1h3l-1 15H5L4 7zm2 0h6V6a3 3 0 0 0-6 0z";
+
+/** The owner's social links with the solid icons of the reference (editable like the shared ones). */
+function SocialIcons({ view, className }: { view: View; className: string }) {
+  const links = view.ctx.data.basics.links.filter((l) => safeUrl(l.url));
+  return (
+    <div className={`pt-socials ${className}`}>
+      {links.map((l) => {
+        const href = safeUrl(l.url)!;
+        return (
+          <a key={l.id} href={href} {...outside(href)} aria-label={l.type} title={l.type} {...ed(`basics.links[${l.id}].url`, "url", "لینک")}>
+            {SOLID[l.type] ? (
+              <svg viewBox="0 0 24 24" className="pt-solid" aria-hidden="true">
+                <path d={SOLID[l.type]} />
+              </svg>
+            ) : (
+              <Icon name={l.type} className="pt-ico" />
+            )}
+          </a>
+        );
+      })}
+      {view.editing && (
+        <span className="pt-socials-add" {...ed("basics.links", "newlink", "افزودن راه ارتباطی")}>
+          +
+        </span>
+      )}
+    </div>
+  );
+}
 
 function Svg({ name, className = "pt-ico" }: { name: string; className?: string }) {
   return (
@@ -175,6 +215,7 @@ function menuItems(view: View) {
     { to: "/", label: "خانه" },
     ...(pageOn(view.ctx.data, "/about") ? [{ to: "/about", label: "درباره‌ی ما" }] : []),
     { to: "/menu", label: "منو" },
+    { to: "/reservation", label: "رزرو" },
     { to: "/contact", label: "تماس با ما" },
     { to: "/shop", label: "سفارش آنلاین" },
   ];
@@ -198,7 +239,9 @@ function MiniCart({ view }: { view: View }) {
   return (
     <div className="pt-mini" tabIndex={-1}>
       <PageLink to="/cart" link={view.link} className="pt-bag">
-        <Svg name="bag" />
+        <svg viewBox="0 0 24 24" className="pt-solid" aria-hidden="true">
+          <path d={BAG_SOLID} />
+        </svg>
         {cart.count > 0 && <i>{fa(cart.count)}</i>}
         <span className="sr-only">سبد خرید</span>
       </PageLink>
@@ -258,7 +301,7 @@ function Header(view: View) {
         <nav className="pt-nav">{nav}</nav>
         <Logo view={view} />
         <div className="pt-tools">
-          <Socials ctx={view.ctx} editing={view.editing} className="pt-head-socials" />
+          <SocialIcons view={view} className="pt-head-socials" />
           <MiniCart view={view} />
           <PageLink to="/shop" link={view.link} className="pt-btn line pt-order">
             سفارش آنلاین
@@ -307,7 +350,7 @@ function Footer(view: View) {
               {b.phone}
             </a>
           )}
-          <Socials ctx={ctx} editing={editing} className="pt-foot-socials" />
+          <SocialIcons view={view} className="pt-foot-socials" />
         </div>
         <div>
           {blockOn(ctx.data, "newsletter") && b.email && (
@@ -442,9 +485,11 @@ function Home(view: View) {
                 <PageLink to={productPath(p)} link={link} className="pt-pizza-pic">
                   <span style={{ "--i": k } as CSSProperties}>{pic(p) && <img src={pic(p)} alt={p.name} loading="lazy" />}</span>
                 </PageLink>
-                <h3>{p.name}</h3>
-                {p.description && <p>{p.description.split("\n")[0]}</p>}
-                <SizeButtons view={view} p={p} />
+                <div className="pt-pizza-text">
+                  <h3>{p.name}</h3>
+                  {p.description && <p>{p.description.split("\n")[0]}</p>}
+                  <SizeButtons view={view} p={p} />
+                </div>
               </article>
             ))}
           </div>
@@ -475,6 +520,7 @@ function Home(view: View) {
       )}
 
       {on("carte") && carte.length > 0 && <Carte view={view} cats={carte} />}
+      {on("carte") && <Band view={view} />}
 
       {on("about") && <AboutBlock view={view} pics={photos.slice(0, 2)} />}
 
@@ -512,6 +558,19 @@ function Home(view: View) {
   );
 }
 
+/** The wide pizza photo; with a title it is the top of an inner page (menu, about us). */
+function Band({ view, title, src, path = "site.shop.promoTitle", label = "عکس پهن" }: { view: View; title?: string; src?: string; path?: string; label?: string }) {
+  const url = safeUrl(src ?? view.shop.newImage);
+  return (
+    <section className={`pt-band${title ? " pt-band-title" : ""}`}>
+      <span className="pt-band-pic" {...ed(src ? path : "site.shop.newImage", "image", label)}>
+        {url && <img src={url} alt="" loading="lazy" />}
+      </span>
+      {title && <h1>{title}</h1>}
+    </section>
+  );
+}
+
 /** «À la carte»: two columns of short lists with small round pictures. */
 function Carte({ view, cats }: { view: View; cats: Shop["categories"] }) {
   const { shop, link } = view;
@@ -546,7 +605,7 @@ function Carte({ view, cats }: { view: View; cats: Shop["categories"] }) {
 
 type Photo = NonNullable<ResumeData["site"]>["gallery"][number];
 
-/** Two tall photos side by side (stacked on phones), each opens large. */
+/** Two photos, one above the other (as in the reference), each opens large. */
 function PhotoPair({ view, pics }: { view: View; pics: Photo[] }) {
   return (
     <div className="pt-pair">
@@ -565,11 +624,18 @@ function PhotoPair({ view, pics }: { view: View; pics: Photo[] }) {
 }
 
 function AboutBlock({ view, pics }: { view: View; pics?: Photo[] }) {
-  const { ctx, editing, link } = view;
+  const { ctx, editing, link, shop } = view;
   const site = ctx.data.site;
   return (
-    <section className={`pt-sec pt-wrap pt-split pt-flip${pics ? " pt-split3" : ""}`}>
-      {pics ? <PhotoPair view={view} pics={pics} /> : <Pic src={site?.aboutImage} path="site.aboutImage" label="عکس معرفی" className="pt-split-pic pt-rise" />}
+    <section className="pt-sec pt-wrap pt-split pt-flip pt-split3">
+      {pics ? (
+        <PhotoPair view={view} pics={pics} />
+      ) : (
+        <div className="pt-pair">
+          <Pic src={shop.lookImage} path="site.shop.lookImage" label="عکس بالا" className="pt-photo pt-rise" />
+          <Pic src={site?.aboutImage} path="site.aboutImage" label="عکس پایین" className="pt-photo pt-rise" />
+        </div>
+      )}
       <div className="pt-split-text pt-rise">
         <Opt value={site?.aboutCaption} editing={editing} edit={ed("site.aboutCaption", "text", "خط بالای تیتر")}>
           <small className="pt-kicker" {...ed("site.aboutCaption", "text", "خط بالای تیتر")}>
@@ -580,12 +646,12 @@ function AboutBlock({ view, pics }: { view: View; pics?: Photo[] }) {
           <h2 {...ed("site.aboutTitle", "text", "تیتر معرفی")}>{site?.aboutTitle}</h2>
         </Opt>
         <Opt value={site?.aboutText} editing={editing} edit={ed("site.aboutText", "multiline", "متن معرفی")}>
-          <div className="pt-muted" {...ed("site.aboutText", "multiline", "متن معرفی")}>
+          <div className="pt-body" {...ed("site.aboutText", "multiline", "متن معرفی")}>
             <Para text={site?.aboutText} />
           </div>
         </Opt>
-        <PageLink to="/shop" link={link} className="pt-btn">
-          سفارش غذا
+        <PageLink to="/reservation" link={link} className="pt-btn">
+          رزرو میز
         </PageLink>
       </div>
     </section>
@@ -598,24 +664,15 @@ function MenuPage(view: View) {
   const { shop } = view;
   const products = visible(shop);
   const cats = shop.categories.filter((c) => products.some((p) => p.categoryId === c.id));
+  const carte = cats.filter((c) => c.id !== shop.showcaseCategoryId).slice(-3);
   return (
     <>
-      {cats.length > 1 && (
-        <nav className="pt-jump" aria-label="دسته‌های منو">
-          <div className="pt-wrap">
-            {cats.map((c) => (
-              <a key={c.id} href={`#pt-cat-${c.id}`}>
-                {c.name}
-              </a>
-            ))}
-          </div>
-        </nav>
-      )}
-      {cats.map((c, k) => {
+      <Band view={view} title="منوی ما" />
+      {cats.map((c) => {
         const list = products.filter((p) => p.categoryId === c.id);
         const cover = safeUrl(c.image) ?? pic(list[0]!);
         return (
-          <section key={c.id} id={`pt-cat-${c.id}`} className={`pt-sec pt-menu-cat${k % 2 ? " pt-dark" : ""}`}>
+          <section key={c.id} id={`pt-cat-${c.id}`} className="pt-menu-cat">
             <div className="pt-wrap">
               <span className="pt-cat-pic" {...ed(`${item("site.shop.categories", c.id)}.image`, "image", "عکس دسته")}>
                 {cover && <img src={cover} alt="" loading="lazy" />}
@@ -630,6 +687,8 @@ function MenuPage(view: View) {
           </section>
         );
       })}
+      <Band view={view} />
+      {carte.length > 0 && <Carte view={view} cats={carte} />}
     </>
   );
 }
@@ -643,15 +702,16 @@ function About(view: View) {
   const sign = safeUrl(shop.trendImage);
   return (
     <>
+      <Band view={view} title="درباره‌ی ما" src={shop.discoverImage} path="site.shop.discoverImage" label="عکس بالای صفحه" />
       <AboutBlock view={view} />
-      <section className="pt-sec pt-wrap pt-split">
+      <section className="pt-sec pt-wrap pt-split pt-split3">
         <div className="pt-split-text pt-rise">
           <small className="pt-kicker">سفری خوش‌طعم</small>
           <Opt value={site?.styleTitle} editing={editing} edit={ed("site.styleTitle", "text", "تیتر")}>
             <h2 {...ed("site.styleTitle", "text", "تیتر")}>{site?.styleTitle}</h2>
           </Opt>
           <Opt value={site?.styleText} editing={editing} edit={ed("site.styleText", "multiline", "متن")}>
-            <div className="pt-muted" {...ed("site.styleText", "multiline", "متن")}>
+            <div className="pt-body" {...ed("site.styleText", "multiline", "متن")}>
               <Para text={site?.styleText} />
             </div>
           </Opt>
@@ -659,7 +719,10 @@ function About(view: View) {
             {sign && <img src={sign} alt="" loading="lazy" />}
           </span>
         </div>
-        <Pic src={site?.heroImage} path="site.heroImage" label="عکس کنار متن" className="pt-split-pic pt-rise" />
+        <div className="pt-pair">
+          <Pic src={site?.heroImage} path="site.heroImage" label="عکس بالا" className="pt-photo pt-rise" />
+          <Pic src={site?.accentImage} path="site.accentImage" label="عکس پایین" className="pt-photo pt-rise" />
+        </div>
       </section>
       {team.length > 0 && (
         <section className="pt-sec pt-dark">
@@ -689,48 +752,50 @@ function About(view: View) {
 }
 
 function Contact(view: View) {
-  const { ctx, editing } = view;
+  const { ctx, shop, editing } = view;
   const b = ctx.data.basics;
   const site = ctx.data.site;
   const map = safeUrl(site?.mapUrl);
   const embed = mapEmbed(map);
+  const bg = safeUrl(shop.discoverImage);
   return (
     <>
-      <section className="pt-contact">
+      <section className="pt-contact pt-contact-top">
         <div className="pt-contact-text pt-rise">
+          <span className="pt-contact-bg">{bg && <img src={bg} alt="" loading="lazy" />}</span>
           <small className="pt-kicker">نشانی ما</small>
           <h1>کجا ما را پیدا کنید</h1>
           <Opt value={site?.contactText} editing={editing} edit={ed("site.contactText", "multiline", "متن")}>
-            <div className="pt-muted" {...ed("site.contactText", "multiline", "متن")}>
+            <div className="pt-body" {...ed("site.contactText", "multiline", "متن")}>
               <Para text={site?.contactText} />
             </div>
           </Opt>
-          <Opt value={site?.address} editing={editing} edit={ed("site.address", "text", "نشانی")}>
-            <p className="pt-contact-line">
-              <Svg name="pin" /> <span {...ed("site.address", "text", "نشانی")}>{site?.address}</span>
-            </p>
-          </Opt>
-          {b.phone && (
-            <p className="pt-contact-line">
-              <Svg name="phone" />{" "}
-              <a href={`tel:${b.phone.replace(/[^\d+]/g, "")}`} dir="ltr" {...ed("basics.phone", "text", "تلفن")}>
-                {b.phone}
-              </a>
-            </p>
-          )}
-          {b.email && (
-            <p className="pt-contact-line">
-              <Svg name="mail" />{" "}
-              <a href={`mailto:${b.email}`} dir="ltr" {...ed("basics.email", "text", "ایمیل")}>
-                {b.email}
-              </a>
-            </p>
-          )}
-          {map && (
-            <a href={map} {...outside(map)} className="pt-btn">
-              مسیریابی
-            </a>
-          )}
+          <ul className="pt-lines-list">
+            <Opt value={site?.address} editing={editing} edit={ed("site.address", "text", "نشانی")}>
+              <li>
+                <Svg name="pin" /> <span {...ed("site.address", "text", "نشانی")}>{site?.address}</span>
+              </li>
+            </Opt>
+            {b.phone && (
+              <li>
+                <Svg name="phone" />{" "}
+                <a href={`tel:${b.phone.replace(/[^\d+]/g, "")}`} dir="ltr" {...ed("basics.phone", "text", "تلفن")}>
+                  {b.phone}
+                </a>
+              </li>
+            )}
+            {b.email && (
+              <li>
+                <Svg name="mail" />{" "}
+                <a href={`mailto:${b.email}`} dir="ltr" {...ed("basics.email", "text", "ایمیل")}>
+                  {b.email}
+                </a>
+              </li>
+            )}
+          </ul>
+          <a href={map ?? "#"} {...outside(map)} className="pt-btn">
+            مسیریابی
+          </a>
         </div>
         <div className="pt-map" {...ed("site.mapUrl", "url", "لینک نقشه (گوگل‌مپ، نشان، بلد یا اوپن‌استریت‌مپ)")}>
           {embed ? <iframe src={embed} title="نقشه‌ی رستوران" loading="lazy" referrerPolicy="no-referrer" /> : <span>برای نمایش نقشه، لینک مکان رستوران را بگذارید.</span>}
@@ -741,7 +806,7 @@ function Contact(view: View) {
         <div className="pt-contact-text pt-rise">
           <small className="pt-kicker">در تماس باشید</small>
           <h2>تماس با ما</h2>
-          <p className="pt-muted">برای پرسش‌های عمومی این فرم را پر کنید؛ ظرف ۴۸ ساعت پاسخ می‌دهیم.</p>
+          <p className="pt-body">برای پرسش‌های عمومی، فرم زیر را پر کنید؛ ظرف ۴۸ ساعت به شما پاسخ می‌دهیم.</p>
           {b.email ? (
             // No server mailbox yet: sending opens an email to the restaurant.
             <form method="get" action={`mailto:${b.email}`} className="pt-form">
@@ -758,8 +823,8 @@ function Contact(view: View) {
                 <input name="subject" />
               </label>
               <label className="pt-full">
-                پیام شما
-                <textarea name="body" required rows={4} />
+                پیام شما (اختیاری)
+                <textarea name="body" rows={4} />
               </label>
               <button type="submit" className="pt-btn">
                 ارسال
@@ -771,6 +836,77 @@ function Contact(view: View) {
         </div>
       </section>
     </>
+  );
+}
+
+/** Table booking: the same two halves as the contact page; the request opens an email to the restaurant. */
+function Reservation(view: View) {
+  const { ctx, shop } = view;
+  const b = ctx.data.basics;
+  const site = ctx.data.site;
+  const bg = safeUrl(shop.discoverImage);
+  return (
+    <section className="pt-contact pt-contact-top">
+      <div className="pt-contact-text pt-rise">
+        <span className="pt-contact-bg">{bg && <img src={bg} alt="" loading="lazy" />}</span>
+        <small className="pt-kicker">رزرو میز</small>
+        <h1>میز خود را رزرو کنید</h1>
+        <p className="pt-body">تاریخ، ساعت و تعداد نفرات را بنویسید؛ پس از بررسی، برای تأیید رزرو با شما تماس می‌گیریم. برای مهمانی‌های بیشتر از ۱۲ نفر لطفاً تلفنی هماهنگ کنید.</p>
+        <h4 className="pt-res-hours">ساعات کاری</h4>
+        <Hours text={site?.contactNote} />
+        {b.phone && (
+          <p className="pt-contact-line">
+            <Svg name="phone" />{" "}
+            <a href={`tel:${b.phone.replace(/[^\d+]/g, "")}`} dir="ltr">
+              {b.phone}
+            </a>
+          </p>
+        )}
+      </div>
+      <div className="pt-contact-text pt-res-form pt-rise">
+        {b.email ? (
+          // No server mailbox yet: the booking opens an email to the restaurant with the details.
+          <form method="get" action={`mailto:${b.email}`} className="pt-form">
+            <input type="hidden" name="subject" value="درخواست رزرو میز" />
+            <label>
+              نام و نام خانوادگی
+              <input name="cc" required />
+            </label>
+            <label>
+              شماره‌ی تماس
+              <input name="bcc" inputMode="tel" dir="ltr" required />
+            </label>
+            <label>
+              تاریخ
+              <input type="date" name="date" dir="ltr" required />
+            </label>
+            <label>
+              ساعت
+              <input type="time" name="time" dir="ltr" required />
+            </label>
+            <label className="pt-full">
+              تعداد نفرات
+              <select name="guests" defaultValue="2">
+                {[1, 2, 3, 4, 5, 6, 7, 8, 10, 12].map((n) => (
+                  <option key={n} value={n}>
+                    {fa(n)} نفر
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="pt-full">
+              توضیحات (اختیاری)
+              <textarea name="body" rows={3} />
+            </label>
+            <button type="submit" className="pt-btn">
+              ثبت درخواست رزرو
+            </button>
+          </form>
+        ) : (
+          <p className="pt-muted">برای فعال شدن فرم رزرو، ایمیل رستوران را وارد کنید.</p>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -1333,14 +1469,14 @@ export function patioSample(locale: ResumeData["locale"]): ResumeData {
       ...base.site,
       aboutCaption: "طعم و تغذیه",
       aboutTitle: "غذای باکیفیت و متعادل",
-      aboutText: "غذا، هماهنگی و خنده سرو می‌کنیم؛ از سال ۱۳۷۷ غذای خوشمزه و تجربه‌ای دلپذیر برای مهمانانمان ساخته‌ایم.\n\nمشتری‌ها مهمان ما هستند و ما میزبانشان؛ کار ما این است که هر روز هر لحظه از تجربه‌ی مهمانان را کمی بهتر کنیم.",
-      aboutImage: img("about2"),
+      aboutText: "غذا، هماهنگی و خنده سرو می‌کنیم. از سال ۱۳۷۷ تا امروز، هر روز غذای خوشمزه و تجربه‌ای دلپذیر برای مهمانانمان ساخته‌ایم؛ با مواد اولیه‌ی تازه که هر صبح از بازار محلی می‌خریم و نانی که در تنور خودمان پخته می‌شود.\n\nمشتری‌ها مهمان ما هستند و ما میزبانشان. کار ما این است که هر لحظه از تجربه‌ی مهمانان را کمی بهتر کنیم؛ از خوشامد گرم دم در تا آخرین فنجان قهوه بعد از غذا، تا هر بار با لبخند برگردید.",
+      aboutImage: img("about1"),
       styleTitle: "فلسفه‌ی ما",
-      styleText: "ساده و متعادل. سرآشپز ما طعم‌ها و غذاهای ویژه‌ی ایتالیا و فراتر از آن را با هنری غافلگیرکننده کنار هم می‌گذارد.\n\n«در همه‌ی دنیا سفر کرده‌ام و طعم‌های محلی را چشیده‌ام. هر آشپز فلسفه و روش خودش را دارد و من از همه‌شان یاد گرفته‌ام.»",
+      styleText: "ساده و متعادل. سرآشپز ما طعم‌ها و غذاهای ویژه‌ی ایتالیا و فراتر از آن را با هنری غافلگیرکننده کنار هم می‌گذارد؛ خمیر پیتزا ۴۸ ساعت استراحت می‌کند، سس‌ها هر روز تازه پخته می‌شوند و هیچ بشقابی بدون چشیدن از آشپزخانه بیرون نمی‌رود.\n\n«در همه‌ی دنیا سفر کرده‌ام و طعم‌های محلی را چشیده‌ام. هر آشپز فلسفه و روش خودش را دارد و من از همه‌شان یاد گرفته‌ام.»",
       heroImage: img("photo1"),
       accentImage: img("contact"),
       signatureImage: png("bistro"),
-      contactText: "رستوران ما در قلب شهر، کنار پارک ملت است. برای رزرو میز یا سفارش مهمانی تماس بگیرید یا به ما سر بزنید؛ خوشحال می‌شویم میزبانتان باشیم.",
+      contactText: "رستوران ما در قلب شهر، روبه‌روی پارک ملت است؛ جایی آرام برای یک ناهار کاری، شامی دونفره یا دورهمی با دوستان. پارکینگ عمومی در چند قدمی ورودی است و ایستگاه مترو هم فاصله‌ی زیادی ندارد.\n\nبرای رزرو میز، سفارش مهمانی یا هر پرسشی درباره‌ی منو تماس بگیرید یا سری به ما بزنید؛ خوشحال می‌شویم میزبانتان باشیم.",
       contactNote: "شنبه تا چهارشنبه: ۹ تا ۲۲\nپنجشنبه: ۱۱ تا ۲۴\nجمعه: ۱۱ تا ۲۳\nساعت خوش: ۱۷ تا ۲۱",
       address: "تهران، خیابان ولیعصر، روبه‌روی پارک ملت، پلاک ۱۲۳",
       mapUrl: "https://www.openstreetmap.org/?mlat=35.7000&mlon=51.4000",
@@ -1364,6 +1500,8 @@ export function patioSample(locale: ResumeData["locale"]): ResumeData {
         discoverTitle: "منوی کامل",
         discountTitle: "آلاکارت",
         discoverImage: img("foot"),
+        newImage: img("slice"),
+        lookImage: img("plate"),
         trendImage: png("sign"),
         newsletterText: "از تازه‌ترین خبرها و پیشنهادهای ما باخبر شوید.",
         showcaseCategoryId: "pz",
@@ -1446,17 +1584,34 @@ const css = /* css */ `
 .pt-head-block h2, .pt-split-text h2, .pt-contact-text h1, .pt-contact-text h2 { font-family: var(--pt-head); font-size: clamp(32px, 3.4cqi, 48px); font-weight: 500; line-height: 1.25; }
 
 /* Header: menu, logo in the middle, socials, bag and the order button */
-.pt-header { position: sticky; top: 0; z-index: 30; background: rgb(11 11 11 / .96); border-bottom: 1px solid var(--pt-line); }
-/* On the home page the header lies over the hero (sticky, pulled over it), never outside the page. */
-.pt-home .pt-header { margin-bottom: -97px; background: linear-gradient(rgb(0 0 0 / .55), transparent); border-color: transparent; }
+.pt-header { position: relative; z-index: 30; background: var(--pt-bg); border-bottom: 1px solid rgb(233 120 40 / .32); }
+/* On the home page the header lies over the hero (pulled over it), never outside the page. */
+.pt-home .pt-header { margin-bottom: -97px; background: linear-gradient(rgb(0 0 0 / .55), transparent); }
 .pt-header-in { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 20px; min-height: 96px; }
 .pt-nav { display: flex; gap: 28px; font-size: 14px; font-weight: 600; }
 .pt-nav a { position: relative; padding: 6px 0; }
 .pt-nav a::after { content: ""; position: absolute; inset-inline: 0; bottom: 0; height: 1px; background: var(--pt-orange); transform: scaleX(0); transition: transform .3s; }
 .pt-nav a:hover::after, .pt-nav a[aria-current="page"]::after { transform: scaleX(1); }
 .pt-logo { justify-self: center; display: flex; }
-.pt-logo img { display: block; height: 58px; width: auto; }
-.pt-logo b { font-family: var(--pt-head); font-size: 34px; }
+.pt-logo img { display: block; height: 44px; width: auto; }
+.pt-logo b { font-family: var(--pt-head); font-size: 28px; }
+/* Filled icons (socials and bag), one size and spacing */
+.pt-solid { display: block; width: 17px; height: 17px; fill: currentColor; }
+.pt-socials { display: flex; align-items: center; gap: 16px; }
+.pt-socials a { display: grid; place-items: center; color: #fff; transition: color .3s; }
+.pt-socials a:hover { color: var(--pt-orange); }
+.pt-socials .pt-ico { width: 17px; height: 17px; }
+.pt-socials-add { cursor: pointer; color: var(--pt-muted); }
+.pt-bag .pt-solid { width: 18px; height: 18px; }
+/* Home and menu: a dark textured background instead of flat black */
+.pt-tex { background: #0B0B0B url("${sampleImage("pt-bgtex")}") center top / 1600px auto repeat; }
+/* Wide pizza photo band; with a title it heads an inner page */
+.pt-band { position: relative; display: grid; place-items: center; overflow: hidden; }
+.pt-band-pic { display: block; width: 100%; height: clamp(180px, 31cqi, 400px); }
+.pt-band-pic img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.pt-band-title .pt-band-pic { height: clamp(260px, 36cqi, 460px); }
+.pt-band-title .pt-band-pic::after { content: ""; position: absolute; inset: 0; background: rgb(0 0 0 / .5); }
+.pt-band h1 { position: absolute; z-index: 1; font-family: var(--pt-head); font-size: clamp(40px, 5.6cqi, 72px); font-weight: 500; text-align: center; }
 .pt-tools { display: flex; align-items: center; justify-content: flex-end; gap: 18px; }
 .pt-head-socials { gap: 4px !important; }
 .pt-head-socials a { width: 32px !important; height: 32px !important; color: #fff !important; }
@@ -1496,15 +1651,17 @@ const css = /* css */ `
 @keyframes pt-up { from { opacity: 0; transform: translateY(30px); } }
 
 /* Pizza menu: when the page opens the round pizzas spin fast for a few seconds and come to rest; a button per size */
-.pt-pizzas { display: grid; justify-items: center; gap: 90px; }
-.pt-pizza { display: grid; justify-items: center; gap: 14px; width: min(100%, 520px); text-align: center; }
-.pt-pizza-pic { display: block; width: min(100%, 440px); }
+/* Pizzas: one per row, a big round pizza on one side and its text on the other */
+.pt-pizzas { display: grid; gap: 70px; }
+.pt-pizza { display: grid; grid-template-columns: 1.15fr 1fr; align-items: center; gap: clamp(30px, 6cqi, 90px); }
+.pt-pizza-text { display: grid; justify-items: start; gap: 16px; }
+.pt-pizza-pic { order: 2; display: block; width: 100%; max-width: 600px; justify-self: center; }
 .pt-pizza-pic span { display: block; aspect-ratio: 1; border-radius: 50%; overflow: hidden; box-shadow: 0 30px 50px -30px #000; animation: pt-spin 3s calc(.4s + var(--i) * .15s) cubic-bezier(.1, .65, .15, 1) both; }
 .pt-pizza-pic img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.14); transition: transform .8s; }
 .pt-pizza:hover .pt-pizza-pic img { transform: scale(1.2) rotate(8deg); }
 @keyframes pt-spin { from { transform: rotate(-900deg) scale(.82); opacity: 0; } 15% { opacity: 1; } }
-.pt-pizza h3 { margin-top: 18px; font-family: var(--pt-head); font-size: clamp(30px, 3cqi, 40px); font-weight: 500; }
-.pt-pizza p { max-width: 380px; color: rgb(255 255 255 / .82); font-family: var(--pt-head); font-size: 20px; font-style: italic; line-height: 1.6; }
+.pt-pizza h3 { font-family: var(--pt-head); font-size: clamp(32px, 3.4cqi, 46px); font-weight: 500; line-height: 1.2; }
+.pt-pizza p { max-width: 420px; color: rgb(255 255 255 / .82); font-family: var(--pt-head); font-size: 20px; font-style: italic; line-height: 1.6; }
 .pt-sizes { display: grid; gap: 12px; margin-top: 10px; }
 .pt-size { display: flex; align-items: center; justify-content: center; gap: 16px; }
 .pt-size-btn { min-width: 92px; height: 34px; padding: 0 14px; border: 1px solid #fff; background: none; color: #fff; font-size: 12px; font-weight: 600; cursor: pointer; transition: background .25s, color .25s; }
@@ -1545,10 +1702,13 @@ const css = /* css */ `
 .pt-photo:hover img { transform: scale(1.07); filter: brightness(.8); }
 .pt-split { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
 .pt-flip .pt-split-text { order: 2; }
-.pt-split3 { grid-template-columns: 1.4fr 1fr; gap: 60px; }
-.pt-split3:not(.pt-flip) { grid-template-columns: 1fr 1.4fr; }
-.pt-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-.pt-pair .pt-photo { aspect-ratio: 3 / 4; }
+.pt-split3 { grid-template-columns: 1fr 1.1fr; gap: 70px; }
+.pt-split3:not(.pt-flip) { grid-template-columns: 1.1fr 1fr; }
+/* Two short photos stacked beside the text */
+.pt-pair { display: grid; gap: 20px; }
+.pt-pair .pt-photo, .pt-pair .pt-pic { aspect-ratio: 2 / 1; }
+.pt-body { color: rgb(255 255 255 / .8); font-size: 16px; line-height: 2.05; }
+.pt-body p + p { margin-top: 16px; }
 .pt-split-text { display: grid; justify-items: start; gap: 20px; }
 .pt-split-pic { aspect-ratio: 4 / 5; }
 .pt-contact-line { display: flex; align-items: center; gap: 12px; font-size: 14px; }
@@ -1579,13 +1739,29 @@ section[id^="pt-cat-"] { scroll-margin-top: 160px; }
 .pt-chef b { font-family: var(--pt-head); font-size: 26px; font-weight: 500; }
 
 /* Contact */
-.pt-contact { display: grid; grid-template-columns: 1fr 1fr; min-height: 560px; }
+.pt-contact { position: relative; display: grid; grid-template-columns: 1fr 1fr; min-height: 640px; }
+/* First half: the text over a dark restaurant photo, the map beside it at the same height */
+.pt-contact-top { min-height: clamp(560px, 60cqi, 760px); }
+.pt-contact-bg { position: absolute; inset: 0; z-index: -1; overflow: hidden; }
+.pt-contact-bg img { width: 100%; height: 100%; object-fit: cover; }
+.pt-contact-bg::after { content: ""; position: absolute; inset: 0; background: rgb(0 0 0 / .72); }
+.pt-contact-top > .pt-contact-text { position: relative; isolation: isolate; }
+.pt-contact-top .pt-map { align-self: stretch; min-height: 0; }
+.pt-contact-top .pt-map iframe { min-height: 100%; }
+.pt-lines-list { display: grid; gap: 14px; margin: 6px 0 10px; font-size: 15px; }
+.pt-lines-list li { display: flex; align-items: center; gap: 12px; }
+.pt-lines-list .pt-ico { width: 18px; height: 18px; color: var(--pt-orange); }
+.pt-res-hours { margin-top: 6px; font-family: var(--pt-head); font-size: 24px; font-weight: 500; }
+.pt-res-form { background: var(--pt-bg2); }
+.pt-form select { width: 100%; padding: 10px 0; border-bottom: 1px solid var(--pt-line); font: inherit; }
+.pt-form select option { background: #151515; }
 .pt-contact-text { display: grid; align-content: center; justify-items: start; gap: 18px; padding: 70px clamp(24px, 6cqi, 90px); }
 .pt-map { display: grid; place-items: center; min-height: 420px; align-self: center; background: var(--pt-bg2); color: var(--pt-muted); font-size: 13px; }
 .pt-map iframe { width: 100%; height: 100%; min-height: 420px; border: 0; filter: grayscale(.2); }
-.pt-contact-pic { min-height: 520px; }
+.pt-contact-pic { min-height: 520px; height: 100%; }
 .pt-contact + .pt-contact .pt-contact-text { background: var(--pt-bg); }
-.pt-form { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; width: 100%; margin-top: 10px; }
+.pt-form { display: grid; grid-template-columns: 1fr 1fr; gap: 30px 26px; width: 100%; margin-top: 10px; }
+.pt-form .pt-full { grid-column: 1 / -1; }
 .pt-form label { display: grid; gap: 10px; font-size: 14px; }
 .pt-form input, .pt-form textarea { width: 100%; padding: 10px 0; border-bottom: 1px solid var(--pt-line); font: inherit; transition: border-color .3s; }
 .pt-form input:focus, .pt-form textarea:focus { outline: none; border-color: var(--pt-orange); }
@@ -1766,7 +1942,11 @@ section[id^="pt-cat-"] { scroll-margin-top: 160px; }
   .pt-split3, .pt-split3:not(.pt-flip) { grid-template-columns: 1fr; gap: 30px; }
   .pt-split3 .pt-split-text, .pt-flip.pt-split3 .pt-split-text { order: 2; }
   .pt-pizzas { gap: 64px; }
+  .pt-pizza { grid-template-columns: 1fr; gap: 26px; }
+  .pt-pizza-pic { order: 0; }
+  .pt-pizza-text { justify-items: center; text-align: center; }
   .pt-pizza-pic { width: 92%; }
+  .pt-contact-top .pt-map { min-height: 340px; }
   .pt-hero-text h1 { font-size: 48px; }
   .pt-pair { grid-template-columns: 1fr; }
   .pt-carte, .pt-menu-list { grid-template-columns: 1fr; }
