@@ -10,16 +10,19 @@ import { type Product, type ResumeData, type Shop } from "@rb/schema";
 import { api, type ShopSummary } from "../../api";
 import { newId } from "../editor/list";
 import { Field, ImagePicker, MoneyInput, readNumber, showNumber } from "./fields";
-import { AdBanners, Coupons, Trash } from "./ShopManagerMore";
+import { AdBanners, Coupons } from "./ShopManagerMore";
+import { TrashTabs } from "./ShopTrash";
 import { Reports } from "./ShopReports";
 import { Pages, Quotes } from "./ShopPages";
+import { Blog } from "./ShopBlog";
+import { Extras } from "./ShopExtras";
 import { Customers, Reviews, Tickets } from "./ShopPeople";
 import { Dashboard, Orders } from "./ShopOrders";
 import { Products, stockOf } from "./ShopProducts";
 import { resetSample, sampleShopApi, sampleShopFor } from "./sampleData";
 import { ShopApiContext } from "./shopApi";
 
-type Tab = "dashboard" | "quotes" | "pages" | "products" | "categories" | "banners" | "coupons" | "orders" | "reports" | "reviews" | "tickets" | "customers" | "trash" | "settings";
+type Tab = "dashboard" | "quotes" | "pages" | "blog" | "extras" | "products" | "categories" | "banners" | "coupons" | "orders" | "reports" | "reviews" | "tickets" | "customers" | "trash" | "settings";
 
 type Props = {
   data: ResumeData;
@@ -30,12 +33,14 @@ type Props = {
   resumeId?: string;
   /** Opens the products tab on this product (a click on a product in the site preview). */
   focusProductId?: string;
+  /** Whether the site's template has a blog page (the blog tab says so when it has not). */
+  hasBlog?: boolean;
   onClose: () => void;
 };
 
 const EMPTY_SHOP: Shop = { categories: [], products: [] };
 
-export function ShopManager({ data, sample, onData, resumeId, focusProductId, onClose }: Props) {
+export function ShopManager({ data, sample, onData, resumeId, focusProductId, hasBlog, onClose }: Props) {
   const [tab, setTab] = useState<Tab>(focusProductId ? "products" : "dashboard");
   // Counts for the "new" marks on the tabs; read again after changes in those tabs.
   const [counts, setCounts] = useState<Pick<ShopSummary, "newOrders" | "openTickets" | "waitingReviews"> | null>(null);
@@ -114,7 +119,9 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, on
               ["coupons", "🏷 کدهای تخفیف"],
               ["banners", "🖼 بنرها و اسلایدها"],
               ["quotes", "⭐ نظرات صفحه‌ی اول"],
+              ["extras", "✨ ویژگی‌ها، برندها و آرم‌ها"],
               ["pages", "📄 صفحه‌ها و تماس"],
+              ["blog", "📰 بلاگ", shop.posts?.length ? <i key="n" className="shm-count">{showNumber(shop.posts.length)}</i> : null],
               ["reports", "📈 گزارش‌ها"],
               ["trash", "🗑 سطل زباله", trashCount ? <i key="n" className="shm-count">{showNumber(trashCount)}</i> : null],
               ["settings", "⚙️ تنظیمات فروشگاه"],
@@ -128,7 +135,7 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, on
         </nav>
       <ShopApiContext.Provider value={source}>
       <div className="shm-body">
-        {mode === "sample" && !["products", "categories", "banners", "coupons", "quotes", "pages", "trash", "settings"].includes(tab) && (
+        {mode === "sample" && !["products", "categories", "banners", "coupons", "quotes", "pages", "blog", "extras", "trash", "settings"].includes(tab) && (
           <p className="shm-sample">
             <span>
               🧪 <b>این‌ها اطلاعات نمونه است</b> تا ببینید پنل چه کارهایی می‌کند. تغییرهای شما فقط در همین مرورگر است و کاربر دیگری آن‌ها را نمی‌بیند؛ بعد از ۳۰ دقیقه دوری خودش تازه می‌شود. با اولین سفارش یا مشتری واقعی، اطلاعات خود فروشگاه‌تان این‌جا می‌آید.
@@ -156,12 +163,14 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, on
         {tab === "coupons" && <Coupons shop={shop} setShop={setShop} />}
         {tab === "orders" && <Orders resumeId={rid} onChanged={refreshCounts} />}
         {tab === "quotes" && <Quotes data={data} onData={onData} />}
+        {tab === "extras" && <Extras data={data} onData={onData} shop={shop} setShop={setShop} />}
+        {tab === "blog" && <Blog shop={shop} setShop={setShop} hasBlog={Boolean(hasBlog)} />}
         {tab === "pages" && <Pages data={data} onData={onData} shop={shop} setShop={setShop} />}
         {tab === "reports" && <Reports resumeId={rid} shop={namesShop} />}
         {tab === "reviews" && <Reviews resumeId={rid} shop={namesShop} setShop={setShop} onChanged={refreshCounts} />}
         {tab === "tickets" && <Tickets resumeId={rid} onChanged={refreshCounts} />}
         {tab === "customers" && <Customers resumeId={rid} />}
-        {tab === "trash" && <Trash shop={shop} setShop={setShop} />}
+        {tab === "trash" && <TrashTabs shop={shop} setShop={setShop} resumeId={rid} onChanged={refreshCounts} />}
         {tab === "settings" && <Settings shop={shop} setShop={setShop} />}
           </>
         )}

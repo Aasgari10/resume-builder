@@ -29,7 +29,9 @@ export function WebPage({ ctx, className, css, children }: { ctx: Ctx; className
   return (
     <div className="w-shell" dir={dir} lang={ctx.data.locale} style={vars}>
       <div className={`w-page ${className}`} dir={dir} lang={ctx.data.locale} style={vars}>
-        <style>{webStyles + zoomCss + css}</style>
+        {/* Set as raw text: as a child string, React escapes ">" and quotes when rendering to a string
+            (published pages), which breaks selectors such as "a > b" and values such as content: "". */}
+        <style dangerouslySetInnerHTML={{ __html: (webStyles + zoomCss + css).replace(/<\/style/gi, "<\\/style") }} />
         {children}
       </div>
       <ZoomLayers items={zoom} closeLabel={ctx.data.locale === "fa" ? "بستن" : "Close"} />

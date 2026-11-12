@@ -87,10 +87,10 @@ model OtpCode {
 // ───────────── Resumes ─────────────
 
 model Resume {
-  id        String   @id @default(cuid())
-  userId    String
-  title     String // user-facing label in the dashboard
-  locale    Locale   @default(fa) // mirrors data.locale
+  id             String   @id @default(cuid())
+  userId         String
+  title          String // user-facing label in the dashboard
+  locale         Locale   @default(fa) // mirrors data.locale
   data           Json // resume content; validated by resumeDraftSchema on write
   portfolioTheme Json? // themeSchema; editor's working theme for the portfolio site
   pdfTheme       Json? // themeSchema; settings of the last PDF export
@@ -181,6 +181,7 @@ model ShopOrder {
   customerId   String? // set when a signed-in customer ordered
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
+  deletedAt    DateTime? // in the panel's trash since then (hidden everywhere); removed for good after 30 days
 
   site     Site          @relation(fields: [siteId], references: [id], onDelete: Cascade)
   customer ShopCustomer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
@@ -191,13 +192,14 @@ model ShopOrder {
 
 // A customer account of one shop (each shop has its own customers).
 model ShopCustomer {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   siteId       String
   name         String
   phone        String // Iranian mobile number, the login name
   passwordHash String
-  addresses    Json     @default("[]") // [{ id, title, city, address, postalCode }]
-  createdAt    DateTime @default(now())
+  addresses    Json      @default("[]") // [{ id, title, city, address, postalCode }]
+  createdAt    DateTime  @default(now())
+  deletedAt    DateTime? // in the panel's trash since then (hidden everywhere); removed for good after 30 days
 
   site    Site         @relation(fields: [siteId], references: [id], onDelete: Cascade)
   orders  ShopOrder[]
@@ -209,15 +211,16 @@ model ShopCustomer {
 
 // A customer's rating and comment on a product; shown once the shop approves it.
 model ShopReview {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   siteId     String
   productId  String
   customerId String
   rating     Int // 1..5
   text       String
-  approved   Boolean  @default(false)
+  approved   Boolean   @default(false)
   reply      String? // the shop's answer
-  createdAt  DateTime @default(now())
+  createdAt  DateTime  @default(now())
+  deletedAt  DateTime? // in the panel's trash since then (hidden everywhere); removed for good after 30 days
 
   site     Site         @relation(fields: [siteId], references: [id], onDelete: Cascade)
   customer ShopCustomer @relation(fields: [customerId], references: [id], onDelete: Cascade)
@@ -235,6 +238,7 @@ model ShopTicket {
   messages   Json             @default("[]") // [{ from: "customer" | "shop", text, at }]
   createdAt  DateTime         @default(now())
   updatedAt  DateTime         @updatedAt
+  deletedAt  DateTime? // in the panel's trash since then (hidden everywhere); removed for good after 30 days
 
   site     Site         @relation(fields: [siteId], references: [id], onDelete: Cascade)
   customer ShopCustomer @relation(fields: [customerId], references: [id], onDelete: Cascade)
