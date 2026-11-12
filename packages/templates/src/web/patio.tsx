@@ -152,13 +152,21 @@ const pic = (p: Product) => safeUrl(p.images[0]);
 const productPath = (p: Product) => `/product/${p.id}`;
 
 /** The orange kicker with a short line after it, then a serif heading. */
-function Head({ view, kicker, title, titlePath, center }: { view: View; kicker?: string; title?: string; titlePath?: string; center?: boolean }) {
+function Head({ view, kicker, title, titlePath, center, sub, subPath }: { view: View; kicker?: string; title?: string; titlePath?: string; center?: boolean; sub?: string; subPath?: string }) {
+  const deco = subPath !== undefined;
   return (
-    <div className={`pt-head-block${center ? " pt-center" : ""} pt-rise`}>
+    <div className={`pt-head-block${center ? " pt-center" : ""}${deco ? " pt-deco" : ""} pt-rise`}>
       {kicker && <small className="pt-kicker">{kicker}</small>}
       <Opt value={title} editing={view.editing} edit={ed(titlePath ?? "", "text", "تیتر")}>
         <h2 {...(titlePath ? ed(titlePath, "text", "تیتر") : {})}>{title}</h2>
       </Opt>
+      {deco && (
+        <Opt value={sub} editing={view.editing} edit={ed(subPath, "text", "خط زیر تیتر")}>
+          <small className="pt-sub" {...ed(subPath, "text", "خط زیر تیتر")}>
+            {sub}
+          </small>
+        </Opt>
+      )}
     </div>
   );
 }
@@ -415,7 +423,7 @@ function SizeButtons({ view, p }: { view: View; p: Product }) {
 }
 
 /** One line of the menu lists: a small round picture, the name and a badge, the price and a line of text. */
-function Dish({ view, p, pics = true }: { view: View; p: Product; pics?: boolean }) {
+function Dish({ view, p, pics = true, sizes }: { view: View; p: Product; pics?: boolean; sizes?: string[] }) {
   const img = pic(p);
   return (
     <PageLink to={productPath(p)} link={view.link} className={`pt-dish${p.stock === 0 ? " pt-out" : ""}`} product={p.id}>
@@ -423,10 +431,21 @@ function Dish({ view, p, pics = true }: { view: View; p: Product; pics?: boolean
       <span className="pt-dish-text">
         <span className="pt-dish-line">
           <b>{p.name}</b>
-          {p.badge && <em className="pt-badge">{p.badge}</em>}
           <i aria-hidden="true" />
-          {p.stock === 0 ? <span className="pt-soldout">تمام شد</span> : <Price view={view} p={p} />}
+          {p.stock === 0 ? (
+            <span className="pt-soldout">تمام شد</span>
+          ) : sizes ? (
+            <span className="pt-prices">
+              {sizes.map((z) => (
+                // Columns stay narrow: the unit is shown once, under the size names.
+                <b key={z}>{fa(variantOf(p, z).unit)}</b>
+              ))}
+            </span>
+          ) : (
+            <Price view={view} p={p} />
+          )}
         </span>
+        {p.badge && <em className="pt-badge">{p.badge}</em>}
         {p.description && <small>{p.description.split("\n")[0]}</small>}
       </span>
     </PageLink>
@@ -465,20 +484,12 @@ function Home(view: View) {
           <Opt value={shop.heroText} editing={editing} edit={ed("site.shop.heroText", "text", "متن زیر تیتر")}>
             <p {...ed("site.shop.heroText", "text", "متن زیر تیتر")}>{shop.heroText}</p>
           </Opt>
-          <div className="pt-btns">
-            <PageLink to="/shop" link={link} className="pt-btn">
-              سفارش آنلاین
-            </PageLink>
-            <PageLink to="/menu" link={link} className="pt-btn line">
-              دیدن منو
-            </PageLink>
-          </div>
         </div>
       </section>
 
       {on("pizza") && pizzas.length > 0 && (
         <section className="pt-sec pt-wrap">
-          <Head view={view} kicker={shop.newText} title={shop.newTitle} titlePath="site.shop.newTitle" center />
+          <Head view={view} kicker={shop.newText} title={shop.newTitle} titlePath="site.shop.newTitle" center sub={shop.showcaseText} subPath="site.shop.showcaseText" />
           <div className="pt-pizzas">
             {pizzas.map((p, k) => (
               <article key={p.id} className="pt-pizza" data-product={p.id}>
@@ -527,11 +538,11 @@ function Home(view: View) {
       {on("visit") && (
         <section className="pt-sec pt-wrap pt-split pt-split3">
           <div className="pt-split-text pt-rise">
-            <small className="pt-kicker">رزرو میز</small>
+            <small className="pt-kicker">مشتاق دیدارتان هستیم</small>
             <h2>به رستوران ما سر بزنید</h2>
-            <Opt value={site?.contactText} editing={editing} edit={ed("site.contactText", "multiline", "متن دعوت")}>
-              <div className="pt-muted" {...ed("site.contactText", "multiline", "متن دعوت")}>
-                <Para text={site?.contactText} />
+            <Opt value={shop.promoText} editing={editing} edit={ed("site.shop.promoText", "multiline", "متن دعوت")}>
+              <div className="pt-body" {...ed("site.shop.promoText", "multiline", "متن دعوت")}>
+                <Para text={shop.promoText} />
               </div>
             </Opt>
             <Opt value={site?.address} editing={editing} edit={ed("site.address", "text", "نشانی")}>
@@ -547,11 +558,19 @@ function Home(view: View) {
                 </a>
               </p>
             )}
+            {data.basics.email && (
+              <p className="pt-contact-line">
+                <Svg name="mail" />{" "}
+                <a href={`mailto:${data.basics.email}`} dir="ltr">
+                  {data.basics.email}
+                </a>
+              </p>
+            )}
             <PageLink to="/contact" link={link} className="pt-btn">
               راه‌های ارتباط
             </PageLink>
           </div>
-          <PhotoPair view={view} pics={photos.slice(2, 4)} />
+          <PhotoPair view={view} pics={photos.slice(2, 4)} tall />
         </section>
       )}
     </>
@@ -572,6 +591,13 @@ function Band({ view, title, src, path = "site.shop.promoTitle", label = "عکس
 }
 
 /** «À la carte»: two columns of short lists with small round pictures. */
+/** The size names when every dish of a list comes in the same sizes (one price column each). */
+function sizeNames(list: Product[]): string[] | undefined {
+  const names = list[0]?.options?.[0]?.values.map((v) => v.label);
+  if (!names || names.length < 2) return undefined;
+  return list.every((p) => p.options?.[0]?.values.map((v) => v.label).join("|") === names.join("|")) ? names : undefined;
+}
+
 function Carte({ view, cats }: { view: View; cats: Shop["categories"] }) {
   const { shop, link } = view;
   const products = visible(shop);
@@ -579,17 +605,28 @@ function Carte({ view, cats }: { view: View; cats: Shop["categories"] }) {
     <section className="pt-sec pt-wrap">
       <Head view={view} kicker={shop.discoverTitle} title={shop.discountTitle} titlePath="site.shop.discountTitle" center />
       <div className="pt-carte">
-        {cats.map((c) => (
-          <div key={c.id} className="pt-carte-col pt-rise">
-            <h3>{c.name}</h3>
-            {products
-              .filter((p) => p.categoryId === c.id)
-              .slice(0, 6)
-              .map((p) => (
-                <Dish key={p.id} view={view} p={p} />
+        {cats.map((c) => {
+          const list = products.filter((p) => p.categoryId === c.id).slice(0, 6);
+          const sizes = sizeNames(list);
+          return (
+            <div key={c.id} className="pt-carte-col pt-rise">
+              <div className="pt-carte-head">
+                <h3>{c.name}</h3>
+                {sizes && (
+                  <span className="pt-prices pt-prices-head">
+                    {sizes.map((z) => (
+                      <em key={z}>{z}</em>
+                    ))}
+                    <small>(تومان)</small>
+                  </span>
+                )}
+              </div>
+              {list.map((p) => (
+                <Dish key={p.id} view={view} p={p} sizes={sizes} />
               ))}
-          </div>
-        ))}
+            </div>
+          );
+        })}
       </div>
       <div className="pt-btns pt-center">
         <PageLink to="/shop" link={link} className="pt-btn">
@@ -606,9 +643,9 @@ function Carte({ view, cats }: { view: View; cats: Shop["categories"] }) {
 type Photo = NonNullable<ResumeData["site"]>["gallery"][number];
 
 /** Two photos, one above the other (as in the reference), each opens large. */
-function PhotoPair({ view, pics }: { view: View; pics: Photo[] }) {
+function PhotoPair({ view, pics, tall }: { view: View; pics: Photo[]; tall?: boolean }) {
   return (
-    <div className="pt-pair">
+    <div className={`pt-pair${tall ? " pt-tall" : ""}`}>
       {pics.map((g) => (
         <ZoomOpen key={g.id} id={g.id} className="pt-photo pt-rise">
           <img src={safeUrl(g.image)} alt={g.title} loading="lazy" {...ed(`${item("site.gallery", g.id)}.image`, "image", "عکس")} />
@@ -629,7 +666,7 @@ function AboutBlock({ view, pics }: { view: View; pics?: Photo[] }) {
   return (
     <section className="pt-sec pt-wrap pt-split pt-flip pt-split3">
       {pics ? (
-        <PhotoPair view={view} pics={pics} />
+        <PhotoPair view={view} pics={pics} tall />
       ) : (
         <div className="pt-pair">
           <Pic src={shop.lookImage} path="site.shop.lookImage" label="عکس بالا" className="pt-photo pt-rise" />
@@ -650,6 +687,13 @@ function AboutBlock({ view, pics }: { view: View; pics?: Photo[] }) {
             <Para text={site?.aboutText} />
           </div>
         </Opt>
+        {!pics && (
+          <Opt value={site?.bandText} editing={editing} edit={ed("site.bandText", "multiline", "متن تکمیلی")}>
+            <div className="pt-body" {...ed("site.bandText", "multiline", "متن تکمیلی")}>
+              <Para text={site?.bandText} />
+            </div>
+          </Opt>
+        )}
         <PageLink to="/reservation" link={link} className="pt-btn">
           رزرو میز
         </PageLink>
@@ -677,11 +721,23 @@ function MenuPage(view: View) {
               <span className="pt-cat-pic" {...ed(`${item("site.shop.categories", c.id)}.image`, "image", "عکس دسته")}>
                 {cover && <img src={cover} alt="" loading="lazy" />}
               </span>
-              <h2 className="pt-cat-title">{c.name}</h2>
-              <div className="pt-menu-list">
-                {list.map((p) => (
-                  <Dish key={p.id} view={view} p={p} pics={false} />
-                ))}
+              <div className="pt-menu-text pt-rise">
+                <div className="pt-carte-head">
+                  <h2 className="pt-cat-title">{c.name}</h2>
+                  {sizeNames(list) && (
+                    <span className="pt-prices pt-prices-head">
+                      {sizeNames(list)!.map((z) => (
+                        <em key={z}>{z}</em>
+                      ))}
+                      <small>(تومان)</small>
+                    </span>
+                  )}
+                </div>
+                <div className="pt-menu-list">
+                  {list.map((p) => (
+                    <Dish key={p.id} view={view} p={p} pics={false} sizes={sizeNames(list)} />
+                  ))}
+                </div>
               </div>
             </div>
           </section>
@@ -1430,10 +1486,10 @@ export function patioSample(locale: ResumeData["locale"]): ResumeData {
   });
   const dish = (id: string, categoryId: string, name: string, price: number, image: string, description: string, extra: Partial<Product> = {}): Product => ({ id, name, categoryId, price, images: [image], description, ...extra });
   const products: Product[] = [
-    dish("z1", "pz", "مارگاریتا", 0, img("pizza3"), "سس گوجه، موتزارلای تازه، ریحان و روغن زیتون.", size(390000, 480000)),
-    dish("z2", "pz", "بوراتای کلاسیک", 0, img("pizza2"), "سس گوجه، پنیر بوراتا، اسفناج تازه و گوجه‌گیلاسی.", size(450000, 560000)),
-    dish("z3", "pz", "کاپریچوزا", 0, img("pizza1"), "سس گوجه، ژامبون، قارچ، کنگر فرنگی و زیتون سیاه.", size(430000, 530000)),
-    dish("z4", "pz", "سیسیلیانا", 0, img("pizza4"), "سس گوجه، پپرونی، پیاز قرمز، فلفل تند و پنیر چدار.", { ...size(440000, 540000), badge: "تند" }),
+    dish("z1", "pz", "مارگاریتا", 0, img("pizza3"), "سس گوجه، پنیر موتزارلای تازه، ریحان، روغن زیتون و کمی نمک دریایی.", size(390000, 480000)),
+    dish("z2", "pz", "بوراتای کلاسیک", 0, img("pizza2"), "سس گوجه، پنیر بوراتا، پارمزان، اسفناج تازه، گوجه‌گیلاسی و روغن ریحان.", size(450000, 560000)),
+    dish("z3", "pz", "کاپریچوزا", 0, img("pizza1"), "سس گوجه، موتزارلا، ژامبون، قارچ، کنگر فرنگی، زیتون سیاه و پونه‌ی کوهی.", size(430000, 530000)),
+    dish("z4", "pz", "سیسیلیانا", 0, img("pizza4"), "سس گوجه، موتزارلا، پپرونی، پیاز قرمز، فلفل تند، پنیر چدار و ریحان تازه.", { ...size(440000, 540000), badge: "تند" }),
     dish("p1", "ps", "اسپاگتی ناپولیتانا", 320000, img("pasta2"), "سس گوجه‌ی تازه، سیر، ریحان و پارمزان.\nپاستای تازه‌ی دست‌ساز که هر روز صبح در آشپزخانه‌ی ما آماده می‌شود."),
     dish("p2", "ps", "اسپاگتی پوتانسکا", 340000, img("pasta3"), "زیتون، کاپاری، گوجه و فلفل تند.", { badge: "پیشنهاد سرآشپز" }),
     dish("p3", "ps", "پنه آرابیاتا", 310000, img("pasta4"), "پنه با سس گوجه‌ی تند و سیر."),
@@ -1445,9 +1501,10 @@ export function patioSample(locale: ResumeData["locale"]): ResumeData {
     dish("s3", "st", "صدف تازه", 520000, png("dish4"), "یک دوجین صدف تازه با لیمو و یخ."),
     dish("d1", "sd", "کلم بروکسل", 140000, png("dish6"), "کلم بروکسل برشته با کره و سیر.", { badge: "گیاهی" }),
     dish("d2", "sd", "بروکلی کره‌ای", 130000, png("dish5"), "بروکلی بخارپز با کره و لیمو."),
-    dish("m1", "mp", "پیتزا پپرونی کوچک", 260000, png("dish9"), "پپرونی، پیاز قرمز و موتزارلا."),
-    dish("m2", "mp", "پیتزا سبزیجات", 240000, png("dish7"), "اسفناج، قارچ و پنیر بز.", { badge: "گیاهی" }),
-    dish("m3", "mp", "پیتزا دیاولا", 270000, png("dish11"), "سالامی تند، زیتون سیاه و فلفل.", { stock: 0 }),
+    dish("m1", "mp", "پیتزا پپرونی", 0, png("dish9"), "پپرونی، پیاز قرمز و موتزارلا.", size(360000, 450000)),
+    dish("m2", "mp", "پیتزا سبزیجات", 0, png("dish7"), "اسفناج، قارچ و پنیر بز.", { ...size(340000, 420000), badge: "گیاهی" }),
+    dish("m3", "mp", "پیتزا دیاولا", 0, png("dish11"), "سالامی تند، زیتون سیاه و فلفل.", size(370000, 460000)),
+    dish("m4", "mp", "پیتزا کالابریا", 0, png("dish8"), "موتزارلا، قارچ کبابی، فلفل دلمه و سوسیس.", size(380000, 470000)),
   ];
   return {
     ...base,
@@ -1469,7 +1526,8 @@ export function patioSample(locale: ResumeData["locale"]): ResumeData {
       ...base.site,
       aboutCaption: "طعم و تغذیه",
       aboutTitle: "غذای باکیفیت و متعادل",
-      aboutText: "غذا، هماهنگی و خنده سرو می‌کنیم. از سال ۱۳۷۷ تا امروز، هر روز غذای خوشمزه و تجربه‌ای دلپذیر برای مهمانانمان ساخته‌ایم؛ با مواد اولیه‌ی تازه که هر صبح از بازار محلی می‌خریم و نانی که در تنور خودمان پخته می‌شود.\n\nمشتری‌ها مهمان ما هستند و ما میزبانشان. کار ما این است که هر لحظه از تجربه‌ی مهمانان را کمی بهتر کنیم؛ از خوشامد گرم دم در تا آخرین فنجان قهوه بعد از غذا، تا هر بار با لبخند برگردید.",
+      aboutText: "غذا، هماهنگی و خنده سرو می‌کنیم. از سال ۱۳۷۷ تا امروز، هر روز غذای خوشمزه و تجربه‌ای دلپذیر برای مهمانانمان ساخته‌ایم.",
+      bandText: "مواد اولیه را هر صبح از بازار محلی می‌خریم و نانمان در تنور خودمان پخته می‌شود.\n\nمشتری‌ها مهمان ما هستند و ما میزبانشان. کار ما این است که هر لحظه از تجربه‌ی مهمانان را کمی بهتر کنیم؛ از خوشامد گرم دم در تا آخرین فنجان قهوه بعد از غذا، تا هر بار با لبخند برگردید.",
       aboutImage: img("about1"),
       styleTitle: "فلسفه‌ی ما",
       styleText: "ساده و متعادل. سرآشپز ما طعم‌ها و غذاهای ویژه‌ی ایتالیا و فراتر از آن را با هنری غافلگیرکننده کنار هم می‌گذارد؛ خمیر پیتزا ۴۸ ساعت استراحت می‌کند، سس‌ها هر روز تازه پخته می‌شوند و هیچ بشقابی بدون چشیدن از آشپزخانه بیرون نمی‌رود.\n\n«در همه‌ی دنیا سفر کرده‌ام و طعم‌های محلی را چشیده‌ام. هر آشپز فلسفه و روش خودش را دارد و من از همه‌شان یاد گرفته‌ام.»",
@@ -1491,9 +1549,11 @@ export function patioSample(locale: ResumeData["locale"]): ResumeData {
       shop: {
         heroKicker: "خوش آمدید به",
         heroTitle: "پاتیوتایم بیسترو",
-        heroText: "رستوران، بار و کافه؛ غذای تازه و فضایی گرم برای هر روز.",
+        heroText: "پیتزا، برگر، نوشیدنی، قهوه و دسر",
         heroImage: img("hero"),
         newText: "رستوران ایتالیایی",
+        showcaseText: "دستور پخت کلاسیک",
+        promoText: "در قلب شهر، روبه‌روی پارک ملت منتظرتان هستیم؛ برای ناهار، شام یا یک قهوه‌ی عصرگاهی.",
         newTitle: "منوی پیتزا",
         bestText: "تازه از آشپزخانه",
         bestTitle: "پاستای تازه",
@@ -1510,7 +1570,7 @@ export function patioSample(locale: ResumeData["locale"]): ResumeData {
           { id: "ps", name: "پاستا و اسپاگتی", image: img("pasta1") },
           { id: "st", name: "پیش‌غذا", image: png("dish4") },
           { id: "sd", name: "کنار غذا", image: png("dish6") },
-          { id: "mp", name: "پیتزای کوچک", image: png("dish10") },
+          { id: "mp", name: "پیتزای ویژه", image: png("dish10") },
         ],
         products,
         shippingFee: 50000,
@@ -1581,6 +1641,15 @@ const css = /* css */ `
 .pt-kicker::after { content: ""; width: 54px; height: 1px; background: currentColor; }
 .pt-center .pt-kicker::before { content: ""; width: 54px; height: 1px; background: currentColor; }
 .pt-head-block { display: grid; gap: 14px; margin-bottom: 56px; }
+/* Pizza menu heading: lines across, dots beside the title, a small line under it */
+.pt-deco { width: min(100%, 560px); margin-inline: auto; gap: 12px; }
+.pt-deco { justify-content: stretch; }
+.pt-deco > * { justify-self: stretch; }
+.pt-deco .pt-kicker, .pt-deco .pt-sub { display: flex; width: 100%; align-items: center; gap: 16px; }
+.pt-deco .pt-kicker::before, .pt-deco .pt-kicker::after, .pt-deco .pt-sub::before, .pt-deco .pt-sub::after { content: ""; flex: 1; width: auto; height: 1px; background: rgb(255 255 255 / .35); }
+.pt-deco h2 { display: flex; justify-content: center; align-items: center; gap: 22px; }
+.pt-deco h2::before, .pt-deco h2::after { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.pt-sub { color: var(--pt-gold); font-size: 12px; font-weight: 700; }
 .pt-head-block h2, .pt-split-text h2, .pt-contact-text h1, .pt-contact-text h2 { font-family: var(--pt-head); font-size: clamp(32px, 3.4cqi, 48px); font-weight: 500; line-height: 1.25; }
 
 /* Header: menu, logo in the middle, socials, bag and the order button */
@@ -1639,11 +1708,13 @@ const css = /* css */ `
 .pt-hero { position: relative; display: grid; align-items: center; min-height: clamp(560px, 52cqi, 820px); overflow: hidden; isolation: isolate; }
 .pt-hero-pic { position: absolute; inset: 0; z-index: -1; }
 .pt-hero-pic img { width: 100%; height: 100%; object-fit: cover; animation: pt-zoom 22s ease-in-out infinite alternate; }
-.pt-hero-pic::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgb(0 0 0 / .15), rgb(0 0 0 / .7)); }
+.pt-hero-pic::after { content: ""; position: absolute; inset: 0; background: rgb(0 0 0 / .45); }
 @keyframes pt-zoom { to { transform: scale(1.12); } }
-.pt-hero-text { display: grid; justify-items: start; gap: 18px; width: min(620px, 100%); box-sizing: border-box; margin-inline-start: clamp(20px, 9cqi, 160px); padding-top: 90px; }
-.pt-hero-text h1 { font-family: var(--pt-head); font-size: clamp(48px, 6.4cqi, 92px); font-weight: 500; line-height: 1.05; }
-.pt-hero-text p { max-width: 460px; color: rgb(255 255 255 / .85); font-size: 16px; line-height: 2; }
+.pt-hero-text { display: grid; justify-items: center; gap: 18px; width: min(760px, 100% - 36px); box-sizing: border-box; margin-inline: auto; padding-top: 90px; text-align: center; }
+.pt-hero-text .pt-kicker::after { display: none; }
+.pt-hero-text .pt-kicker { font-size: 15px; letter-spacing: .02em; }
+.pt-hero-text h1 { max-width: 4em; font-family: var(--pt-head); font-size: clamp(52px, 7cqi, 100px); font-weight: 500; line-height: 1.05; }
+.pt-hero-text p { max-width: 460px; color: rgb(255 255 255 / .9); font-family: var(--pt-head); font-size: clamp(20px, 1.9cqi, 26px); line-height: 1.6; }
 .pt-hero-text > * { animation: pt-up 1s cubic-bezier(.2, .8, .2, 1) both; }
 .pt-hero-text > :nth-child(2) { animation-delay: .15s; }
 .pt-hero-text > :nth-child(3) { animation-delay: .3s; }
@@ -1653,9 +1724,11 @@ const css = /* css */ `
 /* Pizza menu: when the page opens the round pizzas spin fast for a few seconds and come to rest; a button per size */
 /* Pizzas: one per row, a big round pizza on one side and its text on the other */
 .pt-pizzas { display: grid; gap: 70px; }
-.pt-pizza { display: grid; grid-template-columns: 1.15fr 1fr; align-items: center; gap: clamp(30px, 6cqi, 90px); }
+.pt-pizza { display: grid; grid-template-columns: minmax(0, 500px) minmax(0, 400px); justify-content: center; align-items: center; gap: clamp(30px, 5cqi, 70px); }
+.pt-pizza:nth-child(even) { grid-template-columns: minmax(0, 400px) minmax(0, 500px); }
+.pt-pizza:nth-child(even) .pt-pizza-pic { order: 0; }
 .pt-pizza-text { display: grid; justify-items: start; gap: 16px; }
-.pt-pizza-pic { order: 2; display: block; width: 100%; max-width: 600px; justify-self: center; }
+.pt-pizza-pic { order: 2; display: block; width: 100%; }
 .pt-pizza-pic span { display: block; aspect-ratio: 1; border-radius: 50%; overflow: hidden; box-shadow: 0 30px 50px -30px #000; animation: pt-spin 3s calc(.4s + var(--i) * .15s) cubic-bezier(.1, .65, .15, 1) both; }
 .pt-pizza-pic img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.14); transition: transform .8s; }
 .pt-pizza:hover .pt-pizza-pic img { transform: scale(1.2) rotate(8deg); }
@@ -1667,7 +1740,7 @@ const css = /* css */ `
 .pt-size-btn { min-width: 92px; height: 34px; padding: 0 14px; border: 1px solid #fff; background: none; color: #fff; font-size: 12px; font-weight: 600; cursor: pointer; transition: background .25s, color .25s; }
 .pt-size-btn:hover { background: #fff; color: #111; }
 .pt-size b { min-width: 120px; font-family: var(--pt-head); font-size: 28px; font-weight: 500; text-align: start; }
-.pt-soldout { color: #E8705A; font-size: 13px; font-weight: 700; }
+.pt-soldout { color: var(--pt-muted); font-size: 13px; font-weight: 700; }
 
 /* Fresh pasta cards */
 .pt-pasta { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 46px 30px; }
@@ -1682,19 +1755,29 @@ const css = /* css */ `
 .pt-price { display: inline-flex; gap: 8px; align-items: baseline; white-space: nowrap; }
 .pt-price b { font-family: var(--pt-head); font-size: 20px; font-weight: 500; }
 .pt-price s { color: var(--pt-muted); font-size: 13px; }
+.pt-dish-text .pt-badge { justify-self: start; }
 .pt-badge { padding: 1px 7px; background: var(--pt-orange); font-size: 10px; font-style: normal; font-weight: 700; white-space: nowrap; }
 
 /* À la carte */
 .pt-carte { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px 60px; margin-bottom: 50px; }
 .pt-carte-col { display: grid; align-content: start; gap: 22px; }
-.pt-carte-col h3 { padding-bottom: 12px; border-bottom: 1px solid var(--pt-line); font-family: var(--pt-head); font-size: 30px; font-weight: 500; }
+.pt-carte-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
+.pt-carte-col h3 { position: relative; padding-bottom: 12px; font-size: 22px; font-weight: 800; }
+.pt-carte-col h3::after { content: ""; position: absolute; inset-inline-start: 0; bottom: 0; width: 44px; height: 2px; background: var(--pt-orange); }
+.pt-prices { display: inline-flex; gap: 14px; white-space: nowrap; }
+.pt-prices { gap: 8px; }
+.pt-prices b, .pt-prices em { min-width: 62px; text-align: center; }
+.pt-prices-head { position: relative; padding-bottom: 14px; }
+.pt-prices-head small { position: absolute; inset-inline: 0; bottom: -4px; color: var(--pt-muted); font-size: 10px; text-align: center; }
+.pt-prices b { font-family: var(--pt-head); font-size: 18px; font-weight: 500; }
+.pt-prices em { padding: 2px 6px; border: 1px solid rgb(255 255 255 / .5); font-size: 11px; font-style: normal; font-weight: 600; }
 .pt-dish { display: flex; align-items: center; gap: 16px; transition: color .2s; }
 .pt-dish:hover .pt-dish-line b { color: var(--pt-gold); }
 .pt-dish-pic { flex: none; width: 58px; height: 58px; border-radius: 50%; overflow: hidden; transition: transform .6s cubic-bezier(.2, .8, .2, 1.3); }
 .pt-dish:hover .pt-dish-pic { transform: rotate(-25deg) scale(1.06); }
 .pt-dish-pic img { width: 100%; height: 100%; object-fit: cover; }
 .pt-dish-text { flex: 1; min-width: 0; display: grid; gap: 4px; }
-.pt-out { opacity: .5; }
+.pt-out { opacity: .75; }
 
 /* Photo row, split blocks */
 .pt-photo { display: block; aspect-ratio: 3 / 4; overflow: hidden; cursor: zoom-in; }
@@ -1707,6 +1790,7 @@ const css = /* css */ `
 /* Two short photos stacked beside the text */
 .pt-pair { display: grid; gap: 20px; }
 .pt-pair .pt-photo, .pt-pair .pt-pic { aspect-ratio: 2 / 1; }
+.pt-pair.pt-tall .pt-photo { aspect-ratio: 4 / 3; }
 .pt-body { color: rgb(255 255 255 / .8); font-size: 16px; line-height: 2.05; }
 .pt-body p + p { margin-top: 16px; }
 .pt-split-text { display: grid; justify-items: start; gap: 20px; }
@@ -1721,12 +1805,15 @@ const css = /* css */ `
 .pt-jump a { flex: none; padding: 8px 18px; border: 1px solid var(--pt-line); font-size: 13px; transition: background .2s, border-color .2s; }
 .pt-jump a:hover { background: var(--pt-orange); border-color: var(--pt-orange); }
 section[id^="pt-cat-"] { scroll-margin-top: 160px; }
-.pt-menu-cat .pt-wrap { display: grid; justify-items: center; }
-.pt-cat-pic { display: block; width: 220px; aspect-ratio: 1; border-radius: 50%; overflow: hidden; box-shadow: 0 30px 50px -30px #000; }
+.pt-menu-cat { padding-block: 70px; }
+.pt-menu-cat .pt-wrap { display: grid; grid-template-columns: minmax(0, 460px) minmax(0, 620px); justify-content: center; align-items: center; gap: clamp(30px, 6cqi, 90px); }
+.pt-menu-cat:nth-of-type(even) .pt-cat-pic { order: 2; }
+.pt-cat-pic { display: block; width: 100%; aspect-ratio: 1; border-radius: 50%; overflow: hidden; box-shadow: 0 30px 50px -30px #000; }
 .pt-cat-pic img { width: 100%; height: 100%; object-fit: cover; animation: pt-spin 2.6s cubic-bezier(.12, .7, .2, 1) both; }
-.pt-cat-title { display: flex; align-items: center; gap: 16px; margin: 30px 0 46px; font-family: var(--pt-head); font-size: 32px; font-weight: 500; color: var(--pt-gold); }
-.pt-cat-title::before, .pt-cat-title::after { content: ""; width: 40px; height: 1px; background: currentColor; }
-.pt-menu-list { display: grid; grid-template-columns: 1fr 1fr; gap: 26px 60px; width: 100%; }
+.pt-menu-text .pt-carte-head { margin-bottom: 34px; }
+.pt-cat-title { position: relative; padding-bottom: 14px; font-size: 28px; font-weight: 800; }
+.pt-cat-title::after { content: ""; position: absolute; inset-inline-start: 0; bottom: 0; width: 56px; height: 2px; background: var(--pt-orange); }
+.pt-menu-list { display: grid; gap: 24px; width: 100%; }
 
 /* Team */
 .pt-team { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 34px; justify-content: center; }
@@ -1935,7 +2022,16 @@ section[id^="pt-cat-"] { scroll-margin-top: 160px; }
   .pt-drawer a { padding: 14px 4px; border-top: 1px solid var(--pt-line); font-weight: 600; }
   .pt-drawer a[aria-current="page"] { color: var(--pt-orange); }
   .pt-mini-panel { inset-inline-end: -10px; width: min(330px, 86vw); }
-  .pt-hero-text { padding-top: 70px; margin-inline: 18px; justify-items: center; text-align: center; }
+  .pt-hero-text { padding-top: 70px; }
+  .pt-pizza, .pt-pizza:nth-child(even) { grid-template-columns: 1fr; }
+  .pt-menu-cat { padding-block: 44px; }
+  .pt-menu-cat .pt-wrap { grid-template-columns: 1fr; justify-items: center; gap: 34px; }
+  .pt-menu-cat .pt-cat-pic { order: 0 !important; width: 88%; }
+  .pt-menu-text { width: 100%; }
+  .pt-menu-text .pt-carte-head:not(:has(.pt-prices)) { justify-content: center; }
+  .pt-menu-text .pt-carte-head:not(:has(.pt-prices)) .pt-cat-title::after { inset-inline-start: calc(50% - 28px); }
+  .pt-foot-mid { order: -1; }
+  .pt-hours { width: min(100%, 340px); margin-inline: auto; }
   .pt-hero-text .pt-btns { justify-content: center; }
   .pt-pasta { grid-template-columns: 1fr; }
   /* As in the reference: the two photos first, the text under them. */
@@ -1949,6 +2045,7 @@ section[id^="pt-cat-"] { scroll-margin-top: 160px; }
   .pt-contact-top .pt-map { min-height: 340px; }
   .pt-hero-text h1 { font-size: 48px; }
   .pt-pair { grid-template-columns: 1fr; }
+  .pt-pair.pt-tall .pt-photo { aspect-ratio: 4 / 5; }
   .pt-carte, .pt-menu-list { grid-template-columns: 1fr; }
   .pt-split, .pt-contact, .pt-product, .pt-foot-cols { grid-template-columns: 1fr; gap: 40px; }
   .pt-flip .pt-split-text { order: 0; }
@@ -1965,7 +2062,6 @@ section[id^="pt-cat-"] { scroll-margin-top: 160px; }
   .pt-toolbar { font-size: 14px; }
   .pt-sort summary { min-width: 0; gap: 10px; }
   .pt-foot-cols { text-align: center; }
-  .pt-hours div { justify-content: center; }
   .pt-foot-end { flex-direction: column; justify-content: center; padding-block: 26px; text-align: center; }
   .pt-foot-end nav { justify-content: center; gap: 14px; }
   .pt-line { grid-template-columns: 64px minmax(0, 1fr) auto; }
