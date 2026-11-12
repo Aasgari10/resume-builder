@@ -17,7 +17,7 @@ import type { TemplateProps } from "../types";
 import { Opt, PageLink, Socials, blockOn, ed, item, outside, partsCss } from "./parts";
 import { ZoomOpen } from "./zoom";
 import { InfoPage, infoPages, onSale, shopkitCss } from "./shopkit";
-import { AccountView, BagLink, CartView, CheckoutView, KIcon, ProductCard, ProductView, ShopList, ThanksView, kafeShopCss, soldCategories, soldProducts } from "./kafeShop";
+import { AccountView, AddedToast, BagLink, CartView, CheckoutView, KIcon, ProductCard, ProductView, ShopList, ThanksView, kafeShopCss, soldCategories, soldProducts } from "./kafeShop";
 import { mapEmbed } from "./golsara";
 
 export const LADIVA_BLOCKS = [
@@ -25,13 +25,18 @@ export const LADIVA_BLOCKS = [
   { key: "booking", label: "نوار رزرو سریع" },
   { key: "intro", label: "جمله‌ی خوشامد" },
   { key: "space", label: "معرفی سالن" },
-  { key: "services", label: "خدمات" },
+  { key: "services", label: "خدمات (اسلایدر)" },
+  { key: "packages", label: "پکیج‌ها (کادر سبز)" },
   { key: "stats", label: "اعداد" },
   { key: "prices", label: "راهنمای قیمت" },
   { key: "quotes", label: "نظر مشتری‌ها" },
   { key: "gallery", label: "گالری" },
   { key: "faq", label: "پرسش‌های پرتکرار" },
+  { key: "quality", label: "محصولات باکیفیت (سه آیکون)" },
   { key: "products", label: "محصولات" },
+  { key: "rating", label: "جمله‌ی امتیاز" },
+  { key: "video", label: "نوار ویدیو" },
+  { key: "logos", label: "لوگوی رسانه‌ها" },
   { key: "banners", label: "دو بنر" },
   { key: "blog", label: "بلاگ" },
 ] as const;
@@ -93,6 +98,7 @@ export function LadivaSite(props: TemplateProps) {
       <Header {...view} />
       <main key={page}>{body}</main>
       <Footer {...view} />
+      <AddedToast view={view} />
     </WebPage>
   );
 }
@@ -171,6 +177,13 @@ function Svg({ name, className = "ld-ico" }: { name: string; className?: string 
   );
 }
 
+/** Line icons for the three marks of the "quality products" block: leaf, no-drop, globe. */
+const MARKS = [
+  "M20 34V18M20 22c-6 0-10-4-10-11 7 0 10 4 10 11zM20 26c0-7 4-11 11-11 0 7-4 11-11 11z",
+  "M20 6c5 7 9 12 9 17a9 9 0 0 1-18 0c0-5 4-10 9-17zM8 8l24 24",
+  "M20 34a14 14 0 1 0 0-28 14 14 0 0 0 0 28zM6 20h28M20 6c4 4 6 9 6 14s-2 10-6 14M20 6c-4 4-6 9-6 14s2 10 6 14",
+];
+
 /** Lowest price of a service's items ("from ..."). */
 const fromPrice = (shop: Shop, catId: string) => {
   const prices = live(shop)
@@ -179,6 +192,71 @@ const fromPrice = (shop: Shop, catId: string) => {
     .filter((n) => n > 0);
   return prices.length ? Math.min(...prices) : undefined;
 };
+
+/**
+ * A slider without scripts: one radio per position, arrows are labels for the radios before and after,
+ * dots below. "show" cards are in view on a wide screen, one on a phone; the rules for this slider are
+ * written next to it, since they depend on the number of cards.
+ */
+function Slider({ id, items, show = 3, dots, className }: { id: string; items: ReactNode[]; show?: number; dots?: boolean; className?: string }) {
+  const n = items.length;
+  const wideMax = Math.max(0, n - show);
+  const phoneMax = Math.max(0, n - 1);
+  const rules = items
+    .map((_, k) => {
+      const at = `#${id}-${k}:checked ~`;
+      return [
+        `${at} .ld-sl-view .ld-sl-track { --s: ${Math.min(k, wideMax)}; }`,
+        k > 0 ? `${at} .ld-sl-nav .ld-sl-prev-${k} { display: grid; }` : "",
+        k < wideMax ? `${at} .ld-sl-nav .ld-sl-next-${k} { display: grid; }` : "",
+        `${at} .ld-sl-dots label:nth-child(${k + 1}) { background: currentColor; }`,
+        `@container (max-width: 820px) { ${at} .ld-sl-view .ld-sl-track { --s: ${Math.min(k, phoneMax)}; } ${k < phoneMax && k >= wideMax ? `${at} .ld-sl-nav .ld-sl-next-${k} { display: grid; }` : ""} }`,
+      ].join(" ");
+    })
+    .join("\n");
+  return (
+    <div className={`ld-sl ${className ?? ""}`} style={{ "--show": show } as CSSProperties}>
+      <style dangerouslySetInnerHTML={{ __html: rules }} />
+      {items.map((_, k) => (
+        <input key={k} type="radio" name={id} id={`${id}-${k}`} defaultChecked={k === 0} className="ld-sl-radio" aria-label={`اسلاید ${fa(k + 1)}`} />
+      ))}
+      <div className="ld-sl-view">
+        <div className="ld-sl-track">
+          {items.map((x, k) => (
+            <div key={k} className="ld-sl-cell">
+              {x}
+            </div>
+          ))}
+        </div>
+      </div>
+      {n > 1 && (
+        <div className="ld-sl-nav">
+          {items.map((_, k) => (
+            <span key={k}>
+              {k > 0 && (
+                <label htmlFor={`${id}-${k - 1}`} className={`ld-sl-arrow ld-sl-prev ld-sl-prev-${k}`} aria-label="قبلی">
+                  <Svg name="arrow" />
+                </label>
+              )}
+              {k < phoneMax && (
+                <label htmlFor={`${id}-${k + 1}`} className={`ld-sl-arrow ld-sl-next ld-sl-next-${k}`} aria-label="بعدی">
+                  <Svg name="arrow" />
+                </label>
+              )}
+            </span>
+          ))}
+        </div>
+      )}
+      {dots && n > show && (
+        <div className="ld-sl-dots">
+          {items.map((_, k) => (
+            <label key={k} htmlFor={`${id}-${k}`} aria-label={`اسلاید ${fa(k + 1)}`} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 /* ───────────── Header and footer ───────────── */
 
@@ -220,11 +298,30 @@ function Header(view: View) {
   const b = ctx.data.basics;
   const site = ctx.data.site;
   const items = menuItems(view);
-  const nav = items.map((m) => (
-    <PageLink key={m.to} to={m.to} link={link} current={isCurrent(view, m.to)}>
-      {m.label}
-    </PageLink>
-  ));
+  const services = servicesOf(shop);
+  // "Services" opens a list of every service (a hover panel on wide screens, a sub-list in the phone menu).
+  const nav = (phone: boolean) =>
+    items.map((m) =>
+      m.to === "/services" && services.length > 0 ? (
+        <div key={m.to} className="ld-drop">
+          <PageLink to={m.to} link={link} current={isCurrent(view, m.to)}>
+            {m.label}
+            {!phone && <Svg name="down" className="ld-ico ld-drop-ico" />}
+          </PageLink>
+          <div className="ld-drop-list">
+            {services.map((c) => (
+              <PageLink key={c.id} to={`/services/${c.id}`} link={link} current={view.page === `/services/${c.id}`}>
+                {c.name}
+              </PageLink>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <PageLink key={m.to} to={m.to} link={link} current={isCurrent(view, m.to)}>
+          {m.label}
+        </PageLink>
+      ),
+    );
   const sells = soldProducts(shop).length > 0;
   return (
     <header className="ld-head">
@@ -257,13 +354,13 @@ function Header(view: View) {
               <span />
             </summary>
             <nav className="ld-drawer">
-              {nav}
+              {nav(true)}
               <PageLink to="/appointment" link={link}>
                 رزرو نوبت
               </PageLink>
             </nav>
           </details>
-          <nav className="ld-nav">{nav}</nav>
+          <nav className="ld-nav">{nav(false)}</nav>
           <Logo view={view} />
           <div className="ld-tools">
             {sells && (
@@ -353,7 +450,8 @@ function Footer(view: View) {
   const { ctx, link, editing, shop } = view;
   const b = ctx.data.basics;
   const site = ctx.data.site;
-  const strip = (site?.gallery ?? []).filter((g) => safeUrl(g.image)).slice(5, 11);
+  // Photos without a caption make the strip above the footer (the reference's Instagram row).
+  const strip = (site?.gallery ?? []).filter((g) => safeUrl(g.image) && !g.title.trim()).slice(0, 6);
   const pages = (shop.pages ?? []).filter((p) => !p.hidden);
   return (
     <footer className="ld-foot">
@@ -451,8 +549,11 @@ function Home(view: View) {
   const site = data.site;
   const on = (k: string) => blockOn(data, k);
   const services = servicesOf(shop);
-  const gallery = (site?.gallery ?? []).filter((g) => safeUrl(g.image)).slice(0, 5);
-  const quotes = (site?.testimonials ?? []).filter((t) => !t.hidden).slice(0, 3);
+  const gallery = (site?.gallery ?? []).filter((g) => safeUrl(g.image) && g.title.trim()).slice(0, 8);
+  const quotes = (site?.testimonials ?? []).filter((t) => !t.hidden).slice(0, 8);
+  const logos = (site?.clients ?? []).filter((c) => safeUrl(c.image)).slice(0, 10);
+  const video = (shop.slides ?? [])[0];
+  const marks = (shop.bandItems ?? []).slice(0, 3);
   const faq = (shop.faq ?? []).filter((f) => f.q.trim() && f.a.trim()).slice(0, 6);
   const products = soldProducts(shop).slice(0, 4);
   const banners = (shop.banners ?? []).filter((x) => !x.hidden).slice(0, 2);
@@ -525,12 +626,25 @@ function Home(view: View) {
                 خدمات
               </PageLink>
             </div>
-            <div className="ld-services">
-              {services.slice(0, 6).map((c, k) => (
-                <ServiceCard key={c.id} view={view} c={c} i={k} />
-              ))}
-            </div>
+            <Slider id="ld-sv" items={services.map((c, k) => <ServiceCard key={c.id} view={view} c={c} i={k} />)} show={3} />
           </div>
+        </section>
+      )}
+
+      {on("packages") && (
+        <section className="ld-wrap ld-packages">
+          <div className="ld-pack-text ld-rise">
+            <h2 className="ld-title" {...ed("site.shop.promoTitle", "text", "تیتر (کلمه‌ی بین دو * با خط دست‌نویس)")}>
+              <Fancy text={shop.promoTitle} />
+            </h2>
+            <Opt value={shop.promoText} editing={editing} edit={ed("site.shop.promoText", "multiline", "متن")}>
+              <p {...ed("site.shop.promoText", "multiline", "متن")}>{shop.promoText}</p>
+            </Opt>
+            <PageLink to="/services" link={link} className="ld-btn light">
+              مشاهده‌ی پکیج‌ها
+            </PageLink>
+          </div>
+          <Pic src={shop.newImage} path="site.shop.newImage" label="عکس پکیج‌ها" className="ld-pack-pic" />
         </section>
       )}
 
@@ -583,6 +697,21 @@ function Home(view: View) {
         </section>
       )}
 
+      {on("video") && video && safeUrl(video.image) && (
+        <section className="ld-video">
+          <Pic src={video.image} path={`${item("site.shop.slides", video.id)}.image`} label="عکس نوار ویدیو" className="ld-video-pic" />
+          {safeUrl(video.text) ? (
+            <a href={safeUrl(video.text)} {...outside(safeUrl(video.text))} className="ld-play" aria-label="پخش ویدیو">
+              <Svg name="play" />
+            </a>
+          ) : (
+            <span className="ld-play" aria-hidden="true" {...ed(`${item("site.shop.slides", video.id)}.text`, "url", "لینک ویدیو")}>
+              <Svg name="play" />
+            </span>
+          )}
+        </section>
+      )}
+
       {on("quotes") && quotes.length > 0 && (
         <section className="ld-sec ld-rose">
           <div className="ld-wrap">
@@ -592,8 +721,11 @@ function Home(view: View) {
               </h2>
               <p>ببینید مشتری‌های راضی ما چه می‌گویند</p>
             </div>
-            <div className="ld-quotes">
-              {quotes.map((t) => {
+            <Slider
+              id="ld-qt"
+              dots
+              className="ld-quotes"
+              items={quotes.map((t) => {
                 const at = item("site.testimonials", t.id);
                 const face = safeUrl(t.image);
                 return (
@@ -607,7 +739,7 @@ function Home(view: View) {
                   </figure>
                 );
               })}
-            </div>
+            />
           </div>
         </section>
       )}
@@ -620,7 +752,12 @@ function Home(view: View) {
               <Fancy text={shop.discountTitle} />
             </h2>
           </div>
-          <Gallery view={view} items={gallery} />
+          <Slider id="ld-gl" show={5} className="ld-gal-slider" items={gallery.map((g) => (
+            <ZoomOpen key={g.id} id={g.id} className="ld-gal">
+              <img src={safeUrl(g.image)} alt={g.title} loading="lazy" {...ed(`${item("site.gallery", g.id)}.image`, "image", "عکس گالری")} />
+              {g.title && <span {...ed(`${item("site.gallery", g.id)}.title`, "text", "متن روی عکس")}>{g.title}</span>}
+            </ZoomOpen>
+          ))} />
         </section>
       )}
 
@@ -638,6 +775,34 @@ function Home(view: View) {
               تماس با ما
             </PageLink>
           </div>
+        </section>
+      )}
+
+      {on("quality") && (
+        <section className="ld-split ld-quality">
+          <div className="ld-split-text ld-rise">
+            <h2 className="ld-title" {...ed("site.contactTitle", "text", "تیتر (کلمه‌ی بین دو * با خط دست‌نویس)")}>
+              <Fancy text={site?.contactTitle} />
+            </h2>
+            <Opt value={site?.styleText} editing={editing} edit={ed("site.styleText", "multiline", "متن")}>
+              <div className="ld-body" {...ed("site.styleText", "multiline", "متن")}>
+                <Para text={site?.styleText} />
+              </div>
+            </Opt>
+            {marks.length > 0 && (
+              <ul className="ld-marks">
+                {marks.map((m, k) => (
+                  <li key={k}>
+                    <svg viewBox="0 0 40 40" aria-hidden="true">
+                      <path d={MARKS[k % MARKS.length]} />
+                    </svg>
+                    <span {...ed(`site.shop.bandItems[${k}]`, "text", "عنوان")}>{m}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <Pic src={site?.signatureImage} path="site.signatureImage" label="عکس کنار متن" className="ld-split-pic" />
         </section>
       )}
 
@@ -663,6 +828,36 @@ function Home(view: View) {
           <div className="kf-grid">
             {products.map((p, k) => (
               <ProductCard key={p.id} view={view} p={p} i={k} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {on("rating") && (
+        <section className="ld-sec ld-wrap ld-rating">
+          <Stars n={5} />
+          <Opt value={site?.bandText} editing={editing} edit={ed("site.bandText", "text", "جمله‌ی بزرگ")}>
+            <blockquote className="ld-rise" {...ed("site.bandText", "text", "جمله‌ی بزرگ")}>
+              «{site?.bandText}»
+            </blockquote>
+          </Opt>
+          <Opt value={shop.discoverTitle} editing={editing} edit={ed("site.shop.discoverTitle", "text", "خط امتیاز")}>
+            <p {...ed("site.shop.discoverTitle", "text", "خط امتیاز")}>{shop.discoverTitle}</p>
+          </Opt>
+          <PageLink to="/appointment" link={link} className="ld-btn line">
+            رزرو نوبت
+          </PageLink>
+        </section>
+      )}
+
+      {on("logos") && logos.length > 0 && (
+        <section className="ld-wrap ld-logos-block">
+          <Kicker>رسانه‌هایی که درباره‌ی ما نوشته‌اند</Kicker>
+          <div className="ld-logos">
+            {logos.map((c) => (
+              <span key={c.id} className="ld-logo-item" title={c.name} {...ed(`${item("site.clients", c.id)}.image`, "image", "لوگو")}>
+                <img src={safeUrl(c.image)} alt={c.name} loading="lazy" />
+              </span>
             ))}
           </div>
         </section>
@@ -939,7 +1134,7 @@ function PageTop({ view, kicker, title, text, src, path, label }: { view: View; 
 function About(view: View) {
   const { ctx, editing } = view;
   const site = ctx.data.site;
-  const gallery = (site?.gallery ?? []).filter((g) => safeUrl(g.image)).slice(0, 5);
+  const gallery = (site?.gallery ?? []).filter((g) => safeUrl(g.image) && g.title.trim()).slice(0, 5);
   return (
     <>
       <PageTop view={view} kicker="درباره‌ی ما" title="چرا *ما* بهترینیم؟" text={site?.contactText} src={site?.signatureImage} path="site.signatureImage" />
@@ -1279,13 +1474,15 @@ export function ladivaSample(locale: ResumeData["locale"]): ResumeData {
       aboutCaption: "فضایی برای شما",
       aboutTitle: "مراقبت‌های زیبایی *مخصوص* شما",
       aboutText: "بیایید سفری به سوی آرامش و خودباوری را آغاز کنیم. شما سزاوار بهترین حس و بهترین ظاهر هستید و ما با خدماتی متنوع در کنارتان هستیم؛ از مراقبت مو تا ناخن و میکاپ، همه را این‌جا انجام می‌دهیم.\nاین فضا را با فکر شما ساخته‌ایم تا آرام و دلنشین باشد؛ زمانی که این‌جا می‌گذرانید، زمان استراحت است.",
-      aboutImage: img("home5"),
+      aboutImage: img("i2"),
       styleTitle: "هیچ چیز مثل یک *مانیکور* تازه حالتان را خوب نمی‌کند",
       styleText: "تیم ما از آرایشگران و متخصص‌هایی تشکیل شده که سال‌ها تجربه دارند و هر سال در دوره‌های تازه شرکت می‌کنند.\nما فقط از محصولات معتبر، ارگانیک و بی‌خطر استفاده می‌کنیم و همه‌ی وسایل پس از هر مشتری استریل می‌شوند؛ چون سلامت شما برایمان از هر چیزی مهم‌تر است.",
-      contactTitle: "از محصولات *باکیفیت* استفاده می‌کنیم",
+      contactTitle: "فقط از محصولات باکیفیتی استفاده می‌کنیم که به آن‌ها *اعتماد* دارید",
+      bandText: "سالن زیبایی بهتری از این در شهر پیدا نمی‌کنید.",
+      clients: Array.from({ length: 10 }, (_, k) => ({ id: `lg${k + 1}`, name: `رسانه‌ی ${k + 1}`, image: sampleImage(`ld-logo${k + 1}`, "png") })),
       contactText: "این‌جاییم تا به شما خدمت کنیم؛ همان‌طور که شما زیبایی‌تان را به ما می‌سپارید. بیایید با هم تصویری را که در ذهن دارید به واقعیت تبدیل کنیم.",
       heroImage: img("hero2"),
-      accentImage: img("home3"),
+      accentImage: img("p4"),
       signatureImage: img("s6"),
       address: "تهران، خیابان ولیعصر، بالاتر از پارک ساعی، پلاک ۴۵",
       contactNote: "شنبه تا پنجشنبه: ۹ تا ۲۰\nجمعه: تعطیل",
@@ -1296,6 +1493,8 @@ export function ladivaSample(locale: ResumeData["locale"]): ResumeData {
         { id: "g3", title: "حالت‌دهی مو", image: img("g3") },
         { id: "g4", title: "میکاپ", image: img("g4") },
         { id: "g5", title: "کاشت ناخن", image: img("g5") },
+        { id: "g6", title: "شینیون توسط سارا", image: img("p1") },
+        { id: "g7", title: "رنگ مو توسط نگار", image: img("p2") },
         { id: "i1", title: "", image: img("i1") },
         { id: "i2", title: "", image: img("i2") },
         { id: "i3", title: "", image: img("i3") },
@@ -1307,6 +1506,8 @@ export function ladivaSample(locale: ResumeData["locale"]): ResumeData {
         { id: "t1", name: "سینا ل.", image: img("av1"), text: "عاشق این سالن شدم! پدیکور لوکسشان فوق‌العاده است؛ لاکی که زدند تقریباً شش هفته ماند و هنوز براق است." },
         { id: "t2", name: "آمنه ر.", image: img("av2"), text: "تصادفی پیدایش کردم و چه خوب که آمدم. برخوردشان گرم است و کیفیت کارشان بی‌نظیر؛ روی شکل ناخن خیلی وسواس دارم و راضی بیرون آمدم." },
         { id: "t3", name: "مهسا ک.", image: img("av3"), text: "اگر می‌شد صد ستاره می‌دادم! بهداشت را کامل رعایت می‌کنند و ناخن ژلم سه هفته بی‌نقص ماند." },
+        { id: "t4", name: "هانیه ج.", image: img("av1"), text: "سالن زیبا و دلنشینی است و حال‌وهوای آرامی دارد. هایلایتم دقیقاً همان شد که می‌خواستم." },
+        { id: "t5", name: "نازنین م.", image: img("av2"), text: "میکاپ عروسی‌ام را این‌جا انجام دادم؛ تا آخر شب بی‌نقص ماند و همه از عکس‌ها تعریف کردند." },
       ],
       shop: {
         heroTitle: "زیبایی شما،\n*از* سر تا پا",
@@ -1314,13 +1515,19 @@ export function ladivaSample(locale: ResumeData["locale"]): ResumeData {
         heroImage: img("hero1"),
         newTitle: "طیفی از خدمات *زیبایی* باکیفیت",
         bestTitle: "راهنمای قیمت",
+        promoTitle: "پکیج‌های زیبایی *همه‌کاره*",
+        promoText: "این فضا را با فکر شما ساخته‌ایم تا آرام و دلنشین باشد. با پکیج‌های ما مو، ناخن و پوستتان را در یک روز به ما بسپارید و فقط استراحت کنید.",
+        newImage: img("home5"),
+        discoverTitle: "امتیاز ۴٫۸ بر اساس بیش از ۱۰۰۰ نظر",
+        bandItems: ["ارگانیک", "بدون مواد سمی", "سازگار با طبیعت"],
+        slides: [{ id: "vd1", title: "ویدیوی سالن", image: img("wide"), text: "" }],
         bestText: "قیمت‌های ثابت و شفاف برای همه‌ی خدمات زیبایی ما",
         discountTitle: "زیبایی شما *اولویت* ماست",
         showcaseTitle: "محصولات *حرفه‌ای*",
         showcaseText: "محصولات مورد علاقه‌تان را از فروشگاه آنلاین ما بخرید.",
         lookImage: img("home6"),
-        discoverImage: img("p5"),
-        trendImage: img("appt"),
+        discoverImage: img("s4"),
+        trendImage: img("p3"),
         stats: [
           { id: "st1", value: "۵٬۰۰۰+", label: "مشتری راضی در سال", text: "متخصص‌های ما با خدمات متنوع کاری می‌کنند که حس و ظاهرتان عالی باشد." },
           { id: "st2", value: "۱۳۲۵", label: "طرح ناخن منحصربه‌فرد", text: "هر طرحی که دوست دارید را می‌توانیم اجرا کنیم یا طرحی تازه برایتان بسازیم." },
@@ -1449,8 +1656,9 @@ const css = /* css */ `
 .ld-nav a:hover::after, .ld-nav a[aria-current="page"]::after { transform: scaleX(1); }
 .ld-logo { display: grid; justify-items: center; line-height: 1; }
 .ld-logo img { display: block; height: 52px; width: auto; }
-.ld-logo b { font-family: "Ld Nastaliq", var(--ld-head); font-size: 40px; font-weight: 400; line-height: 1.2; }
-.ld-logo small { margin-top: -2px; font-size: 10px; letter-spacing: .2em; }
+.ld-logo { gap: 6px; }
+.ld-logo b { display: block; height: 46px; overflow: visible; font-family: "Ld Nastaliq", var(--ld-head); font-size: 34px; font-weight: 400; line-height: 1.35; }
+.ld-logo small { position: relative; padding-top: 6px; border-top: 1px solid currentColor; font-size: 10px; letter-spacing: .25em; line-height: 1; opacity: .85; }
 .ld-tools { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
 .ld-book { height: 42px; margin-inline-start: 10px; padding: 0 22px; }
 .ld-home .ld-book { border-color: #fff; color: #fff !important; }
@@ -1461,17 +1669,20 @@ const css = /* css */ `
 .ld-hero { position: relative; display: grid; grid-template-columns: 1fr 1fr; min-height: clamp(560px, 56cqi, 860px); color: #fff; isolation: isolate; }
 .ld-hero-pic { display: block; overflow: hidden; }
 .ld-hero-pic img { display: block; width: 100%; height: 100%; object-fit: cover; animation: ld-zoom 1.8s cubic-bezier(.2, .8, .2, 1) both; }
-.ld-hero::after { content: ""; position: absolute; inset: 0; z-index: 0; background: linear-gradient(rgb(0 0 0 / .32), rgb(0 0 0 / .12) 40%, rgb(0 0 0 / .22)); pointer-events: none; }
+.ld-hero::after { content: ""; position: absolute; inset: 0; z-index: 0; background: radial-gradient(ellipse at center, rgb(0 0 0 / .32), rgb(0 0 0 / .1) 70%), linear-gradient(rgb(0 0 0 / .3), transparent 30%); pointer-events: none; }
 @keyframes ld-zoom { from { transform: scale(1.08); } }
 .ld-hero-text { position: absolute; inset: 0; z-index: 1; display: grid; place-content: center; justify-items: center; gap: 20px; padding: 120px 24px 40px; text-align: center; }
-.ld-hero h1 { white-space: pre-line; font-family: var(--ld-head); font-size: clamp(48px, 7cqi, 104px); font-weight: 400; line-height: 1.1; text-shadow: 0 2px 30px rgb(0 0 0 / .2); animation: ld-up 1.1s .2s cubic-bezier(.2, .8, .2, 1) both; }
-.ld-hero p { max-width: 460px; font-size: 16px; line-height: 2; animation: ld-up 1.1s .35s cubic-bezier(.2, .8, .2, 1) both; }
+.ld-hero h1 { white-space: pre-line; font-family: var(--ld-head); font-size: clamp(54px, 8.6cqi, 124px); font-weight: 400; line-height: 1.02; text-shadow: 0 2px 30px rgb(0 0 0 / .2); animation: ld-up 1.1s .2s cubic-bezier(.2, .8, .2, 1) both; }
+.ld-hero p { max-width: 460px; margin-top: 6px; font-size: 16px; line-height: 2; text-shadow: 0 1px 12px rgb(0 0 0 / .45); animation: ld-up 1.1s .35s cubic-bezier(.2, .8, .2, 1) both; }
 .ld-hero .ld-round { margin-top: 10px; animation: ld-up 1.1s .5s cubic-bezier(.2, .8, .2, 1) both; }
 @keyframes ld-up { from { opacity: 0; transform: translateY(26px); } }
 
 /* Quick booking strip under the hero */
-.ld-quick { padding-block: 34px; background: var(--ld-cream); }
-.ld-form-row { grid-template-columns: 1fr 1fr 1fr auto !important; align-items: end; }
+.ld-quick { position: relative; z-index: 2; margin-top: -60px; }
+.ld-quick .ld-wrap { max-width: 1100px; }
+.ld-form-row { grid-template-columns: 1fr 1fr 1fr 220px !important; align-items: end; gap: 30px !important; padding: 36px 40px; background: var(--ld-cream); box-shadow: 0 30px 60px -40px rgb(0 0 0 / .45); }
+.ld-form-row > .ld-btn { border-color: var(--ld-ink); background: transparent; color: var(--ld-ink) !important; }
+.ld-form-row > .ld-btn:hover { background: var(--ld-ink); color: #fff !important; }
 .ld-form-row .ld-field:has(textarea) { display: none; }
 .ld-form-row .ld-full { grid-column: auto; }
 .ld-form-row > .ld-btn { justify-self: stretch; }
@@ -1505,13 +1716,13 @@ const css = /* css */ `
 .ld .ld-service { position: relative; display: block; aspect-ratio: 4 / 5; overflow: hidden; color: #fff; }
 .ld-service-pic { position: absolute; inset: 0; }
 .ld-service-pic img { width: 100%; height: 100%; object-fit: cover; transition: transform 1.2s cubic-bezier(.2, .8, .2, 1); }
-.ld-service::after { content: ""; position: absolute; inset: 0; background: linear-gradient(transparent 40%, rgb(0 0 0 / .62)); }
+.ld .ld-service::after { content: ""; position: absolute; inset: 0; background: linear-gradient(transparent 30%, rgb(0 0 0 / .75)); }
 .ld-service:hover .ld-service-pic img { transform: scale(1.07); }
 .ld-from { position: absolute; top: 18px; inset-inline-start: 18px; z-index: 1; padding: 4px 12px; border-radius: 20px; background: var(--ld-green); font-size: 11px; font-weight: 700; }
 .ld-service-text { position: absolute; inset-inline: 24px; bottom: 24px; z-index: 1; display: grid; justify-items: start; gap: 10px; }
-.ld-service-text b { font-family: var(--ld-head); font-size: 30px; font-weight: 400; }
-.ld-service-text small { font-size: 13px; line-height: 1.8; opacity: .9; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.ld-service-text .ld-btn { height: 38px; padding: 0 18px; border-color: #fff; background: transparent; color: #fff !important; }
+.ld-service-text b { font-family: var(--ld-head); font-size: 36px; font-weight: 400; line-height: 1.2; }
+.ld-service-text small { font-size: 14px; line-height: 1.8; opacity: .9; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ld-service-text .ld-btn { height: 44px; padding: 0 24px; border-color: #fff; background: transparent; color: #fff !important; }
 .ld-service:hover .ld-btn { background: #fff; color: var(--ld-ink) !important; }
 
 /* Photo beside text (numbers, about) */
@@ -1527,11 +1738,11 @@ const css = /* css */ `
 
 /* Price guide: a picture and a list per service */
 .ld-prices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px; }
-.ld-price-card { display: grid; grid-template-columns: 2fr 3fr; min-height: 360px; }
+.ld-price-card { display: grid; grid-template-columns: 1fr 2fr; min-height: 380px; }
 .ld-price-pic { height: 100%; }
 .ld-price-list { display: grid; align-content: center; gap: 24px; padding: 36px 34px; background: var(--ld-cream); }
 .ld-price-card.green .ld-price-list { background: var(--ld-green); color: #fff; }
-.ld-price-list h3 { font-family: var(--ld-head); font-size: 30px; font-weight: 400; }
+.ld-price-list h3 { font-family: var(--ld-head); font-size: 38px; font-weight: 400; }
 .ld-rows { display: grid; padding: 0; list-style: none; }
 .ld-rows li { display: flex; align-items: baseline; gap: 10px; padding-block: 12px; border-bottom: 1px solid rgb(0 0 0 / .08); font-size: 14px; }
 .ld-price-card.green .ld-rows li { border-color: rgb(255 255 255 / .18); }
@@ -1539,9 +1750,7 @@ const css = /* css */ `
 .ld-rows b { font-weight: 600; white-space: nowrap; }
 
 /* Reviews on rose */
-.ld-quotes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .ld-quote { display: grid; justify-items: center; align-content: start; gap: 18px; padding: 10px 34px; text-align: center; }
-.ld-quote + .ld-quote { border-inline-start: 1px solid rgb(255 255 255 / .3); }
 .ld-stars { color: #fff; font-size: 16px; letter-spacing: 3px; }
 .ld-quote blockquote { margin: 0; font-size: 15px; line-height: 2; }
 .ld-face { display: block; width: 66px; height: 66px; border: 2px solid #fff; border-radius: 50%; overflow: hidden; }
@@ -1572,9 +1781,9 @@ const css = /* css */ `
 .ld-banner-pic { position: absolute; inset: 0; }
 .ld-banner-pic img { transition: transform 1.2s cubic-bezier(.2, .8, .2, 1); }
 .ld-banner:hover .ld-banner-pic img { transform: scale(1.06); }
-.ld-banner::after { content: ""; position: absolute; inset: 0; background: rgb(0 0 0 / .25); }
+.ld .ld-banner::after { content: ""; position: absolute; inset: 0; background: rgb(30 20 20 / .42); }
 .ld-banner-text { position: absolute; inset: 0; z-index: 1; display: grid; place-content: center; justify-items: center; gap: 20px; }
-.ld-banner-text b { font-family: var(--ld-head); font-size: clamp(30px, 3.4cqi, 46px); font-weight: 400; }
+.ld-banner-text b { font-family: var(--ld-head); font-size: clamp(34px, 4.2cqi, 58px); font-weight: 400; text-shadow: 0 2px 20px rgb(0 0 0 / .35); }
 
 /* Blog cards */
 .ld-posts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 30px; }
@@ -1663,9 +1872,9 @@ const css = /* css */ `
 .ld-foot-cols { display: grid; grid-template-columns: 1fr 1fr 1.4fr; gap: 40px; }
 .ld-foot-cols .ld-logo { justify-items: start; }
 .ld-foot-cols .ld-kicker { margin-bottom: 18px; }
-.ld-foot-links { display: grid; gap: 10px; font-size: 14px; }
+.ld-foot-links { display: grid; gap: 12px; font-size: 15px; }
 .ld-foot-links a:hover, .ld-foot-contact a:hover { color: var(--ld-rose); }
-.ld-foot-contact { display: grid; align-content: start; gap: 12px; font-size: 14px; line-height: 1.9; }
+.ld-foot-contact { display: grid; align-content: start; gap: 12px; font-size: 15px; line-height: 1.9; }
 .ld-foot-contact p { white-space: pre-line; }
 .ld-foot-phone { display: inline-flex; align-items: center; gap: 8px; font-size: 18px; }
 .ld-news { display: grid; gap: 16px; }
@@ -1686,6 +1895,74 @@ const css = /* css */ `
 .kf-look .kf-gal-p { background: #fff; border: 1px solid var(--ld-line); }
 .kf-look .kf-tag { border-radius: 20px; background: var(--ld-green); font-size: 11px; }
 .kf-look .kf-tag.dark { background: var(--ld-rose); }
+.kf-look .sk-stars svg.on, .kf-look .sk-stars svg.half { fill: var(--ld-rose); color: var(--ld-rose); }
+.ld-stars { color: var(--ld-rose); }
+.ld-rose .ld-stars { color: #fff; }
+
+/* Slider (radios, no scripts) */
+.ld-sl { position: relative; }
+.ld-sl-radio { position: absolute; opacity: 0; pointer-events: none; }
+.ld-sl-view { overflow: hidden; }
+.ld-sl-track { --s: 0; --gap: 26px; display: flex; gap: var(--gap); transform: translateX(calc(var(--s) * (100% + var(--gap)) / var(--show))); transition: transform .7s cubic-bezier(.2, .8, .2, 1); }
+.ld-sl-cell { flex: 0 0 calc((100% - (var(--show) - 1) * var(--gap)) / var(--show)); min-width: 0; }
+.ld-sl-nav label { display: none; }
+.ld-sl-arrow { position: absolute; top: 50%; z-index: 3; place-items: center; width: 50px; height: 50px; margin-top: -25px; border-radius: 50%; background: var(--ld-rose); color: #fff; cursor: pointer; box-shadow: 0 10px 24px -10px rgb(0 0 0 / .4); transition: transform .3s; }
+.ld-sl-arrow:hover { transform: scale(1.08); }
+.ld-sl-prev { inset-inline-start: -22px; }
+.ld-sl-next { inset-inline-end: -22px; }
+.ld-sl-prev .ld-ico { transform: scaleX(-1); }
+.ld-sl-dots { display: flex; justify-content: center; gap: 10px; margin-top: 40px; }
+.ld-sl-dots label { width: 9px; height: 9px; border: 1px solid currentColor; border-radius: 50%; cursor: pointer; }
+.ld-quotes .ld-sl-cell + .ld-sl-cell .ld-quote { border-inline-start: 1px solid rgb(255 255 255 / .3); }
+.ld-quotes .ld-sl-arrow { display: none !important; }
+.ld-gal-slider { padding-inline: 14px; }
+.ld-gal-slider .ld-sl-track { --gap: 14px; }
+.ld-gal-slider .ld-sl-prev { inset-inline-start: 30px; }
+.ld-gal-slider .ld-sl-next { inset-inline-end: 30px; }
+
+/* Header: the services list under "services" */
+.ld-drop { position: relative; }
+.ld-drop > a { display: inline-flex; align-items: center; gap: 4px; }
+.ld-drop-ico { width: 14px; height: 14px; }
+.ld-drop-list { position: absolute; top: 100%; inset-inline-start: -20px; z-index: 40; display: grid; min-width: 220px; padding: 14px 0; background: #fff; color: var(--ld-ink); box-shadow: 0 24px 50px -24px rgb(0 0 0 / .35); opacity: 0; visibility: hidden; transform: translateY(10px); transition: opacity .25s, transform .25s, visibility .25s; }
+.ld-drop:hover .ld-drop-list, .ld-drop:focus-within .ld-drop-list { opacity: 1; visibility: visible; transform: none; }
+.ld-nav .ld-drop-list a { padding: 9px 24px; font-size: 14px; }
+.ld-nav .ld-drop-list a::after { display: none; }
+.ld-nav .ld-drop-list a:hover, .ld-nav .ld-drop-list a[aria-current="page"] { color: var(--ld-rose); }
+
+/* Packages: a green panel beside a photo */
+.ld-packages { display: grid; grid-template-columns: 1fr 1fr; padding-block: 110px 0; }
+.ld-pack-text { display: grid; align-content: center; justify-items: start; gap: 24px; padding: 70px clamp(24px, 5cqi, 80px); background: var(--ld-green); color: #fff; }
+.ld-pack-text p { line-height: 2; opacity: .92; }
+.ld-pack-pic { min-height: 520px; }
+
+/* Video band */
+.ld-video { position: relative; display: grid; place-items: center; margin-top: 110px; }
+.ld-video-pic { width: 100%; height: clamp(320px, 38cqi, 560px); }
+.ld .ld-play { position: absolute; display: grid; place-items: center; width: 96px; height: 96px; border: 1px solid #fff; border-radius: 50%; background: rgb(255 255 255 / .18); color: #fff; backdrop-filter: blur(4px); transition: transform .4s, background .3s; }
+.ld .ld-play:hover { transform: scale(1.08); background: rgb(255 255 255 / .3); }
+.ld-play .ld-ico { width: 30px; height: 30px; fill: currentColor; stroke: none; }
+.ld-video + .ld-rose { margin-top: 0; }
+
+/* "Quality products" with three line icons */
+.ld-quality { margin-top: 0; }
+.ld-quality .ld-split-text { background: var(--ld-blush); }
+.ld-marks { display: flex; flex-wrap: wrap; gap: 40px; margin-top: 10px; padding: 0; list-style: none; }
+.ld-marks li { display: grid; justify-items: center; gap: 10px; font-size: 12px; font-weight: 600; letter-spacing: .04em; }
+.ld-marks svg { width: 44px; height: 44px; fill: none; stroke: var(--ld-ink); stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Big rating line */
+.ld-rating { display: grid; justify-items: center; gap: 24px; text-align: center; }
+.ld-rating .ld-stars { color: var(--ld-ink); font-size: 22px; }
+.ld-rating blockquote { max-width: 16em; margin: 0; font-family: var(--ld-head); font-size: clamp(30px, 4cqi, 52px); line-height: 1.4; }
+.ld-rating p { color: var(--ld-muted); }
+
+/* Press logos */
+.ld-logos-block { display: grid; justify-items: center; gap: 30px; padding-bottom: 110px; }
+.ld-logos { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 40px 50px; align-items: center; width: 100%; }
+.ld-logo-item { display: grid; place-items: center; }
+.ld-logo-item img { max-width: 100%; max-height: 56px; opacity: .85; transition: opacity .3s; }
+.ld-logo-item:hover img { opacity: 1; }
 
 /* Gentle reveal while scrolling, where supported */
 @supports (animation-timeline: view()) {
@@ -1714,7 +1991,7 @@ const css = /* css */ `
   .ld-bar-in { min-height: 70px; grid-template-columns: auto 1fr auto; }
   .ld-nav, .ld-book { display: none; }
   .ld-logo { justify-self: center; }
-  .ld-logo b { font-size: 32px; }
+  .ld-logo b { height: 40px; font-size: 30px; }
   .ld-burger { display: block; }
   .ld-burger summary { display: grid; place-items: center; width: 40px; height: 40px; list-style: none; cursor: pointer; }
   .ld-burger summary::-webkit-details-marker { display: none; }
@@ -1747,8 +2024,25 @@ const css = /* css */ `
   .ld-price-pic { aspect-ratio: 16 / 10; }
   .ld-price-list { padding: 28px 20px; }
   .ld-stat { grid-template-columns: 1fr; gap: 10px; }
-  .ld-quotes { grid-template-columns: 1fr; gap: 40px; }
-  .ld-quote + .ld-quote { border: 0; padding-top: 40px; border-top: 1px solid rgb(255 255 255 / .3); }
+  .ld-sl { --show: 1 !important; }
+  .ld-sl-prev { inset-inline-start: 6px; }
+  .ld-sl-next { inset-inline-end: 6px; }
+  .ld-quotes .ld-sl-cell + .ld-sl-cell .ld-quote { border: 0; }
+  .ld-gal-slider .ld-sl-cell { flex-basis: 78%; }
+  .ld-quick { margin-top: 0; }
+  .ld-quick .ld-wrap { padding: 0; }
+  .ld-form-row { padding: 30px 18px; box-shadow: none; }
+  .ld-packages { grid-template-columns: 1fr; padding-top: 70px; }
+  .ld-pack-pic { min-height: 340px; }
+  .ld-video { margin-top: 70px; }
+  .ld-play { width: 72px; height: 72px; }
+  .ld-logos { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 26px; }
+  .ld-logos-block { padding-bottom: 70px; }
+  .ld-marks { gap: 26px; }
+  .ld-drop-list { display: none; }
+  .ld-drawer .ld-drop { display: grid; }
+  .ld-drawer .ld-drop-list { position: static; display: grid; min-width: 0; padding: 0 0 8px; box-shadow: none; opacity: 1; visibility: visible; transform: none; }
+  .ld-drawer .ld-drop-list a { padding: 9px 20px; border: 0; color: var(--ld-muted); font-size: 13px; }
   .ld-gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ld-gallery > :nth-child(n + 4) { display: block; }
   .ld-gallery > :nth-child(n + 5) { display: none; }
