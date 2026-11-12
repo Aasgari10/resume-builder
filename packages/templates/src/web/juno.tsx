@@ -1792,7 +1792,7 @@ export function junoSample(locale: ResumeData["locale"]): ResumeData {
   ];
   return {
     ...base,
-    basics: { ...base.basics, fullName: "Juno", jobTitle: "اسباب‌بازی و سرگرمی", avatarUrl: png("logo"), email: "info@example.com", phone: "1 800 458 56 97", location: "شنبه تا پنجشنبه، ۹ تا ۲۱", summary: "فروشگاه اسباب‌بازی جونو؛ اسباب‌بازی‌های شاد، آموزشی و بی‌خطر برای همه‌ی سنین، با ارسال سریع به سراسر کشور.",
+    basics: { ...base.basics, fullName: "Juno", jobTitle: "اسباب‌بازی و سرگرمی", avatarUrl: png("logo"), email: "info@example.com", phone: "1 800 458 56 97", location: "شنبه تا پنجشنبه، ۹ تا ۲۱", summary: "فروشگاه اسباب‌بازی جونو؛ اسباب‌بازی‌های شاد، آموزشی و بی‌خطر برای همه‌ی سنین. هر محصول را پیش از فروش خودمان امتحان می‌کنیم، بسته‌بندی کادویی رایگان داریم و سفارش‌ها را با ارسال سریع به سراسر کشور می‌فرستیم.",
       links: [
         { id: "sl1", type: "instagram", url: "https://instagram.com/example" },
         { id: "sl2", type: "telegram", url: "https://t.me/example" },
@@ -2021,9 +2021,8 @@ ${Array.from({ length: n }, (_, k) => `.jn-n${n} .jn-auto:checked ~ .jn-slides >
 .jn-slide:only-child .jn-say > *, ${[1, 2, 3, 4, 5].map((n) => `.jn-dot:nth-of-type(${n}):checked ~ .jn-slides > .jn-slide:nth-child(${n}) .jn-say > *`).join(", ")} { opacity: 1; transform: none; }
 .jn-auto:checked ~ .jn-slides .jn-say > * { opacity: 1; transform: none; }
 @keyframes jn-float { 50% { transform: translateY(-10px) rotate(-1.5deg); } }
-.jn-bear { position: absolute; bottom: -6px; inset-inline-end: 8%; z-index: 2; width: clamp(84px, 11.5cqi, 150px); transform-origin: bottom center; animation: jn-wave 3.2s ease-in-out infinite; }
+.jn-bear { position: absolute; bottom: -6px; inset-inline-end: 8%; z-index: 2; width: clamp(84px, 11.5cqi, 150px); }
 .jn-bear img { display: block; width: 100%; }
-@keyframes jn-wave { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg) translateY(-6px); } }
 .jn-dots { position: absolute; bottom: 18px; left: 50%; translate: -50% 0; z-index: 3; display: flex; gap: 8px; }
 .jn-dots label { width: 10px; height: 10px; border-radius: 50%; background: rgb(255 255 255 / .6); box-shadow: 0 0 0 1px rgb(0 0 0 / .1); cursor: pointer; transition: width .3s, background .3s; }
 ${[1, 2, 3, 4, 5].map((n) => `.jn-dot:nth-of-type(${n}):checked ~ .jn-dots label:nth-child(${n})`).join(", ")}, .jn-auto:checked ~ .jn-dots label:first-child { width: 26px; border-radius: 5px; background: var(--jn-blue); }
@@ -2145,7 +2144,7 @@ ${[1, 2, 3, 4, 5, 6].map((n) => `.jn-dot:nth-of-type(${n}):checked ~ .jn-qdots l
 
 /* Footer */
 .jn-foot { padding-block: 80px 26px; background: var(--jn-navy); color: #fff; }
-.jn-foot h2 { max-width: 13em; margin-bottom: 50px; font-size: clamp(26px, 3cqi, 40px); font-weight: 800; line-height: 1.4; }
+.jn-foot h2 { margin-bottom: 50px; font-size: clamp(22px, 3cqi, 40px); font-weight: 800; line-height: 1.4; }
 .jn-foot-cols { display: grid; grid-template-columns: 1.3fr 1fr 1fr 1.2fr; gap: 0; align-items: stretch; padding-bottom: 40px; border-bottom: 1px solid rgb(255 255 255 / .14); }
 .jn-foot-cols > div { display: flex; flex-direction: column; gap: 13px; padding-inline: 28px; border-inline-start: 1px solid rgb(255 255 255 / .1); font-size: 14px; }
 .jn-foot-cols > div:first-child { padding-inline-start: 0; border-inline-start: none; }
