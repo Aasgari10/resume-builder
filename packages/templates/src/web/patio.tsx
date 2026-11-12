@@ -508,7 +508,7 @@ function Home(view: View) {
       )}
 
       {on("pasta") && pasta.length > 0 && (
-        <section className="pt-sec pt-dark">
+        <section className="pt-sec">
           <div className="pt-wrap">
             <Head view={view} kicker={shop.bestText} title={shop.bestTitle} titlePath="site.shop.bestTitle" center />
             <div className="pt-pasta">
@@ -538,39 +538,39 @@ function Home(view: View) {
       {on("visit") && (
         <section className="pt-sec pt-wrap pt-split pt-split3">
           <div className="pt-split-text pt-rise">
-            <small className="pt-kicker">مشتاق دیدارتان هستیم</small>
+            <small className="pt-kicker">کجا ما را پیدا کنید</small>
             <h2>به رستوران ما سر بزنید</h2>
             <Opt value={shop.promoText} editing={editing} edit={ed("site.shop.promoText", "multiline", "متن دعوت")}>
               <div className="pt-body" {...ed("site.shop.promoText", "multiline", "متن دعوت")}>
                 <Para text={shop.promoText} />
               </div>
             </Opt>
-            <Opt value={site?.address} editing={editing} edit={ed("site.address", "text", "نشانی")}>
-              <p className="pt-contact-line">
-                <Svg name="pin" /> <span {...ed("site.address", "text", "نشانی")}>{site?.address}</span>
-              </p>
-            </Opt>
-            {data.basics.phone && (
-              <p className="pt-contact-line">
-                <Svg name="phone" />{" "}
-                <a href={`tel:${data.basics.phone.replace(/[^\d+]/g, "")}`} dir="ltr">
-                  {data.basics.phone}
-                </a>
-              </p>
-            )}
-            {data.basics.email && (
-              <p className="pt-contact-line">
-                <Svg name="mail" />{" "}
-                <a href={`mailto:${data.basics.email}`} dir="ltr">
-                  {data.basics.email}
-                </a>
-              </p>
-            )}
-            <PageLink to="/contact" link={link} className="pt-btn">
-              راه‌های ارتباط
-            </PageLink>
+            <div className="pt-visit-lines">
+              <Opt value={site?.address} editing={editing} edit={ed("site.address", "text", "نشانی")}>
+                <p {...ed("site.address", "text", "نشانی")}>{site?.address}</p>
+              </Opt>
+              {data.basics.email && (
+                <p>
+                  ایمیل:{" "}
+                  <a href={`mailto:${data.basics.email}`} dir="ltr">
+                    {data.basics.email}
+                  </a>
+                </p>
+              )}
+              {data.basics.phone && (
+                <p>
+                  تلفن:{" "}
+                  <a href={`tel:${data.basics.phone.replace(/[^\d+]/g, "")}`} dir="ltr">
+                    {data.basics.phone}
+                  </a>
+                </p>
+              )}
+            </div>
+            <a href={safeUrl(site?.mapUrl) ?? "#"} {...outside(safeUrl(site?.mapUrl))} className="pt-btn">
+              مسیریابی
+            </a>
           </div>
-          <PhotoPair view={view} pics={photos.slice(2, 4)} tall />
+          <PhotoPair view={view} pics={photos.slice(2, 4)} mode="side" />
         </section>
       )}
     </>
@@ -601,11 +601,18 @@ function sizeNames(list: Product[]): string[] | undefined {
 function Carte({ view, cats }: { view: View; cats: Shop["categories"] }) {
   const { shop, link } = view;
   const products = visible(shop);
+  // Two columns as in the reference: the lists with one price stacked, the ones with a price per size beside them.
+  const sized = cats.filter((c) => sizeNames(products.filter((p) => p.categoryId === c.id)));
+  const plain = cats.filter((c) => !sized.includes(c));
+  const half = Math.ceil(cats.length / 2);
+  const columns = sized.length && plain.length ? [plain, sized] : [cats.slice(0, half), cats.slice(half)].filter((x) => x.length);
   return (
     <section className="pt-sec pt-wrap">
       <Head view={view} kicker={shop.discoverTitle} title={shop.discountTitle} titlePath="site.shop.discountTitle" center />
       <div className="pt-carte">
-        {cats.map((c) => {
+        {columns.map((col, k) => (
+          <div key={k} className="pt-carte-side">
+        {col.map((c) => {
           const list = products.filter((p) => p.categoryId === c.id).slice(0, 6);
           const sizes = sizeNames(list);
           return (
@@ -627,6 +634,8 @@ function Carte({ view, cats }: { view: View; cats: Shop["categories"] }) {
             </div>
           );
         })}
+          </div>
+        ))}
       </div>
       <div className="pt-btns pt-center">
         <PageLink to="/shop" link={link} className="pt-btn">
@@ -643,9 +652,10 @@ function Carte({ view, cats }: { view: View; cats: Shop["categories"] }) {
 type Photo = NonNullable<ResumeData["site"]>["gallery"][number];
 
 /** Two photos, one above the other (as in the reference), each opens large. */
-function PhotoPair({ view, pics, tall }: { view: View; pics: Photo[]; tall?: boolean }) {
+/** Two photos: overlapping (stack) or side by side (side), as on the home page of the reference. */
+function PhotoPair({ view, pics, mode }: { view: View; pics: Photo[]; mode: "stack" | "side" }) {
   return (
-    <div className={`pt-pair${tall ? " pt-tall" : ""}`}>
+    <div className={`pt-pair pt-${mode}`}>
       {pics.map((g) => (
         <ZoomOpen key={g.id} id={g.id} className="pt-photo pt-rise">
           <img src={safeUrl(g.image)} alt={g.title} loading="lazy" {...ed(`${item("site.gallery", g.id)}.image`, "image", "عکس")} />
@@ -666,7 +676,7 @@ function AboutBlock({ view, pics }: { view: View; pics?: Photo[] }) {
   return (
     <section className="pt-sec pt-wrap pt-split pt-flip pt-split3">
       {pics ? (
-        <PhotoPair view={view} pics={pics} tall />
+        <PhotoPair view={view} pics={pics} mode="stack" />
       ) : (
         <div className="pt-pair">
           <Pic src={shop.lookImage} path="site.shop.lookImage" label="عکس بالا" className="pt-photo pt-rise" />
@@ -694,9 +704,15 @@ function AboutBlock({ view, pics }: { view: View; pics?: Photo[] }) {
             </div>
           </Opt>
         )}
-        <PageLink to="/reservation" link={link} className="pt-btn">
-          رزرو میز
-        </PageLink>
+        {pics ? (
+          <PageLink to="/about" link={link} className="pt-btn">
+            بیشتر بدانید
+          </PageLink>
+        ) : (
+          <PageLink to="/reservation" link={link} className="pt-btn">
+            رزرو میز
+          </PageLink>
+        )}
       </div>
     </section>
   );
@@ -1646,9 +1662,10 @@ const css = /* css */ `
 .pt-deco { justify-content: stretch; }
 .pt-deco > * { justify-self: stretch; }
 .pt-deco .pt-kicker, .pt-deco .pt-sub { display: flex; width: 100%; align-items: center; gap: 16px; }
-.pt-deco .pt-kicker::before, .pt-deco .pt-kicker::after, .pt-deco .pt-sub::before, .pt-deco .pt-sub::after { content: ""; flex: 1; width: auto; height: 1px; background: rgb(255 255 255 / .35); }
+.pt-deco .pt-kicker, .pt-deco .pt-sub { justify-content: center; }
+.pt-deco .pt-kicker::before, .pt-deco .pt-kicker::after, .pt-deco .pt-sub::before, .pt-deco .pt-sub::after { content: ""; width: 56px; height: 1px; background: currentColor; opacity: .7; }
 .pt-deco h2 { display: flex; justify-content: center; align-items: center; gap: 22px; }
-.pt-deco h2::before, .pt-deco h2::after { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.pt-deco h2::before, .pt-deco h2::after { content: "★"; font-size: .45em; }
 .pt-sub { color: var(--pt-gold); font-size: 12px; font-weight: 700; }
 .pt-head-block h2, .pt-split-text h2, .pt-contact-text h1, .pt-contact-text h2 { font-family: var(--pt-head); font-size: clamp(32px, 3.4cqi, 48px); font-weight: 500; line-height: 1.25; }
 
@@ -1723,9 +1740,9 @@ const css = /* css */ `
 
 /* Pizza menu: when the page opens the round pizzas spin fast for a few seconds and come to rest; a button per size */
 /* Pizzas: one per row, a big round pizza on one side and its text on the other */
-.pt-pizzas { display: grid; gap: 70px; }
-.pt-pizza { display: grid; grid-template-columns: minmax(0, 500px) minmax(0, 400px); justify-content: center; align-items: center; gap: clamp(30px, 5cqi, 70px); }
-.pt-pizza:nth-child(even) { grid-template-columns: minmax(0, 400px) minmax(0, 500px); }
+.pt-pizzas { display: grid; gap: 0; }
+.pt-pizza { display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 620px); justify-content: center; align-items: center; gap: clamp(30px, 5cqi, 70px); }
+.pt-pizza:nth-child(even) { grid-template-columns: minmax(0, 620px) minmax(0, 380px); }
 .pt-pizza:nth-child(even) .pt-pizza-pic { order: 0; }
 .pt-pizza-text { display: grid; justify-items: start; gap: 16px; }
 .pt-pizza-pic { order: 2; display: block; width: 100%; }
@@ -1759,7 +1776,8 @@ const css = /* css */ `
 .pt-badge { padding: 1px 7px; background: var(--pt-orange); font-size: 10px; font-style: normal; font-weight: 700; white-space: nowrap; }
 
 /* À la carte */
-.pt-carte { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px 60px; margin-bottom: 50px; }
+.pt-carte { display: grid; grid-template-columns: 1fr 1fr; gap: 50px 90px; margin-bottom: 60px; }
+.pt-carte-side { display: grid; align-content: start; gap: 50px; }
 .pt-carte-col { display: grid; align-content: start; gap: 22px; }
 .pt-carte-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
 .pt-carte-col h3 { position: relative; padding-bottom: 12px; font-size: 22px; font-weight: 800; }
@@ -1790,7 +1808,13 @@ const css = /* css */ `
 /* Two short photos stacked beside the text */
 .pt-pair { display: grid; gap: 20px; }
 .pt-pair .pt-photo, .pt-pair .pt-pic { aspect-ratio: 2 / 1; }
-.pt-pair.pt-tall .pt-photo { aspect-ratio: 4 / 3; }
+/* Home: two photos overlapping (the second lower, over the corner of the first) or side by side */
+.pt-stack { direction: ltr; grid-template-columns: 43fr 17fr 40fr; gap: 0; }
+.pt-stack > :first-child { grid-area: 1 / 1 / 2 / 3; aspect-ratio: 3 / 4; }
+.pt-stack > :nth-child(2) { grid-area: 1 / 2 / 2 / 4; z-index: 1; margin-top: 23%; aspect-ratio: 4 / 5; box-shadow: -14px 18px 40px -16px #000; }
+.pt-side { direction: ltr; grid-template-columns: 1fr 1fr; gap: 12px; }
+.pt-side .pt-photo { aspect-ratio: 7 / 10; }
+.pt-visit-lines { display: grid; gap: 6px; font-size: 14px; color: rgb(255 255 255 / .85); }
 .pt-body { color: rgb(255 255 255 / .8); font-size: 16px; line-height: 2.05; }
 .pt-body p + p { margin-top: 16px; }
 .pt-split-text { display: grid; justify-items: start; gap: 20px; }
@@ -1806,9 +1830,9 @@ const css = /* css */ `
 .pt-jump a:hover { background: var(--pt-orange); border-color: var(--pt-orange); }
 section[id^="pt-cat-"] { scroll-margin-top: 160px; }
 .pt-menu-cat { padding-block: 70px; }
-.pt-menu-cat .pt-wrap { display: grid; grid-template-columns: minmax(0, 460px) minmax(0, 620px); justify-content: center; align-items: center; gap: clamp(30px, 6cqi, 90px); }
+.pt-menu-cat .pt-wrap { display: grid; grid-template-columns: minmax(0, 570px) minmax(0, 570px); justify-content: center; align-items: center; gap: clamp(30px, 6cqi, 90px); }
 .pt-menu-cat:nth-of-type(even) .pt-cat-pic { order: 2; }
-.pt-cat-pic { display: block; width: min(100%, 460px); justify-self: center; aspect-ratio: 1; border-radius: 50%; overflow: hidden; box-shadow: 0 30px 50px -30px #000; }
+.pt-cat-pic { display: block; width: min(100%, 570px); justify-self: center; aspect-ratio: 1; border-radius: 50%; overflow: hidden; box-shadow: 0 30px 50px -30px #000; }
 .pt-cat-pic img { width: 100%; height: 100%; object-fit: cover; animation: pt-spin 2.6s cubic-bezier(.12, .7, .2, 1) both; }
 .pt-menu-text .pt-carte-head { margin-bottom: 34px; }
 .pt-cat-title { position: relative; padding-bottom: 14px; font-size: 28px; font-weight: 800; }
@@ -2045,7 +2069,10 @@ section[id^="pt-cat-"] { scroll-margin-top: 160px; }
   .pt-contact-top .pt-map { min-height: 340px; }
   .pt-hero-text h1 { font-size: 48px; }
   .pt-pair { grid-template-columns: 1fr; }
-  .pt-pair.pt-tall .pt-photo { aspect-ratio: 4 / 5; }
+  .pt-stack > :first-child, .pt-stack > :nth-child(2) { grid-area: auto; margin: 0; aspect-ratio: 4 / 5; box-shadow: none; }
+  .pt-stack { direction: inherit; gap: 14px; }
+  .pt-side { direction: inherit; gap: 14px; }
+  .pt-side .pt-photo { aspect-ratio: 4 / 5; }
   .pt-carte, .pt-menu-list { grid-template-columns: 1fr; }
   .pt-split, .pt-contact, .pt-product, .pt-foot-cols { grid-template-columns: 1fr; gap: 40px; }
   .pt-flip .pt-split-text { order: 0; }
