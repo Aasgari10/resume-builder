@@ -29,6 +29,7 @@ export const SHOWCASE_COLORS: Record<string, string> = {
   "grogin-shop": "#634C9F",
   "juno-shop": "#12AEE0",
   "kafe-site": "#BE9C79",
+  "ladiva-site": "#C38A98",
   "patio-shop": "#DD5902",
 };
 
