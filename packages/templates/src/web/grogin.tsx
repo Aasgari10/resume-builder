@@ -2558,7 +2558,7 @@ ${[1, 2, 3, 4, 5, 6].map((n) => `.gg-gallery:has(.gg-thumb:nth-child(${n}) input
 .gg-checkout h2, .gg-checkout .full, .gg-checkout .gg-error { grid-column: 1 / -1; }
 .gg-checkout label { display: grid; gap: 6px; font-size: 13px; }
 .gg-checkout input, .gg-checkout textarea { padding: 10px 12px; border: 1px solid var(--gg-line); border-radius: 6px; font: inherit; }
-.gg-trap { position: absolute; left: -9999px; }
+.gg-trap { position: absolute; inset-inline-start: 0; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }
 .gg-error { padding: 10px 14px; border-radius: 6px; background: #FEF2F2; color: var(--gg-red); }
 .gg-pay { padding: 12px 14px; border-radius: 6px; background: var(--gg-soft); font-size: 12px; line-height: 1.8; }
 .gg-thanks { display: grid; justify-items: center; gap: 14px; max-width: 520px; margin: 40px auto; text-align: center; }

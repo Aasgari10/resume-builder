@@ -1649,7 +1649,7 @@ ${[1, 2, 3, 4].map((n) => `.gs-look:has(.gs-spot:nth-of-type(${n}) input:not(:ch
 .gs-checkout label { display: grid; gap: 8px; font-size: .9em; font-weight: 600; }
 .gs-checkout input, .gs-checkout textarea { width: 100%; padding: 13px 16px; border: 1px solid var(--gs-line); border-radius: 12px; background: var(--color-bg); color: var(--gs-ink); font: inherit; font-weight: 400; transition: border-color .2s; }
 .gs-checkout input:focus, .gs-checkout textarea:focus { outline: none; border-color: var(--gs-ink); }
-.gs-trap { position: absolute; inset-inline-start: -9999px; width: 1px; height: 1px; }
+.gs-trap { position: absolute; inset-inline-start: 0; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }
 .gs-thanks { display: grid; justify-items: center; gap: 16px; padding-block: clamp(40px, 6cqi, 80px); text-align: center; }
 .gs-thanks p { max-width: 34em; line-height: 2; }
 .gs-check { width: 76px; height: 76px; display: grid; place-items: center; border-radius: 50%; background: color-mix(in srgb, #16A34A 15%, var(--color-bg)); color: #16A34A; font-size: 2.2em; animation: gs-pop .7s cubic-bezier(.2, 1.5, .4, 1) backwards; }

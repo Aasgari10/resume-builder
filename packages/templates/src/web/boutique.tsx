@@ -1687,7 +1687,7 @@ ${[1, 2, 3, 4].map((n) => `.bq-look:has(.bq-spot:nth-of-type(${n}) input:not(:ch
 .bq-checkout label { display: grid; gap: 8px; font-size: .9em; font-weight: 600; }
 .bq-checkout input, .bq-checkout textarea { width: 100%; padding: 13px 16px; border: 1px solid var(--bq-line); border-radius: 12px; background: var(--color-bg); color: var(--bq-ink); font: inherit; font-weight: 400; transition: border-color .2s; }
 .bq-checkout input:focus, .bq-checkout textarea:focus { outline: none; border-color: var(--bq-ink); }
-.bq-trap { position: absolute; inset-inline-start: -9999px; width: 1px; height: 1px; }
+.bq-trap { position: absolute; inset-inline-start: 0; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }
 .bq-thanks { display: grid; justify-items: center; gap: 16px; padding-block: clamp(40px, 6cqi, 80px); text-align: center; }
 .bq-thanks p { max-width: 34em; line-height: 2; }
 .bq-check { width: 76px; height: 76px; display: grid; place-items: center; border-radius: 50%; background: color-mix(in srgb, #16A34A 15%, var(--color-bg)); color: #16A34A; font-size: 2.2em; animation: bq-pop .7s cubic-bezier(.2, 1.5, .4, 1) backwards; }

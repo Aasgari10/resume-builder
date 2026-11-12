@@ -2405,7 +2405,7 @@ ${[1, 2, 3, 4, 5, 6].map((n) => `.jn-gallery:has(.jn-thumb:nth-child(${n}) input
 .jn-checkout h2, .jn-checkout .full, .jn-checkout .jn-error { grid-column: 1 / -1; }
 .jn-checkout label { display: grid; gap: 6px; font-size: 14px; }
 .jn-checkout input, .jn-checkout textarea { padding: 11px 14px; border: 1px solid var(--jn-line); border-radius: 14px; font: inherit; }
-.jn-trap { position: absolute; left: -9999px; }
+.jn-trap { position: absolute; inset-inline-start: 0; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }
 .jn-error { padding: 10px 14px; border-radius: 12px; background: #FEF2F2; color: #DC2626; }
 .jn-pay { padding: 12px 14px; border-radius: 14px; background: var(--jn-grey); font-size: 13px; line-height: 1.8; }
 .jn-thanks { display: grid; justify-items: center; gap: 14px; max-width: 520px; margin: 40px auto; text-align: center; }
