@@ -291,7 +291,7 @@ function Footer({ ctx, link, editing }: View) {
 
   return (
     <footer className="as-foot" id="skills">
-      <style>{rules}</style>
+      <style dangerouslySetInnerHTML={{ __html: rules }} />
       {skills.map((s, i) => (
         <input key={s.id} className="as-radio" type="radio" name={`${uid}-skill`} id={`${uid}-${i}`} defaultChecked={i === 0} />
       ))}

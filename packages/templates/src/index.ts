@@ -24,6 +24,10 @@ import { SEPID_BLOCKS, SEPID_OPTIONAL_PAGES, SepidPortfolio, sepidPages, sepidSa
 import { BOUTIQUE_BLOCKS, BoutiqueShop, boutiquePages, boutiqueSample } from "./web/boutique";
 import { GOLSARA_BLOCKS, GOLSARA_OPTIONAL_PAGES, GolsaraShop, golsaraPages, golsaraSample } from "./web/golsara";
 import { HOMEMART_BLOCKS, HomeMartShop, homemartPages, homemartSample } from "./web/homemart";
+import { PATIO_BLOCKS, PATIO_OPTIONAL_PAGES, PatioShop, patioPages, patioSample } from "./web/patio";
+import { KAFE_BLOCKS, KAFE_OPTIONAL_PAGES, KafeSite, kafePages, kafeSample } from "./web/kafe";
+import { JUNO_BLOCKS, JUNO_OPTIONAL_PAGES, JunoShop, junoPages, junoSample } from "./web/juno";
+import { GROGIN_BLOCKS, GROGIN_OPTIONAL_PAGES, GroginShop, groginPages, groginSample } from "./web/grogin";
 import type { ResumeData } from "@rb/schema";
 import type { TemplateDefinition, TemplateTag } from "./types";
 
@@ -88,6 +92,10 @@ export const PORTFOLIO_TEMPLATES: readonly TemplateDefinition[] = [
   { ...web("sepid-portfolio", "سپید", SepidPortfolio), pages: sepidPages, sample: sepidSample, optionalPages: SEPID_OPTIONAL_PAGES, blocks: SEPID_BLOCKS },
   { ...web("boutique-shop", "بوتیک (فروشگاه)", BoutiqueShop), pages: boutiquePages, sample: boutiqueSample, blocks: BOUTIQUE_BLOCKS, shop: true },
   { ...web("golsara-shop", "گل‌سرا (گل‌فروشی)", GolsaraShop), pages: golsaraPages, sample: golsaraSample, blocks: GOLSARA_BLOCKS, optionalPages: GOLSARA_OPTIONAL_PAGES, shop: true },
+  { ...web("patio-shop", "پاتیوتایم (رستوران)", PatioShop), pages: patioPages, sample: patioSample, blocks: PATIO_BLOCKS, optionalPages: PATIO_OPTIONAL_PAGES, shop: true },
+  { ...web("kafe-site", "کورتو (کافه)", KafeSite), pages: kafePages, sample: kafeSample, blocks: KAFE_BLOCKS, optionalPages: KAFE_OPTIONAL_PAGES, shop: true, menu: true },
+  { ...web("juno-shop", "جونو (اسباب‌بازی)", JunoShop), pages: junoPages, sample: junoSample, blocks: JUNO_BLOCKS, optionalPages: JUNO_OPTIONAL_PAGES, shop: true },
+  { ...web("grogin-shop", "گروگین (سوپرمارکت)", GroginShop), pages: groginPages, sample: groginSample, blocks: GROGIN_BLOCKS, optionalPages: GROGIN_OPTIONAL_PAGES, shop: true },
   { ...web("homemart-shop", "هوم‌مارت (فروشگاه لوازم خانگی)", HomeMartShop), pages: homemartPages, sample: homemartSample, blocks: HOMEMART_BLOCKS, shop: true },
   minimalPortfolio,
   web("studio-portfolio", "استودیو", StudioPortfolio),
@@ -135,6 +143,7 @@ export function resolvePage(template: TemplateDefinition, data: ResumeData, path
 const PAGE_TITLES: Record<string, Record<ResumeData["locale"], string>> = {
   "/gallery": { fa: "گالری", en: "Gallery" },
   "/about": { fa: "درباره‌ی من", en: "About" },
+  "/reservation": { fa: "رزرو میز", en: "Reservation" },
   "/resume": { fa: "رزومه", en: "Resume" },
   "/credentials": { fa: "سوابق", en: "Credentials" },
   "/works": { fa: "نمونه‌کارها", en: "Works" },
@@ -150,6 +159,10 @@ const PAGE_TITLES: Record<string, Record<ResumeData["locale"], string>> = {
   "/support": { fa: "پشتیبانی", en: "Support" },
   "/support/tickets": { fa: "تیکت‌های من", en: "My tickets" },
   "/faq": { fa: "سؤالات متداول", en: "FAQ" },
+  "/blog": { fa: "بلاگ", en: "Blog" },
+  "/team": { fa: "تیم ما", en: "Our team" },
+  "/menu": { fa: "منو", en: "Menu" },
+  "/offer": { fa: "آنچه ارائه می‌دهیم", en: "What we offer" },
 };
 
 /** Title of an inner page for the browser tab ("About", a project's name); empty for the home page. */
@@ -159,6 +172,7 @@ export function pageTitle(data: ResumeData, page: string): string {
   }
   if (page.startsWith("/product/")) return data.site?.shop?.products.find((p) => `/product/${p.id}` === page)?.name ?? "";
   if (page.startsWith("/page/")) return data.site?.shop?.pages?.find((p) => `/page/${p.slug}` === page)?.title ?? "";
+  if (page.startsWith("/blog/")) return data.site?.shop?.posts?.find((p) => `/blog/${p.id}` === page)?.title ?? "";
   if (page.startsWith("/category/")) return data.site?.shop?.categories.find((c) => `/category/${c.id}` === page)?.name ?? "";
   return PAGE_TITLES[page]?.[data.locale] ?? "";
 }

@@ -6,7 +6,7 @@
 // it), survives a page reload, and starts fresh after 30 minutes away or with "start again".
 
 import { allVariantKeys, priceCart, type CartLine, type Product, type Shop, type ShopOrderStatus, type Visitor } from "@rb/schema";
-import type { ShopCustomer, ShopCustomerDetail, ShopOrder, ShopOrderQuery, ShopProductStat, ShopReview, ShopSummary, ShopTicket } from "../../api";
+import type { ShopCustomer, ShopCustomerDetail, ShopOrder, ShopOrderQuery, ShopProductStat, ShopReview, ShopSummary, ShopTicket, ShopTrash, ShopTrashKind } from "../../api";
 
 /* ───────────── A repeatable random source ───────────── */
 
@@ -91,6 +91,13 @@ type Store = {
   tickets: (ShopTicket & { customerId?: string })[];
   /** The sample customer signed in on the preview, if any. */
   me?: string;
+  /** Deleted rows, as in the server's trash (each with the time it was deleted). */
+  trash?: {
+    orders: (ShopOrder & { deletedAt: string })[];
+    customers: (SampleCustomer & { deletedAt: string })[];
+    reviews: (Store["reviews"][number] & { deletedAt: string })[];
+    tickets: (Store["tickets"][number] & { deletedAt: string })[];
+  };
 };
 
 function makeStore(shop: Shop): Store {
@@ -299,7 +306,25 @@ export type ShopApi = {
   updateShopTicket: (resumeId: string, id: string, patch: { text?: string; status?: ShopTicket["status"] }) => Promise<{ ticket: ShopTicket }>;
   deleteShopTicket: (resumeId: string, id: string) => Promise<{ ok: true }>;
   batchShopTickets: (resumeId: string, ids: string[], action: "close" | "delete") => Promise<{ done: number }>;
+  shopTrash: (resumeId: string) => Promise<ShopTrash>;
+  restoreShopTrash: (resumeId: string, kind: ShopTrashKind, ids: string[]) => Promise<{ done: number; failed: string[] }>;
+  purgeShopTrash: (resumeId: string, kind: ShopTrashKind, ids: string[]) => Promise<{ done: number }>;
 };
+
+const TRASH_DAYS = 30;
+const trashOf = (s: Store) => (s.trash ??= { orders: [], customers: [], reviews: [], tickets: [] });
+/** Moves the rows with these ids from a list of the store to its trash; returns the rest of the list. */
+function toTrash<T extends { id: string }>(list: T[], bin: (T & { deletedAt: string })[], pick: (x: T) => boolean, at = new Date().toISOString()): T[] {
+  for (const x of list) if (pick(x)) bin.unshift({ ...x, deletedAt: at });
+  return list.filter((x) => !pick(x));
+}
+/** Takes rows back out of a trash list; returns them without the time stamp. */
+function fromTrash<T extends { id: string; deletedAt: string }>(bin: T[], pick: (x: T) => boolean): Omit<T, "deletedAt">[] {
+  const back = bin.filter(pick).map(({ deletedAt: _, ...x }) => x);
+  const keep = bin.filter((x) => !pick(x));
+  bin.splice(0, bin.length, ...keep);
+  return back;
+}
 
 const copy = <T,>(x: T): T => structuredClone(x);
 /** A list without the fields that only the sample keeps. */
@@ -374,13 +399,13 @@ export function sampleShopApi(shop: Shop): ShopApi {
     },
     batchShopOrders: async (_r, ids, status) => {
       const s = st();
-      if (status === "DELETE") s.orders = s.orders.filter((o) => !ids.includes(o.id));
+      if (status === "DELETE") s.orders = toTrash(s.orders, trashOf(s).orders, (o) => ids.includes(o.id));
       else for (const o of s.orders) if (ids.includes(o.id)) o.status = status;
       return done({ done: ids.length, failed: [] });
     },
     deleteShopOrder: async (_r, orderId) => {
       const s = st();
-      s.orders = s.orders.filter((o) => o.id !== orderId);
+      s.orders = toTrash(s.orders, trashOf(s).orders, (o) => o.id === orderId);
       return done({ ok: true as const });
     },
     shopCustomers: async () => ({
@@ -408,10 +433,12 @@ export function sampleShopApi(shop: Shop): ShopApi {
     },
     deleteShopCustomer: async (_r, cid) => {
       const s = st();
-      s.customers = s.customers.filter((x) => x.id !== cid);
-      s.reviews = s.reviews.filter((r) => r.customerId !== cid);
-      s.tickets = s.tickets.filter((t) => t.customerId !== cid);
-      for (const o of s.orders) if (o.customerId === cid) o.customerId = null;
+      // The account goes to the trash with its comments and tickets (same time stamp); its orders stay.
+      const at = new Date().toISOString();
+      const bin = trashOf(s);
+      s.customers = toTrash(s.customers, bin.customers, (x) => x.id === cid, at);
+      s.reviews = toTrash(s.reviews, bin.reviews, (r) => r.customerId === cid, at);
+      s.tickets = toTrash(s.tickets, bin.tickets, (t) => t.customerId === cid, at);
       if (s.me === cid) s.me = undefined;
       return done({ ok: true as const });
     },
@@ -426,12 +453,12 @@ export function sampleShopApi(shop: Shop): ShopApi {
     },
     deleteShopReview: async (_r, rid) => {
       const s = st();
-      s.reviews = s.reviews.filter((r) => r.id !== rid);
+      s.reviews = toTrash(s.reviews, trashOf(s).reviews, (r) => r.id === rid);
       return done({ ok: true as const });
     },
     batchShopReviews: async (_r, ids, action) => {
       const s = st();
-      if (action === "delete") s.reviews = s.reviews.filter((r) => !ids.includes(r.id));
+      if (action === "delete") s.reviews = toTrash(s.reviews, trashOf(s).reviews, (r) => ids.includes(r.id));
       else for (const r of s.reviews) if (ids.includes(r.id)) r.approved = action === "approve";
       return done({ done: ids.length });
     },
@@ -445,14 +472,67 @@ export function sampleShopApi(shop: Shop): ShopApi {
     },
     deleteShopTicket: async (_r, tid) => {
       const s = st();
-      s.tickets = s.tickets.filter((t) => t.id !== tid);
+      s.tickets = toTrash(s.tickets, trashOf(s).tickets, (t) => t.id === tid);
       return done({ ok: true as const });
     },
     batchShopTickets: async (_r, ids, action) => {
       const s = st();
-      if (action === "delete") s.tickets = s.tickets.filter((t) => !ids.includes(t.id));
+      if (action === "delete") s.tickets = toTrash(s.tickets, trashOf(s).tickets, (t) => ids.includes(t.id));
       else for (const t of s.tickets) if (ids.includes(t.id)) t.status = "CLOSED";
       return done({ done: ids.length });
+    },
+    shopTrash: async () => {
+      const bin = trashOf(st());
+      const gone = new Set(bin.customers.map((c) => c.id));
+      const own = <T extends { customerId?: string }>(x: T) => !x.customerId || !gone.has(x.customerId);
+      return copy({
+        orders: bin.orders,
+        customers: bin.customers.map((c) => ({ id: c.id, name: c.name, phone: c.phone, createdAt: c.createdAt, deletedAt: c.deletedAt, reviews: bin.reviews.filter((r) => r.customerId === c.id).length, tickets: bin.tickets.filter((t) => t.customerId === c.id).length })),
+        reviews: bare(bin.reviews.filter(own)),
+        tickets: bare(bin.tickets.filter(own)),
+        days: TRASH_DAYS,
+      });
+    },
+    restoreShopTrash: async (_r, kind, ids) => {
+      const s = st();
+      const bin = trashOf(s);
+      const gone = new Set(bin.customers.map((c) => c.id));
+      const pick = (x: { id: string; customerId?: string }) => ids.includes(x.id) && (!x.customerId || !gone.has(x.customerId));
+      let n = 0;
+      const sortDesc = <T extends { createdAt?: string; updatedAt?: string }>(list: T[]) => list.sort((a, b) => (b.updatedAt ?? b.createdAt ?? "").localeCompare(a.updatedAt ?? a.createdAt ?? ""));
+      if (kind === "orders") {
+        const back = fromTrash(bin.orders, (o) => ids.includes(o.id));
+        s.orders = sortDesc([...s.orders, ...back]);
+        n = back.length;
+      } else if (kind === "customers") {
+        for (const c of bin.customers.filter((x) => ids.includes(x.id))) {
+          const same = (x: { customerId?: string; deletedAt: string }) => x.customerId === c.id && x.deletedAt === c.deletedAt;
+          s.reviews = sortDesc([...s.reviews, ...fromTrash(bin.reviews, same)]);
+          s.tickets = sortDesc([...s.tickets, ...fromTrash(bin.tickets, same)]);
+        }
+        const back = fromTrash(bin.customers, (c) => ids.includes(c.id));
+        s.customers = sortDesc([...s.customers, ...back]);
+        n = back.length;
+      } else if (kind === "reviews") {
+        const back = fromTrash(bin.reviews, pick);
+        s.reviews = sortDesc([...s.reviews, ...back]);
+        n = back.length;
+      } else {
+        const back = fromTrash(bin.tickets, pick);
+        s.tickets = sortDesc([...s.tickets, ...back]);
+        n = back.length;
+      }
+      return done({ done: n, failed: [] });
+    },
+    purgeShopTrash: async (_r, kind, ids) => {
+      const bin = trashOf(st());
+      const before = bin[kind].length;
+      if (kind === "customers") {
+        bin.reviews = bin.reviews.filter((r) => !r.customerId || !ids.includes(r.customerId));
+        bin.tickets = bin.tickets.filter((t) => !t.customerId || !ids.includes(t.customerId));
+      }
+      (bin[kind] as { id: string }[]) = (bin[kind] as { id: string }[]).filter((x) => !ids.includes(x.id));
+      return done({ done: before - bin[kind].length });
     },
   };
 }
