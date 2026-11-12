@@ -21,7 +21,6 @@ export const PATIO_BLOCKS = [
   { key: "pizza", label: "منوی پیتزا (پیتزاهای گرد)" },
   { key: "pasta", label: "پاستای تازه" },
   { key: "carte", label: "منوی آلاکارت" },
-  { key: "photos", label: "ردیف عکس‌ها" },
   { key: "about", label: "معرفی رستوران" },
   { key: "visit", label: "به رستوران ما سر بزنید" },
   { key: "newsletter", label: "خبرنامه‌ی پایین صفحه" },
@@ -403,7 +402,7 @@ function Home(view: View) {
   const pastaCat = shop.categories.find((c) => c.id !== shop.showcaseCategoryId && cat(c.id).length);
   const pasta = cat(pastaCat?.id).slice(0, 6);
   const carte = shop.categories.filter((c) => c.id !== shop.showcaseCategoryId && c.id !== pastaCat?.id && cat(c.id).length).slice(0, 3);
-  const photos = (site?.gallery ?? []).filter((g) => safeUrl(g.image)).slice(0, 4);
+  const photos = (site?.gallery ?? []).filter((g) => safeUrl(g.image) && !g.description).slice(0, 4);
   const hero = safeUrl(shop.heroImage);
   return (
     <>
@@ -477,25 +476,10 @@ function Home(view: View) {
 
       {on("carte") && carte.length > 0 && <Carte view={view} cats={carte} />}
 
-      {on("photos") && (photos.length > 0 || editing) && (
-        <section className="pt-photos">
-          {photos.map((g) => (
-            <ZoomOpen key={g.id} id={g.id} className="pt-photo">
-              <img src={safeUrl(g.image)} alt={g.title} loading="lazy" {...ed(`${item("site.gallery", g.id)}.image`, "image", "عکس")} />
-            </ZoomOpen>
-          ))}
-          {editing && photos.length < 4 && (
-            <span className="pt-photo pt-add" {...ed("site.gallery", "newimage", "افزودن عکس")}>
-              +
-            </span>
-          )}
-        </section>
-      )}
-
-      {on("about") && <AboutBlock view={view} />}
+      {on("about") && <AboutBlock view={view} pics={photos.slice(0, 2)} />}
 
       {on("visit") && (
-        <section className="pt-sec pt-wrap pt-split">
+        <section className="pt-sec pt-wrap pt-split pt-split3">
           <div className="pt-split-text pt-rise">
             <small className="pt-kicker">رزرو میز</small>
             <h2>به رستوران ما سر بزنید</h2>
@@ -521,7 +505,7 @@ function Home(view: View) {
               راه‌های ارتباط
             </PageLink>
           </div>
-          <Pic src={site?.accentImage} path="site.accentImage" label="عکس کنار متن" className="pt-split-pic pt-rise" />
+          <PhotoPair view={view} pics={photos.slice(2, 4)} />
         </section>
       )}
     </>
@@ -560,12 +544,32 @@ function Carte({ view, cats }: { view: View; cats: Shop["categories"] }) {
   );
 }
 
-function AboutBlock({ view, withPic = true }: { view: View; withPic?: boolean }) {
+type Photo = NonNullable<ResumeData["site"]>["gallery"][number];
+
+/** Two tall photos side by side (stacked on phones), each opens large. */
+function PhotoPair({ view, pics }: { view: View; pics: Photo[] }) {
+  return (
+    <div className="pt-pair">
+      {pics.map((g) => (
+        <ZoomOpen key={g.id} id={g.id} className="pt-photo pt-rise">
+          <img src={safeUrl(g.image)} alt={g.title} loading="lazy" {...ed(`${item("site.gallery", g.id)}.image`, "image", "عکس")} />
+        </ZoomOpen>
+      ))}
+      {view.editing && pics.length < 2 && (
+        <span className="pt-photo pt-add" {...ed("site.gallery", "newimage", "افزودن عکس")}>
+          +
+        </span>
+      )}
+    </div>
+  );
+}
+
+function AboutBlock({ view, pics }: { view: View; pics?: Photo[] }) {
   const { ctx, editing, link } = view;
   const site = ctx.data.site;
   return (
-    <section className="pt-sec pt-wrap pt-split pt-flip">
-      {withPic && <Pic src={site?.aboutImage} path="site.aboutImage" label="عکس معرفی" className="pt-split-pic pt-rise" />}
+    <section className={`pt-sec pt-wrap pt-split pt-flip${pics ? " pt-split3" : ""}`}>
+      {pics ? <PhotoPair view={view} pics={pics} /> : <Pic src={site?.aboutImage} path="site.aboutImage" label="عکس معرفی" className="pt-split-pic pt-rise" />}
       <div className="pt-split-text pt-rise">
         <Opt value={site?.aboutCaption} editing={editing} edit={ed("site.aboutCaption", "text", "خط بالای تیتر")}>
           <small className="pt-kicker" {...ed("site.aboutCaption", "text", "خط بالای تیتر")}>
@@ -1492,20 +1496,20 @@ const css = /* css */ `
 @keyframes pt-up { from { opacity: 0; transform: translateY(30px); } }
 
 /* Pizza menu: when the page opens the round pizzas spin fast for a few seconds and come to rest; a button per size */
-.pt-pizzas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 46px 34px; }
-.pt-pizza { display: grid; justify-items: center; gap: 12px; text-align: center; }
-.pt-pizza-pic { display: block; width: 100%; }
+.pt-pizzas { display: grid; justify-items: center; gap: 90px; }
+.pt-pizza { display: grid; justify-items: center; gap: 14px; width: min(100%, 520px); text-align: center; }
+.pt-pizza-pic { display: block; width: min(100%, 440px); }
 .pt-pizza-pic span { display: block; aspect-ratio: 1; border-radius: 50%; overflow: hidden; box-shadow: 0 30px 50px -30px #000; animation: pt-spin 3s calc(.4s + var(--i) * .15s) cubic-bezier(.1, .65, .15, 1) both; }
 .pt-pizza-pic img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.14); transition: transform .8s; }
 .pt-pizza:hover .pt-pizza-pic img { transform: scale(1.2) rotate(8deg); }
 @keyframes pt-spin { from { transform: rotate(-900deg) scale(.82); opacity: 0; } 15% { opacity: 1; } }
-.pt-pizza h3 { margin-top: 12px; font-family: var(--pt-head); font-size: 28px; font-weight: 500; }
-.pt-pizza p { max-width: 260px; color: var(--pt-muted); font-size: 14px; line-height: 1.9; }
-.pt-sizes { display: grid; gap: 10px; margin-top: 6px; }
+.pt-pizza h3 { margin-top: 18px; font-family: var(--pt-head); font-size: clamp(30px, 3cqi, 40px); font-weight: 500; }
+.pt-pizza p { max-width: 380px; color: rgb(255 255 255 / .82); font-family: var(--pt-head); font-size: 20px; font-style: italic; line-height: 1.6; }
+.pt-sizes { display: grid; gap: 12px; margin-top: 10px; }
 .pt-size { display: flex; align-items: center; justify-content: center; gap: 16px; }
 .pt-size-btn { min-width: 92px; height: 34px; padding: 0 14px; border: 1px solid #fff; background: none; color: #fff; font-size: 12px; font-weight: 600; cursor: pointer; transition: background .25s, color .25s; }
 .pt-size-btn:hover { background: #fff; color: #111; }
-.pt-size b { font-family: var(--pt-head); font-size: 24px; font-weight: 500; }
+.pt-size b { min-width: 120px; font-family: var(--pt-head); font-size: 28px; font-weight: 500; text-align: start; }
 .pt-soldout { color: #E8705A; font-size: 13px; font-weight: 700; }
 
 /* Fresh pasta cards */
@@ -1536,12 +1540,15 @@ const css = /* css */ `
 .pt-out { opacity: .5; }
 
 /* Photo row, split blocks */
-.pt-photos { display: grid; grid-template-columns: repeat(4, 1fr); }
 .pt-photo { display: block; aspect-ratio: 3 / 4; overflow: hidden; cursor: zoom-in; }
 .pt-photo img { width: 100%; height: 100%; object-fit: cover; transition: transform 1s, filter .5s; }
 .pt-photo:hover img { transform: scale(1.07); filter: brightness(.8); }
 .pt-split { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
 .pt-flip .pt-split-text { order: 2; }
+.pt-split3 { grid-template-columns: 1.4fr 1fr; gap: 60px; }
+.pt-split3:not(.pt-flip) { grid-template-columns: 1fr 1.4fr; }
+.pt-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.pt-pair .pt-photo { aspect-ratio: 3 / 4; }
 .pt-split-text { display: grid; justify-items: start; gap: 20px; }
 .pt-split-pic { aspect-ratio: 4 / 5; }
 .pt-contact-line { display: flex; align-items: center; gap: 12px; font-size: 14px; }
@@ -1721,7 +1728,7 @@ section[id^="pt-cat-"] { scroll-margin-top: 160px; }
 @container (max-width: 1100px) {
   .pt-head-socials { display: none !important; }
   .pt-nav { gap: 18px; }
-  .pt-pizzas, .pt-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pt-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .pt-pasta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .pt-cart { grid-template-columns: 1fr; }
 }
@@ -1754,9 +1761,14 @@ section[id^="pt-cat-"] { scroll-margin-top: 160px; }
   .pt-mini-panel { inset-inline-end: -10px; width: min(330px, 86vw); }
   .pt-hero-text { padding-top: 70px; margin-inline: 18px; justify-items: center; text-align: center; }
   .pt-hero-text .pt-btns { justify-content: center; }
-  .pt-pizzas, .pt-pasta, .pt-photos { grid-template-columns: 1fr; }
-  .pt-pizza-pic { width: 82%; }
-  .pt-photos { grid-template-columns: 1fr 1fr; }
+  .pt-pasta { grid-template-columns: 1fr; }
+  /* As in the reference: the two photos first, the text under them. */
+  .pt-split3, .pt-split3:not(.pt-flip) { grid-template-columns: 1fr; gap: 30px; }
+  .pt-split3 .pt-split-text, .pt-flip.pt-split3 .pt-split-text { order: 2; }
+  .pt-pizzas { gap: 64px; }
+  .pt-pizza-pic { width: 92%; }
+  .pt-hero-text h1 { font-size: 48px; }
+  .pt-pair { grid-template-columns: 1fr; }
   .pt-carte, .pt-menu-list { grid-template-columns: 1fr; }
   .pt-split, .pt-contact, .pt-product, .pt-foot-cols { grid-template-columns: 1fr; gap: 40px; }
   .pt-flip .pt-split-text { order: 0; }
