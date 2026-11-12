@@ -25,6 +25,7 @@ import { BOUTIQUE_BLOCKS, BoutiqueShop, boutiquePages, boutiqueSample } from "./
 import { GOLSARA_BLOCKS, GOLSARA_OPTIONAL_PAGES, GolsaraShop, golsaraPages, golsaraSample } from "./web/golsara";
 import { HOMEMART_BLOCKS, HomeMartShop, homemartPages, homemartSample } from "./web/homemart";
 import { PATIO_BLOCKS, PATIO_OPTIONAL_PAGES, PatioShop, patioPages, patioSample } from "./web/patio";
+import { LADIVA_BLOCKS, LADIVA_OPTIONAL_PAGES, LadivaSite, ladivaPages, ladivaSample } from "./web/ladiva";
 import { KAFE_BLOCKS, KAFE_OPTIONAL_PAGES, KafeSite, kafePages, kafeSample } from "./web/kafe";
 import { JUNO_BLOCKS, JUNO_OPTIONAL_PAGES, JunoShop, junoPages, junoSample } from "./web/juno";
 import { GROGIN_BLOCKS, GROGIN_OPTIONAL_PAGES, GroginShop, groginPages, groginSample } from "./web/grogin";
@@ -94,6 +95,7 @@ export const PORTFOLIO_TEMPLATES: readonly TemplateDefinition[] = [
   { ...web("golsara-shop", "گل‌سرا (گل‌فروشی)", GolsaraShop), pages: golsaraPages, sample: golsaraSample, blocks: GOLSARA_BLOCKS, optionalPages: GOLSARA_OPTIONAL_PAGES, shop: true },
   { ...web("patio-shop", "پاتیوتایم (رستوران)", PatioShop), pages: patioPages, sample: patioSample, blocks: PATIO_BLOCKS, optionalPages: PATIO_OPTIONAL_PAGES, shop: true },
   { ...web("kafe-site", "کورتو (کافه)", KafeSite), pages: kafePages, sample: kafeSample, blocks: KAFE_BLOCKS, optionalPages: KAFE_OPTIONAL_PAGES, shop: true, menu: true, sells: true },
+  { ...web("ladiva-site", "لا دیوا (آرایشگاه)", LadivaSite), pages: ladivaPages, sample: ladivaSample, blocks: LADIVA_BLOCKS, optionalPages: LADIVA_OPTIONAL_PAGES, shop: true, services: true },
   { ...web("juno-shop", "جونو (اسباب‌بازی)", JunoShop), pages: junoPages, sample: junoSample, blocks: JUNO_BLOCKS, optionalPages: JUNO_OPTIONAL_PAGES, shop: true },
   { ...web("grogin-shop", "گروگین (سوپرمارکت)", GroginShop), pages: groginPages, sample: groginSample, blocks: GROGIN_BLOCKS, optionalPages: GROGIN_OPTIONAL_PAGES, shop: true },
   { ...web("homemart-shop", "هوم‌مارت (فروشگاه لوازم خانگی)", HomeMartShop), pages: homemartPages, sample: homemartSample, blocks: HOMEMART_BLOCKS, shop: true },
