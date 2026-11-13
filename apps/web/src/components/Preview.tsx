@@ -404,6 +404,13 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
                 // logo, or by default a gallery picture / certificate.
                 const site = raw.site ?? { gallery: [] };
                 const image = String(value);
+                if (target.path === "projects") {
+                  // A new event (escape room): the sample events stay, the new one joins them.
+                  const list = raw.projects.length ? raw.projects : shown.projects;
+                  onDataChange({ ...raw, projects: [...structuredClone(list), { id: newId(), title: "رویداد تازه", description: "متن رویداد را این‌جا بنویسید.", technologies: [], images: [image] }] });
+                  setTarget(null);
+                  return;
+                }
                 onDataChange({
                   ...raw,
                   site:

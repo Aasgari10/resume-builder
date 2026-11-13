@@ -156,7 +156,13 @@ export function EditPopover({ target, value, shown, canRemove, canClear, onSave,
             {busy ? "در حال آپلود…" : "انتخاب تصویر"}
           </button>
           <input ref={file} type="file" accept="image/*" hidden onChange={(e) => e.target.files?.[0] && void upload(e.target.files[0])} />
-          <small className="muted">بعد از آپلود، روی عنوان مدرک کلیک کنید تا اسمش را بنویسید.</small>
+          <small className="muted">
+            {target.path === "projects"
+              ? "عکس رویداد را انتخاب کنید؛ بعد روی عنوان و متن رویداد کلیک کنید تا بنویسیدشان."
+              : target.path === "site.gallery" && target.label.includes("گالری")
+                ? "عکس به آخر گالری اضافه می‌شود."
+                : "بعد از آپلود، روی عنوان مدرک کلیک کنید تا اسمش را بنویسید."}
+          </small>
         </>
       )}
 

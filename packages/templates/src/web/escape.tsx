@@ -87,6 +87,10 @@ const Para = ({ text }: { text?: string }) => (
       ))}
   </>
 );
+/** A phone number in Persian digits; its groups keep their order inside right-to-left text. */
+const faDigits = (v: string) => v.replace(/\d/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[Number(d)]!);
+const telHref = (v: string) => `tel:${v.replace(/[۰-۹]/g, (d) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d))).replace(/[^\d+]/g, "")}`;
+const Phone = ({ value }: { value: string }) => <bdi dir="ltr">{faDigits(value)}</bdi>;
 /** A decorative picture of the template (the red numbers behind some sections). */
 const DIGITS = sampleImage("eg-digits");
 
@@ -201,8 +205,8 @@ function Header(view: View) {
         <div className="eg-top-in">
           <span className="eg-top-info">
             {b.phone && (
-              <a href={`tel:${b.phone.replace(/[^\d+]/g, "")}`} dir="ltr" {...ed("basics.phone", "text", "تلفن")}>
-                {b.phone}
+              <a href={telHref(b.phone)} {...ed("basics.phone", "text", "تلفن")}>
+                <Phone value={b.phone} />
               </a>
             )}
             {b.email && (
@@ -260,7 +264,7 @@ function Footer(view: View) {
           <Logo view={view} />
         </div>
         <div>
-          <h4>منو</h4>
+          <h4>منوی سایت</h4>
           <nav className="eg-foot-list">
             <PageLink to="/rooms" link={link}>
               اتاق‌ها
@@ -296,8 +300,8 @@ function Footer(view: View) {
               <span {...ed("site.address", "text", "نشانی")}>{site?.address}</span>
             </Opt>
             {b.phone && (
-              <a href={`tel:${b.phone.replace(/[^\d+]/g, "")}`} dir="ltr" {...ed("basics.phone", "text", "تلفن")}>
-                {b.phone}
+              <a href={telHref(b.phone)} {...ed("basics.phone", "text", "تلفن")}>
+                <Phone value={b.phone} />
               </a>
             )}
             {b.email && (
@@ -444,8 +448,8 @@ function Home(view: View) {
                     می‌خواهید تیم‌تان را بیاورید؟
                     <br />
                     با ما تماس بگیرید:{" "}
-                    <a href={`tel:${b.phone.replace(/[^\d+]/g, "")}`} dir="ltr">
-                      {b.phone}
+                    <a href={telHref(b.phone)}>
+                      <Phone value={b.phone} />
                     </a>
                     {b.email && (
                       <>
@@ -633,15 +637,15 @@ function GiftBand({ view }: { view: View }) {
           <p className="eg-body" {...ed(`${at}.text`, "multiline", "متن")}>
             {band.text}
           </p>
-          {href ? (
-            <a href={href} {...outside(href)} className="eg-btn">
-              خرید کارت هدیه
-            </a>
-          ) : (
-            <PageLink to="/contact" link={view.link} className="eg-btn">
-              خرید کارت هدیه
-            </PageLink>
-          )}
+          {/* Without a link of its own the button leads to the contact page; in the editor a click sets the link. */}
+          <a
+            href={href ?? view.link("/contact")}
+            {...(href ? outside(href) : { "data-page": "/contact" })}
+            className="eg-btn"
+            {...(view.editing ? ed(`${at}.link`, "url", "لینک خرید کارت هدیه") : {})}
+          >
+            خرید کارت هدیه
+          </a>
         </div>
       </div>
     </section>
@@ -769,7 +773,7 @@ function About(view: View) {
         {gallery.length > 0 && (
           <div className="eg-gallery">
             {gallery.map((g, k) => (
-              <input key={g.id} type="radio" name="eg-g" id={`eg-g${k}`} defaultChecked={k === 0} className="eg-radio" />
+              <input key={g.id} type="radio" name="eg-g" id={`eg-g${k}`} className="eg-radio" />
             ))}
             <div className="eg-gallery-main">
               {gallery.map((g, k) => (
@@ -791,8 +795,13 @@ function About(view: View) {
                 </label>
               ))}
             </div>
-            <style>{gallery.map((_, k) => `#eg-g${k}:checked ~ .eg-gallery-main figure:nth-child(${k + 1}) { opacity: 1; visibility: visible; } #eg-g${k}:checked ~ .eg-thumbs label:nth-child(${k + 1}) { opacity: 1; outline-color: var(--eg-red); }`).join("\n")}</style>
+            <style>{galleryCss(gallery.length)}</style>
           </div>
+        )}
+        {view.editing && (
+          <span className="p-ghost eg-add" {...ed("site.gallery", "newimage", "افزودن عکس به گالری")}>
+            + افزودن عکس به گالری
+          </span>
         )}
         <div className="eg-body" {...ed("basics.summary", "multiline", "متن درباره‌ی ما")}>
           <Para text={data.basics.summary} />
@@ -841,6 +850,33 @@ function About(view: View) {
   );
 }
 
+/**
+ * The gallery shows each picture for a few seconds in turn (CSS only, no scripts). Once a visitor
+ * chooses a picture (an arrow or a thumbnail checks its radio) it stops on that one.
+ */
+const GALLERY_STEP = 5;
+function galleryCss(n: number): string {
+  if (n < 1) return "";
+  const p = 100 / n;
+  const fade = Math.min(p / 5, 4);
+  const cycle = n * GALLERY_STEP;
+  const shown = (on: string, off: string) =>
+    `0% { ${off} } ${fade.toFixed(2)}% { ${on} } ${p.toFixed(2)}% { ${on} } ${(p + fade).toFixed(2)}% { ${off} } 100% { ${off} }`;
+  const rules = [
+    `@keyframes eg-g${n} { ${shown("opacity: 1; visibility: visible;", "opacity: 0; visibility: hidden;")} }`,
+    `@keyframes eg-t${n} { ${shown("opacity: 1; outline-color: var(--eg-red);", "opacity: .55; outline-color: transparent;")} }`,
+  ];
+  for (let k = 0; k < n; k++) {
+    const delay = (k - n) * GALLERY_STEP;
+    rules.push(`.eg-gallery-main figure:nth-child(${k + 1}) { animation: eg-g${n} ${cycle}s ${delay}s linear infinite; }`);
+    rules.push(`.eg-thumbs label:nth-child(${k + 1}) { animation: eg-t${n} ${cycle}s ${delay}s linear infinite; }`);
+    rules.push(`#eg-g${k}:checked ~ .eg-gallery-main figure:nth-child(${k + 1}) { opacity: 1; visibility: visible; }`);
+    rules.push(`#eg-g${k}:checked ~ .eg-thumbs label:nth-child(${k + 1}) { opacity: 1; outline-color: var(--eg-red); }`);
+  }
+  if (n === 1) rules.push(`.eg-gallery-main figure, .eg-thumbs label { animation: none; opacity: 1; visibility: visible; }`);
+  return rules.join("\n");
+}
+
 function Post(view: View & { id: string }) {
   const p = livePosts(view.shop).find((x) => x.id === view.id)!;
   const pic = safeUrl(p.image);
@@ -886,9 +922,9 @@ function Contact(view: View) {
             {b.phone && (
               <li>
                 <Svg name="phone" />
-                <a href={`tel:${b.phone.replace(/[^\d+]/g, "")}`} dir="ltr" {...ed("basics.phone", "text", "تلفن")}>
-                  {b.phone}
-                </a>
+                <a href={telHref(b.phone)} {...ed("basics.phone", "text", "تلفن")}>
+                <Phone value={b.phone} />
+              </a>
               </li>
             )}
             {b.email && (
@@ -1091,7 +1127,7 @@ export function escapeSample(locale: ResumeData["locale"]): ResumeData {
       jobTitle: "اتاق فرار",
       avatarUrl: "",
       email: "info@example.com",
-      phone: "021 0000 0000",
+      phone: "021 2233 4455",
       summary:
         "گریزگاه از سال ۱۳۹۶ با یک اتاق کوچک شروع کرد و امروز نُه اتاق فرار با داستان‌های متفاوت دارد؛ از فرار از زندان و پرونده‌های کارآگاهی تا ماجراهای ترسناک و اتاق ویژه‌ی کودکان. هر اتاق را تیمی از طراحان بازی، نویسنده‌ها و صحنه‌پردازها ساخته‌اند تا از لحظه‌ی ورود حس کنید وارد یک داستان واقعی شده‌اید.\nما باور داریم بهترین خاطره‌ها را با هم می‌سازیم. برای همین هر بازی خصوصی است و فقط شما و همراهانتان در اتاق هستید. راهنمای بازی از پشت دوربین همراهتان است و اگر جایی گیر کردید، سرنخ می‌دهد تا هیجان بازی تا آخرین دقیقه حفظ شود.",
       links: [
@@ -1413,6 +1449,11 @@ const css = /* css */ `
 .eg-gallery-main { display: grid; }
 .eg-gallery-main figure { grid-area: 1 / 1; position: relative; margin: 0; aspect-ratio: 1.67; border: 1px solid #2a2626; overflow: hidden; opacity: 0; visibility: hidden; transition: opacity .6s, visibility .6s; }
 .eg-gallery-main figure img { width: 100%; height: 100%; object-fit: cover; }
+.eg-gallery-main figure:first-child { opacity: 1; visibility: visible; }
+.eg-gallery:has(.eg-radio:checked) .eg-gallery-main figure, .eg-gallery:has(.eg-radio:checked) .eg-thumbs label { animation: none; }
+.eg-gallery:has(.eg-radio:checked) .eg-gallery-main figure:first-child { opacity: 0; visibility: hidden; }
+.eg-gallery:hover .eg-gallery-main figure, .eg-gallery:hover .eg-thumbs label { animation-play-state: paused; }
+.eg-add { display: inline-block; margin: -20px 0 30px; }
 .eg-arrow { position: absolute; top: 50%; display: grid; place-items: center; width: 32px; height: 32px; margin-top: -16px; border-radius: 50%; background: var(--eg-red); color: #fff; cursor: pointer; }
 .eg-arrow .eg-ico { width: 16px; height: 16px; stroke-width: 4; }
 .eg-arrow.prev { inset-inline-start: 22px; }
@@ -1530,4 +1571,5 @@ const css = /* css */ `
 }
 @keyframes eg-in { from { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .eg * { transition: none !important; animation: none !important; } }
+.eg-gallery .eg-radio:checked ~ .eg-gallery-main figure { transition: opacity .6s, visibility .6s; }
 `;
