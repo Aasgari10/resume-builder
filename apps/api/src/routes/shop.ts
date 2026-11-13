@@ -17,6 +17,7 @@ import {
   variantOf,
   slotKey,
   todayTehran,
+  type BookingView,
   type CartLine,
   type Visitor,
 } from "@rb/schema";
@@ -218,7 +219,7 @@ const BACK_PAGES = ["/account", "/support/tickets"];
 const mobile = (v: string | undefined) => (v ?? "").replace(/[۰-۹]/g, (d) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d))).replace(/[\s-]/g, "").replace(/^\+98/, "0");
 
 /** The signed-in customer's id for this shop, if the cookie is valid. */
-async function signedInCustomer(req: Request, siteId: string): Promise<string | null> {
+export async function signedInCustomer(req: Request, siteId: string): Promise<string | null> {
   const token = readCookie(req.headers.cookie, CUSTOMER_COOKIE);
   return token ? customerFromToken(token, siteId, env.sessionSecret) : null;
 }
@@ -258,6 +259,21 @@ async function accountAction(req: Request, res: Response, subdomain: string, bas
     if (!c || c.deletedAt || !checkPassword(password, c.passwordHash)) return go(account(base, "شماره یا رمز درست نیست.", true, home));
     setCustomer(res, base, customerToken(c.id, siteId, env.sessionSecret));
     return go(to(base, home));
+  }
+
+  // Canceling a booking: by its owner signed in, or from the tracking page with its code and phone.
+  if (op === "booking-cancel") {
+    const code = text(body.code, 12).toUpperCase();
+    const me = await signedInCustomer(req, siteId);
+    const m = code ? await prisma.siteMessage.findFirst({ where: { siteId, kind: "BOOKING", deletedAt: null, code } }) : null;
+    const fromTrack = body.back === "/track";
+    const back = (msg: string, error = false) =>
+      fromTrack ? `${to(base, "/track")}?${new URLSearchParams({ code, phone: text(body.phone, 20), [error ? "error" : "msg"]: msg })}` : account(base, msg, error, "/account");
+    const allowed = m && ((me && m.customerId === me) || samePhone(m.phone, body.phone));
+    if (!m || !allowed) return go(back("نوبت پیدا نشد.", true));
+    if (m.status === "CANCELED" || m.status === "DONE" || (m.date ?? "") < todayTehran()) return go(back("این نوبت دیگر قابل لغو نیست.", true));
+    await prisma.siteMessage.update({ where: { id: m.id }, data: { status: "CANCELED", ownerNote: [m.ownerNote, "لغو شده توسط خود مراجع"].filter(Boolean).join("\n") } });
+    return go(back("نوبت لغو شد."));
   }
 
   const customerId = await signedInCustomer(req, siteId);
@@ -344,9 +360,29 @@ export async function takenSlots(siteId: string, seats = false): Promise<Record<
   return out;
 }
 
+const asView = (m: { code: string | null; date: string | null; time: string | null; service: string | null; guests: number | null; status: BookingView["status"]; createdAt: Date }): BookingView => ({
+  code: m.code ?? "",
+  date: m.date ?? undefined,
+  time: m.time ?? undefined,
+  service: m.service ?? undefined,
+  guests: m.guests ?? undefined,
+  status: m.status,
+  at: m.createdAt.toISOString(),
+});
+/** Phone numbers compared by their digits, so "0912 111 2233" and "09121112233" match. */
+const samePhone = (a: string | null | undefined, b: string | null | undefined) => {
+  const d = (x: string | null | undefined) => mobile(x ?? undefined).replace(/\D/g, "").replace(/^98/, "0");
+  return Boolean(d(a)) && d(a) === d(b);
+};
+
 export async function loadVisitor(req: Request, siteId: string, page: string, schedule?: { seats?: boolean }): Promise<Visitor> {
   const visitor = readVisitor(req);
   if (schedule) visitor.taken = await takenSlots(siteId, Boolean(schedule.seats));
+  // The tracking page: a booking found by its code and the phone it was made with.
+  if (page === "/track" && visitor.query.code) {
+    const m = await prisma.siteMessage.findFirst({ where: { siteId, kind: "BOOKING", deletedAt: null, code: visitor.query.code.trim().toUpperCase() } });
+    visitor.tracked = m && samePhone(m.phone, visitor.query.phone) ? asView(m) : null;
+  }
   const reviews = await prisma.shopReview.findMany({ where: { siteId, approved: true, deletedAt: null }, select: { productId: true, rating: true } });
   const ratings: Record<string, { avg: number; count: number }> = {};
   for (const r of reviews) {
@@ -365,6 +401,10 @@ export async function loadVisitor(req: Request, siteId: string, page: string, sc
     const c = await prisma.shopCustomer.findFirst({ where: { id: customerId, siteId, deletedAt: null } });
     if (c) {
       visitor.customer = { id: c.id, name: c.name, phone: c.phone };
+      if (page === "/account") {
+        const mine = await prisma.siteMessage.findMany({ where: { siteId, kind: "BOOKING", customerId: c.id, deletedAt: null }, orderBy: [{ date: "desc" }, { time: "desc" }], take: 30 });
+        visitor.bookings = mine.map(asView);
+      }
       if (page === "/account" || page === "/checkout" || page === "/support/tickets") {
         const [orders, tickets] = await Promise.all([
           prisma.shopOrder.findMany({ where: { siteId, customerId: c.id, deletedAt: null }, orderBy: { createdAt: "desc" }, take: 50 }),

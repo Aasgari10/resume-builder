@@ -94,15 +94,18 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
   useEffect(() => {
     if (!resumeId) return setMode("sample");
     api.shopSummary(resumeId).then(
-      (r) => setMode(!r.summary || (r.summary.orders === 0 && r.summary.customers === 0) ? "sample" : "real"),
+      (r) => setMode(!r.summary || (r.summary.orders === 0 && r.summary.customers === 0 && !r.summary.messages) ? "sample" : "real"),
       () => setMode("real"),
     );
   }, [resumeId]);
   // The sample sells the shop's own products, or the template's sample products while it has none.
   const sampleShop = sampleShopFor(shop, sample?.site?.shop);
-  const sampleKey = sampleShop.products.map((p) => p.id).join(",");
+  // The sample inbox (bookings, messages, sign-ups) follows the site's own working hours.
+  const demoShop: Shop = { ...sampleShop, schedule: shop.schedule };
+  const hasBookings = Boolean(bookingKind);
+  const sampleKey = `${sampleShop.products.map((p) => p.id).join(",")}|${JSON.stringify(shop.schedule ?? null)}|${hasBookings}`;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const sampleApi = useMemo(() => sampleShopApi(sampleShop), [sampleKey]);
+  const sampleApi = useMemo(() => sampleShopApi(demoShop, hasBookings), [sampleKey]);
   const source = mode === "sample" ? sampleApi : api;
   // "Start again" builds a new sample; the tabs are drawn anew to read it.
   const [round, setRound] = useState(0);
@@ -110,12 +113,13 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
   // Comments and reports name the products the orders were made of.
   const namesShop = mode === "sample" ? { ...shop, products: sampleShop.products, categories: sampleShop.categories } : shop;
 
-  // New bookings, messages and sign-ups sent through the site's forms (always the real site, never the sample).
+  // New bookings, messages and sign-ups sent through the site's forms (or the sample inbox's).
   const [inboxNew, setInboxNew] = useState(0);
   const refreshInbox = () => {
-    if (resumeId) api.siteMessages(resumeId).then((r) => setInboxNew(r.newCounts.booking + r.newCounts.contact + r.newCounts.newsletter), () => undefined);
+    if (rid && mode !== "loading") source.siteMessages(rid).then((r) => setInboxNew(r.newCounts.booking + r.newCounts.contact + r.newCounts.newsletter), () => undefined);
   };
-  useEffect(refreshInbox, [resumeId, tab]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(refreshInbox, [rid, mode, tab]);
   const refreshCounts = () => {
     if (rid && mode !== "loading") source.shopSummary(rid).then((r) => setCounts(r.summary), () => undefined);
   };
@@ -197,21 +201,21 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
         </nav>
       <ShopApiContext.Provider value={source}>
       <div className="shm-body">
-        {mode === "sample" && !["products", "categories", "banners", "coupons", "quotes", "pages", "blog", "extras", "trash", "settings", "qr", "inbox", "schedule", "events", ...STUDIO_ONLY].includes(tab) && (
+        {mode === "sample" && (
           <p className="shm-sample">
             <span>
-              🧪 <b>این‌ها اطلاعات نمونه است</b> تا ببینید پنل چه کارهایی می‌کند. تغییرهای شما فقط در همین مرورگر است و کاربر دیگری آن‌ها را نمی‌بیند؛ بعد از ۳۰ دقیقه دوری خودش تازه می‌شود. با اولین سفارش یا مشتری واقعی، اطلاعات خود فروشگاه‌تان این‌جا می‌آید.
+              🧪 <b>حالت دمو:</b> سفارش‌ها، مشتری‌ها، نوبت‌ها و پیام‌ها نمونه‌اند تا همه‌چیز را امتحان کنید؛ از خود سایت (پیش‌نمایش) هم نوبت بگیرید، سفارش بدهید یا پیام بفرستید و این‌جا ببینیدش. این تغییرها فقط در همین مرورگر است و بعد از ۱۰ دقیقه دوری خودبه‌خود به حالت اول برمی‌گردد. با اولین سفارش، مشتری یا پیام واقعی سایت منتشرشده، اطلاعات واقعی این‌جا می‌آید.
             </span>
             <button
               type="button"
               className="btn ghost small"
               onClick={() => {
-                if (!window.confirm("همه‌ی تغییرهای شما روی اطلاعات نمونه پاک شود و نمونه‌ها از اول ساخته شوند؟")) return;
-                resetSample(sampleShop);
+                if (!window.confirm("همه‌ی تغییرهای دمو (سفارش‌ها، نوبت‌ها، پیام‌ها، مشتری‌ها) پاک شود و داده‌های نمونه از اول ساخته شوند؟")) return;
+                resetSample(demoShop, hasBookings);
                 setRound((n) => n + 1);
               }}
             >
-              ↺ شروع دوباره‌ی نمونه
+              ↺ ریست داده‌های دمو
             </button>
           </p>
         )}
@@ -221,17 +225,17 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
         {tab === "dashboard" && <Dashboard resumeId={rid} products={live.length} outOfStock={outOfStock} lowStock={lowStock} onTab={(t) => setTab(t as Tab)} />}
         {tab === "schedule" && <ScheduleEditor shop={shop} setShop={setShop} seats={bookingKind === "table"} />}
         {tab === "events" && <EventsEditor shop={shop} setShop={setShop} />}
-        {tab === "studio" && <StudioDashboard resumeId={resumeId} shop={shop} onTab={(t) => setTab(t as Tab)} kind={bookingKind} />}
-        {tab === "calendar" && <StudioCalendar resumeId={resumeId} shop={shop} kind={bookingKind} />}
-        {tab === "clients" && <StudioClients resumeId={resumeId} shop={shop} kind={bookingKind} />}
-        {tab === "studio-reports" && <StudioReports resumeId={resumeId} shop={shop} kind={bookingKind} />}
+        {tab === "studio" && <StudioDashboard resumeId={rid} shop={shop} onTab={(t) => setTab(t as Tab)} kind={bookingKind} />}
+        {tab === "calendar" && <StudioCalendar resumeId={rid} shop={shop} kind={bookingKind} />}
+        {tab === "clients" && <StudioClients resumeId={rid} shop={shop} kind={bookingKind} />}
+        {tab === "studio-reports" && <StudioReports resumeId={rid} shop={shop} kind={bookingKind} />}
         {tab === "products" && studio && <StudioPackages shop={shop} setShop={setShop} />}
         {tab === "products" && !studio && <Products shop={shop} setShop={setShop} onSample={sample?.site?.shop ? startFromSample : undefined} focus={focusProductId} resumeId={rid} />}
         {tab === "categories" && <Categories shop={shop} setShop={setShop} sells={sells} services={services || studio} />}
         {tab === "banners" && <Banners shop={shop} setShop={setShop} />}
         {tab === "coupons" && <Coupons shop={shop} setShop={setShop} />}
         {tab === "orders" && <Orders resumeId={rid} onChanged={refreshCounts} />}
-        {tab === "inbox" && <SiteInbox resumeId={resumeId} onChanged={refreshInbox} bookings={bookings} />}
+        {tab === "inbox" && <SiteInbox resumeId={rid} onChanged={refreshInbox} bookings={bookings} />}
         {tab === "quotes" && <Quotes data={data} onData={onData} />}
         {tab === "extras" && <Extras data={data} onData={onData} shop={shop} setShop={setShop} menu={menu} sections={panel?.extras} />}
         {tab === "blog" && <Blog shop={shop} setShop={setShop} hasBlog={Boolean(hasBlog)} />}

@@ -7,7 +7,9 @@
 
 import type { ReactNode } from "react";
 import { addDay, freeAt, openDays, slotsOf, todayTehran, type Schedule } from "@rb/schema";
+import type { Visitor } from "@rb/schema";
 import { FormMeta } from "./parts";
+import { BookingTable } from "./shopkit";
 
 const fa = (n: number) => new Intl.NumberFormat("fa-IR").format(n);
 export const faDay = (day: string, o: Intl.DateTimeFormatOptions) => new Date(`${day}T12:00:00Z`).toLocaleDateString("fa-IR-u-ca-persian", { timeZone: "UTC", ...o });
@@ -150,7 +152,37 @@ export function BookingPicker({ link, path, schedule: s, taken, query, need = 1,
   );
 }
 
+/** Find a booking by its code and phone; see its state and cancel it. Answered by the server (visitor.tracked). */
+export function TrackBooking({ link, visitor }: { link: (path: string) => string; visitor: Visitor }) {
+  const q = visitor.query;
+  const looked = Boolean(q.code);
+  return (
+    <div className="bk bk-track">
+      {q.msg && <p className="sk-ok">{q.msg}</p>}
+      {q.error && <p className="sk-err">{q.error}</p>}
+      <form method="get" action={link("/track")} className="bk-form bk-track-form">
+        <label className="half">
+          کد پیگیری
+          <input name="code" required dir="ltr" defaultValue={q.code} placeholder="B123456" />
+        </label>
+        <label className="half">
+          شماره‌ی موبایلی که با آن نوبت گرفتید
+          <input name="phone" required inputMode="tel" dir="ltr" defaultValue={q.phone} />
+        </label>
+        <button type="submit" className="bk-btn">
+          پیگیری
+        </button>
+      </form>
+      {looked && (visitor.tracked ? <BookingTable list={[visitor.tracked]} link={link} back="/track" phone={q.phone} /> : <p className="sk-err">نوبتی با این کد و شماره پیدا نشد.</p>)}
+    </div>
+  );
+}
+
 export const bookingCss = /* css */ `
+.bk.bk-track { grid-template-columns: minmax(0, 1fr); gap: 22px; max-width: 900px; margin-inline: auto; }
+.bk-track .bk-form { padding: clamp(18px, 3cqi, 28px); background: var(--bk-soft); }
+.bk-track .bk-btn { grid-column: 1 / -1; }
+@container (max-width: 560px) { .bk-track .bk-form > label.half { grid-column: 1 / -1; } }
 .bk { --bk-accent: #333; --bk-ink: #222; --bk-soft: #F6F2EE; --bk-line: #E4DDD6; --bk-dark: #222; --bk-on: #fff; --bk-head: inherit;
   display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: clamp(20px, 3cqi, 50px); align-items: start; color: var(--bk-ink); }
 .bk-cal { border: 1px solid var(--bk-line); background: #fff; }

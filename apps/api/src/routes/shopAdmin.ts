@@ -61,6 +61,8 @@ shopAdminRouter.get(
       prisma.shopOrder.aggregate({ where: { ...where, status: { not: "CANCELED" }, createdAt: { gte: since } }, _sum: { total: true }, _count: true }),
       prisma.shopOrder.findMany({ where, orderBy: { createdAt: "desc" }, take: 8 }),
     ]);
+    // Bookings, messages and sign-ups: a site with some of its own shows its real activity, not the sample.
+    const messages = await prisma.siteMessage.count({ where: { siteId: site.id, deletedAt: null } });
     res.json({
       summary: {
         customers,
@@ -71,6 +73,7 @@ shopAdminRouter.get(
         sales: sold._sum.total ?? 0,
         monthSales: soldMonth._sum.total ?? 0,
         monthOrders: soldMonth._count,
+        messages,
         recent,
       },
     });

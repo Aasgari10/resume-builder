@@ -3,9 +3,13 @@
 // customer or order arrives, and the editor's preview uses the same sample for the customer's side
 // (signing in, ordering, tickets, comments), so the owner can try the shop from both sides.
 // Nothing here is sent to the server: the sample lives in this browser only (no other user sees
-// it), survives a page reload, and starts fresh after 30 minutes away or with "start again".
+// it), survives a page reload, and starts fresh after 10 minutes away or with "start again".
+// The same goes for what visitors send through the site's forms (bookings, messages, newsletter
+// sign-ups): the preview saves them into a sample inbox that the manager's inbox and booking tabs
+// read, so every template can be tried end to end without touching the real site.
 
-import { allVariantKeys, priceCart, type CartLine, type Product, type Shop, type ShopOrderStatus, type Visitor } from "@rb/schema";
+import { addDay, allVariantKeys, defaultSchedule, freeAt, priceCart, slotKey, slotsOf, todayTehran, type BookingView, type CartLine, type Product, type Shop, type ShopOrderStatus, type Visitor } from "@rb/schema";
+import type { SiteMessage, SiteMessages, SiteMessageStatus } from "../../api";
 import type { ShopCustomer, ShopCustomerDetail, ShopOrder, ShopOrderQuery, ShopProductStat, ShopReview, ShopSummary, ShopTicket, ShopTrash, ShopTrashKind } from "../../api";
 
 /* ───────────── A repeatable random source ───────────── */
@@ -221,7 +225,7 @@ function makeStore(shop: Shop): Store {
 
 /* ───────────── Keeping the sample in this browser ───────────── */
 
-const AWAY = 30 * 60000; // after this long with no page of the editor open, the sample starts fresh
+const AWAY = 10 * 60000; // after this long with no page of the editor open, the sample starts fresh
 const STORE_KEY = "rb-shop-sample";
 
 type Saved = { key: string; seen: number; store: Store };
@@ -265,11 +269,23 @@ function storeFor(shop: Shop): Store {
 }
 
 /** Marks the sample as in use (call while a page that shows it is open), so it is not renewed. */
-export const touchSample = () => save();
+export const touchSample = () => {
+  save();
+  saveMessages();
+};
 
 /** Throws away every change and makes the sample again. */
-export function resetSample(shop: Shop) {
+export function resetSample(shop: Shop, bookings = true) {
   cached = { key: fingerprint(shop), store: makeStore(shop) };
+  inbox = { key: messagesKey(shop, bookings), list: makeMessages(shop, bookings) };
+  saveMessages();
+  changed();
+}
+
+/** Throws the sample inbox away and makes it again (a site without a shop: only its forms). */
+export function resetSampleInbox(shop: Shop, bookings = true) {
+  inbox = { key: messagesKey(shop, bookings), list: makeMessages(shop, bookings) };
+  saveMessages();
   changed();
 }
 
@@ -309,6 +325,9 @@ export type ShopApi = {
   shopTrash: (resumeId: string) => Promise<ShopTrash>;
   restoreShopTrash: (resumeId: string, kind: ShopTrashKind, ids: string[]) => Promise<{ done: number; failed: string[] }>;
   purgeShopTrash: (resumeId: string, kind: ShopTrashKind, ids: string[]) => Promise<{ done: number }>;
+  siteMessages: (resumeId: string, trash?: boolean) => Promise<SiteMessages>;
+  updateSiteMessage: (resumeId: string, id: string, patch: { status?: SiteMessageStatus; ownerNote?: string | null; date?: string; time?: string }) => Promise<{ message: SiteMessage }>;
+  batchSiteMessages: (resumeId: string, ids: string[], action: "seen" | "confirm" | "done" | "cancel" | "delete" | "restore" | "purge") => Promise<{ done: number }>;
 };
 
 const TRASH_DAYS = 30;
@@ -330,8 +349,9 @@ const copy = <T,>(x: T): T => structuredClone(x);
 /** A list without the fields that only the sample keeps. */
 const bare = <T extends { customerId?: string }>(list: T[]) => list.map(({ customerId: _, ...x }) => x as Omit<T, "customerId">);
 
-export function sampleShopApi(shop: Shop): ShopApi {
+export function sampleShopApi(shop: Shop, bookings = true): ShopApi {
   storeFor(shop);
+  const messages = sampleMessagesApi(shop, bookings);
   // Always the current store: "start again" replaces it.
   const st = () => storeFor(shop);
   const found = <T extends { id: string }>(list: T[], id: string) => {
@@ -534,6 +554,7 @@ export function sampleShopApi(shop: Shop): ShopApi {
       (bin[kind] as { id: string }[]) = (bin[kind] as { id: string }[]).filter((x) => !ids.includes(x.id));
       return done({ done: before - bin[kind].length });
     },
+    ...messages,
   };
 }
 
@@ -541,7 +562,7 @@ const addressesOf = (c: SampleCustomer): Address[] => c.addresses ?? c.places.ma
 
 /* ───────────── The customer's side, for the preview ───────────── */
 
-type Result = { msg?: string; error?: string; page?: string; code?: string };
+type Result = { msg?: string; error?: string; page?: string; code?: string; query?: Record<string, string> };
 
 /** What a visitor of the preview sees from the sample: who is signed in, their records, comments. */
 export function sampleVisitor(shop: Shop, page: string): Pick<Visitor, "customer" | "account" | "ratings" | "reviews"> {
@@ -605,6 +626,7 @@ const mobile = (v: unknown) => text(v, 20).replace(/[۰-۹]/g, (d) => String("۰
 
 /** A form sent to /_account on the preview, answered like the server does (messages included). */
 export function sampleAccountAction(shop: Shop, fields: Record<string, string>, autoApprove: boolean): Result {
+  if (fields.op === "booking-cancel") return sampleCancelBooking(shop, fields, true);
   const s = storeFor(shop);
   const op = fields.op;
   // Forms of the support page come back to it, as on the published site.
@@ -723,4 +745,270 @@ export function sampleOrder(shop: Shop, cart: CartLine[], coupon: string | undef
   } as ShopOrder);
   changed();
   return { code, page: "/thanks" };
+}
+
+/* ───────────── The site's forms: a sample inbox of bookings, messages and sign-ups ───────────── */
+
+const MESSAGES_KEY = "rb-site-sample-messages";
+type SavedMessages = { key: string; seen: number; list: SampleMessage[] };
+/** A row of the sample inbox; `customerId` ties a booking to the sample customer who made it. */
+type SampleMessage = SiteMessage & { customerId?: string | null };
+let inbox: { key: string; list: SampleMessage[] } | null = null;
+
+/** The sample inbox is made again when what it is made of changes (the services, the hours). */
+const messagesKey = (shop: Shop, bookings = true) => {
+  const sc = shop.schedule;
+  return `${bookings ? "b" : "-"}${fingerprint(shop)}|${sc ? [sc.days.join(""), sc.start, sc.end, sc.slot, sc.capacity, sc.seats ? 1 : 0].join(",") : "-"}`;
+};
+
+/** What the sample bookings are for: the site's services (not the products it sells), else its categories. */
+function bookedNames(shop: Shop): string[] {
+  const sold = new Set(shop.categories.filter((c) => c.sell).map((c) => c.id));
+  const services = shop.products.filter((p) => !p.trashed && !p.hidden && !(p.categoryId && sold.has(p.categoryId))).map((p) => p.name);
+  return services.length ? services : shop.categories.filter((c) => !c.sell).map((c) => c.name);
+}
+
+/** Every start time of a day, past days included (the sample also has bookings that already happened). */
+const timesOf = (shop: Shop, day: string) => slotsOf(shop.schedule ?? defaultSchedule(), day, new Date(`${addDay(day, -1)}T00:00:00Z`));
+
+function makeMessages(shop: Shop, bookings = true): SampleMessage[] {
+  const seats = Boolean(shop.schedule?.seats);
+  const names = bookedNames(shop);
+  const people: [string, string][] = [
+    ["مریم احمدی", "09121234567"],
+    ["سارا کریمی", "09351234567"],
+    ["علی رضایی", "09191234567"],
+    ["نگار حسینی", "09121112233"],
+    ["رضا موسوی", "09361234567"],
+    ["الهام نوری", "09131234567"],
+    ["کاوه شریفی", "09141234567"],
+    ["مینا طاهری", "09171234567"],
+    ["پویا زمانی", "09381234567"],
+    ["سارا کریمی", "09351234567"],
+  ];
+  const today = todayTehran();
+  // Days around today: done ones in the past, waiting and confirmed ones ahead.
+  const plan: [number, SiteMessageStatus][] = [
+    [-34, "CANCELED"],
+    [-21, "DONE"],
+    [-12, "DONE"],
+    [-5, "DONE"],
+    [-1, "DONE"],
+    [1, "CONFIRMED"],
+    [1, "NEW"],
+    [2, "CONFIRMED"],
+    [4, "NEW"],
+    [6, "NEW"],
+  ];
+  const list: SampleMessage[] = [];
+  // A site with no booking form only gets messages and sign-ups.
+  if (bookings) plan.forEach(([offset, status], k) => {
+    // The nearest working day from there (the sample keeps to the site's own hours).
+    let day = addDay(today, offset);
+    for (let i = 0; i < 7 && !timesOf(shop, day).length; i++) day = addDay(day, offset < 0 ? -1 : 1);
+    const times = timesOf(shop, day);
+    const time = times[(k * 3) % Math.max(1, times.length)] ?? "10:00";
+    const [name, phone] = people[k]!;
+    list.push({
+      id: `sm-b${k}`,
+      kind: "BOOKING",
+      status,
+      code: `B${300100 + k * 37}`,
+      name,
+      phone,
+      email: null,
+      subject: null,
+      text: k % 4 === 1 ? (seats ? "اگر امکانش هست میز کنار پنجره." : "لطفاً اگر زمان جابه‌جا شد خبر بدهید.") : null,
+      service: seats ? null : (names[k % Math.max(1, names.length)] ?? null),
+      date: day,
+      time,
+      guests: seats ? [2, 4, 3, 6, 2, 5, 2, 8, 4, 3][k]! : null,
+      page: "/",
+      ownerNote: status === "CANCELED" ? "مراجع تماس گرفت و لغو کرد." : null,
+      createdAt: new Date(new Date(`${day}T08:00:00Z`).getTime() - 3 * DAY).toISOString(),
+      deletedAt: null,
+    });
+  });
+  const ago = (h: number) => new Date(Date.now() - h * 3600000).toISOString();
+  const row = (id: string, x: Partial<SiteMessage>): SampleMessage => ({ id, kind: "CONTACT", status: "NEW", code: null, name: null, phone: null, email: null, subject: null, text: null, service: null, date: null, time: null, guests: null, page: "/contact", ownerNote: null, createdAt: ago(1), deletedAt: null, ...x });
+  list.push(
+    row("sm-c1", { name: "نازنین رستمی", email: "nazanin@example.com", phone: "09123334455", subject: "سؤال درباره‌ی هزینه‌ها", text: "سلام، امکان پرداخت قسطی هم دارید؟ ممنون می‌شوم راهنمایی کنید.", createdAt: ago(3) }),
+    row("sm-c2", { name: "بهزاد کاظمی", phone: "09367778899", subject: "همکاری", text: "سلام وقت بخیر. برای یک همکاری کاری می‌خواستم با شما صحبت کنم؛ لطفاً تماس بگیرید.", status: "SEEN", createdAt: ago(30) }),
+    row("sm-c3", { name: "لیلا صادقی", email: "leila@example.com", text: "از برخورد خوب و حرفه‌ای‌تان خیلی ممنونم. حتماً به دوستانم معرفی‌تان می‌کنم 🌷", status: "DONE", createdAt: ago(96) }),
+    row("sm-n1", { kind: "NEWSLETTER", email: "arash.m@example.com", page: "/", createdAt: ago(5) }),
+    row("sm-n2", { kind: "NEWSLETTER", email: "hanieh@example.com", page: "/", status: "SEEN", createdAt: ago(50) }),
+    row("sm-n3", { kind: "NEWSLETTER", email: "sina.t@example.com", page: "/", status: "SEEN", createdAt: ago(200) }),
+  );
+  return list.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+function saveMessages() {
+  if (!inbox) return;
+  try {
+    localStorage.setItem(MESSAGES_KEY, JSON.stringify({ key: inbox.key, seen: Date.now(), list: inbox.list } satisfies SavedMessages));
+  } catch {
+    // Full or blocked storage: the sample inbox still works until the page is reloaded.
+  }
+}
+function messagesFor(shop: Shop, bookings = true): SampleMessage[] {
+  const key = messagesKey(shop, bookings);
+  if (!inbox || inbox.key !== key) {
+    let list: SampleMessage[] | null = null;
+    try {
+      const saved = JSON.parse(localStorage.getItem(MESSAGES_KEY) ?? "null") as SavedMessages | null;
+      if (saved?.key === key && Date.now() - saved.seen < AWAY && Array.isArray(saved.list)) list = saved.list;
+    } catch {
+      // Storage blocked or broken: start from a fresh sample inbox.
+    }
+    inbox = { key, list: list ?? makeMessages(shop, bookings) };
+  }
+  return inbox.list;
+}
+function messagesChanged() {
+  saveMessages();
+  for (const f of listeners) f();
+}
+
+/** The inbox calls (what SiteInbox and the booking tabs use), answered from the sample inbox. */
+export function sampleMessagesApi(shop: Shop, bookings = true): Pick<ShopApi, "siteMessages" | "updateSiteMessage" | "batchSiteMessages"> {
+  const plain = (m: SampleMessage): SiteMessage => {
+    const { customerId: _, ...x } = m;
+    return copy(x);
+  };
+  return {
+    siteMessages: async (_r, trash) => {
+      const list = messagesFor(shop, bookings);
+      const live = list.filter((m) => !m.deletedAt);
+      const count = (kind: SiteMessage["kind"]) => live.filter((m) => m.kind === kind && m.status === "NEW").length;
+      return { messages: list.filter((m) => (trash ? m.deletedAt : !m.deletedAt)).map(plain), newCounts: { booking: count("BOOKING"), contact: count("CONTACT"), newsletter: count("NEWSLETTER") }, days: TRASH_DAYS };
+    },
+    updateSiteMessage: async (_r, id, patch) => {
+      const m = messagesFor(shop, bookings).find((x) => x.id === id && !x.deletedAt);
+      if (!m) throw new Error("not found");
+      if (patch.status) m.status = patch.status;
+      if (patch.date) m.date = patch.date;
+      if (patch.time) m.time = patch.time;
+      if (patch.ownerNote !== undefined) m.ownerNote = patch.ownerNote || null;
+      messagesChanged();
+      return { message: plain(m) };
+    },
+    batchSiteMessages: async (_r, ids, action) => {
+      const all = messagesFor(shop, bookings);
+      const status = { seen: "SEEN", confirm: "CONFIRMED", done: "DONE", cancel: "CANCELED" } as const;
+      let n = 0;
+      if (action === "purge") {
+        const keep = all.filter((m) => !(ids.includes(m.id) && m.deletedAt));
+        n = all.length - keep.length;
+        all.splice(0, all.length, ...keep);
+      } else {
+        for (const m of all) {
+          if (!ids.includes(m.id)) continue;
+          if (action === "restore") {
+            if (m.deletedAt) (m.deletedAt = null), n++;
+          } else if (!m.deletedAt) {
+            if (action === "delete") m.deletedAt = new Date().toISOString();
+            else m.status = status[action];
+            n++;
+          }
+        }
+      }
+      messagesChanged();
+      return { done: n };
+    },
+  };
+}
+
+/** Places taken at each time from today on, as the server counts them (guests on a restaurant). */
+export function sampleTaken(shop: Shop): Record<string, number> {
+  const seats = Boolean(shop.schedule?.seats);
+  const today = todayTehran();
+  const out: Record<string, number> = {};
+  for (const m of messagesFor(shop)) {
+    if (m.kind !== "BOOKING" || m.deletedAt || m.status === "CANCELED" || !m.date || !m.time || m.date < today) continue;
+    const key = slotKey(m.date, m.time);
+    out[key] = (out[key] ?? 0) + (seats ? Math.max(1, m.guests ?? 1) : 1);
+  }
+  return out;
+}
+
+const asView = (m: SampleMessage): BookingView => ({ code: m.code ?? "", date: m.date ?? undefined, time: m.time ?? undefined, service: m.service ?? undefined, guests: m.guests ?? undefined, status: m.status, at: m.createdAt });
+const samePhone = (a: string | null | undefined, b: string | undefined) => Boolean(a && b && mobile(a).slice(-10) === mobile(b).slice(-10) && mobile(b).length >= 10);
+
+/** The preview's booking side: free times, the signed-in visitor's bookings (/account) and a tracked one (/track). */
+export function sampleBookingVisitor(shop: Shop, page: string, query: Record<string, string>, withAccount: boolean): Pick<Visitor, "taken" | "bookings" | "tracked"> {
+  const out: Pick<Visitor, "taken" | "bookings" | "tracked"> = {};
+  if (shop.schedule) out.taken = sampleTaken(shop);
+  const list = messagesFor(shop).filter((m) => m.kind === "BOOKING" && !m.deletedAt);
+  if (page === "/track" && query.code) {
+    const m = list.find((x) => x.code === query.code!.trim().toUpperCase());
+    out.tracked = m && samePhone(m.phone, query.phone) ? asView(m) : null;
+  }
+  const me = withAccount ? cached?.store.me : undefined;
+  if (me && page === "/account")
+    out.bookings = list
+      .filter((m) => m.customerId === me)
+      .sort((a, b) => `${b.date} ${b.time}`.localeCompare(`${a.date} ${a.time}`))
+      .map(asView);
+  return out;
+}
+
+/**
+ * A form of the preview sent to /_form, saved into the sample inbox with the checks the server makes
+ * (a booking needs a name, a phone and, on a site with hours, a free time). Returns the "?sent=" answer.
+ */
+export function sampleSiteForm(shop: Shop, fields: Record<string, string>, withAccount: boolean, bookings = true): { sent: string; code?: string } {
+  if (fields.website) return { sent: fields.kind ?? "contact" };
+  const kind = fields.kind === "booking" ? "BOOKING" : fields.kind === "newsletter" ? "NEWSLETTER" : fields.kind === "contact" ? "CONTACT" : null;
+  if (!kind) return { sent: "error" };
+  const contact = text(fields.bcc, 120);
+  const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+  const email = text(fields.email, 120) || (isEmail(contact) ? contact : "");
+  const phone = text(fields.phone, 20) || (contact && !isEmail(contact) ? contact.slice(0, 20) : "");
+  const name = text(fields.name, 80) || text(fields.cc, 80);
+  const body = text(fields.text, 3000) || text(fields.body, 3000) || text(fields.message, 3000);
+  const list = messagesFor(shop, bookings);
+  const at = new Date().toISOString();
+  const base = { status: "NEW" as const, code: null, name: name || null, phone: phone || null, email: email || null, subject: text(fields.subject, 160) || null, text: body || null, service: text(fields.service, 80) || null, date: text(fields.date, 20) || null, time: text(fields.time, 10) || null, guests: Number(fields.guests) > 0 ? Math.min(500, Math.floor(Number(fields.guests))) : null, page: text(fields.back, 200) || "/", ownerNote: null, createdAt: at, deletedAt: null };
+  const id = `sm-${Date.now().toString(36)}`;
+  if (kind === "NEWSLETTER") {
+    if (!isEmail(email)) return { sent: "error" };
+    if (!list.some((m) => m.kind === kind && m.email === email && !m.deletedAt)) list.unshift({ ...base, id, kind });
+    messagesChanged();
+    return { sent: "newsletter" };
+  }
+  if (kind === "CONTACT") {
+    if (!base.text && !base.subject) return { sent: "error" };
+    list.unshift({ ...base, id, kind });
+    messagesChanged();
+    return { sent: "contact" };
+  }
+  if (!name || !phone) return { sent: "error" };
+  const s = shop.schedule;
+  if (s) {
+    if (!base.date || !base.time) return { sent: "error" };
+    const need = s.seats ? Math.max(1, base.guests ?? 1) : 1;
+    if (freeAt(s, sampleTaken(shop), base.date, base.time) < need) return { sent: "full" };
+  }
+  let code = "";
+  do code = `B${100000 + Math.floor(Math.random() * 900000)}`;
+  while (list.some((m) => m.code === code));
+  list.unshift({ ...base, id, kind, code, customerId: withAccount ? (cached?.store.me ?? null) : null });
+  messagesChanged();
+  return { sent: "booking", code };
+}
+
+/** The visitor cancels a booking of theirs on the preview (signed in, or by its code and phone). */
+function sampleCancelBooking(shop: Shop, fields: Record<string, string>, withAccount: boolean): Result {
+  const code = text(fields.code, 12).toUpperCase();
+  const fromTrack = fields.back === "/track";
+  const answer = (msg: string, error = false): Result =>
+    fromTrack ? { page: "/track", query: { code, phone: text(fields.phone, 20), [error ? "error" : "msg"]: msg } } : { page: "/account", [error ? "error" : "msg"]: msg };
+  const m = messagesFor(shop).find((x) => x.kind === "BOOKING" && !x.deletedAt && x.code === code);
+  const me = withAccount ? cached?.store.me : undefined;
+  if (!m || !((me && m.customerId === me) || samePhone(m.phone, fields.phone))) return answer("نوبت پیدا نشد.", true);
+  if (m.status === "CANCELED" || m.status === "DONE" || (m.date ?? "") < todayTehran()) return answer("این نوبت دیگر قابل لغو نیست.", true);
+  m.status = "CANCELED";
+  m.ownerNote = [m.ownerNote, "لغو شده توسط خود مراجع"].filter(Boolean).join("\n");
+  messagesChanged();
+  return answer("نوبت لغو شد.");
 }

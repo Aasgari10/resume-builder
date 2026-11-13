@@ -48,10 +48,10 @@ export function pagesOf(data: ResumeData, optional: readonly { path: string }[])
 /** Whether a home-page section is switched on. */
 export const blockOn = (data: ResumeData, key: string) => !(data.site?.hiddenBlocks ?? []).includes(key);
 
-export function PageLink({ to, link, className, children, current, product }: { to: string; link: Link; className?: string; children: ReactNode; current?: boolean; product?: string }) {
+export function PageLink({ to, link, className, children, current, product, label }: { to: string; link: Link; className?: string; children: ReactNode; current?: boolean; product?: string; label?: string }) {
   // "product": in the editor, a click on it opens that product in the shop manager.
   return (
-    <a href={link(to)} data-page={to} data-product={product} className={className} aria-current={current ? "page" : undefined}>
+    <a href={link(to)} data-page={to} data-product={product} className={className} aria-label={label} aria-current={current ? "page" : undefined}>
       {children}
     </a>
   );
