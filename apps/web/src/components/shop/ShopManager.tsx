@@ -45,19 +45,24 @@ type Props = {
   services?: boolean;
   /** The site has a booking form: the inbox opens on the bookings. */
   bookings?: boolean;
+  /** A photo studio: price packages instead of a menu, a blog, no QR code. */
+  studio?: boolean;
   onClose: () => void;
 };
 
 /** Tabs of a menu site, in this order. */
 const MENU_TABS: Tab[] = ["products", "categories", "inbox", "qr", "banners", "extras", "quotes", "pages", "trash"];
 
+/** Tabs of a photo studio, in this order. */
+const STUDIO_TABS: Tab[] = ["inbox", "products", "categories", "banners", "extras", "quotes", "blog", "pages", "trash"];
+
 const EMPTY_SHOP: Shop = { categories: [], products: [] };
 
-export function ShopManager({ data, sample, onData, resumeId, focusProductId, hasBlog, menu: menuSite, sells: sellsMenu, services, bookings, onClose }: Props) {
+export function ShopManager({ data, sample, onData, resumeId, focusProductId, hasBlog, menu: menuSite, sells: sellsMenu, services, bookings, studio, onClose }: Props) {
   const sells = sellsMenu || services;
   // Only a menu site that sells nothing gets the short menu panel.
   const menu = menuSite && !sells;
-  const [tab, setTab] = useState<Tab>(focusProductId || menu ? "products" : "dashboard");
+  const [tab, setTab] = useState<Tab>(studio ? "inbox" : focusProductId || menu ? "products" : "dashboard");
   // Counts for the "new" marks on the tabs; read again after changes in those tabs.
   const [counts, setCounts] = useState<Pick<ShopSummary, "newOrders" | "openTickets" | "waitingReviews"> | null>(null);
   const shop = data.site?.shop ?? EMPTY_SHOP;
@@ -122,7 +127,7 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
   return (
     <div className="shm" dir="rtl" role="dialog" aria-label={menu ? "مدیریت سایت" : "مدیریت فروشگاه"}>
       <header className="shm-head">
-        <h2>{menu ? "☕ مدیریت سایت" : "🛍 مدیریت فروشگاه"}</h2>
+        <h2>{studio ? "📸 مدیریت آتلیه" : menu ? "☕ مدیریت سایت" : "🛍 مدیریت فروشگاه"}</h2>
         <button type="button" className="btn small" onClick={onClose}>
           بستن و برگشت به سایت
         </button>
@@ -132,7 +137,7 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
           {(
             [
               ["dashboard", "📊 داشبورد"],
-              ["products", menu ? "☕ منو" : services ? "💇 خدمات و محصولات" : menuSite ? "☕ منو و محصولات" : "📦 محصولات", <i key="n" className="shm-count">{showNumber(live.length)}</i>],
+              ["products", studio ? "📸 پکیج‌های عکاسی" : menu ? "☕ منو" : services ? "💇 خدمات و محصولات" : menuSite ? "☕ منو و محصولات" : "📦 محصولات", <i key="n" className="shm-count">{showNumber(live.length)}</i>],
               ["qr", "▦ QR کد منو"],
               ["categories", "📂 دسته‌ها"],
               ["orders", "📋 سفارش‌ها", badge(counts?.newOrders)],
@@ -141,7 +146,7 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
               ["reviews", "💬 نظرات", badge(counts?.waitingReviews)],
               ["tickets", "🎫 تیکت‌ها", badge(counts?.openTickets)],
               ["coupons", "🏷 کدهای تخفیف"],
-              ["banners", "🖼 بنرها و اسلایدها"],
+              ["banners", studio ? "🖼 اسلایدها و اعضای تیم" : "🖼 بنرها و اسلایدها"],
               ["quotes", "⭐ نظرات صفحه‌ی اول"],
               ["extras", "✨ ویژگی‌ها، برندها و آرم‌ها"],
               ["pages", "📄 صفحه‌ها و تماس"],
@@ -151,8 +156,8 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
               ["settings", "⚙️ تنظیمات فروشگاه"],
             ] as [Tab, string, ReactNode?][]
           )
-            .filter(([id]) => (menu ? MENU_TABS.includes(id) : (menuSite && !services) || id !== "qr"))
-            .sort(([a], [b]) => (menu ? MENU_TABS.indexOf(a) - MENU_TABS.indexOf(b) : 0))
+            .filter(([id]) => (studio ? STUDIO_TABS.includes(id) : menu ? MENU_TABS.includes(id) : (menuSite && !services) || id !== "qr"))
+            .sort(([a], [b]) => (studio ? STUDIO_TABS.indexOf(a) - STUDIO_TABS.indexOf(b) : menu ? MENU_TABS.indexOf(a) - MENU_TABS.indexOf(b) : 0))
             .map(([id, label, extra]) => (
             <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)}>
               <span>{label}</span>
@@ -185,7 +190,7 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
           <>
         {tab === "dashboard" && <Dashboard resumeId={rid} products={live.length} outOfStock={outOfStock} lowStock={lowStock} onTab={(t) => setTab(t as Tab)} />}
         {tab === "products" && <Products shop={shop} setShop={setShop} onSample={sample?.site?.shop ? startFromSample : undefined} focus={focusProductId} resumeId={rid} />}
-        {tab === "categories" && <Categories shop={shop} setShop={setShop} sells={sells} services={services} />}
+        {tab === "categories" && <Categories shop={shop} setShop={setShop} sells={sells} services={services || studio} />}
         {tab === "banners" && <Banners shop={shop} setShop={setShop} />}
         {tab === "coupons" && <Coupons shop={shop} setShop={setShop} />}
         {tab === "orders" && <Orders resumeId={rid} onChanged={refreshCounts} />}

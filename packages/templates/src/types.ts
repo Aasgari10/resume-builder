@@ -52,4 +52,6 @@ export type TemplateDefinition = {
   services?: boolean;
   /** The site has a booking form (salon appointment, restaurant table): the inbox shows a bookings list. */
   bookings?: boolean;
+  /** A photo studio: the shop panel manages the price packages (no cart), the blog and the inbox; no menu QR code. */
+  studio?: boolean;
 };

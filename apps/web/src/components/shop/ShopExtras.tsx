@@ -47,7 +47,7 @@ export function Extras({ data, onData, shop, setShop, menu }: Props) {
   return (
     <div className="shm-cats">
       <h3>✨ ویژگی‌های فروشگاه</h3>
-      <p className="muted">جمله‌های کوتاه مثل «ارسال رایگان» یا «تضمین کیفیت» (حداکثر ۴ تا). بعضی قالب‌ها کنار هرکدام آیکون هم نشان می‌دهند.</p>
+      <p className="muted">جمله‌های کوتاه مثل «ارسال رایگان» یا «تضمین کیفیت» (حداکثر ۶ تا؛ بیشتر قالب‌ها ۴ تای اول را نشان می‌دهند، قالب آتلیه هر ۶ تا را با عنوان «خدمات ما»). بعضی قالب‌ها کنار هرکدام آیکون هم نشان می‌دهند.</p>
       {perks.map((x, k) => (
         <div key={x.id} className="shm-faq">
           <input value={x.title} maxLength={60} placeholder="عنوان" aria-label="عنوان ویژگی" onChange={(e) => savePerks(perks.map((p) => (p.id === x.id ? { ...p, title: e.target.value } : p)))} />
@@ -61,7 +61,7 @@ export function Extras({ data, onData, shop, setShop, menu }: Props) {
           </div>
         </div>
       ))}
-      {perks.length < 4 && (
+      {perks.length < 6 && (
         <button type="button" className="btn small" onClick={() => savePerks([...perks, { id: newId(), title: "ویژگی جدید" }])}>
           + ویژگی جدید
         </button>
