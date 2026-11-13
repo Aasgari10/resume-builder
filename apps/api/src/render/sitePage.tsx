@@ -41,7 +41,7 @@ export const SITE_CSP = [
   "default-src 'none'",
   `script-src ${scriptHashes.join(" ") || "'none'"}`,
   // Songs of music templates: sample files here, or the owner's links.
-  "media-src 'self' https:",
+  `media-src 'self' https: ${new URL(env.appUrl).origin}`,
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self'",
   // The app origin is listed so uploaded photos also load in development over plain HTTP.

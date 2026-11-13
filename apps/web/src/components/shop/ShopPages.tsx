@@ -112,7 +112,7 @@ const slugify = (text: string, taken: string[]) => {
   return slug;
 };
 
-export function Pages({ data, onData, shop, setShop, faqCategories }: Props & { shop: Shop; setShop: (s: Partial<Shop>) => void; faqCategories?: boolean }) {
+export function Pages({ data, onData, shop, setShop, faqCategories, textPages = true }: Props & { shop: Shop; setShop: (s: Partial<Shop>) => void; faqCategories?: boolean; textPages?: boolean }) {
   const setSite = setSiteOf(data, onData);
   const site = data.site;
   const b = data.basics;
@@ -186,6 +186,8 @@ export function Pages({ data, onData, shop, setShop, faqCategories }: Props & { 
         </button>
       )}
 
+      {textPages && (
+        <>
       <h3>📄 صفحه‌های متنی</h3>
       <p className="muted">مثل «درباره‌ی ما»، «قوانین و مقررات» یا «حریم خصوصی». لینکشان در پایین سایت می‌آید.</p>
       {pages.map((p, k) => (
@@ -259,6 +261,8 @@ export function Pages({ data, onData, shop, setShop, faqCategories }: Props & { 
             + صفحه‌ی دلخواه
           </button>
         </div>
+      )}
+        </>
       )}
     </div>
   );

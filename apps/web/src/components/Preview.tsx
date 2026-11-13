@@ -432,9 +432,17 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
                 const site = raw.site ?? { gallery: [] };
                 const image = String(value);
                 if (target.path === "projects") {
-                  // A new event (escape room): the sample events stay, the new one joins them.
+                  // A new item of the template's list (an event, a record…): the sample ones stay, the new one joins them.
                   const list = raw.projects.length ? raw.projects : shown.projects;
-                  onDataChange({ ...raw, projects: [...structuredClone(list), { id: newId(), title: "رویداد تازه", description: "متن رویداد را این‌جا بنویسید.", technologies: [], images: [image] }] });
+                  onDataChange({ ...raw, projects: [...structuredClone(list), { id: newId(), title: target.label, description: "متن را این‌جا بنویسید.", technologies: [], images: [image] }] });
+                  setTarget(null);
+                  return;
+                }
+                if (target.path === "site.shop.banners") {
+                  // A new team member (music studio): name, role and a short text are written on the page.
+                  const shop = raw.site?.shop ?? shown.site?.shop ?? { categories: [], products: [] };
+                  const list = raw.site?.shop?.banners ?? shown.site?.shop?.banners ?? [];
+                  onDataChange({ ...raw, site: { ...site, shop: { ...shop, banners: [...structuredClone(list), { id: newId(), title: "عضو تازه", kicker: "سمت", text: "معرفی کوتاه", image }] } } });
                   setTarget(null);
                   return;
                 }

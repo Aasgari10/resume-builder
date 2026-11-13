@@ -250,7 +250,7 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
         {tab === "quotes" && <Quotes data={data} onData={onData} />}
         {tab === "extras" && <Extras data={data} onData={onData} shop={shop} setShop={setShop} menu={menu} sections={panel?.extras} />}
         {tab === "blog" && <Blog shop={shop} setShop={setShop} hasBlog={Boolean(hasBlog)} />}
-        {tab === "pages" && <Pages data={data} onData={onData} shop={shop} setShop={setShop} faqCategories={panel?.faqCategories} />}
+        {tab === "pages" && <Pages data={data} onData={onData} shop={shop} setShop={setShop} faqCategories={panel?.faqCategories} textPages={!(panel?.hide ?? []).includes("text-pages")} />}
         {tab === "reports" && <Reports resumeId={rid} shop={namesShop} />}
         {tab === "reviews" && <Reviews resumeId={rid} shop={namesShop} setShop={setShop} onChanged={refreshCounts} />}
         {tab === "tickets" && <Tickets resumeId={rid} onChanged={refreshCounts} />}

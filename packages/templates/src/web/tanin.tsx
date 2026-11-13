@@ -270,6 +270,14 @@ function Header(view: View) {
                 {m.label}
               </PageLink>
             ))}
+            <span className="tn-drawer-foot">
+              {ctx.data.basics.phone && (
+                <a href={telHref(ctx.data.basics.phone)}>
+                  <Svg name="phone" /> <Phone value={ctx.data.basics.phone} />
+                </a>
+              )}
+              <Socials view={view} />
+            </span>
           </nav>
         </details>
       </div>
@@ -473,9 +481,19 @@ function Home(view: View) {
                 </span>
                 <b {...ed(`${at}.title`, "text", "نام اثر")}>{p.title}</b>
                 <small {...ed(`${at}.role`, "text", "هنرمند")}>{p.role}</small>
+                {editing && (
+                  <span className="p-ghost tn-song-edit" {...ed(`${at}.url`, "audio", "آهنگ این اثر")}>
+                    🎵 {href ? "عوض کردن آهنگ" : "+ آهنگ این اثر"}
+                  </span>
+                )}
               </article>
             );
           })}
+          {editing && data.projects.length < 3 && (
+            <span className="p-ghost" {...ed("projects", "newimage", "اثر تازه")}>
+              + اثر تازه
+            </span>
+          )}
         </section>
       )}
 
@@ -516,9 +534,9 @@ function Home(view: View) {
       </div>
       {on("reviews") && <Reviews view={view} />}
       {on("news") && <News view={view} />}
-      {editing && !song && (
-        <p className="tn-wrap p-ghost" {...ed(`${item("projects", data.projects[0]?.id ?? "")}.url`, "url", "لینک فایل آهنگ")}>
-          + لینک فایل آهنگ برای پخش‌کننده‌ی بالای صفحه
+      {editing && !song && data.projects[0] && (
+        <p className="tn-wrap p-ghost" {...ed(`${item("projects", data.projects[0].id)}.url`, "audio", "آهنگ")}>
+          🎵 + آهنگ برای پخش‌کننده‌ی بالای صفحه (آهنگ اولین اثر پخش می‌شود)
         </p>
       )}
     </>
@@ -554,7 +572,7 @@ function Player({ view, song }: { view: View; song: ResumeData["projects"][numbe
         </span>
         <span className="tn-time">
           <small data-cur>۰۰:۰۰</small>
-          <span className="tn-bar" data-bar {...(view.editing ? ed(`${at}.url`, "url", "لینک فایل آهنگ") : {})}>
+          <span className="tn-bar" data-bar {...(view.editing ? ed(`${at}.url`, "audio", "آهنگ") : {})}>
             <i data-fill />
           </span>
           <small data-dur>۰۰:۰۰</small>
@@ -1090,6 +1108,11 @@ function About(view: View) {
                 );
               })}
             </div>
+            {view.editing && (
+              <span className="p-ghost" {...ed("site.shop.banners", "newimage", "عضو تازه")}>
+                + عضو تازه
+              </span>
+            )}
             <style>{team.map((_, k) => `#tn-tm${k}:checked ~ .tn-team-info .tn-team-card:nth-child(${k + 1}) { opacity: 1; visibility: visible; transform: none; } #tn-tm${k}:checked ~ .tn-team-pics .tn-member:nth-child(${k + 1}) { flex-grow: 1.6; filter: none; }`).join("\n")}</style>
           </div>
         </section>
@@ -1844,7 +1867,7 @@ const css = /* css */ `
 /* After scrolling: a slightly see-through grey bar on a computer, a deep brown one on a phone. */
 .tn-head::before { content: ""; position: absolute; inset: 0 0 auto; height: 90px; background: rgb(54 52 58 / .82); backdrop-filter: blur(10px); box-shadow: 0 10px 30px -18px rgb(0 0 0 / .7); opacity: 0; transition: opacity .4s; }
 @supports (animation-timeline: scroll()) {
-  .tn-head::before { animation: tn-solid linear both; animation-timeline: scroll(root); animation-range: 0 160px; }
+  .tn-head::before { animation: tn-solid linear both; animation-timeline: scroll(nearest); animation-range: 0 160px; }
 }
 @keyframes tn-solid { to { opacity: 1; } }
 .tn-head-in > * { position: relative; }
@@ -2317,11 +2340,17 @@ const css = /* css */ `
   .tn-burger[open] summary span { background: transparent; }
   .tn-burger[open] summary span::before { top: 0; transform: rotate(45deg); }
   .tn-burger[open] summary span::after { top: 0; transform: rotate(-45deg); }
-  .tn-drawer { position: absolute; z-index: 30; top: 100%; inset-inline: -16px; display: grid; max-height: calc(100vh - 72px); overflow-y: auto; padding: 8px 24px 28px; background: #1F1A1D; border-top: 1px solid var(--tn-line); box-shadow: 0 30px 50px -20px rgb(0 0 0 / .8); animation: tn-drop .35s cubic-bezier(.2, .7, .2, 1) both; }
-  .tn-drawer a { display: block; padding: 14px 0; border-bottom: 1px solid var(--tn-line); color: #E6E1E7; font-size: 17px; white-space: nowrap; transition: color .3s, padding .3s; }
-  .tn-drawer a:last-child { border-bottom: 0; }
+  /* The menu fills the screen under the header, in the header's own color; it never scrolls by itself. */
+  .tn-drawer { position: absolute; z-index: 30; top: 100%; inset-inline: -16px; display: flex; flex-direction: column; min-height: calc(100svh - 72px); box-sizing: border-box; padding: 6px 24px 24px; background: var(--tn-bar); backdrop-filter: blur(14px); border-top: 1px solid rgb(214 166 112 / .25); animation: tn-drop .35s cubic-bezier(.2, .7, .2, 1) both; }
+  .tn-drawer a { display: flex; align-items: center; justify-content: space-between; padding: min(14px, 1.7svh) 0; border-bottom: 1px solid rgb(255 255 255 / .08); color: #EDE8EE; font-size: min(18px, 2.3svh); white-space: nowrap; transition: color .3s, padding .3s; animation: tn-drop .45s cubic-bezier(.2, .7, .2, 1) both; }
+  .tn-drawer a::after { content: "‹"; color: rgb(214 166 112 / .6); font-size: 1.3em; line-height: 1; }
+  .tn-drawer a:nth-child(2) { animation-delay: .03s; } .tn-drawer a:nth-child(3) { animation-delay: .06s; } .tn-drawer a:nth-child(4) { animation-delay: .09s; } .tn-drawer a:nth-child(5) { animation-delay: .12s; } .tn-drawer a:nth-child(6) { animation-delay: .15s; } .tn-drawer a:nth-child(7) { animation-delay: .18s; } .tn-drawer a:nth-child(n+8) { animation-delay: .21s; }
   .tn-drawer a:hover { padding-inline-start: 6px; color: #fff; }
   .tn-drawer a[aria-current="page"] { color: var(--tn-gold); }
+  .tn-drawer-foot { display: grid; gap: 10px; margin-top: auto; padding-top: 22px; color: #CFC8CF; font-size: 14px; }
+  .tn-drawer-foot a { display: inline-flex; justify-content: flex-start; gap: 8px; padding: 0; border: 0; font-size: 14px; animation: none; }
+  .tn-drawer-foot a::after { content: none; }
+  .tn-head:has(.tn-burger[open])::before { opacity: 1; animation: none; }
   .tn-hero { min-height: 0; }
   .tn-hero-in { padding: 120px 0 40px; }
   .tn-hero h1 { font-size: 9.4cqi; }
@@ -2335,8 +2364,8 @@ const css = /* css */ `
   .tn-records { grid-template-columns: minmax(0, 1fr); }
   .tn-unite, .tn-artists-head, .tn-split-head, .tn-band-in, .tn-band.full .tn-band-in, .tn-news-letter, .tn-contact, .tn-article-grid, .tn-faq-in, .tn-team-in { grid-template-columns: minmax(0, 1fr); }
   .tn-stats, .tn-stats-sec { display: none; }
-  .tn-head::before { background: rgb(46 34 28 / .94); }
-  .tn-drawer { background: #2A201C; }
+  .tn-head { --tn-bar: rgb(44 33 28 / .9); }
+  .tn-head::before { background: var(--tn-bar); backdrop-filter: blur(14px); }
   .tn-features { grid-template-columns: minmax(0, 1fr); }
   .tn-features.two { grid-template-columns: 1fr 1fr; text-align: center; }
   .tn-features.two article { justify-items: center; }

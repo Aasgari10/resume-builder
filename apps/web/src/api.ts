@@ -349,6 +349,14 @@ export const api = {
     request<{ ok: true }>("POST", "/waitlist", { product, phone }),
   uploadAvatar: (dataUrl: string) => request<{ url: string }>("POST", "/uploads/avatar", { dataUrl }),
   uploadImage: (dataUrl: string) => request<{ url: string }>("POST", "/uploads/image", { dataUrl }),
+  /** A song file (MP3, M4A or OGG, up to 8 MB), sent as it is. */
+  uploadAudio: async (file: File): Promise<{ url: string }> => {
+    const res = await fetch("/api/uploads/audio", { method: "POST", credentials: "include", headers: { "Content-Type": "application/octet-stream" }, body: file }).catch(() => null);
+    if (!res) throw new ApiError(0, "NETWORK", "ارتباط با سرور برقرار نشد");
+    const json = await res.json().catch(() => null);
+    if (!res.ok) throw new ApiError(res.status, json?.error?.code ?? "UNKNOWN", res.status === 413 ? "حجم فایل صوتی بیشتر از ۸ مگابایت است" : (json?.error?.message ?? "آپلود انجام نشد"));
+    return json as { url: string };
+  },
   assistantQuota: () => request<AssistantQuota>("GET", "/assistant/quota"),
   askAssistant: (body: { message: string; history: AssistantTurn[]; theme: Theme; locale: "fa" | "en"; capabilities?: Capabilities }) =>
     request<AssistantResponse>("POST", "/assistant/theme", body),

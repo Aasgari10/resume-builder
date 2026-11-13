@@ -12,7 +12,7 @@ import { ZoomOpen } from "./zoom";
 
 /* ───────────── Click-to-edit markers ───────────── */
 
-export type EditKind = "text" | "multiline" | "image" | "url" | "period" | "month" | "lines" | "tags" | "newlink" | "newimage";
+export type EditKind = "text" | "multiline" | "image" | "url" | "audio" | "period" | "month" | "lines" | "tags" | "newlink" | "newimage";
 export type Edit = { "data-edit": string; "data-edit-kind": EditKind; "data-edit-label": string };
 export const ed = (path: string, kind: EditKind, label: string): Edit => ({ "data-edit": path, "data-edit-kind": kind, "data-edit-label": label });
 export const item = (list: string, id: string) => `${list}[${id}]`;
