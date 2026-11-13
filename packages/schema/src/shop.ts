@@ -28,6 +28,8 @@ export type Visitor = {
   ratings?: Record<string, { avg: number; count: number }>;
   /** Approved comments of the product on screen. */
   reviews?: { id: string; name: string; rating: number; text: string; reply?: string; at: string }[];
+  /** Booking templates: appointments already taken in the booking window, by "yyyy-mm-dd hh:mm". */
+  taken?: Record<string, number>;
 };
 
 export const emptyVisitor = (): Visitor => ({ cart: [], wishlist: [], query: {} });

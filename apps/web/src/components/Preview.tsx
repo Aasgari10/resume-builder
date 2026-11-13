@@ -146,6 +146,15 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
     const to = a.getAttribute("data-page");
     const href = a.getAttribute("href") ?? "";
     if (to) setPage(to);
+    // Links inside the site with a query (a booking day, a month, a blog category or page): open that
+    // page with the query, as the published site does, then go to its anchor or the top.
+    else if (href.startsWith("/") && !href.startsWith("//")) {
+      const url = new URL(href, "http://site");
+      setVisitor((v) => ({ ...v, query: Object.fromEntries(url.searchParams) }));
+      setPage(url.pathname);
+      const anchor = url.hash.slice(1);
+      window.setTimeout(() => (anchor ? document.getElementById(anchor)?.scrollIntoView({ behavior: "smooth", block: "start" }) : frameTop(a)), 60);
+    }
     // Project rule: a placeholder link ("#", example.com) takes the visitor to the top of the page.
     else if (isDummyUrl(href)) a.closest(".ws-view")?.scrollTo({ top: 0, behavior: "smooth" });
     else if (href.startsWith("#")) document.getElementById(href.slice(1))?.scrollIntoView({ behavior: "smooth" });
@@ -281,7 +290,7 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
           دستیار
         </button>
         {site.shop && (
-          <button type="button" className="ws-chip" title={site.studio ? "مدیریت آتلیه: پیام‌ها و رزروها، پکیج‌ها، تیم، بلاگ" : site.services ? "مدیریت سایت: خدمات، فروشگاه، سفارش‌ها و بلاگ" : site.menu && site.sells ? "مدیریت سایت: منو، فروشگاه، سفارش‌ها و QR کد" : site.menu ? "مدیریت سایت: منو، QR کد و محتوای صفحه‌ها" : "مدیریت فروشگاه: سفارش‌ها، محصولات، تیکت‌ها و گزارش‌ها"} onClick={() => { setShopFocus(undefined); setShopOpen(true); }}>
+          <button type="button" className="ws-chip" title={site.clinic ? "مدیریت مطب: نوبت‌ها، ساعت کاری، تعرفه‌ها، رویدادها و بلاگ" : site.studio ? "مدیریت آتلیه: پیام‌ها و رزروها، پکیج‌ها، تیم، بلاگ" : site.services ? "مدیریت سایت: خدمات، فروشگاه، سفارش‌ها و بلاگ" : site.menu && site.sells ? "مدیریت سایت: منو، فروشگاه، سفارش‌ها و QR کد" : site.menu ? "مدیریت سایت: منو، QR کد و محتوای صفحه‌ها" : "مدیریت فروشگاه: سفارش‌ها، محصولات، تیکت‌ها و گزارش‌ها"} onClick={() => { setShopFocus(undefined); setShopOpen(true); }}>
             ⚙️ مدیریت
           </button>
         )}
@@ -351,7 +360,7 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
         )}
       {shopOpen &&
         createPortal(
-          <ShopManager data={raw} sample={templateSample} onData={onDataChange} resumeId={resumeId} focusProductId={shopFocus} menu={Boolean(site.menu)} sells={Boolean(site.sells)} services={Boolean(site.services)} bookings={Boolean(site.bookings)} studio={Boolean(site.studio)} panel={site.panel} hasBlog={Boolean(site.optionalPages?.some((p) => p.path === "/blog"))} onClose={() => { setShopOpen(false); setShopFocus(undefined); }} />,
+          <ShopManager data={raw} sample={templateSample} onData={onDataChange} resumeId={resumeId} focusProductId={shopFocus} menu={Boolean(site.menu)} sells={Boolean(site.sells)} services={Boolean(site.services)} bookings={Boolean(site.bookings)} studio={Boolean(site.studio)} clinic={Boolean(site.clinic)} panel={site.panel} hasBlog={Boolean(site.optionalPages?.some((p) => p.path === "/blog"))} onClose={() => { setShopOpen(false); setShopFocus(undefined); }} />,
           document.body,
         )}
       {target &&

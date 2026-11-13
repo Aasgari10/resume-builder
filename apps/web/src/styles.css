@@ -1502,3 +1502,10 @@ select {
   .shm-cal-day { min-height: 0; }
   .shm-pack-top { grid-template-columns: 1fr; }
 }
+
+/* Working hours and events */
+.shm-sched { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.shm-sched input, .shm-sched select, .shm-studio input[type="date"] { padding: 7px 9px; border: 1px solid var(--border); border-radius: 8px; font: inherit; background: #fff; }
+.shm-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 6px 4px 12px; border: 1px solid var(--border); border-radius: 99px; background: var(--surface); font-size: .85rem; }
+.shm-chip button { border: 0; background: none; color: var(--muted); cursor: pointer; }
+.shm-past { opacity: .6; }

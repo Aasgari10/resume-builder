@@ -31,6 +31,7 @@ export const SHOWCASE_COLORS: Record<string, string> = {
   "kafe-site": "#BE9C79",
   "ladiva-site": "#C38A98",
   "cropit-site": "#3A3A3A",
+  "therapy-site": "#E9A68C",
   "patio-shop": "#DD5902",
 };
 

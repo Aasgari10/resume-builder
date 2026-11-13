@@ -3,3 +3,4 @@ export * from "./resume.schema";
 export * from "./theme.schema";
 export * from "./hidden";
 export * from "./shop";
+export * from "./schedule";

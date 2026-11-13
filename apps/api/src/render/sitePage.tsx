@@ -137,12 +137,13 @@ const SENT_TEXT: Record<string, [string, string]> = {
   contact: ["پیام شما فرستاده شد", "به‌زودی پاسخ می‌دهیم."],
   newsletter: ["عضویت شما در خبرنامه ثبت شد", "از تازه‌ها باخبرتان می‌کنیم."],
   error: ["فرستاده نشد", "لطفاً فیلدهای لازم را کامل کنید و دوباره بفرستید."],
+  full: ["این زمان دیگر خالی نیست", "همین حالا شخص دیگری این نوبت را گرفت؛ لطفاً زمان دیگری انتخاب کنید."],
 };
 
 /** The notice after a form was sent: fixed at the bottom of the page, closes with a click, fades by itself. No scripts. */
 function sentNotice(sent: { kind: string; code?: string }): string {
   const [title, text] = SENT_TEXT[sent.kind] ?? SENT_TEXT.contact!;
-  const ok = sent.kind !== "error";
+  const ok = sent.kind !== "error" && sent.kind !== "full";
   const code = ok && sent.code ? `<br>کد پیگیری: <b dir="ltr">${escapeHtml(sent.code)}</b>` : "";
   return `<input type="checkbox" id="rb-sent-x" style="position:absolute;opacity:0;pointer-events:none">
 <div class="rb-sent" role="status" dir="rtl"><b>${ok ? "✓ " : ""}${escapeHtml(title)}</b><span>${escapeHtml(text)}${code}</span><label for="rb-sent-x" aria-label="بستن">×</label></div>
