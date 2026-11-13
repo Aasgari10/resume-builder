@@ -281,7 +281,7 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
           دستیار
         </button>
         {site.shop && (
-          <button type="button" className="ws-chip" title={site.services ? "مدیریت سایت: خدمات، فروشگاه، سفارش‌ها و بلاگ" : site.menu && site.sells ? "مدیریت سایت: منو، فروشگاه، سفارش‌ها و QR کد" : site.menu ? "مدیریت سایت: منو، QR کد و محتوای صفحه‌ها" : "مدیریت فروشگاه: سفارش‌ها، محصولات، تیکت‌ها و گزارش‌ها"} onClick={() => { setShopFocus(undefined); setShopOpen(true); }}>
+          <button type="button" className="ws-chip" title={site.studio ? "مدیریت آتلیه: پیام‌ها و رزروها، پکیج‌ها، تیم، بلاگ" : site.services ? "مدیریت سایت: خدمات، فروشگاه، سفارش‌ها و بلاگ" : site.menu && site.sells ? "مدیریت سایت: منو، فروشگاه، سفارش‌ها و QR کد" : site.menu ? "مدیریت سایت: منو، QR کد و محتوای صفحه‌ها" : "مدیریت فروشگاه: سفارش‌ها، محصولات، تیکت‌ها و گزارش‌ها"} onClick={() => { setShopFocus(undefined); setShopOpen(true); }}>
             ⚙️ مدیریت
           </button>
         )}
@@ -351,7 +351,7 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
         )}
       {shopOpen &&
         createPortal(
-          <ShopManager data={raw} sample={templateSample} onData={onDataChange} resumeId={resumeId} focusProductId={shopFocus} menu={Boolean(site.menu)} sells={Boolean(site.sells)} services={Boolean(site.services)} bookings={Boolean(site.bookings)} hasBlog={Boolean(site.optionalPages?.some((p) => p.path === "/blog"))} onClose={() => { setShopOpen(false); setShopFocus(undefined); }} />,
+          <ShopManager data={raw} sample={templateSample} onData={onDataChange} resumeId={resumeId} focusProductId={shopFocus} menu={Boolean(site.menu)} sells={Boolean(site.sells)} services={Boolean(site.services)} bookings={Boolean(site.bookings)} studio={Boolean(site.studio)} panel={site.panel} hasBlog={Boolean(site.optionalPages?.some((p) => p.path === "/blog"))} onClose={() => { setShopOpen(false); setShopFocus(undefined); }} />,
           document.body,
         )}
       {target &&

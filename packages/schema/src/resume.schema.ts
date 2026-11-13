@@ -255,7 +255,7 @@ function buildResumeSchemas(strict: boolean) {
     lookSpots: z.array(z.object({ id, productId: z.string().max(40), x: z.number().min(0).max(100), y: z.number().min(0).max(100) })).max(4).optional(),
     trendImage: optionalUrl,
     bandItems: z.array(z.string().max(60)).max(6).optional(), // the moving dark band
-    perks: z.array(perk).max(4).optional(),
+    perks: z.array(perk).max(6).optional(), // some templates show six (a studio's services)
     // Discount codes customers type at checkout.
     coupons: z
       .array(

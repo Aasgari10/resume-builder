@@ -25,6 +25,7 @@ import { BOUTIQUE_BLOCKS, BoutiqueShop, boutiquePages, boutiqueSample } from "./
 import { GOLSARA_BLOCKS, GOLSARA_OPTIONAL_PAGES, GolsaraShop, golsaraPages, golsaraSample } from "./web/golsara";
 import { HOMEMART_BLOCKS, HomeMartShop, homemartPages, homemartSample } from "./web/homemart";
 import { PATIO_BLOCKS, PATIO_OPTIONAL_PAGES, PatioShop, patioPages, patioSample } from "./web/patio";
+import { CROPIT_BLOCKS, CROPIT_OPTIONAL_PAGES, CropitSite, cropitPages, cropitSample } from "./web/cropit";
 import { LADIVA_BLOCKS, LADIVA_OPTIONAL_PAGES, LadivaSite, ladivaPages, ladivaSample } from "./web/ladiva";
 import { KAFE_BLOCKS, KAFE_OPTIONAL_PAGES, KafeSite, kafePages, kafeSample } from "./web/kafe";
 import { JUNO_BLOCKS, JUNO_OPTIONAL_PAGES, JunoShop, junoPages, junoSample } from "./web/juno";
@@ -91,14 +92,15 @@ export const PORTFOLIO_TEMPLATES: readonly TemplateDefinition[] = [
   { ...web("code-portfolio", "کد", CodePortfolio), pages: codePages, sample: codeSample, blocks: CODE_BLOCKS },
   { ...web("simple-portfolio", "ساده", SimplePortfolio), pages: simplePages, sample: simpleSample, blocks: SIMPLE_BLOCKS },
   { ...web("sepid-portfolio", "سپید", SepidPortfolio), pages: sepidPages, sample: sepidSample, optionalPages: SEPID_OPTIONAL_PAGES, blocks: SEPID_BLOCKS },
-  { ...web("boutique-shop", "بوتیک (فروشگاه)", BoutiqueShop), pages: boutiquePages, sample: boutiqueSample, blocks: BOUTIQUE_BLOCKS, shop: true },
-  { ...web("golsara-shop", "گل‌سرا (گل‌فروشی)", GolsaraShop), pages: golsaraPages, sample: golsaraSample, blocks: GOLSARA_BLOCKS, optionalPages: GOLSARA_OPTIONAL_PAGES, shop: true },
-  { ...web("patio-shop", "پاتیوتایم (رستوران)", PatioShop), pages: patioPages, sample: patioSample, blocks: PATIO_BLOCKS, optionalPages: PATIO_OPTIONAL_PAGES, shop: true, bookings: true },
-  { ...web("kafe-site", "کورتو (کافه)", KafeSite), pages: kafePages, sample: kafeSample, blocks: KAFE_BLOCKS, optionalPages: KAFE_OPTIONAL_PAGES, shop: true, menu: true, sells: true },
-  { ...web("ladiva-site", "لا دیوا (آرایشگاه)", LadivaSite), pages: ladivaPages, sample: ladivaSample, blocks: LADIVA_BLOCKS, optionalPages: LADIVA_OPTIONAL_PAGES, shop: true, services: true, bookings: true },
-  { ...web("juno-shop", "جونو (اسباب‌بازی)", JunoShop), pages: junoPages, sample: junoSample, blocks: JUNO_BLOCKS, optionalPages: JUNO_OPTIONAL_PAGES, shop: true },
-  { ...web("grogin-shop", "گروگین (سوپرمارکت)", GroginShop), pages: groginPages, sample: groginSample, blocks: GROGIN_BLOCKS, optionalPages: GROGIN_OPTIONAL_PAGES, shop: true },
-  { ...web("homemart-shop", "هوم‌مارت (فروشگاه لوازم خانگی)", HomeMartShop), pages: homemartPages, sample: homemartSample, blocks: HOMEMART_BLOCKS, shop: true },
+  { ...web("boutique-shop", "بوتیک (فروشگاه)", BoutiqueShop), pages: boutiquePages, sample: boutiqueSample, blocks: BOUTIQUE_BLOCKS, shop: true, panel: { extras: { perks: "✨ ویژگی‌های فروشگاه" } } },
+  { ...web("golsara-shop", "گل‌سرا (گل‌فروشی)", GolsaraShop), pages: golsaraPages, sample: golsaraSample, blocks: GOLSARA_BLOCKS, optionalPages: GOLSARA_OPTIONAL_PAGES, shop: true, panel: { extras: { perks: "✨ ویژگی‌های فروشگاه" }, hide: ["quotes"] } },
+  { ...web("patio-shop", "پاتیوتایم (رستوران)", PatioShop), pages: patioPages, sample: patioSample, blocks: PATIO_BLOCKS, optionalPages: PATIO_OPTIONAL_PAGES, shop: true, bookings: true, panel: { hide: ["banners", "extras"] } },
+  { ...web("kafe-site", "کورتو (کافه)", KafeSite), pages: kafePages, sample: kafeSample, blocks: KAFE_BLOCKS, optionalPages: KAFE_OPTIONAL_PAGES, shop: true, menu: true, sells: true, panel: { extras: { perks: "☕ آنچه ارائه می‌دهیم (آیکون‌ها)", stats: "🔢 اعداد", brands: "🏷 آرم همکاران" } } },
+  { ...web("ladiva-site", "لا دیوا (آرایشگاه)", LadivaSite), pages: ladivaPages, sample: ladivaSample, blocks: LADIVA_BLOCKS, optionalPages: LADIVA_OPTIONAL_PAGES, shop: true, services: true, bookings: true, panel: { extras: { perks: "📍 شعبه‌ها (صفحه‌ی تماس)", stats: "🔢 اعداد", brands: "📰 لوگوی رسانه‌ها" } } },
+  { ...web("cropit-site", "کراپ ایت (آتلیه عکاسی)", CropitSite), pages: cropitPages, sample: cropitSample, blocks: CROPIT_BLOCKS, optionalPages: CROPIT_OPTIONAL_PAGES, shop: true, menu: true, studio: true, bookings: true, panel: { extras: { perks: "🎯 خدمات ما (۶ خدمت با آیکون)", brands: "🤝 لوگوی همکاران" } } },
+  { ...web("juno-shop", "جونو (اسباب‌بازی)", JunoShop), pages: junoPages, sample: junoSample, blocks: JUNO_BLOCKS, optionalPages: JUNO_OPTIONAL_PAGES, shop: true, panel: { extras: { perks: "✨ ویژگی‌های فروشگاه", brands: "🏷 آرم مشتری‌ها", trust: "💳 آرم‌های پایین صفحه" } } },
+  { ...web("grogin-shop", "گروگین (سوپرمارکت)", GroginShop), pages: groginPages, sample: groginSample, blocks: GROGIN_BLOCKS, optionalPages: GROGIN_OPTIONAL_PAGES, shop: true, panel: { extras: { perks: "✨ ویژگی‌های فروشگاه", brands: "🏷 برندهای محبوب", trust: "💳 آرم‌های پایین صفحه" }, hide: ["quotes"] } },
+  { ...web("homemart-shop", "هوم‌مارت (فروشگاه لوازم خانگی)", HomeMartShop), pages: homemartPages, sample: homemartSample, blocks: HOMEMART_BLOCKS, shop: true, panel: { extras: { perks: "✨ ویژگی‌های فروشگاه" } } },
   minimalPortfolio,
   web("studio-portfolio", "استودیو", StudioPortfolio),
   web("split-portfolio", "دوستونه", SplitPortfolio),

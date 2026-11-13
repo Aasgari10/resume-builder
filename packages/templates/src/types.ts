@@ -52,4 +52,15 @@ export type TemplateDefinition = {
   services?: boolean;
   /** The site has a booking form (salon appointment, restaurant table): the inbox shows a bookings list. */
   bookings?: boolean;
+  /** A photo studio: the shop panel manages the price packages (no cart), the blog and the inbox; no menu QR code. */
+  studio?: boolean;
+  /**
+   * Shop manager pieces this template shows on its pages; a manager tab for content the template has
+   * no place for is left out. "extras" lists the sections of that tab, each with the heading it gets.
+   */
+  panel?: {
+    extras?: { perks?: string; stats?: string; brands?: string; trust?: string };
+    /** Tabs of content this template does not show (e.g. "banners", "quotes"). */
+    hide?: string[];
+  };
 };
