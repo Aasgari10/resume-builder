@@ -38,6 +38,7 @@ const templates = [
   { id: "golsara-shop", name: "گل‌سرا (گل‌فروشی)", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
   { id: "boutique-shop", name: "بوتیک (فروشگاه)", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
   { id: "patio-shop", name: "پاتیوتایم (رستوران)", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
+  { id: "therapy-site", name: "مهرپویا (مطب روان‌شناسی)", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
   { id: "cropit-site", name: "کراپ ایت (آتلیه عکاسی)", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
   { id: "ladiva-site", name: "لا دیوا (آرایشگاه)", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
   { id: "kafe-site", name: "کورتو (کافه)", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
