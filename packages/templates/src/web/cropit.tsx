@@ -46,7 +46,7 @@ export function cropitPages(data: ResumeData): string[] {
 
 type View = { ctx: Ctx; shop: Shop; link: (p: string) => string; editing: boolean; page: string; visitor: Visitor };
 /** Pages whose top is a big photo under a see-through header. */
-const PHOTO_TOP = ["/", "/services", "/about"];
+const PHOTO_TOP = ["/"];
 
 export function CropitSite(props: TemplateProps) {
   const ctx = webCtx(props);
@@ -394,7 +394,7 @@ function PhotoTop({ view, slides }: { view: View; slides: Slide[] }) {
 }
 
 function Instagram({ view }: { view: View }) {
-  const pics = instaOf(view.ctx.data).slice(0, 4);
+  const pics = instaOf(view.ctx.data).slice(0, 12);
   const insta = view.ctx.data.basics.links.find((l) => l.type === "instagram");
   const href = safeUrl(insta?.url);
   if (!pics.length && !view.editing) return null;
@@ -410,15 +410,20 @@ function Instagram({ view }: { view: View }) {
           </a>
         )}
       </div>
+      {/* A strip that moves slowly sideways and stops under the pointer; the photos are there twice so it loops without a jump. */}
       <div className="cr-insta-row">
-        {pics.map((g) => (
-          <ZoomOpen key={g.id} id={g.id} className="cr-insta-pic">
-            <img src={safeUrl(g.image)} alt={g.title} loading="lazy" {...ed(`${item("site.gallery", g.id)}.image`, "image", "عکس")} />
-          </ZoomOpen>
-        ))}
-        {view.editing && pics.length < 4 && (
-          <span className="cr-insta-pic cr-add" {...ed("site.gallery", "newimage", "افزودن عکس")}>
-            +
+        <div className="cr-insta-track" style={{ "--n": pics.length, "--t": `${pics.length * 6}s` } as CSSProperties}>
+          {[0, 1].map((round) =>
+            pics.map((g) => (
+              <ZoomOpen key={`${round}-${g.id}`} id={g.id} className="cr-insta-pic">
+                <img src={safeUrl(g.image)} alt={round ? "" : g.title} loading="lazy" {...(round ? {} : ed(`${item("site.gallery", g.id)}.image`, "image", "عکس"))} />
+              </ZoomOpen>
+            )),
+          )}
+        </div>
+        {view.editing && (
+          <span className="cr-insta-add" {...ed("site.gallery", "newimage", "افزودن عکس")}>
+            + عکس اینستاگرام
           </span>
         )}
       </div>
@@ -477,12 +482,14 @@ function Cv({ view }: { view: View }) {
 }
 
 /** "Ready to start? Work with me" band over a photo. */
-function WorkBand({ view, title }: { view: View; title: string }) {
+/** On the home page the text is on the start side over the photographer; inner pages use their own photo with the text on the other side. */
+function WorkBand({ view, title, inner }: { view: View; title: string; inner?: boolean }) {
   const { shop, link, editing } = view;
-  const url = safeUrl(shop.newImage);
+  const path = inner ? "site.heroImage" : "site.shop.newImage";
+  const url = safeUrl(inner ? (view.ctx.data.site?.heroImage ?? shop.newImage) : shop.newImage);
   return (
-    <section className="cr-work">
-      <span className="cr-work-pic" {...ed("site.shop.newImage", "image", "عکس پشت نوار")}>
+    <section className={`cr-work${inner ? " end" : ""}`}>
+      <span className="cr-work-pic" {...ed(path, "image", "عکس پشت نوار")}>
         {url && <img src={url} alt="" loading="lazy" />}
       </span>
       <div className="cr-wrap cr-work-text">
@@ -716,7 +723,7 @@ function Services(view: View) {
       )}
       {editing && plans.length === 0 && <p className="cr-wrap cr-hint">پکیج‌های عکاسی (قیمت‌ها) را در پنل مدیریت، بخش «پکیج‌ها» اضافه کنید.</p>}
       <Quotes view={view} />
-      <WorkBand view={view} title="با ما کار کنید" />
+      <WorkBand view={view} title="با ما کار کنید" inner />
     </>
   );
 }
@@ -780,8 +787,8 @@ function About(view: View) {
                 <div className="cr-body" {...ed(t.textPath, "multiline", "متن")}>
                   <Para text={t.text} />
                 </div>
-                <PageLink to="/services" link={link} className="cr-btn">
-                  خدمات ما
+                <PageLink to="/gallery" link={link} className="cr-btn">
+                  همه چیز درباره‌ی ما
                 </PageLink>
               </div>
             ))}
@@ -795,7 +802,13 @@ function About(view: View) {
             <Pic src={lead.image} path={`${item("site.shop.banners", lead.id)}.image`} label="عکس" className="cr-team-pic" />
             <figcaption>
               <h2 {...ed(`${item("site.shop.banners", lead.id)}.title`, "text", "تیتر")}>{lead.title}</h2>
-              {lead.text && <p {...ed(`${item("site.shop.banners", lead.id)}.text`, "text", "متن")}>{lead.text}</p>}
+              {lead.text && (
+                <p {...ed(`${item("site.shop.banners", lead.id)}.text`, "text", "متن (خط‌ها را با · جدا کنید)")}>
+                  {lead.text.split("·").map((x, k) => (
+                    <span key={k}>{x.trim()}</span>
+                  ))}
+                </p>
+              )}
             </figcaption>
           </figure>
           {members.map((m) => {
@@ -815,7 +828,7 @@ function About(view: View) {
       <Cv view={view} />
       <Instagram view={view} />
       <Quotes view={view} />
-      <WorkBand view={view} title="با ما کار کنید" />
+      <WorkBand view={view} title="با ما کار کنید" inner />
     </>
   );
 }
@@ -1133,7 +1146,7 @@ export function cropitSample(locale: ResumeData["locale"]): ResumeData {
     ...base,
     basics: {
       ...base.basics,
-      fullName: "جنیفر لایت",
+      fullName: "ترانه مهرآیین",
       jobTitle: "عکاس",
       avatarUrl: png("logo"),
       email: "studio@example.com",
@@ -1169,19 +1182,20 @@ export function cropitSample(locale: ResumeData["locale"]): ResumeData {
       styleTitle: "اصول ما",
       styleText: "صداقت در قیمت، احترام به وقت شما و حفظ حریم خصوصی؛ عکس‌های شما بدون اجازه‌ی خودتان هیچ‌جا منتشر نمی‌شود.\nهمه‌ی عکس‌ها را خودمان روتوش می‌کنیم و تا راضی نباشید کار را تمام‌شده نمی‌دانیم.",
       contactText: "برای رزرو جلسه‌ی عکاسی، همکاری یا هر پرسشی پیام بگذارید؛ در کمتر از یک روز کاری پاسخ می‌دهیم.",
-      accentImage: img("cat8"),
+      accentImage: img("mission"),
+      heroImage: img("work2"),
       signatureImage: png("logo-light"),
-      address: "تهران، خیابان شریعتی، بالاتر از پل رومی، پلاک ۲۴",
+      address: "تهران، شریعتی، پل رومی، پلاک ۲۴",
       mapUrl: "https://www.openstreetmap.org/?mlat=35.7700&mlon=51.4400",
       gallery: [
-        { id: "g1", title: "مرد با پیراهن گل‌دار", description: "مد و فشن", image: img("ig3") },
-        { id: "g2", title: "نور طلایی", description: "پرتره", image: img("hero2") },
-        { id: "g3", title: "در جنگل", description: "طبیعت", image: img("cat7") },
-        { id: "g4", title: "دو دوست", description: "آدم‌ها", image: img("ig1") },
-        { id: "g5", title: "کنار دیوار", description: "مد و فشن", image: img("hero1") },
-        { id: "g6", title: "لباس قرمز", description: "پرتره", image: img("ig5") },
-        { id: "g7", title: "خیابان", description: "شهر", image: img("hero3") },
-        { id: "g8", title: "نگاه", description: "آدم‌ها", image: img("hero4") },
+        { id: "g1", title: "مرد با پیراهن گل‌دار", description: "مد و فشن", image: img("gal1") },
+        { id: "g2", title: "روز آفتابی", description: "آدم‌ها", image: img("gal2") },
+        { id: "g3", title: "در جنگل", description: "طبیعت", image: img("gal3") },
+        { id: "g4", title: "دو دوست و دوچرخه", description: "آدم‌ها", image: img("gal4") },
+        { id: "g5", title: "کنار در سبز", description: "مد و فشن", image: img("gal5") },
+        { id: "g6", title: "عینک زرد", description: "عروسی", image: img("gal6") },
+        { id: "g7", title: "در ماشین", description: "شهر", image: img("gal7") },
+        { id: "g8", title: "دیوار نارنجی", description: "مد و فشن", image: img("gal8") },
         { id: "i1", title: "", image: img("ig3") },
         { id: "i2", title: "", image: img("ig7") },
         { id: "i3", title: "", image: img("ig4") },
@@ -1190,9 +1204,9 @@ export function cropitSample(locale: ResumeData["locale"]): ResumeData {
         { id: "i6", title: "", image: img("ig6") },
       ],
       testimonials: [
-        { id: "t1", name: "سارا محمدی", role: "مدل", image: img("rev1"), text: "جلسه‌ی عکاسی با جنیفر یکی از بهترین تجربه‌هایم بود؛ آن‌قدر راحت بودم که اصلاً متوجه دوربین نشدم و عکس‌ها از چیزی که فکر می‌کردم هم بهتر شد." },
-        { id: "t2", name: "نگار احمدی", role: "طراح لباس", image: img("rev2"), text: "برای کاتالوگ مجموعه‌ی جدیدمان با این استودیو کار کردیم؛ دقیق، خوش‌قول و خلاق. حتماً دوباره همکاری می‌کنیم." },
-        { id: "t3", name: "علی رضایی", role: "بازیگر", image: img("rev3"), text: "عکس‌های پرتره‌ام را این‌جا گرفتم؛ نورپردازی عالی و روتوشی که طبیعی ماند. ممنون از همه‌ی تیم." },
+        { id: "t1", name: "سارا محمدی", role: "مدل", image: img("rev1"), text: "جلسه‌ی عکاسی با ترانه یکی از بهترین تجربه‌هایم بود؛ از اولین تماس تا تحویل عکس‌ها همه‌چیز با حوصله و دقت پیش رفت. آن‌قدر راحت بودم که اصلاً متوجه دوربین نشدم و عکس‌ها از چیزی که فکر می‌کردم هم بهتر شد. نور، لباس و حتی جای ایستادن را با هم انتخاب کردیم و نتیجه دقیقاً همان حسی را داشت که می‌خواستم." },
+        { id: "t2", name: "نگار احمدی", role: "طراح لباس", image: img("rev2"), text: "برای کاتالوگ مجموعه‌ی جدیدمان با این استودیو کار کردیم؛ دقیق، خوش‌قول و خلاق. پیش از عکاسی طرح صحنه‌ها را برایمان فرستادند و روز عکاسی هیچ زمانی هدر نرفت. عکس‌ها سر موعد و با روتوشی تمیز و طبیعی رسید و فروش آنلاین مجموعه‌مان را حسابی بالا برد. حتماً دوباره همکاری می‌کنیم." },
+        { id: "t3", name: "علی رضایی", role: "بازیگر", image: img("rev3"), text: "عکس‌های پرتره‌ام را برای پرونده‌ی بازیگری این‌جا گرفتم؛ نورپردازی عالی و روتوشی که طبیعی ماند. فضای استودیو آرام و صمیمی است و تیم با حوصله کمک کرد تا بهترین زاویه‌ها را پیدا کنم. چند هفته بعد با همین عکس‌ها برای دو نقش تازه دعوت شدم. ممنون از همه‌ی تیم." },
       ],
       clients: ["evanto", "shutterstock", "jquery", "unyson"].map((n, k) => ({ id: `c${k + 1}`, name: n, image: png(`p-${n}`) })),
       shop: {
@@ -1202,14 +1216,14 @@ export function cropitSample(locale: ResumeData["locale"]): ResumeData {
           { id: "s3", title: "داستان شما در یک قاب", text: "از استودیو تا خیابان، هر جا که بخواهید", image: img("hero3") },
         ],
         discoverTitle: "بگذارید از خودمان بگوییم",
-        discoverImage: img("hero4"),
+        discoverImage: img("about-top"),
         bestTitle: "خدمات بی‌نقص ما",
-        trendImage: img("hero5"),
+        trendImage: img("services-top"),
         promoTitle: "درباره‌ی استودیوی ما",
         promoText: "استودیوی ما از یک اتاق کوچک و یک دوربین قدیمی شروع شد؛ امروز تیمی از عکاسان، طراحان نور و روتوش‌کاران کنار هم کار می‌کنند.\nهنوز هم مثل روز اول، هر عکس را با عشق می‌گیریم.",
         newImage: img("work"),
         newText: "بیشتر با ما آشنا شوید!",
-        lookImage: img("cat6"),
+        lookImage: img("price-bg"),
         categories: [
           { id: "c1", name: "مد و فشن", image: img("cat1"), text: "عکاسی کاتالوگ، لوک‌بوک و کمپین برندهای لباس؛ با طراحی نور و صحنه‌ی مخصوص هر مجموعه." },
           { id: "c2", name: "پرتره", image: img("cat2") },
@@ -1229,19 +1243,22 @@ export function cropitSample(locale: ResumeData["locale"]): ResumeData {
           { id: "v6", title: "موسیقی متن", text: "انتخاب و تنظیم موسیقی مناسب برای فیلم‌ها و اسلایدشوهای شما." },
         ],
         banners: [
-          { id: "tm0", title: "تیم ما", text: "تهران، خیابان شریعتی، پلاک ۲۴ · ۰۲۱ ۰۰۰۰ ۰۰۰۰", image: img("cat3") },
-          { id: "tm1", title: "آرش کریمی", kicker: "عکاس", image: img("ig2") },
-          { id: "tm2", title: "مینا صادقی", kicker: "طراح نور", image: img("cat5") },
-          { id: "tm3", title: "رضا نوری", kicker: "روتوش‌کار", image: img("ig5") },
-          { id: "tm4", title: "لیلا رحیمی", kicker: "گریمور", image: img("cat2") },
-          { id: "tm5", title: "سامان ملکی", kicker: "فیلم‌بردار", image: img("ig4") },
-          { id: "tm6", title: "نیلوفر امینی", kicker: "طراح لباس", image: img("hero2") },
+          { id: "tm0", title: "تیم ما", text: "تهران، خیابان شریعتی، پلاک ۲۴ · ۰۲۱ ۰۰۰۰ ۰۰۰۰ ، studio@example.com", image: img("team1") },
+          { id: "tm1", title: "آرش کریمی", kicker: "عکاس", image: img("team2") },
+          { id: "tm2", title: "مینا صادقی", kicker: "طراح نور", image: img("team3") },
+          { id: "tm3", title: "رضا نوری", kicker: "روتوش‌کار", image: img("team4") },
+          { id: "tm4", title: "لیلا رحیمی", kicker: "گریمور", image: img("team5") },
+          { id: "tm5", title: "سامان ملکی", kicker: "فیلم‌بردار", image: img("team6") },
+          { id: "tm6", title: "نیلوفر امینی", kicker: "طراح لباس", image: img("team7") },
         ],
         products: [plan("pl1", "پکیج خلاقانه", 2900000, "۵۲۰"), plan("pl2", "پکیج حرفه‌ای", 3900000, "۳۲۰"), plan("pl3", "پکیج ویژه", 5200000, "۵۲۰")],
         posts: [
-          { id: "b1", title: "به رؤیایمان ایمان داریم", image: img("hero1"), date: "2026-10-16", author: "جنیفر", category: "آدم‌ها", text: "هر جلسه‌ی عکاسی برای ما یک قصه است. پیش از شروع، با شما درباره‌ی حس و حالی که دوست دارید حرف می‌زنیم و بعد نور و لوکیشن را انتخاب می‌کنیم.\nدر این مطلب از پشت صحنه‌ی یکی از جلسه‌های اخیرمان می‌گوییم و چند نکته برای این‌که جلوی دوربین راحت‌تر باشید." },
-          { id: "b2", title: "نور طبیعی یا نور استودیو؟", image: img("ig2"), date: "2026-09-28", author: "جنیفر", category: "مد و فشن", text: "نور طبیعی گرم و نرم است و حس زندگی دارد؛ نور استودیو کنترل‌شده و دقیق. انتخاب میان این دو به سبک عکسی که می‌خواهید بستگی دارد.\nدر این یادداشت تفاوت‌ها و کاربرد هرکدام را با چند نمونه توضیح داده‌ایم." },
-          { id: "b3", title: "برای عکاسی پرتره چه بپوشیم؟", image: img("ig5"), date: "2026-09-02", author: "جنیفر", category: "پرتره", text: "رنگ‌های ساده و یک‌دست، پارچه‌های بی‌چروک و لباسی که در آن راحت باشید، بهترین انتخاب‌اند. از طرح‌های خیلی شلوغ پرهیز کنید." },
+          { id: "b1", title: "به رؤیایمان ایمان داریم", image: img("blog1"), date: "2026-10-16", author: "ترانه", category: "آدم‌ها", text: "هر جلسه‌ی عکاسی برای ما یک قصه است. پیش از شروع، با شما درباره‌ی حس و حالی که دوست دارید حرف می‌زنیم و بعد نور و لوکیشن را انتخاب می‌کنیم.\nدر این مطلب از پشت صحنه‌ی یکی از جلسه‌های اخیرمان می‌گوییم و چند نکته برای این‌که جلوی دوربین راحت‌تر باشید." },
+          { id: "b2", title: "نور طبیعی یا نور استودیو؟", image: img("blog2"), date: "2026-09-28", author: "ترانه", category: "مد و فشن", text: "هر جلسه‌ی عکاسی برای ما یک قصه است. پیش از شروع، با شما درباره‌ی حس و حالی که دوست دارید حرف می‌زنیم و بعد نور و لوکیشن را انتخاب می‌کنیم.\nدر این مطلب از پشت صحنه‌ی یکی از جلسه‌های اخیرمان می‌گوییم و چند نکته برای این‌که جلوی دوربین راحت‌تر باشید." },
+          { id: "b3", title: "برای عکاسی پرتره چه بپوشیم؟", image: img("blog3"), date: "2026-09-02", author: "ترانه", category: "پرتره", text: "هر جلسه‌ی عکاسی برای ما یک قصه است. پیش از شروع، با شما درباره‌ی حس و حالی که دوست دارید حرف می‌زنیم و بعد نور و لوکیشن را انتخاب می‌کنیم.\nدر این مطلب از پشت صحنه‌ی یکی از جلسه‌های اخیرمان می‌گوییم و چند نکته برای این‌که جلوی دوربین راحت‌تر باشید." },
+          { id: "b4", title: "یک روز آفتابی در شهر", image: img("blog4"), date: "2026-08-18", author: "ترانه", category: "شهر", text: "هر جلسه‌ی عکاسی برای ما یک قصه است. پیش از شروع، با شما درباره‌ی حس و حالی که دوست دارید حرف می‌زنیم و بعد نور و لوکیشن را انتخاب می‌کنیم.\nدر این مطلب از پشت صحنه‌ی یکی از جلسه‌های اخیرمان می‌گوییم و چند نکته برای این‌که جلوی دوربین راحت‌تر باشید." },
+          { id: "b5", title: "ژست‌هایی که طبیعی‌اند", image: img("blog5"), date: "2026-07-30", author: "ترانه", category: "مد و فشن", text: "هر جلسه‌ی عکاسی برای ما یک قصه است. پیش از شروع، با شما درباره‌ی حس و حالی که دوست دارید حرف می‌زنیم و بعد نور و لوکیشن را انتخاب می‌کنیم.\nدر این مطلب از پشت صحنه‌ی یکی از جلسه‌های اخیرمان می‌گوییم و چند نکته برای این‌که جلوی دوربین راحت‌تر باشید." },
+          { id: "b6", title: "عکاسی خیابانی برای شروع", image: img("blog6"), date: "2026-07-11", author: "ترانه", category: "شهر", text: "هر جلسه‌ی عکاسی برای ما یک قصه است. پیش از شروع، با شما درباره‌ی حس و حالی که دوست دارید حرف می‌زنیم و بعد نور و لوکیشن را انتخاب می‌کنیم.\nدر این مطلب از پشت صحنه‌ی یکی از جلسه‌های اخیرمان می‌گوییم و چند نکته برای این‌که جلوی دوربین راحت‌تر باشید." },
         ],
         faq: [],
       },
@@ -1304,8 +1321,9 @@ const css = /* css */ `
 .cr-logo b { font-family: var(--font-heading); font-size: 30px; font-weight: 900; }
 .cr-nav { display: flex; gap: clamp(26px, 3.6cqi, 74px); font-size: 16px; font-weight: 800; }
 .cr-nav a { position: relative; padding: 8px 0; }
-.cr-nav a::after { content: ""; position: absolute; inset-inline: 0; bottom: 0; height: 4px; background: linear-gradient(90deg, currentColor 0 7px, transparent 7px 11.5px, currentColor 11.5px 18.5px, transparent 18.5px 23px, currentColor 23px 30px, transparent 30px); background-repeat: no-repeat; background-position: center; opacity: 0; transition: opacity .3s; }
-.cr-nav a:hover::after, .cr-nav a[aria-current="page"]::after { opacity: 1; }
+/* Dashes under the hovered page, as long as its name, drawn from the right (where Persian starts). */
+.cr-nav a::after { content: ""; position: absolute; inset-inline: 0; bottom: 0; height: 4px; background: repeating-linear-gradient(270deg, currentColor 0 7px, transparent 7px 11.5px); transform: scaleX(0); transform-origin: right; transition: transform .45s cubic-bezier(.2, .8, .2, 1); }
+.cr-nav a:hover::after, .cr-nav a[aria-current="page"]::after { transform: scaleX(1); }
 .cr-tools { display: flex; align-items: center; gap: 22px; margin-inline-start: clamp(10px, 3cqi, 60px); }
 .cr-tools summary { display: grid; place-items: center; list-style: none; cursor: pointer; }
 .cr-tools summary::-webkit-details-marker { display: none; }
@@ -1370,8 +1388,12 @@ const css = /* css */ `
 .cr-insta-bar h2 { display: flex; align-items: center; gap: 16px; font-family: var(--font-heading); font-size: clamp(28px, 3.4cqi, 66px); font-weight: 900; line-height: 1; }
 .cr .cr-follow { display: inline-flex; align-items: center; gap: 14px; height: 66px; padding: 0 30px; background: rgb(255 255 255 / .08); font-size: 16px; font-weight: 800; transition: background .3s; }
 .cr-follow:hover { background: rgb(255 255 255 / .18); }
-.cr-insta-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.cr-insta-pic { display: block; aspect-ratio: 1; overflow: hidden; cursor: zoom-in; }
+.cr-insta-row { position: relative; overflow: hidden; direction: ltr; }
+.cr-insta-track { display: flex; width: max-content; animation: cr-marquee var(--t) linear infinite; }
+.cr-insta-row:hover .cr-insta-track { animation-play-state: paused; }
+@keyframes cr-marquee { to { transform: translateX(-50%); } }
+.cr-insta-pic { display: block; flex: none; width: 25cqi; aspect-ratio: 1; overflow: hidden; cursor: zoom-in; }
+.cr-insta-add { position: absolute; top: 12px; left: 12px; padding: 6px 14px; background: #fff; color: var(--cr-ink); font-size: 13px; cursor: pointer; direction: rtl; }
 .cr-insta-pic img { width: 100%; height: 100%; object-fit: cover; transition: transform 1s, filter .4s; }
 .cr-insta-pic:hover img { transform: scale(1.06); filter: brightness(.85); }
 
@@ -1392,28 +1414,30 @@ const css = /* css */ `
 .cr-work-pic img { width: 100%; height: 100%; object-fit: cover; }
 .cr-work::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, rgb(0 0 0 / .05), rgb(0 0 0 / .45)); }
 .cr-work-text { display: grid; justify-items: start; gap: 20px; padding-block: 160px; padding-inline: clamp(24px, 4.3cqi, 82px); }
+.cr-work.end .cr-work-text { justify-items: end; text-align: end; }
+.cr-work.end::after { background: linear-gradient(90deg, rgb(0 0 0 / .4), rgb(0 0 0 / .05)); }
 .cr-work-text small { font-size: 22px; font-weight: 800; }
 .cr-work-text h2 { font-family: var(--font-heading); font-size: clamp(38px, 4.8cqi, 92px); font-weight: 900; line-height: 1.1; }
 .cr-work-text p { font-size: 22px; font-style: italic; }
 
 /* Reviews: one at a time */
 .cr-quotes { display: grid; justify-items: center; position: relative; }
-.cr-quotes-view { width: 100%; max-width: 1150px; }
+.cr-quotes-view { width: min(100%, 64cqi); }
 .cr-quote { display: none; justify-items: center; gap: 30px; margin: 0; text-align: center; }
-.cr-face { display: block; width: 132px; height: 132px; overflow: hidden; }
+.cr-face { display: block; width: clamp(80px, 6.9cqi, 132px); height: clamp(80px, 6.9cqi, 132px); overflow: hidden; }
 .cr-face img { width: 100%; height: 100%; object-fit: cover; }
-.cr-quote blockquote { position: relative; margin: 0; padding: 0 70px; color: #555; font-size: 18px; font-style: italic; line-height: 2.4; }
-.cr-q1, .cr-q2 { position: absolute; width: 44px !important; height: 44px !important; fill: var(--cr-ink); stroke: none; }
-.cr-q1 { top: -20px; inset-inline-start: 0; }
-.cr-q2 { bottom: -20px; inset-inline-end: 0; }
+.cr-quote blockquote { position: relative; margin: 0; padding: 2.4cqi 4cqi; color: #555; font-size: clamp(14px, 1.05cqi, 20px); font-style: italic; line-height: 2.3; }
+.cr-q1, .cr-q2 { position: absolute; width: clamp(22px, 2.3cqi, 44px) !important; height: clamp(22px, 2.3cqi, 44px) !important; fill: var(--cr-ink); stroke: none; }
+.cr-q1 { top: 0; inset-inline-start: 0; }
+.cr-q2 { bottom: 0; inset-inline-end: 0; }
 .cr-quote figcaption { display: grid; gap: 14px; }
-.cr-quote figcaption b { font-size: 22px; font-weight: 800; }
+.cr-quote figcaption b { font-size: clamp(16px, 1.15cqi, 22px); font-weight: 800; }
 .cr-quote figcaption small { color: var(--cr-muted); }
 .cr-quote-nav span { display: none; }
 .cr-qarrow { position: absolute; top: 46%; display: grid; place-items: center; width: 50px; height: 50px; cursor: pointer; }
 .cr-qarrow .cr-ico { width: 40px; height: 40px; stroke-width: 1.3; }
-.cr-qarrow.prev { inset-inline-start: clamp(10px, 4cqi, 90px); }
-.cr-qarrow.next { inset-inline-end: clamp(10px, 4cqi, 90px); }
+.cr-qarrow.prev { inset-inline-start: 2.4cqi; }
+.cr-qarrow.next { inset-inline-end: 2.4cqi; }
 .cr-dots { display: flex; gap: 14px; margin-top: 40px; color: var(--cr-ink); }
 .cr-dots label { width: 11px; height: 11px; border: 2px solid currentColor; box-sizing: border-box; cursor: pointer; }
 
@@ -1457,13 +1481,14 @@ const css = /* css */ `
 .cr-plan .cr-btn { height: 66px; padding: 0 32px; }
 
 /* About: mission, principles, philosophy tabs */
-.cr-tab-heads { display: flex; justify-content: center; gap: 52px; font-size: 20px; font-weight: 800; }
+.cr-tab-heads { display: flex; justify-content: center; gap: 2.7cqi; font-size: clamp(15px, 1.15cqi, 22px); font-weight: 800; }
+.cr-tabs .cr-me-pic { min-height: clamp(380px, 52cqi, 1000px); }
 .cr-tab-heads label { position: relative; padding-bottom: 16px; color: #777; cursor: pointer; transition: color .3s; }
-.cr-tab-heads label::after { content: ""; position: absolute; inset-inline: 0; bottom: 0; height: 4px; background: repeating-linear-gradient(90deg, var(--cr-ink) 0 7px, transparent 7px 11px); opacity: 0; transition: opacity .3s; }
+.cr-tab-heads label::after { content: ""; position: absolute; inset-inline: 0; bottom: 0; height: 4px; background: repeating-linear-gradient(270deg, var(--cr-ink) 0 7px, transparent 7px 11.5px); transform: scaleX(0); transform-origin: right; transition: transform .45s cubic-bezier(.2, .8, .2, 1); }
 .cr-tab { display: none; justify-items: center; gap: 24px; }
 #cr-tab-a:checked ~ .tab-a, #cr-tab-b:checked ~ .tab-b, #cr-tab-c:checked ~ .tab-c { display: grid; animation: cr-fade .5s ease both; }
 #cr-tab-a:checked ~ .cr-tab-heads label[for="cr-tab-a"], #cr-tab-b:checked ~ .cr-tab-heads label[for="cr-tab-b"], #cr-tab-c:checked ~ .cr-tab-heads label[for="cr-tab-c"] { color: #000; }
-#cr-tab-a:checked ~ .cr-tab-heads label[for="cr-tab-a"]::after, #cr-tab-b:checked ~ .cr-tab-heads label[for="cr-tab-b"]::after, #cr-tab-c:checked ~ .cr-tab-heads label[for="cr-tab-c"]::after { opacity: 1; }
+#cr-tab-a:checked ~ .cr-tab-heads label[for="cr-tab-a"]::after, #cr-tab-b:checked ~ .cr-tab-heads label[for="cr-tab-b"]::after, #cr-tab-c:checked ~ .cr-tab-heads label[for="cr-tab-c"]::after { transform: scaleX(1); }
 @keyframes cr-fade { from { opacity: 0; transform: translateY(10px); } }
 .cr-tab h2 { margin-top: 40px; font-family: var(--font-heading); font-size: clamp(40px, 4.4cqi, 84px); font-weight: 900; line-height: 1.15; }
 .cr-tab .cr-body { max-width: 780px; font-size: 18px; }
@@ -1477,7 +1502,8 @@ const css = /* css */ `
 .cr-team-lead .cr-team-pic { aspect-ratio: 960 / 700; height: 100%; }
 .cr-team-lead::after { content: ""; position: absolute; inset: 0; background: rgb(0 0 0 / .2); }
 .cr-team-lead figcaption { position: absolute; inset: 0; z-index: 1; display: grid; place-content: center; justify-items: center; gap: 12px; text-align: center; }
-.cr-team-lead h2 { font-family: var(--font-heading); font-size: clamp(40px, 5cqi, 96px); font-weight: 900; line-height: 1.1; }
+.cr-team-lead h2 { font-family: var(--font-heading); font-size: clamp(44px, 5.4cqi, 104px); font-weight: 900; line-height: 1.05; }
+.cr-team-lead p { display: grid; gap: 4px; font-size: clamp(13px, 1.05cqi, 20px); }
 .cr-member figcaption { position: absolute; inset-inline: 0; bottom: 0; display: grid; gap: 4px; padding: 60px 24px 22px; background: linear-gradient(transparent, rgb(0 0 0 / .7)); color: #fff; opacity: 0; transform: translateY(14px); transition: opacity .4s, transform .4s; }
 .cr-member:hover figcaption { opacity: 1; transform: none; }
 .cr-member figcaption b { font-size: 20px; }
@@ -1547,29 +1573,32 @@ const css = /* css */ `
 
 /* Footer: dark, four columns */
 .cr-foot { background: var(--cr-dark); color: #fff; }
-.cr-foot-cols { display: grid; grid-template-columns: 1fr 1fr .8fr 1.2fr; gap: 50px; padding-block: 70px 60px; max-width: 1760px; }
-.cr-foot h4 { display: flex; align-items: center; gap: 12px; margin-bottom: 34px; font-size: 22px; font-weight: 800; }
-.cr-foot h5 { margin: 34px 0 18px; font-size: 16px; font-weight: 800; }
-.cr-foot-info { display: grid; gap: 0; }
-.cr-foot-info > div { display: grid; gap: 6px; padding-block: 16px; border-bottom: 1px solid rgb(255 255 255 / .25); }
-.cr-foot-info dt { font-weight: 800; font-size: 15px; }
-.cr-foot-info dd { font-size: 15px; opacity: .9; }
-.cr-foot-gal { display: grid; grid-template-columns: repeat(3, 100px); gap: 46px; }
-.cr-foot-thumb { display: block; width: 100px; height: 100px; overflow: hidden; cursor: zoom-in; }
+.cr-foot-cols { display: grid; grid-template-columns: 22.9cqi 22.7cqi 15.3cqi 1fr; gap: 0; padding: 3.1cqi 5.5cqi 3.1cqi; max-width: none; }
+.cr-foot h4 { display: flex; align-items: center; gap: .55em; margin-bottom: 2.3cqi; font-size: clamp(15px, 1.35cqi, 26px); font-weight: 800; }
+.cr-foot h5 { margin: 2.4cqi 0 1.2cqi; font-size: clamp(12px, .95cqi, 18px); font-weight: 800; }
+.cr-foot-info { display: grid; gap: 0; width: 20.5cqi; min-width: 200px; }
+.cr-foot-info > div { display: grid; gap: .25em; padding-block: .9cqi; border-bottom: 1px solid rgb(255 255 255 / .35); }
+.cr-foot-info > div:first-child { padding-top: 0; }
+.cr-foot-info dt { font-weight: 800; font-size: clamp(12px, 1.05cqi, 20px); }
+.cr-foot-info dd { font-size: clamp(12px, 1.05cqi, 20px); opacity: .95; }
+.cr-foot-gal { display: grid; grid-template-columns: repeat(3, 5.25cqi); gap: 2.35cqi; }
+.cr-foot-thumb { display: block; width: 5.25cqi; height: 5.25cqi; overflow: hidden; cursor: zoom-in; }
 .cr-foot-thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform .6s; }
 .cr-foot-thumb:hover img { transform: scale(1.1); }
-.cr-foot-links { display: grid; gap: 14px; font-size: 16px; font-weight: 800; }
-.cr-foot-links a { display: flex; align-items: center; gap: 12px; transition: opacity .3s; }
+.cr-foot-links { display: grid; gap: .75cqi; font-size: clamp(12px, .95cqi, 18px); font-weight: 800; }
+.cr-foot-links a { display: flex; align-items: center; gap: .9cqi; transition: opacity .3s; }
 .cr-foot-links a:hover { opacity: .7; }
-.cr-foot-links .cr-ico { width: 14px; height: 14px; }
-.cr-news { display: flex; gap: 20px; align-items: end; }
-.cr-news input { flex: 1; min-width: 0; padding: 12px 0; border-bottom: 2px solid #fff; color: #fff; font: inherit; font-style: italic; }
-.cr-news input::placeholder { color: rgb(255 255 255 / .8); }
-.cr-news button { height: 66px; padding: 0 28px; border: 0; background: #423F3D; color: #fff; font: inherit; font-weight: 800; cursor: pointer; transition: background .3s; }
+.cr-foot-links .cr-ico { width: .8em; height: .8em; }
+.cr-news { display: flex; gap: 1.4cqi; align-items: end; }
+.cr-news input { flex: 0 1 17cqi; min-width: 0; padding: .6cqi 0; border-bottom: 2px solid #fff; color: #fff; font: inherit; font-size: clamp(12px, .95cqi, 18px); font-style: italic; }
+.cr-news input::placeholder { color: rgb(255 255 255 / .85); }
+.cr-news button { height: clamp(36px, 3.6cqi, 70px); padding: 0 clamp(12px, 1.4cqi, 28px); border: 0; background: #423F3D; color: #fff; font: inherit; font-size: clamp(11px, .9cqi, 17px); font-weight: 800; cursor: pointer; transition: background .3s; }
 .cr-news button:hover { background: #57534F; }
-.cr-foot-socials a { color: #BDBDBD !important; background: none !important; }
+.cr-foot-socials { gap: .6cqi !important; }
+.cr-foot-socials a { width: clamp(26px, 2.6cqi, 50px) !important; height: clamp(26px, 2.6cqi, 50px) !important; color: #BDBDBD !important; background: none !important; }
 .cr-foot-socials a:hover { color: #fff !important; }
-.cr-foot-end { padding: 14px; background: #111; color: rgb(255 255 255 / .6); font-size: 13px; text-align: center; }
+.cr-foot-socials .p-ico { width: clamp(16px, 1.7cqi, 32px); height: clamp(16px, 1.7cqi, 32px); }
+.cr-foot-end { padding: 4px 14px; background: #111; color: rgb(255 255 255 / .55); font-size: 11px; text-align: center; }
 
 @media (prefers-reduced-motion: reduce) {
   .cr *, .cr *::before, .cr *::after { animation: none !important; transition: none !important; }
@@ -1578,7 +1607,7 @@ const css = /* css */ `
 @container (max-width: 1100px) {
   .cr-nav { gap: 22px; font-size: 14px; }
   .cr-cats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
-  .cr-foot-cols { grid-template-columns: 1fr 1fr; }
+  .cr-foot-cols { grid-template-columns: 1fr 1fr; gap: 40px; }
   .cr-posts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .cr-team { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
@@ -1604,10 +1633,11 @@ const css = /* css */ `
   .cr-cats { grid-template-columns: 1fr; gap: 14px; }
   .cr-insta-bar h2 { font-size: 22px; }
   .cr-follow { height: 44px; padding: 0 14px; font-size: 13px; }
-  .cr-insta-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cr-insta-pic { width: 50cqi; }
   .cr-jobs { font-size: 15px; }
   .cr-work-text { padding-block: 90px; }
-  .cr-quote blockquote { padding: 0 34px; font-size: 15px; }
+  .cr-quotes-view { width: 100%; }
+  .cr-quote blockquote { padding: 34px 26px; font-size: 15px; }
   .cr-q1, .cr-q2 { width: 28px !important; height: 28px !important; }
   .cr-qarrow { display: none; }
   .cr-logos { grid-template-columns: 1fr; gap: 24px; padding-bottom: 60px; }
@@ -1620,9 +1650,15 @@ const css = /* css */ `
   .cr-member figcaption { opacity: 1; transform: none; }
   .cr-gal-grid { grid-template-columns: 1fr; }
   .cr-posts { grid-template-columns: 1fr; }
-  .cr-foot-cols { grid-template-columns: 1fr; gap: 36px; }
-  .cr-foot-gal { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+  .cr-foot-cols { grid-template-columns: 1fr; gap: 36px; padding: 50px 22px 40px; }
+  .cr-foot h4 { margin-bottom: 20px; }
+  .cr-foot-info { width: 100%; }
+  .cr-foot-info > div { padding-block: 12px; }
+  .cr-foot-gal { grid-template-columns: repeat(3, minmax(0, 90px)); gap: 18px; }
   .cr-foot-thumb { width: 100%; height: auto; aspect-ratio: 1; }
+  .cr-foot-links { gap: 12px; }
+  .cr-news input { flex: 1; padding: 10px 0; }
+  .cr-news button { height: 48px; padding: 0 18px; }
   .cr-form .cr-btn { justify-self: stretch; }
 }
 `;
