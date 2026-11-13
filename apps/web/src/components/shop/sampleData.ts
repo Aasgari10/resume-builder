@@ -8,7 +8,7 @@
 // sign-ups): the preview saves them into a sample inbox that the manager's inbox and booking tabs
 // read, so every template can be tried end to end without touching the real site.
 
-import { addDay, allVariantKeys, defaultSchedule, freeAt, priceCart, slotKey, slotsOf, todayTehran, type BookingView, type CartLine, type Product, type Shop, type ShopOrderStatus, type Visitor } from "@rb/schema";
+import { addDay, allVariantKeys, defaultSchedule, freeAt, priceCart, slotsOf, takenFor, takenKey, todayTehran, type BookingView, type CartLine, type Product, type Shop, type ShopOrderStatus, type Visitor } from "@rb/schema";
 import type { SiteMessage, SiteMessages, SiteMessageStatus } from "../../api";
 import type { ShopCustomer, ShopCustomerDetail, ShopOrder, ShopOrderQuery, ShopProductStat, ShopReview, ShopSummary, ShopTicket, ShopTrash, ShopTrashKind } from "../../api";
 
@@ -822,7 +822,7 @@ function makeMessages(shop: Shop, bookings = true): SampleMessage[] {
       service: seats ? null : (names[k % Math.max(1, names.length)] ?? null),
       date: day,
       time,
-      guests: seats ? [2, 4, 3, 6, 2, 5, 2, 8, 4, 3][k]! : null,
+      guests: seats ? [2, 4, 3, 6, 2, 5, 2, 8, 4, 3][k]! : shop.schedule?.byService ? [4, 3, 5, 2, 6, 4, 3, 5, 2, 4][k]! : null,
       page: "/",
       ownerNote: status === "CANCELED" ? "مراجع تماس گرفت و لغو کرد." : null,
       createdAt: new Date(new Date(`${day}T08:00:00Z`).getTime() - 3 * DAY).toISOString(),
@@ -925,7 +925,7 @@ export function sampleTaken(shop: Shop): Record<string, number> {
   const out: Record<string, number> = {};
   for (const m of messagesFor(shop)) {
     if (m.kind !== "BOOKING" || m.deletedAt || m.status === "CANCELED" || !m.date || !m.time || m.date < today) continue;
-    const key = slotKey(m.date, m.time);
+    const key = takenKey(shop.schedule ?? {}, m.date, m.time, m.service);
     out[key] = (out[key] ?? 0) + (seats ? Math.max(1, m.guests ?? 1) : 1);
   }
   return out;
@@ -985,9 +985,9 @@ export function sampleSiteForm(shop: Shop, fields: Record<string, string>, withA
   if (!name || !phone) return { sent: "error" };
   const s = shop.schedule;
   if (s) {
-    if (!base.date || !base.time) return { sent: "error" };
+    if (!base.date || !base.time || (s.byService && !base.service)) return { sent: "error" };
     const need = s.seats ? Math.max(1, base.guests ?? 1) : 1;
-    if (freeAt(s, sampleTaken(shop), base.date, base.time) < need) return { sent: "full" };
+    if (freeAt(s, takenFor(s, sampleTaken(shop), base.service), base.date, base.time) < need) return { sent: "full" };
   }
   let code = "";
   do code = `B${100000 + Math.floor(Math.random() * 900000)}`;

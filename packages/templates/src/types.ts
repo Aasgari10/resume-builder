@@ -56,6 +56,8 @@ export type TemplateDefinition = {
   studio?: boolean;
   /** A practice with online booking (working hours, capacity, events): its own manager tabs. */
   clinic?: boolean;
+  /** An escape room: rooms booked one group at a time (a clinic-like manager with rooms). */
+  escape?: boolean;
   /**
    * Shop manager pieces this template shows on its pages; a manager tab for content the template has
    * no place for is left out. "extras" lists the sections of that tab, each with the heading it gets.

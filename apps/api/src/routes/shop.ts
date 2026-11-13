@@ -15,7 +15,7 @@ import {
   toggleWishlist,
   variantKey,
   variantOf,
-  slotKey,
+  takenKey,
   todayTehran,
   type BookingView,
   type CartLine,
@@ -346,15 +346,16 @@ async function accountAction(req: Request, res: Response, subdomain: string, bas
  * Places already taken from today on, by "yyyy-mm-dd hh:mm" (canceled bookings free theirs): one per
  * booking, or its number of guests when the capacity is in seats (a restaurant).
  */
-export async function takenSlots(siteId: string, seats = false): Promise<Record<string, number>> {
+export async function takenSlots(siteId: string, schedule: { seats?: boolean; byService?: boolean } = {}): Promise<Record<string, number>> {
+  const seats = Boolean(schedule.seats);
   const rows = await prisma.siteMessage.findMany({
     where: { siteId, kind: "BOOKING", deletedAt: null, status: { not: "CANCELED" }, date: { gte: todayTehran() }, time: { not: null } },
-    select: { date: true, time: true, guests: true },
+    select: { date: true, time: true, guests: true, service: true },
     take: 20000,
   });
   const out: Record<string, number> = {};
   for (const r of rows) {
-    const key = slotKey(r.date!, r.time!);
+    const key = takenKey(schedule, r.date!, r.time!, r.service);
     out[key] = (out[key] ?? 0) + (seats ? Math.max(1, r.guests ?? 1) : 1);
   }
   return out;
@@ -375,9 +376,9 @@ const samePhone = (a: string | null | undefined, b: string | null | undefined) =
   return Boolean(d(a)) && d(a) === d(b);
 };
 
-export async function loadVisitor(req: Request, siteId: string, page: string, schedule?: { seats?: boolean }): Promise<Visitor> {
+export async function loadVisitor(req: Request, siteId: string, page: string, schedule?: { seats?: boolean; byService?: boolean }): Promise<Visitor> {
   const visitor = readVisitor(req);
-  if (schedule) visitor.taken = await takenSlots(siteId, Boolean(schedule.seats));
+  if (schedule) visitor.taken = await takenSlots(siteId, schedule);
   // The tracking page: a booking found by its code and the phone it was made with.
   if (page === "/track" && visitor.query.code) {
     const m = await prisma.siteMessage.findFirst({ where: { siteId, kind: "BOOKING", deletedAt: null, code: visitor.query.code.trim().toUpperCase() } });

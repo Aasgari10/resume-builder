@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { addDay, freeAt, openDays, slotsOf, slotKey, todayTehran, type Schedule } from "@rb/schema";
+import { addDay, freeAt, openDays, slotsOf, slotKey, takenFor, takenKey, todayTehran, type Schedule } from "@rb/schema";
 
 const s: Schedule = { days: [6, 0, 1, 2, 3], start: "09:00", end: "13:00", slot: 60, capacity: 2, ahead: 10, closed: [], breakStart: "11:00", breakEnd: "12:00" };
 // A Saturday comfortably in the future (Tehran calendar), so "today" never trims its times.
@@ -36,4 +36,13 @@ test("seats: a party needs as many free seats as its guests", () => {
   assert.ok(openDays(r, taken, new Date(), 4).includes(sat));
   const allButFour = Object.fromEntries(["09:00", "10:00", "12:00"].map((t) => [slotKey(sat, t), 37]));
   assert.ok(!openDays(r, allButFour, new Date(), 4).includes(sat));
+});
+
+test("byService: each room has its own capacity", () => {
+  const r: Schedule = { ...s, capacity: 1, byService: true };
+  const taken = { [takenKey(r, sat, "09:00", "زندان")]: 1 };
+  assert.equal(freeAt(r, takenFor(r, taken, "زندان"), sat, "09:00"), 0);
+  assert.equal(freeAt(r, takenFor(r, taken, "شرلوک"), sat, "09:00"), 1);
+  // Without a capacity per service every booking counts against the same time.
+  assert.equal(takenKey(s, sat, "09:00", "زندان"), slotKey(sat, "09:00"));
 });

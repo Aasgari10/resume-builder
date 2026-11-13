@@ -20,15 +20,17 @@ const toman = (n: number) => `${showNumber(Math.round(n))} تومان`;
 const live = (shop: Shop) => shop.products.filter((p) => !p.trashed);
 
 /** What is booked: a photo session (studio), an appointment (salon) or a table (restaurant). */
-export type BookingKind = "studio" | "salon" | "table" | "clinic";
+export type BookingKind = "studio" | "salon" | "table" | "clinic" | "room";
 const WORDS: Record<BookingKind, { one: string; many: string; who: string; what: string }> = {
   studio: { one: "نوبت", many: "نوبت‌ها", who: "مشتری", what: "پکیج" },
   salon: { one: "نوبت", many: "نوبت‌ها", who: "مشتری", what: "خدمت" },
   table: { one: "رزرو", many: "رزروها", who: "مهمان", what: "تعداد نفرات" },
   clinic: { one: "نوبت", many: "نوبت‌ها", who: "مراجع", what: "نوع جلسه" },
+  room: { one: "رزرو", many: "رزروها", who: "مشتری", what: "اتاق" },
 };
 /** What a booking is for, as shown in lists: the package or service, or the number of guests. */
-const subject = (b: SiteMessage, kind: BookingKind) => (kind === "table" ? (b.guests ? `${showNumber(b.guests)} نفر` : "میز") : b.service || "—");
+const subject = (b: SiteMessage, kind: BookingKind) =>
+  kind === "table" ? (b.guests ? `${showNumber(b.guests)} نفر` : "میز") : kind === "room" && b.guests ? `${b.service || "—"} (${showNumber(b.guests)} نفر)` : b.service || "—";
 
 /** The studio's bookings (or the sample ones), shared by the tabs below. */
 export function useBookings(resumeId: string | undefined, _shop: Shop, _kind: BookingKind) {
@@ -201,7 +203,9 @@ export function StudioCalendar({ resumeId, shop, kind = "studio" }: { resumeId?:
 /* ───────────── 4. Packages ───────────── */
 
 /** A plain editor for the price packages: name, price, a row per feature, the highlighted one. */
-export function StudioPackages({ shop, setShop }: { shop: Shop; setShop: (s: Partial<Shop>) => void }) {
+export function StudioPackages({ shop, setShop, rooms }: { shop: Shop; setShop: (s: Partial<Shop>) => void; rooms?: boolean }) {
+  // An escape room's rooms: a picture each, and short facts (players, time, difficulty) as the lines.
+  const word = rooms ? "اتاق" : "پکیج";
   const list = live(shop);
   const save = (next: Product[]) => setShop({ products: [...next, ...shop.products.filter((p) => p.trashed)] });
   const update = (id: string, patch: Partial<Product>) => save(list.map((p) => (p.id === id ? { ...p, ...patch } : p)));
@@ -215,26 +219,31 @@ export function StudioPackages({ shop, setShop }: { shop: Shop; setShop: (s: Par
   };
   return (
     <div className="shm-studio">
-      <p className="muted">پکیج‌ها در صفحه‌ی «خدمات ما» با دکمه‌ی «سفارش این پکیج» دیده می‌شوند؛ سه پکیج اول نمایش داده می‌شود. هر سفارش یک رزرو در «پیام‌ها و نوبت‌ها» است.</p>
+      <p className="muted">
+        {rooms
+          ? "اتاق‌ها در صفحه‌ی اول (شش اتاق اول)، صفحه‌ی «اتاق‌ها» و فرم «رزرو اتاق» دیده می‌شوند. هر اتاق جدا رزرو می‌شود و هر رزرو در «پیام‌ها و نوبت‌ها» می‌آید."
+          : "پکیج‌ها در صفحه‌ی «خدمات ما» با دکمه‌ی «سفارش این پکیج» دیده می‌شوند؛ سه پکیج اول نمایش داده می‌شود. هر سفارش یک رزرو در «پیام‌ها و نوبت‌ها» است."}
+      </p>
       {list.map((p, k) => (
         <article key={p.id} className="shm-pack">
           <div className="shm-pack-top">
-            <Field label="نام پکیج">
+            <Field label={`نام ${word}`}>
               <input value={p.name} maxLength={120} onChange={(e) => update(p.id, { name: e.target.value })} />
             </Field>
-            <Field label="قیمت">
+            <Field label={rooms ? "قیمت هر سانس" : "قیمت"}>
               <MoneyInput value={p.price} onChange={(n) => update(p.id, { price: n ?? 0 })} />
             </Field>
+            {rooms && <ImagePicker value={p.images[0]} onChange={(url) => update(p.id, { images: url ? [url] : [] })} label="عکس اتاق" />}
             <label className="shm-sell">
               <input type="checkbox" checked={!p.hidden} onChange={(e) => update(p.id, { hidden: e.target.checked ? undefined : true })} />
               نمایش در سایت
             </label>
           </div>
           <div className="shm-pack-lines">
-            <span className="muted">ویژگی‌ها (هر کدام یک ردیف):</span>
+            <span className="muted">{rooms ? "مشخصات (هر کدام یک ردیف، مثلاً «۲ تا ۶ نفر»):" : "ویژگی‌ها (هر کدام یک ردیف):"}</span>
             {lines(p).map((x, i) => (
               <div key={i} className="shm-row">
-                <input value={x} maxLength={80} placeholder="مثلاً ۲ بار تعویض لباس" onChange={(e) => setLines(p, lines(p).map((y, j) => (j === i ? e.target.value : y)))} />
+                <input value={x} maxLength={80} placeholder={rooms ? "مثلاً ۶۰ دقیقه" : "مثلاً ۲ بار تعویض لباس"} onChange={(e) => setLines(p, lines(p).map((y, j) => (j === i ? e.target.value : y)))} />
                 <button type="button" className="btn ghost small" aria-label="حذف ردیف" onClick={() => setLines(p, lines(p).filter((_, j) => j !== i))}>
                   ✕
                 </button>
@@ -254,15 +263,19 @@ export function StudioPackages({ shop, setShop }: { shop: Shop; setShop: (s: Par
             <button
               type="button"
               className="btn ghost small danger"
-              onClick={() => window.confirm(`پکیج «${p.name}» به سطل زباله برود؟`) && setShop({ products: shop.products.map((x) => (x.id === p.id ? { ...x, trashed: true } : x)) })}
+              onClick={() => window.confirm(`${word} «${p.name}» به سطل زباله برود؟`) && setShop({ products: shop.products.map((x) => (x.id === p.id ? { ...x, trashed: true } : x)) })}
             >
               حذف
             </button>
           </div>
         </article>
       ))}
-      <button type="button" className="btn small" onClick={() => save([...list, { id: newId(), name: "پکیج جدید", price: 0, images: [], description: "حداکثر یک نفر\n۲ ساعت عکاسی\n۲۰ عکس روتوش‌شده" }])}>
-        + پکیج جدید
+      <button
+        type="button"
+        className="btn small"
+        onClick={() => save([...list, rooms ? { id: newId(), name: "اتاق جدید", price: 0, images: [], description: "۲ تا ۶ نفر\n۶۰ دقیقه\nسختی: متوسط" } : { id: newId(), name: "پکیج جدید", price: 0, images: [], description: "حداکثر یک نفر\n۲ ساعت عکاسی\n۲۰ عکس روتوش‌شده" }])}
+      >
+        + {word} جدید
       </button>
     </div>
   );
@@ -373,7 +386,7 @@ export function StudioReports({ resumeId, shop, kind = "studio" }: { resumeId?: 
   });
   const max = Math.max(1, ...rows.map((r) => r.all));
   // Per package (studio), per service (salon) or per party size (restaurant).
-  const groups = kind === "studio" ? live(shop).map((p) => p.name) : kind === "salon" ? shop.categories.filter((c) => !c.sell).map((c) => c.name) : [...new Set(bookings.map((b) => subject(b, kind)))].sort();
+  const groups = kind === "studio" || kind === "room" ? live(shop).map((p) => p.name) : kind === "salon" ? shop.categories.filter((c) => !c.sell).map((c) => c.name) : [...new Set(bookings.map((b) => subject(b, kind)))].sort();
   const byPack = groups.map((name) => {
     const list = bookings.filter((b) => (kind === "table" ? subject(b, kind) : b.service) === name);
     const done = list.filter((b) => b.status === "DONE");
@@ -464,10 +477,12 @@ const WEEKDAYS: [number, string][] = [
 ];
 
 /** The online booking rules: working days and hours, session length, places at a time, days off. */
-export function ScheduleEditor({ shop, setShop, seats }: { shop: Shop; setShop: (s: Partial<Shop>) => void; seats?: boolean }) {
-  // A restaurant counts seats: each booking takes as many as its guests.
-  const s = shop.schedule ?? { ...defaultSchedule(), ...(seats ? { seats: true, capacity: 40, slot: 90 } : {}) };
-  const save = (patch: Partial<Schedule>) => setShop({ schedule: { ...s, ...patch, ...(seats ? { seats: true } : {}) } });
+export function ScheduleEditor({ shop, setShop, seats, rooms }: { shop: Shop; setShop: (s: Partial<Shop>) => void; seats?: boolean; rooms?: boolean }) {
+  // A restaurant counts seats: each booking takes as many as its guests. An escape room books each
+  // room on its own: the capacity is for one room.
+  const fixed = seats ? { seats: true } : rooms ? { byService: true } : {};
+  const s = shop.schedule ?? { ...defaultSchedule(), ...(seats ? { capacity: 40, slot: 90 } : rooms ? { capacity: 1, slot: 90 } : {}), ...fixed };
+  const save = (patch: Partial<Schedule>) => setShop({ schedule: { ...s, ...patch, ...fixed } });
   const [closedDay, setClosedDay] = useState("");
   const today = todayTehran();
   // A look at the next working day, to show the owner the times visitors will see.
@@ -503,7 +518,10 @@ export function ScheduleEditor({ shop, setShop, seats }: { shop: Shop; setShop: 
             ))}
           </select>
         </Field>
-        <Field label={seats ? "صندلی در هر نوبت" : "ظرفیت هر نوبت"} hint={seats ? "هر رزرو به تعداد مهمان‌هایش صندلی کم می‌کند" : "چند نفر هم‌زمان (مثلاً چند آرایشگر یا درمانگر)"}>
+        <Field
+          label={seats ? "صندلی در هر نوبت" : rooms ? "گروه هم‌زمان در هر اتاق" : "ظرفیت هر نوبت"}
+          hint={seats ? "هر رزرو به تعداد مهمان‌هایش صندلی کم می‌کند" : rooms ? "هر اتاق جدا حساب می‌شود؛ معمولاً ۱ گروه در هر سانس" : "چند نفر هم‌زمان (مثلاً چند آرایشگر یا درمانگر)"}
+        >
           <input type="number" min={1} max={500} value={s.capacity} onChange={(e) => save({ capacity: Math.max(1, Math.min(500, Number(e.target.value) || 1)) })} />
         </Field>
         <Field label="نوبت‌دهی تا چند روز آینده">
@@ -538,7 +556,7 @@ export function ScheduleEditor({ shop, setShop, seats }: { shop: Shop; setShop: 
       <h3>پیش‌نمایش</h3>
       <p className="muted">
         {sample.length
-          ? `${new Date(`${sampleDay}T12:00:00Z`).toLocaleDateString("fa-IR-u-ca-persian", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" })}: ${showNumber(sample.length)} نوبت، هر کدام ${showNumber(s.capacity)} ${seats ? "صندلی" : "نفر"} — ${sample.join("، ")}`
+          ? `${new Date(`${sampleDay}T12:00:00Z`).toLocaleDateString("fa-IR-u-ca-persian", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" })}: ${showNumber(sample.length)} ${rooms ? "سانس برای هر اتاق" : "نوبت"}، هر کدام ${showNumber(s.capacity)} ${seats ? "صندلی" : rooms ? "گروه" : "نفر"} — ${sample.join("، ")}`
           : "با این تنظیم‌ها در دو هفته‌ی آینده نوبتی نمایش داده نمی‌شود؛ روزها و ساعت‌ها را بررسی کنید."}
       </p>
     </div>

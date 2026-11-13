@@ -16,6 +16,8 @@ export const scheduleSchema = z.object({
   capacity: z.number().int().min(1).max(500).default(1),
   /** A restaurant: the capacity is in seats and each booking takes as many as its guests. */
   seats: z.boolean().optional(),
+  /** Each service has its own capacity (an escape room: one group per room at a time). */
+  byService: z.boolean().optional(),
   /** How many days ahead can be booked. */
   ahead: z.number().int().min(1).max(180).default(30),
   /** Days off (holidays, leave). */
@@ -64,6 +66,20 @@ export function slotsOf(s: Schedule, day: string, now = new Date()): string[] {
 /** Appointments already taken, by "yyyy-mm-dd hh:mm". */
 export type Taken = Record<string, number>;
 export const slotKey = (day: string, time: string) => `${day} ${time}`;
+/**
+ * The key a booking takes: its day and time, and on a schedule with a capacity per service, the
+ * service too ("<service>|yyyy-mm-dd hh:mm").
+ */
+export const takenKey = (s: Pick<Schedule, "byService">, day: string, time: string, service?: string | null) =>
+  s.byService ? `${service ?? ""}|${slotKey(day, time)}` : slotKey(day, time);
+/** The places taken for one service (all of them on a schedule without a capacity per service). */
+export function takenFor(s: Pick<Schedule, "byService">, taken: Taken, service?: string | null): Taken {
+  if (!s.byService) return taken;
+  const prefix = `${service ?? ""}|`;
+  const out: Taken = {};
+  for (const [k, n] of Object.entries(taken)) if (k.startsWith(prefix)) out[k.slice(prefix.length)] = n;
+  return out;
+}
 
 /** Free places left at a time (0 when full or not offered). */
 export function freeAt(s: Schedule, taken: Taken, day: string, time: string, now = new Date()): number {

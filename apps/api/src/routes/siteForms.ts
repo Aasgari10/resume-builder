@@ -11,7 +11,7 @@ import { prisma } from "../db";
 import { env } from "../env";
 import { asyncHandler } from "../lib/http";
 import { subdomainFromHost, validateSubdomain } from "../lib/subdomain";
-import { freeAt, resumeDataSchema } from "@rb/schema";
+import { freeAt, resumeDataSchema, takenFor } from "@rb/schema";
 import { signedInCustomer, takenSlots } from "./shop";
 
 export const siteFormsRouter = Router();
@@ -104,8 +104,8 @@ async function sendForm(req: Request, res: Response, rawSubdomain: string, base:
   const published = resumeDataSchema.safeParse(site.publishedData);
   const schedule = published.success ? published.data.site?.shop?.schedule : undefined;
   if (kind === "BOOKING" && schedule) {
-    if (!f.date || !f.time) return go({ sent: "error" });
-    const taken = await takenSlots(site.id, Boolean(schedule.seats));
+    if (!f.date || !f.time || (schedule.byService && !f.service)) return go({ sent: "error" });
+    const taken = takenFor(schedule, await takenSlots(site.id, schedule), f.service);
     const need = schedule.seats ? Math.max(1, f.guests ?? 1) : 1;
     if (freeAt(schedule, taken, f.date, f.time) < need) return go({ sent: "full" });
   }
