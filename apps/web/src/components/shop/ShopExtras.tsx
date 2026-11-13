@@ -11,7 +11,9 @@ type Perk = NonNullable<Shop["perks"]>[number];
 type Brand = NonNullable<Site["clients"]>[number];
 type Logo = NonNullable<Shop["trustLogos"]>[number];
 type Stat = NonNullable<Shop["stats"]>[number];
-type Props = { data: ResumeData; onData: (d: ResumeData) => void; shop: Shop; setShop: (s: Partial<Shop>) => void; menu?: boolean };
+/** The sections the template shows, each with its heading (see TemplateDefinition.panel). */
+type Sections = { perks?: string; stats?: string; brands?: string; trust?: string };
+type Props = { data: ResumeData; onData: (d: ResumeData) => void; shop: Shop; setShop: (s: Partial<Shop>) => void; menu?: boolean; sections?: Sections };
 
 function moved<T>(list: T[], k: number, by: -1 | 1): T[] {
   const next = [...list];
@@ -34,7 +36,7 @@ function Order({ k, count, onMove }: { k: number; count: number; onMove: (by: -1
   );
 }
 
-export function Extras({ data, onData, shop, setShop, menu }: Props) {
+export function Extras({ data, onData, shop, setShop, menu, sections = { perks: "✨ ویژگی‌های فروشگاه", brands: "🏷 برندهای محبوب", trust: "💳 آرم‌های پایین صفحه" } }: Props) {
   const stats = shop.stats ?? [];
   const saveStats = (next: Stat[]) => setShop({ stats: next.length ? next : undefined });
   const perks = shop.perks ?? [];
@@ -46,7 +48,9 @@ export function Extras({ data, onData, shop, setShop, menu }: Props) {
 
   return (
     <div className="shm-cats">
-      <h3>✨ ویژگی‌های فروشگاه</h3>
+      {sections.perks && (
+      <>
+      <h3>{sections.perks}</h3>
       <p className="muted">جمله‌های کوتاه مثل «ارسال رایگان» یا «تضمین کیفیت» (حداکثر ۶ تا؛ بیشتر قالب‌ها ۴ تای اول را نشان می‌دهند، قالب آتلیه هر ۶ تا را با عنوان «خدمات ما»). بعضی قالب‌ها کنار هرکدام آیکون هم نشان می‌دهند.</p>
       {perks.map((x, k) => (
         <div key={x.id} className="shm-faq">
@@ -67,9 +71,12 @@ export function Extras({ data, onData, shop, setShop, menu }: Props) {
         </button>
       )}
 
-      {menu && (
+      </>
+      )}
+
+      {sections.stats && (
         <>
-          <h3>🔢 اعداد</h3>
+          <h3>{sections.stats}</h3>
           <p className="muted">ردیف اعداد صفحه‌ها، مثل «۲۵۰ نوع قهوه» (حداکثر ۶ تا).</p>
           {stats.map((x, k) => (
             <div key={x.id} className="shm-faq">
@@ -94,7 +101,9 @@ export function Extras({ data, onData, shop, setShop, menu }: Props) {
         </>
       )}
 
-      <h3>🏷 {menu ? "آرم همکاران" : "برندهای محبوب"}</h3>
+      {sections.brands && (
+      <>
+      <h3>{sections.brands}</h3>
       <p className="muted">{menu ? "آرم کافه‌ها، برندهای قهوه یا همکارانی که با آن‌ها کار می‌کنید." : "آرم و نام برندهایی که می‌فروشید."}</p>
       {brands.map((x, k) => (
         <div key={x.id} className="shm-slide">
@@ -118,7 +127,12 @@ export function Extras({ data, onData, shop, setShop, menu }: Props) {
         </button>
       )}
 
-      <h3>💳 آرم‌های پایین صفحه</h3>
+      </>
+      )}
+
+      {sections.trust && (
+      <>
+      <h3>{sections.trust}</h3>
       <p className="muted">آرم روش‌های پرداخت یا نماد اعتماد (مثل اینماد). اگر لینک بگذارید، با کلیک روی آرم باز می‌شود. نماد اعتماد باید به نام خود فروشگاه شما باشد.</p>
       {logos.map((x, k) => (
         <div key={x.id} className="shm-slide">
@@ -140,6 +154,8 @@ export function Extras({ data, onData, shop, setShop, menu }: Props) {
         <button type="button" className="btn small" onClick={() => saveLogos([...logos, { id: newId(), image: "" }])}>
           + آرم جدید
         </button>
+      )}
+      </>
       )}
     </div>
   );
