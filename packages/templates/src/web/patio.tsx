@@ -7,11 +7,12 @@
 // Published pages run without scripts: the mini cart opens on hover/focus, the phone menu is <details>.
 
 import type { CSSProperties, ReactNode } from "react";
-import { emptyVisitor, formatToman, priceCart, unitPrice, variantOf, type Product, type ResumeData, type Shop, type Visitor } from "@rb/schema";
+import { defaultSchedule, emptyVisitor, formatToman, priceCart, unitPrice, variantOf, type Product, type ResumeData, type Shop, type Visitor } from "@rb/schema";
 import { WebPage, webCtx, type Ctx } from "./kit";
 import { safeUrl } from "../format";
 import { sampleImage, sampleResume } from "../sample";
 import type { TemplateProps } from "../types";
+import { BookingPicker, bookingCss } from "./booking";
 import { FormMeta, Icon, Opt, PageLink, Socials, blockOn, ed, item, outside, partsCss } from "./parts";
 import { ZoomOpen } from "./zoom";
 import { AccountPage, CouponBox, hasChoices, InfoPage, infoPages, onSale, OptionPicker, percentOff, Reviews, SORTS, SpecsTable, Stars, filterProducts, shopkitCss } from "./shopkit";
@@ -69,7 +70,7 @@ export function PatioShop(props: TemplateProps) {
       </div>
     );
   return (
-    <WebPage ctx={ctx} className={`pt${page === "/" ? " pt-home" : ""}`} css={partsCss + shopkitCss + css}>
+    <WebPage ctx={ctx} className={`pt${page === "/" ? " pt-home" : ""}`} css={partsCss + shopkitCss + bookingCss + css}>
       <Header {...view} />
       <main key={page} className={kind === "menu" || page === "/" ? "pt-tex" : undefined}>
         {body}
@@ -936,6 +937,61 @@ function Contact(view: View) {
 }
 
 /** Table booking: the same two halves as the contact page; the request opens an email to the restaurant. */
+const PARTY = [1, 2, 3, 4, 5, 6, 7, 8, 10, 12];
+
+/**
+ * Tables from the restaurant's hours: the number of guests comes first (a GET form), then the days and
+ * times with that many free seats; the seats taken are counted by the server again on booking.
+ */
+function TablePicker({ view }: { view: View }) {
+  const q = view.visitor.query;
+  const guests = PARTY.includes(Number(q.guests)) ? Number(q.guests) : 2;
+  return (
+    <div className="pt-table-pick">
+      <form method="get" action={view.link("/reservation")} className="pt-guests">
+        <label>
+          تعداد نفرات
+          <select name="guests" defaultValue={String(guests)}>
+            {PARTY.map((n) => (
+              <option key={n} value={n}>
+                {fa(n)} نفر
+              </option>
+            ))}
+          </select>
+        </label>
+        <button type="submit" className="pt-btn line">
+          نمایش زمان‌های خالی
+        </button>
+      </form>
+      <BookingPicker
+        link={view.link}
+        path="/reservation"
+        schedule={view.shop.schedule ?? defaultSchedule()}
+        taken={view.visitor.taken ?? {}}
+        query={q}
+        need={guests}
+        keep={{ guests: String(guests) }}
+        button="ثبت رزرو"
+      >
+        <input type="hidden" name="guests" value={guests} />
+        <p className="pt-res-party">میز برای {fa(guests)} نفر</p>
+        <label className="half">
+          نام و نام خانوادگی *
+          <input name="name" required autoComplete="name" />
+        </label>
+        <label className="half">
+          شماره‌ی تماس *
+          <input name="phone" inputMode="tel" dir="ltr" required autoComplete="tel" />
+        </label>
+        <label>
+          توضیحات (اختیاری)
+          <textarea name="body" rows={2} placeholder="مثلاً میز کنار پنجره یا جشن تولد" />
+        </label>
+      </BookingPicker>
+    </div>
+  );
+}
+
 function Reservation(view: View) {
   const { ctx, shop } = view;
   const b = ctx.data.basics;
@@ -947,7 +1003,7 @@ function Reservation(view: View) {
         <span className="pt-contact-bg">{bg && <img src={bg} alt="" loading="lazy" />}</span>
         <small className="pt-kicker">رزرو میز</small>
         <h1>میز خود را رزرو کنید</h1>
-        <p className="pt-body">تاریخ، ساعت و تعداد نفرات را بنویسید؛ پس از بررسی، برای تأیید رزرو با شما تماس می‌گیریم. برای مهمانی‌های بیشتر از ۱۲ نفر لطفاً تلفنی هماهنگ کنید.</p>
+        <p className="pt-body">{shop.schedule ? "تعداد نفرات را انتخاب کنید، بعد روز و ساعتی را که میز خالی دارد؛ پس از بررسی، برای تأیید رزرو با شما تماس می‌گیریم." : "تاریخ، ساعت و تعداد نفرات را بنویسید؛ پس از بررسی، برای تأیید رزرو با شما تماس می‌گیریم."} برای مهمانی‌های بیشتر از ۱۲ نفر لطفاً تلفنی هماهنگ کنید.</p>
         <h4 className="pt-res-hours">ساعات کاری</h4>
         <Hours text={site?.contactNote} />
         {b.phone && (
@@ -960,6 +1016,9 @@ function Reservation(view: View) {
         )}
       </div>
       <div className="pt-contact-text pt-res-form pt-rise">
+        {shop.schedule ? (
+          <TablePicker view={view} />
+        ) : (
         <form method="post" action={view.link("/_form")} className="pt-form">
 <FormMeta kind="booking" back={view.page} />
             <label>
@@ -996,6 +1055,8 @@ function Reservation(view: View) {
               ثبت درخواست رزرو
             </button>
           </form>
+
+        )}
       </div>
     </section>
   );
@@ -1570,7 +1631,7 @@ export function patioSample(locale: ResumeData["locale"]): ResumeData {
       accentImage: img("contact"),
       signatureImage: png("bistro"),
       contactText: "رستوران ما در قلب شهر، روبه‌روی پارک ملت است؛ جایی آرام برای یک ناهار کاری، شامی دونفره یا دورهمی با دوستان. پارکینگ عمومی در چند قدمی ورودی است و ایستگاه مترو هم فاصله‌ی زیادی ندارد.\n\nبرای رزرو میز، سفارش مهمانی یا هر پرسشی درباره‌ی منو تماس بگیرید یا سری به ما بزنید؛ خوشحال می‌شویم میزبانتان باشیم.",
-      contactNote: "شنبه تا چهارشنبه: ۹ تا ۲۲\nپنجشنبه: ۱۱ تا ۲۴\nجمعه: ۱۱ تا ۲۳\nساعت خوش: ۱۷ تا ۲۱",
+      contactNote: "همه‌روزه: ۱۲ تا ۲۳\nساعت خوش: ۱۷ تا ۲۱",
       address: "تهران، خیابان ولیعصر، روبه‌روی پارک ملت، پلاک ۱۲۳",
       mapUrl: "https://www.openstreetmap.org/?mlat=35.7000&mlon=51.4000",
       gallery: [
@@ -1619,6 +1680,8 @@ export function patioSample(locale: ResumeData["locale"]): ResumeData {
         coupons: [{ id: "d1", code: "PATIO10", percent: 10, maxDiscount: 150000, active: true }],
         paymentNote: "پرداخت در محل هنگام تحویل، یا کارت به کارت پس از تماس ما.",
         orderNote: "سفارش شما ثبت شد؛ به‌زودی برای هماهنگی ارسال با شما تماس می‌گیریم.",
+        // Tables every day from noon to 23:00, a sitting every 90 minutes, 40 seats at a time.
+        schedule: { days: [0, 1, 2, 3, 4, 5, 6], start: "12:00", end: "23:00", slot: 90, capacity: 40, seats: true, ahead: 30, closed: [] },
         faq: [
           { id: "f1", q: "تا چه شعاعی ارسال دارید؟", a: "تا شعاع ۷ کیلومتری رستوران، با پیک خودمان." },
           { id: "f2", q: "چقدر طول می‌کشد سفارش برسد؟", a: "معمولاً ۴۰ تا ۶۰ دقیقه." },
@@ -1907,6 +1970,21 @@ section[id^="pt-cat-"] { scroll-margin-top: 160px; }
 .pt-lines-list .pt-ico { width: 18px; height: 18px; color: var(--pt-orange); }
 .pt-res-hours { margin-top: 6px; font-family: var(--pt-head); font-size: 24px; font-weight: 500; }
 .pt-res-form { background: var(--pt-bg2); }
+.pt-contact:has(.pt-table-pick) { grid-template-columns: 1fr; }
+.pt-table-pick { display: grid; gap: 22px; width: 100%; }
+.pt-guests { display: flex; flex-wrap: wrap; align-items: end; gap: 14px; }
+.pt-guests label { display: grid; gap: 8px; font-size: 14px; }
+.pt-guests select { min-width: 160px; padding: 11px 12px; border: 1px solid var(--pt-line); background: #151515; color: #fff; font: inherit; }
+.pt-res-party { margin: 0; color: var(--pt-gold); font-weight: 700; }
+.pt .bk { --bk-accent: var(--pt-orange); --bk-ink: #fff; --bk-soft: #1C1C1C; --bk-line: rgb(255 255 255 / .14); --bk-dark: var(--pt-orange); --bk-on: #fff; --bk-head: var(--pt-head); }
+.pt .bk-cal { background: #111; }
+.pt .bk-day { color: rgb(255 255 255 / .25); }
+.pt .bk-day.open { color: #fff; }
+.pt .bk-day.open:hover { background: #222; }
+.pt .bk-week { background: #1C1C1C; }
+.pt .bk-legend i.off { background: #333; }
+.pt .bk-form input:not([type="radio"]), .pt .bk-form select, .pt .bk-form textarea { background: #111; color: #fff; }
+.pt .bk-times span { background: #111; }
 .pt-form select { width: 100%; padding: 10px 0; border-bottom: 1px solid var(--pt-line); font: inherit; }
 .pt-form select option { background: #151515; }
 .pt-contact-text { display: grid; align-content: center; justify-items: start; gap: 18px; padding: 70px clamp(24px, 6cqi, 90px); }

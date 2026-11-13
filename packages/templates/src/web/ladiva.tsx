@@ -9,11 +9,12 @@
 // Published pages run without scripts: the phone menu is a <details>, the questions too.
 
 import type { CSSProperties, ReactNode } from "react";
-import { emptyVisitor, formatToman, type Product, type ResumeData, type Shop, type Visitor } from "@rb/schema";
+import { defaultSchedule, emptyVisitor, formatToman, type Product, type ResumeData, type Shop, type Visitor } from "@rb/schema";
 import { WebPage, webCtx, type Ctx } from "./kit";
 import { safeUrl } from "../format";
 import { sampleImage, sampleResume } from "../sample";
 import type { TemplateProps } from "../types";
+import { BookingPicker, bookingCss } from "./booking";
 import { FormMeta, Opt, PageLink, Socials, blockOn, ed, item, outside, partsCss } from "./parts";
 import { ZoomOpen } from "./zoom";
 import { InfoPage, infoPages, onSale, shopkitCss } from "./shopkit";
@@ -94,7 +95,7 @@ export function LadivaSite(props: TemplateProps) {
       </div>
     );
   return (
-    <WebPage ctx={ctx} className={`ld kf-look${page === "/" ? " ld-home" : ""}`} css={partsCss + shopkitCss + kafeShopCss + css}>
+    <WebPage ctx={ctx} className={`ld kf-look${page === "/" ? " ld-home" : ""}`} css={partsCss + shopkitCss + kafeShopCss + bookingCss + css}>
       <Header {...view} />
       <main key={page}>{body}</main>
       <Footer {...view} />
@@ -384,8 +385,34 @@ function Header(view: View) {
 
 /** The booking form of the footer, the booking page and the services: the request opens an email to the salon. */
 function BookingForm({ view, className, full, button = "ثبت درخواست نوبت" }: { view: View; className?: string; full?: boolean; button?: string }) {
-  const b = view.ctx.data.basics;
   const services = servicesOf(view.shop);
+  // With working hours set, the short forms only carry the service and the name to the booking page,
+  // where the free days and times are chosen.
+  if (view.shop.schedule && !full)
+    return (
+      <form method="get" action={view.link("/appointment")} className={`ld-form ${className ?? ""}`}>
+        <label className="ld-field">
+          <span>نام شما</span>
+          <input name="name" autoComplete="name" />
+        </label>
+        <label className="ld-field">
+          <span>شماره‌ی تماس</span>
+          <input name="phone" inputMode="tel" dir="ltr" autoComplete="tel" />
+        </label>
+        <label className="ld-field ld-full">
+          <span>خدمت</span>
+          <select name="service" defaultValue="">
+            <option value="">انتخاب خدمت</option>
+            {services.map((c) => (
+              <option key={c.id}>{c.name}</option>
+            ))}
+          </select>
+        </label>
+        <button type="submit" className="ld-btn">
+          {button === "ثبت درخواست نوبت" ? "انتخاب روز و ساعت" : button}
+        </button>
+      </form>
+    );
   return (
     <form method="post" action={view.link("/_form")} className={`ld-form ${className ?? ""}`}>
 <FormMeta kind="booking" back={view.page} />
@@ -1167,10 +1194,57 @@ function About(view: View) {
           <Kicker>رزرو آنلاین</Kicker>
           <h2 className="ld-title">قدم بعدی را بردارید و نوبت بگیرید</h2>
           <p>رزرو نوبت فقط چند دقیقه طول می‌کشد.</p>
-          <BookingForm view={view} full className="ld-form-wide" />
+          {view.shop.schedule ? (
+            <PageLink to="/appointment" link={view.link} className="ld-btn">
+              دیدن روزها و ساعت‌های خالی
+            </PageLink>
+          ) : (
+            <BookingForm view={view} full className="ld-form-wide" />
+          )}
         </div>
       </section>
     </>
+  );
+}
+
+/** Free days and times from the salon's working hours; the chosen service and name ride along. */
+function SalonPicker({ view }: { view: View }) {
+  const q = view.visitor.query;
+  const services = servicesOf(view.shop);
+  return (
+    <BookingPicker
+      link={view.link}
+      path="/appointment"
+      schedule={view.shop.schedule ?? defaultSchedule()}
+      taken={view.visitor.taken ?? {}}
+      query={q}
+      keep={{ service: q.service, name: q.name, phone: q.phone }}
+      button="ثبت نوبت"
+    >
+      {services.length > 0 && (
+        <label>
+          خدمت
+          <select name="service" defaultValue={q.service ?? ""}>
+            <option value="">انتخاب خدمت</option>
+            {services.map((c) => (
+              <option key={c.id}>{c.name}</option>
+            ))}
+          </select>
+        </label>
+      )}
+      <label className="half">
+        نام و نام خانوادگی *
+        <input name="name" required autoComplete="name" defaultValue={q.name} />
+      </label>
+      <label className="half">
+        شماره‌ی موبایل *
+        <input name="phone" required inputMode="tel" dir="ltr" autoComplete="tel" defaultValue={q.phone} />
+      </label>
+      <label>
+        توضیحات (اختیاری)
+        <textarea name="body" rows={2} />
+      </label>
+    </BookingPicker>
   );
 }
 
@@ -1186,7 +1260,7 @@ function Appointment(view: View) {
             <Fancy text="ثبت *نوبت*" />
           </h1>
           <p>رزرو نوبت فقط چند دقیقه طول می‌کشد؛ پس از بررسی برای تأیید با شما تماس می‌گیریم.</p>
-          <BookingForm view={view} full className="ld-form-wide" />
+          {view.shop.schedule ? <SalonPicker view={view} /> : <BookingForm view={view} full className="ld-form-wide" />}
           {site?.contactNote && <p className="ld-muted ld-appt-hours">ساعات کاری: {site.contactNote.split("\n").join(" · ")}</p>}
         </div>
         <span className="ld-appt-pic" {...ed("site.shop.trendImage", "image", "عکس کنار فرم")}>
@@ -1545,6 +1619,8 @@ export function ladivaSample(locale: ResumeData["locale"]): ResumeData {
           { id: "pl", name: "لاک ناخن", image: "", sell: true },
         ],
         products,
+        // Saturday to Thursday, 9 to 20, one-hour appointments, three stylists at a time.
+        schedule: { days: [6, 0, 1, 2, 3, 4], start: "09:00", end: "20:00", slot: 60, capacity: 3, ahead: 30, closed: [] },
         faq: [
           { id: "f1", q: "ناخن ژل چقدر ماندگار است؟", a: "معمولاً دو تا سه هفته؛ بسته به رشد ناخن و مراقبتی که در خانه دارید." },
           { id: "f2", q: "چه روش‌هایی برای پرداخت دارید؟", a: "پرداخت با کارت در سالن، کارت به کارت و برای رزروهای بزرگ، بیعانه." },
@@ -1821,6 +1897,9 @@ const css = /* css */ `
 
 /* Booking page */
 .ld-appt { display: grid; grid-template-columns: 1.2fr 1fr; background: var(--ld-cream); }
+.ld-appt:has(.bk) { grid-template-columns: 1fr; }
+.ld-appt:has(.bk) .ld-appt-pic { display: none; }
+.ld .bk { --bk-accent: var(--ld-rose); --bk-ink: var(--ld-ink); --bk-soft: #fff; --bk-line: var(--ld-line); --bk-dark: var(--ld-ink); --bk-head: var(--ld-head); margin-top: 10px; }
 .ld-appt-form { display: grid; align-content: center; gap: 16px; padding: 60px clamp(24px, 6cqi, 80px); }
 .ld-appt-form > p { color: var(--ld-muted); }
 .ld-appt-hours { font-size: 13px; }
