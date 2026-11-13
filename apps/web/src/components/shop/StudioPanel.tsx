@@ -1,6 +1,8 @@
-// The site manager of a photo studio: an overview, a week calendar of the bookings, the price
-// packages, the clients (people who booked) and reports. Everything is read from the bookings saved
-// by the site's forms (see SiteInbox); before the site has any, sample bookings show what each tab does.
+// The booking side of a site manager: an overview, a week calendar, the clients (people who booked)
+// and reports, for every template with a booking form — a photo studio (sessions for a package), a
+// salon (appointments for a service) and a restaurant (tables for a number of guests). The studio also
+// gets a plain editor for its price packages. Everything is read from the bookings saved by the site's
+// forms (see SiteInbox); before the site has any, sample bookings show what each tab does.
 
 import { useEffect, useMemo, useState } from "react";
 import type { Product, Shop } from "@rb/schema";
@@ -16,9 +18,19 @@ const faDay = (d: Date, o: Intl.DateTimeFormatOptions) => d.toLocaleDateString("
 const toman = (n: number) => `${showNumber(Math.round(n))} تومان`;
 const live = (shop: Shop) => shop.products.filter((p) => !p.trashed);
 
+/** What is booked: a photo session (studio), an appointment (salon) or a table (restaurant). */
+export type BookingKind = "studio" | "salon" | "table";
+const WORDS: Record<BookingKind, { one: string; many: string; who: string; what: string }> = {
+  studio: { one: "نوبت", many: "نوبت‌ها", who: "مشتری", what: "پکیج" },
+  salon: { one: "نوبت", many: "نوبت‌ها", who: "مشتری", what: "خدمت" },
+  table: { one: "رزرو", many: "رزروها", who: "مهمان", what: "تعداد نفرات" },
+};
+/** What a booking is for, as shown in lists: the package or service, or the number of guests. */
+const subject = (b: SiteMessage, kind: BookingKind) => (kind === "table" ? (b.guests ? `${showNumber(b.guests)} نفر` : "میز") : b.service || "—");
+
 /** Sample bookings around today, with the studio's own package names (nothing reaches the server). */
-function sampleBookings(shop: Shop): SiteMessage[] {
-  const names = live(shop).map((p) => p.name);
+function sampleBookings(shop: Shop, kind: BookingKind): SiteMessage[] {
+  const names = kind === "salon" ? shop.categories.filter((c) => !c.sell).map((c) => c.name) : live(shop).map((p) => p.name);
   const pick = (k: number) => names[k % Math.max(1, names.length)] ?? "پکیج عکاسی";
   const people = [
     ["مریم احمدی", "09121234567"],
@@ -53,11 +65,11 @@ function sampleBookings(shop: Shop): SiteMessage[] {
       email: null,
       subject: null,
       text: k % 3 === 0 ? "عکس پرتره برای پرونده‌ی کاری" : null,
-      service: pick(k),
+      service: kind === "table" ? null : pick(k),
       date: iso(day),
       time,
-      guests: null,
-      page: "/contact",
+      guests: kind === "table" ? 2 + (k % 5) : null,
+      page: kind === "table" ? "/reservation" : kind === "salon" ? "/appointment" : "/contact",
       ownerNote: null,
       createdAt: addDays(day, -3).toISOString(),
       deletedAt: null,
@@ -66,7 +78,7 @@ function sampleBookings(shop: Shop): SiteMessage[] {
 }
 
 /** The studio's bookings (or the sample ones), shared by the tabs below. */
-export function useBookings(resumeId: string | undefined, shop: Shop) {
+export function useBookings(resumeId: string | undefined, shop: Shop, kind: BookingKind) {
   const [rows, setRows] = useState<SiteMessage[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
@@ -77,7 +89,7 @@ export function useBookings(resumeId: string | undefined, shop: Shop) {
     );
   }, [resumeId]);
   const sample = rows !== null && rows.length === 0;
-  const bookings = useMemo(() => (rows === null ? null : sample ? sampleBookings(shop) : rows), [rows, sample, shop]);
+  const bookings = useMemo(() => (rows === null ? null : sample ? sampleBookings(shop, kind) : rows), [rows, sample, shop, kind]);
   return { bookings, sample, error };
 }
 
@@ -85,21 +97,27 @@ function SampleNote({ on }: { on: boolean }) {
   return on ? (
     <p className="shm-sample">
       <span>
-        🧪 <b>این‌ها رزروهای نمونه است</b> تا ببینید این بخش چه نشان می‌دهد. با اولین رزرو واقعی سایت منتشرشده، رزروهای خودتان این‌جا می‌آید.
+        🧪 <b>این‌ها نمونه است</b> تا ببینید این بخش چه نشان می‌دهد. با اولین نوبت یا رزرو واقعی سایت منتشرشده، اطلاعات خودتان این‌جا می‌آید.
       </span>
     </p>
   ) : null;
 }
 
+/** The price of what was booked: the package's price, or the lowest price of the service's items; tables have none. */
 const priceOf = (shop: Shop, service: string | null) => {
+  if (!service) return 0;
   const p = live(shop).find((x) => x.name === service);
-  return p ? (p.salePrice ?? p.price) : 0;
+  if (p) return p.salePrice ?? p.price;
+  const cat = shop.categories.find((c) => c.name === service);
+  const prices = cat ? live(shop).filter((x) => x.categoryId === cat.id && !x.hidden).map((x) => x.salePrice ?? x.price).filter((n) => n > 0) : [];
+  return prices.length ? Math.min(...prices) : 0;
 };
 
 /* ───────────── 1. Overview ───────────── */
 
-export function StudioDashboard({ resumeId, shop, onTab }: { resumeId?: string; shop: Shop; onTab: (tab: string) => void }) {
-  const { bookings, sample, error } = useBookings(resumeId, shop);
+export function StudioDashboard({ resumeId, shop, onTab, kind = "studio" }: { resumeId?: string; shop: Shop; onTab: (tab: string) => void; kind?: BookingKind }) {
+  const { bookings, sample, error } = useBookings(resumeId, shop, kind);
+  const w = WORDS[kind];
   if (error) return <p className="error">{error}</p>;
   if (!bookings) return <p className="muted shm-hint">در حال بارگذاری…</p>;
   const today = iso(new Date());
@@ -113,6 +131,7 @@ export function StudioDashboard({ resumeId, shop, onTab }: { resumeId?: string; 
   const counts = new Map<string, number>();
   active.forEach((b) => b.service && counts.set(b.service, (counts.get(b.service) ?? 0) + 1));
   const top = [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
+  const guestsToday = todays.reduce((s, b) => s + (b.guests ?? 0), 0);
   return (
     <div className="shm-studio">
       <SampleNote on={sample} />
@@ -122,30 +141,39 @@ export function StudioDashboard({ resumeId, shop, onTab }: { resumeId?: string; 
           <b>{showNumber(fresh.length)}</b>
         </button>
         <button type="button" onClick={() => onTab("calendar")}>
-          <small>نوبت‌های امروز</small>
+          <small>{w.many}ی امروز</small>
           <b>{showNumber(todays.length)}</b>
         </button>
         <button type="button" onClick={() => onTab("calendar")}>
-          <small>نوبت‌های ۷ روز آینده</small>
+          <small>{w.many}ی ۷ روز آینده</small>
           <b>{showNumber(week.length)}</b>
         </button>
-        <div>
-          <small>درآمد جلسه‌های انجام‌شده‌ی این ماه</small>
-          <b>{toman(doneMonth.reduce((s, b) => s + priceOf(shop, b.service), 0))}</b>
-        </div>
-        <div>
-          <small>پرطرفدارترین پکیج</small>
-          <b>{top ? `${top[0]} (${showNumber(top[1])})` : "—"}</b>
-        </div>
+        {kind === "table" ? (
+          <div>
+            <small>مهمان‌های امروز</small>
+            <b>{showNumber(guestsToday)} نفر</b>
+          </div>
+        ) : (
+          <>
+            <div>
+              <small>درآمد {kind === "studio" ? "جلسه‌های" : "نوبت‌های"} انجام‌شده‌ی این ماه</small>
+              <b>{toman(doneMonth.reduce((s, b) => s + priceOf(shop, b.service), 0))}</b>
+            </div>
+            <div>
+              <small>پرطرفدارترین {w.what}</small>
+              <b>{top ? `${top[0]} (${showNumber(top[1])})` : "—"}</b>
+            </div>
+          </>
+        )}
       </div>
-      <h3>📅 نوبت‌های امروز</h3>
+      <h3>📅 {w.many}ی امروز</h3>
       {todays.length ? (
         <ul className="shm-day-list">
           {todays.map((b) => (
             <li key={b.id}>
               <b dir="ltr">{b.time || "—"}</b>
               <span>
-                {b.name} · {b.service}
+                {b.name} · {subject(b, kind)}
               </span>
               <a href={`tel:${b.phone ?? ""}`} dir="ltr">
                 {b.phone}
@@ -155,7 +183,7 @@ export function StudioDashboard({ resumeId, shop, onTab }: { resumeId?: string; 
           ))}
         </ul>
       ) : (
-        <p className="muted">امروز نوبتی ثبت نشده است.</p>
+        <p className="muted">امروز {w.one}ی ثبت نشده است.</p>
       )}
       {fresh.length > 0 && (
         <p>
@@ -170,8 +198,9 @@ export function StudioDashboard({ resumeId, shop, onTab }: { resumeId?: string; 
 
 /* ───────────── 2. Week calendar ───────────── */
 
-export function StudioCalendar({ resumeId, shop }: { resumeId?: string; shop: Shop }) {
-  const { bookings, sample, error } = useBookings(resumeId, shop);
+export function StudioCalendar({ resumeId, shop, kind = "studio" }: { resumeId?: string; shop: Shop; kind?: BookingKind }) {
+  const { bookings, sample, error } = useBookings(resumeId, shop, kind);
+  const w = WORDS[kind];
   // Weeks start on Saturday, as in the Iranian calendar.
   const [offset, setOffset] = useState(0);
   if (error) return <p className="error">{error}</p>;
@@ -215,7 +244,7 @@ export function StudioCalendar({ resumeId, shop }: { resumeId?: string; shop: Sh
                 <article key={b.id} className={`shm-cal-item s-${b.status.toLowerCase()}`} title={b.text ?? undefined}>
                   <b dir="ltr">{b.time || "بدون ساعت"}</b>
                   <span>{b.name}</span>
-                  <small>{b.service}</small>
+                  <small>{subject(b, kind)}</small>
                   <small>{STATUS[b.status]}</small>
                 </article>
               ))}
@@ -223,7 +252,7 @@ export function StudioCalendar({ resumeId, shop }: { resumeId?: string; shop: Sh
           );
         })}
       </div>
-      <p className="muted shm-hint">رنگ‌ها: زرد جدید، سبز تأییدشده، آبی انجام‌شده، خاکستری لغوشده. وضعیت و ساعت هر نوبت را در «📥 پیام‌ها و نوبت‌ها» عوض کنید.</p>
+      <p className="muted shm-hint">رنگ‌ها: زرد جدید، سبز تأییدشده، آبی انجام‌شده، خاکستری لغوشده. وضعیت و ساعت هر {w.one} را در «📥 پیام‌ها و نوبت‌ها» عوض کنید.</p>
       {undated.length > 0 && <p className="muted">{showNumber(undated.length)} درخواست بدون تاریخ هم هست؛ در «پیام‌ها و نوبت‌ها» ببینیدشان.</p>}
     </div>
   );
@@ -301,8 +330,9 @@ export function StudioPackages({ shop, setShop }: { shop: Shop; setShop: (s: Par
 
 /* ───────────── 5. Clients ───────────── */
 
-export function StudioClients({ resumeId, shop }: { resumeId?: string; shop: Shop }) {
-  const { bookings, sample, error } = useBookings(resumeId, shop);
+export function StudioClients({ resumeId, shop, kind = "studio" }: { resumeId?: string; shop: Shop; kind?: BookingKind }) {
+  const { bookings, sample, error } = useBookings(resumeId, shop, kind);
+  const w = WORDS[kind];
   const [q, setQ] = useState("");
   const [open, setOpen] = useState<string | null>(null);
   if (error) return <p className="error">{error}</p>;
@@ -332,10 +362,12 @@ export function StudioClients({ resumeId, shop }: { resumeId?: string; shop: Sho
   return (
     <div className="shm-studio">
       <SampleNote on={sample} />
-      <p className="muted">هر کسی که از سایت نوبت گرفته، با همه‌ی رزروهایش. مشتری‌ها با شماره‌ی تلفن از هم جدا می‌شوند.</p>
+      <p className="muted">هر کسی که از سایت {kind === "table" ? "میز رزرو کرده" : "نوبت گرفته"}، با همه‌ی {w.many}یش؛ با شماره‌ی تلفن از هم جدا می‌شوند.</p>
       <div className="shm-toolbar">
         <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="جستجو در نام، تلفن یا ایمیل…" aria-label="جستجو" />
-        <span className="muted">{showNumber(clients.length)} مشتری</span>
+        <span className="muted">
+          {showNumber(clients.length)} {w.who}
+        </span>
       </div>
       <ul className="shm-msgs">
         {clients.map((c) => (
@@ -345,7 +377,7 @@ export function StudioClients({ resumeId, shop }: { resumeId?: string; shop: Sho
                 <b>{c.name}</b>
                 <span dir="ltr">{c.phone}</span>
                 <span>
-                  {showNumber(c.list.length)} رزرو · {showNumber(c.done)} جلسه‌ی انجام‌شده{c.spent ? ` · ${toman(c.spent)}` : ""}
+                  {showNumber(c.list.length)} {w.one} · {showNumber(c.done)} انجام‌شده{c.spent ? ` · ${toman(c.spent)}` : ""}
                 </span>
               </button>
               {c.phone && (
@@ -365,7 +397,10 @@ export function StudioClients({ resumeId, shop }: { resumeId?: string; shop: Sho
                   {c.list.map((b) => (
                     <li key={b.id}>
                       <b>{b.date ? faDay(new Date(`${b.date}T12:00:00`), { day: "numeric", month: "long", year: "numeric" }) : "بدون تاریخ"}</b>
-                      <span>{b.service || "—"}</span>
+                      <span>
+                        {b.time ? `${b.time} · ` : ""}
+                        {subject(b, kind)}
+                      </span>
                       <i className={`shm-status s-${b.status.toLowerCase()}`}>{STATUS[b.status]}</i>
                     </li>
                   ))}
@@ -381,8 +416,10 @@ export function StudioClients({ resumeId, shop }: { resumeId?: string; shop: Sho
 
 /* ───────────── 6. Reports ───────────── */
 
-export function StudioReports({ resumeId, shop }: { resumeId?: string; shop: Shop }) {
-  const { bookings, sample, error } = useBookings(resumeId, shop);
+export function StudioReports({ resumeId, shop, kind = "studio" }: { resumeId?: string; shop: Shop; kind?: BookingKind }) {
+  const { bookings, sample, error } = useBookings(resumeId, shop, kind);
+  const w = WORDS[kind];
+  const priced = kind !== "table";
   if (error) return <p className="error">{error}</p>;
   if (!bookings) return <p className="muted shm-hint">در حال بارگذاری…</p>;
   // The last six months, by the booked day (or the day of the request when there is none).
@@ -396,11 +433,14 @@ export function StudioReports({ resumeId, shop }: { resumeId?: string; shop: Sho
     return { label: faDay(m, { month: "long", year: "numeric" }), all: list.length, done: done.length, canceled: list.filter((b) => b.status === "CANCELED").length, income: done.reduce((s, b) => s + priceOf(shop, b.service), 0) };
   });
   const max = Math.max(1, ...rows.map((r) => r.all));
-  const byPack = live(shop).map((p) => {
-    const list = bookings.filter((b) => b.service === p.name);
-    const done = list.filter((b) => b.status === "DONE").length;
-    return { name: p.name, all: list.length, done, income: done * (p.salePrice ?? p.price) };
+  // Per package (studio), per service (salon) or per party size (restaurant).
+  const groups = kind === "studio" ? live(shop).map((p) => p.name) : kind === "salon" ? shop.categories.filter((c) => !c.sell).map((c) => c.name) : [...new Set(bookings.map((b) => subject(b, kind)))].sort();
+  const byPack = groups.map((name) => {
+    const list = bookings.filter((b) => (kind === "table" ? subject(b, kind) : b.service) === name);
+    const done = list.filter((b) => b.status === "DONE");
+    return { name, all: list.length, done: done.length, income: done.reduce((s, b) => s + priceOf(shop, b.service), 0) };
   });
+  const guests = bookings.filter((b) => b.status !== "CANCELED").reduce((s, b) => s + (b.guests ?? 0), 0);
   const total = bookings.length;
   const canceled = bookings.filter((b) => b.status === "CANCELED").length;
   return (
@@ -408,42 +448,50 @@ export function StudioReports({ resumeId, shop }: { resumeId?: string; shop: Sho
       <SampleNote on={sample} />
       <div className="shm-stats">
         <div>
-          <small>همه‌ی رزروها</small>
+          <small>همه‌ی {w.many}</small>
           <b>{showNumber(total)}</b>
         </div>
         <div>
-          <small>جلسه‌های انجام‌شده</small>
+          <small>انجام‌شده</small>
           <b>{showNumber(bookings.filter((b) => b.status === "DONE").length)}</b>
         </div>
         <div>
           <small>نرخ لغو</small>
           <b>{total ? `${showNumber(Math.round((canceled / total) * 100))}٪` : "—"}</b>
         </div>
-        <div>
-          <small>درآمد جلسه‌های انجام‌شده</small>
-          <b>{toman(bookings.filter((b) => b.status === "DONE").reduce((s, b) => s + priceOf(shop, b.service), 0))}</b>
-        </div>
+        {priced ? (
+          <div>
+            <small>درآمد انجام‌شده‌ها</small>
+            <b>{toman(bookings.filter((b) => b.status === "DONE").reduce((s, b) => s + priceOf(shop, b.service), 0))}</b>
+          </div>
+        ) : (
+          <div>
+            <small>همه‌ی مهمان‌ها (بدون لغوشده‌ها)</small>
+            <b>{showNumber(guests)} نفر</b>
+          </div>
+        )}
       </div>
-      <h3>رزروها در شش ماه اخیر</h3>
+      <h3>{w.many} در شش ماه اخیر</h3>
       <div className="shm-bars">
         {rows.map((r) => (
           <div key={r.label} className="shm-bar-row">
             <span>{r.label}</span>
             <i style={{ width: `${(r.all / max) * 100}%` }} />
             <small>
-              {showNumber(r.all)} رزرو · {showNumber(r.done)} انجام‌شده{r.canceled ? ` · ${showNumber(r.canceled)} لغو` : ""} · {toman(r.income)}
+              {showNumber(r.all)} {w.one} · {showNumber(r.done)} انجام‌شده{r.canceled ? ` · ${showNumber(r.canceled)} لغو` : ""}
+              {priced ? ` · ${toman(r.income)}` : ""}
             </small>
           </div>
         ))}
       </div>
-      <h3>به تفکیک پکیج</h3>
+      <h3>به تفکیک {w.what}</h3>
       <table className="shm-table">
         <thead>
           <tr>
-            <th>پکیج</th>
-            <th>رزرو</th>
+            <th>{w.what}</th>
+            <th>{w.one}</th>
             <th>انجام‌شده</th>
-            <th>درآمد</th>
+            {priced && <th>درآمد</th>}
           </tr>
         </thead>
         <tbody>
@@ -452,12 +500,12 @@ export function StudioReports({ resumeId, shop }: { resumeId?: string; shop: Sho
               <td>{p.name}</td>
               <td>{showNumber(p.all)}</td>
               <td>{showNumber(p.done)}</td>
-              <td>{toman(p.income)}</td>
+              {priced && <td>{toman(p.income)}</td>}
             </tr>
           ))}
         </tbody>
       </table>
-      <p className="muted shm-hint">درآمد از قیمت فعلی پکیج‌ها و جلسه‌هایی حساب می‌شود که در «پیام‌ها و نوبت‌ها» «انجام‌شده» زده‌اید.</p>
+      {priced && <p className="muted shm-hint">درآمد از قیمت فعلی {kind === "studio" ? "پکیج‌ها" : "خدمات (کمترین قیمت هر خدمت)"} و {w.many}یی حساب می‌شود که در «پیام‌ها و نوبت‌ها» «انجام‌شده» زده‌اید.</p>}
     </div>
   );
 }
