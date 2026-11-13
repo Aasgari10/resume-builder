@@ -527,9 +527,10 @@ const WEEKDAYS: [number, string][] = [
 ];
 
 /** The online booking rules: working days and hours, session length, places at a time, days off. */
-export function ScheduleEditor({ shop, setShop }: { shop: Shop; setShop: (s: Partial<Shop>) => void }) {
-  const s = shop.schedule ?? defaultSchedule();
-  const save = (patch: Partial<Schedule>) => setShop({ schedule: { ...s, ...patch } });
+export function ScheduleEditor({ shop, setShop, seats }: { shop: Shop; setShop: (s: Partial<Shop>) => void; seats?: boolean }) {
+  // A restaurant counts seats: each booking takes as many as its guests.
+  const s = shop.schedule ?? { ...defaultSchedule(), ...(seats ? { seats: true, capacity: 40, slot: 90 } : {}) };
+  const save = (patch: Partial<Schedule>) => setShop({ schedule: { ...s, ...patch, ...(seats ? { seats: true } : {}) } });
   const [closedDay, setClosedDay] = useState("");
   const today = todayTehran();
   // A look at the next working day, to show the owner the times visitors will see.
@@ -539,7 +540,7 @@ export function ScheduleEditor({ shop, setShop }: { shop: Shop; setShop: (s: Par
   const per = (n: number) => `${showNumber(n)} دقیقه`;
   return (
     <div className="shm-studio">
-      <p className="muted">صفحه‌ی «نوبت آنلاین» فقط روزها و ساعت‌هایی را نشان می‌دهد که این‌جا تعیین کنید و هنوز پر نشده‌اند؛ سرور هم موقع ثبت دوباره بررسی می‌کند. تغییرها بعد از «انتشار» در سایت اعمال می‌شود.</p>
+      <p className="muted">صفحه‌ی نوبت یا رزرو فقط روزها و ساعت‌هایی را نشان می‌دهد که این‌جا تعیین کنید و هنوز پر نشده‌اند؛ سرور هم موقع ثبت دوباره بررسی می‌کند. تغییرها بعد از «انتشار» در سایت اعمال می‌شود.</p>
       <h3>روزهای کاری</h3>
       <div className="shm-row">
         {WEEKDAYS.map(([d, label]) => (
@@ -556,7 +557,7 @@ export function ScheduleEditor({ shop, setShop }: { shop: Shop; setShop: (s: Par
         <Field label="ساعت پایان">
           <input type="time" value={s.end} onChange={(e) => e.target.value && save({ end: e.target.value })} />
         </Field>
-        <Field label="طول هر جلسه">
+        <Field label={seats ? "فاصله‌ی نوبت‌های رزرو" : "طول هر جلسه"}>
           <select value={s.slot} onChange={(e) => save({ slot: Number(e.target.value) })}>
             {[15, 20, 30, 45, 60, 75, 90, 120].map((n) => (
               <option key={n} value={n}>
@@ -565,8 +566,8 @@ export function ScheduleEditor({ shop, setShop }: { shop: Shop; setShop: (s: Par
             ))}
           </select>
         </Field>
-        <Field label="ظرفیت هر نوبت" hint="چند نفر هم‌زمان (مثلاً چند درمانگر)">
-          <input type="number" min={1} max={50} value={s.capacity} onChange={(e) => save({ capacity: Math.max(1, Math.min(50, Number(e.target.value) || 1)) })} />
+        <Field label={seats ? "صندلی در هر نوبت" : "ظرفیت هر نوبت"} hint={seats ? "هر رزرو به تعداد مهمان‌هایش صندلی کم می‌کند" : "چند نفر هم‌زمان (مثلاً چند آرایشگر یا درمانگر)"}>
+          <input type="number" min={1} max={500} value={s.capacity} onChange={(e) => save({ capacity: Math.max(1, Math.min(500, Number(e.target.value) || 1)) })} />
         </Field>
         <Field label="نوبت‌دهی تا چند روز آینده">
           <input type="number" min={1} max={180} value={s.ahead} onChange={(e) => save({ ahead: Math.max(1, Math.min(180, Number(e.target.value) || 30)) })} />
@@ -600,7 +601,7 @@ export function ScheduleEditor({ shop, setShop }: { shop: Shop; setShop: (s: Par
       <h3>پیش‌نمایش</h3>
       <p className="muted">
         {sample.length
-          ? `${new Date(`${sampleDay}T12:00:00Z`).toLocaleDateString("fa-IR-u-ca-persian", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" })}: ${showNumber(sample.length)} نوبت، هر کدام برای ${showNumber(s.capacity)} نفر — ${sample.join("، ")}`
+          ? `${new Date(`${sampleDay}T12:00:00Z`).toLocaleDateString("fa-IR-u-ca-persian", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" })}: ${showNumber(sample.length)} نوبت، هر کدام ${showNumber(s.capacity)} ${seats ? "صندلی" : "نفر"} — ${sample.join("، ")}`
           : "با این تنظیم‌ها در دو هفته‌ی آینده نوبتی نمایش داده نمی‌شود؛ روزها و ساعت‌ها را بررسی کنید."}
       </p>
     </div>

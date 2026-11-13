@@ -184,7 +184,7 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
               ["settings", "⚙️ تنظیمات فروشگاه"],
             ] as [Tab, string, ReactNode?][]
           )
-            .filter(([id]) => (clinic ? CLINIC_TABS.includes(id) : studio ? STUDIO_TABS.includes(id) : (bookingKind ? !["schedule", "events"].includes(id) : !STUDIO_ONLY.includes(id)) && (menu ? MENU_TABS.includes(id) : (menuSite && !services) || id !== "qr")))
+            .filter(([id]) => (clinic ? CLINIC_TABS.includes(id) : studio ? STUDIO_TABS.includes(id) : (bookingKind ? id !== "events" && (id !== "schedule" || bookingKind !== "studio") : !STUDIO_ONLY.includes(id)) && (menu ? MENU_TABS.includes(id) : (menuSite && !services) || id !== "qr")))
             // Nothing in the manager the template has no place for: no blog tab without a blog page, no extras without sections.
             .filter(([id]) => !(panel?.hide ?? []).includes(id) && (id !== "blog" || hasBlog) && (id !== "extras" || !panel || Boolean(panel.extras && Object.keys(panel.extras).length)))
             .sort(([a], [b]) => (clinic ? CLINIC_TABS.indexOf(a) - CLINIC_TABS.indexOf(b) : studio ? STUDIO_TABS.indexOf(a) - STUDIO_TABS.indexOf(b) : menu ? MENU_TABS.indexOf(a) - MENU_TABS.indexOf(b) : bookingRank(a) - bookingRank(b)))
@@ -219,7 +219,7 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
         {mode !== "loading" && (
           <>
         {tab === "dashboard" && <Dashboard resumeId={rid} products={live.length} outOfStock={outOfStock} lowStock={lowStock} onTab={(t) => setTab(t as Tab)} />}
-        {tab === "schedule" && <ScheduleEditor shop={shop} setShop={setShop} />}
+        {tab === "schedule" && <ScheduleEditor shop={shop} setShop={setShop} seats={bookingKind === "table"} />}
         {tab === "events" && <EventsEditor shop={shop} setShop={setShop} />}
         {tab === "studio" && <StudioDashboard resumeId={resumeId} shop={shop} onTab={(t) => setTab(t as Tab)} kind={bookingKind} />}
         {tab === "calendar" && <StudioCalendar resumeId={resumeId} shop={shop} kind={bookingKind} />}
