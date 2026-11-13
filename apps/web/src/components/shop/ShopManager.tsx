@@ -17,7 +17,7 @@ import { Pages, Quotes } from "./ShopPages";
 import { Blog } from "./ShopBlog";
 import { Extras } from "./ShopExtras";
 import { SiteInbox } from "./SiteInbox";
-import { StudioCalendar, StudioClients, StudioDashboard, StudioPackages, StudioReports, type BookingKind } from "./StudioPanel";
+import { EventsEditor, ScheduleEditor, StudioCalendar, StudioClients, StudioDashboard, StudioPackages, StudioReports, type BookingKind } from "./StudioPanel";
 import { MenuQr } from "./MenuQr";
 import { Customers, Reviews, Tickets } from "./ShopPeople";
 import { Dashboard, Orders } from "./ShopOrders";
@@ -25,7 +25,7 @@ import { Products, stockOf } from "./ShopProducts";
 import { resetSample, sampleShopApi, sampleShopFor } from "./sampleData";
 import { ShopApiContext } from "./shopApi";
 
-type Tab = "studio" | "calendar" | "clients" | "studio-reports" | "inbox" | "qr" | "dashboard" | "quotes" | "pages" | "blog" | "extras" | "products" | "categories" | "banners" | "coupons" | "orders" | "reports" | "reviews" | "tickets" | "customers" | "trash" | "settings";
+type Tab = "schedule" | "events" | "studio" | "calendar" | "clients" | "studio-reports" | "inbox" | "qr" | "dashboard" | "quotes" | "pages" | "blog" | "extras" | "products" | "categories" | "banners" | "coupons" | "orders" | "reports" | "reviews" | "tickets" | "customers" | "trash" | "settings";
 
 type Props = {
   data: ResumeData;
@@ -48,6 +48,8 @@ type Props = {
   bookings?: boolean;
   /** A photo studio: price packages instead of a menu, a blog, no QR code. */
   studio?: boolean;
+  /** A practice with online booking (therapist, clinic): working hours, sessions, events. */
+  clinic?: boolean;
   /** What the template shows of the manager's content (unused tabs are left out). */
   panel?: { extras?: { perks?: string; stats?: string; brands?: string; trust?: string }; hide?: string[] };
   onClose: () => void;
@@ -57,23 +59,27 @@ type Props = {
 const MENU_TABS: Tab[] = ["products", "categories", "inbox", "qr", "banners", "extras", "quotes", "pages", "trash"];
 
 /** Tabs only templates with a booking form have. */
-const STUDIO_ONLY: Tab[] = ["studio", "calendar", "clients", "studio-reports"];
+const STUDIO_ONLY: Tab[] = ["studio", "calendar", "clients", "studio-reports", "schedule", "events"];
 /** Tab order of a shop: the inbox and the booking tabs (when it has them) come right after the orders. */
 const SHOP_ORDER: Tab[] = ["dashboard", "products", "categories", "orders", "inbox", ...STUDIO_ONLY, "customers", "reviews", "tickets", "coupons", "banners", "quotes", "extras", "pages", "blog", "reports", "trash", "settings", "qr"];
 const bookingRank = (t: Tab) => SHOP_ORDER.indexOf(t);
 /** Tabs of a photo studio, in this order. */
+const CLINIC_TABS: Tab[] = ["studio", "inbox", "calendar", "schedule", "products", "clients", "studio-reports", "events", "categories", "extras", "blog", "pages", "trash"];
 const STUDIO_TABS: Tab[] = ["studio", "inbox", "calendar", "products", "clients", "studio-reports", "categories", "banners", "extras", "quotes", "blog", "pages", "trash"];
 
 const EMPTY_SHOP: Shop = { categories: [], products: [] };
 
-export function ShopManager({ data, sample, onData, resumeId, focusProductId, hasBlog, menu: menuSite, sells: sellsMenu, services, bookings, studio, panel, onClose }: Props) {
+export function ShopManager({ data, sample, onData, resumeId, focusProductId, hasBlog, menu: menuSite, sells: sellsMenu, services, bookings, studio: studioSite, clinic, panel, onClose }: Props) {
+  // A clinic is managed like a studio (bookings first), plus its working hours and events.
+  const studio = studioSite || clinic;
   const sells = sellsMenu || services;
   // Templates with a booking form get the bookings overview, calendar, clients and reports.
-  const bookingKind: BookingKind | undefined = studio ? "studio" : bookings ? (services ? "salon" : "table") : undefined;
+  const bookingKind: BookingKind | undefined = clinic ? "clinic" : studio ? "studio" : bookings ? (services ? "salon" : "table") : undefined;
   const BOOKING_LABELS: Record<BookingKind, [string, string, string, string]> = {
     studio: ["📊 داشبورد", "🗓 تقویم نوبت‌ها", "👥 مشتریان", "📈 گزارش‌ها"],
     salon: ["📅 داشبورد نوبت‌ها", "🗓 تقویم نوبت‌ها", "🙋 نوبت‌گیرندگان", "📈 گزارش نوبت‌ها"],
     table: ["🍽 داشبورد رزروها", "🗓 تقویم رزروها", "🙋 مهمان‌ها", "📈 گزارش رزروها"],
+    clinic: ["📊 داشبورد", "🗓 تقویم نوبت‌ها", "🙋 مراجعان", "📈 گزارش‌ها"],
   };
   const bl = bookingKind ? BOOKING_LABELS[bookingKind] : BOOKING_LABELS.studio;
   // Only a menu site that sells nothing gets the short menu panel.
@@ -143,7 +149,7 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
   return (
     <div className="shm" dir="rtl" role="dialog" aria-label={menu ? "مدیریت سایت" : "مدیریت فروشگاه"}>
       <header className="shm-head">
-        <h2>{studio ? "📸 مدیریت آتلیه" : menu ? "☕ مدیریت سایت" : "🛍 مدیریت فروشگاه"}</h2>
+        <h2>{clinic ? "🩺 مدیریت مطب" : studio ? "📸 مدیریت آتلیه" : menu ? "☕ مدیریت سایت" : "🛍 مدیریت فروشگاه"}</h2>
         <button type="button" className="btn small" onClick={onClose}>
           بستن و برگشت به سایت
         </button>
@@ -154,12 +160,14 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
             [
               ["dashboard", "📊 داشبورد"],
               ["studio", bl[0]],
+              ["schedule", "⏰ ساعت کاری و ظرفیت"],
+              ["events", "🎟 رویدادها"],
               ["calendar", bl[1]],
               ["clients", bl[2]],
               ["studio-reports", bl[3]],
-              ["products", studio ? "📸 پکیج‌های عکاسی" : menu ? "☕ منو" : services ? "💇 خدمات و محصولات" : menuSite ? "☕ منو و محصولات" : "📦 محصولات", <i key="n" className="shm-count">{showNumber(live.length)}</i>],
+              ["products", clinic ? "💳 تعرفه‌ی جلسات" : studio ? "📸 پکیج‌های عکاسی" : menu ? "☕ منو" : services ? "💇 خدمات و محصولات" : menuSite ? "☕ منو و محصولات" : "📦 محصولات", <i key="n" className="shm-count">{showNumber(live.length)}</i>],
               ["qr", "▦ QR کد منو"],
-              ["categories", "📂 دسته‌ها"],
+              ["categories", clinic ? "🧩 حوزه‌های درمان" : "📂 دسته‌ها"],
               ["orders", "📋 سفارش‌ها", badge(counts?.newOrders)],
               ["inbox", "📥 پیام‌ها و نوبت‌ها", badge(inboxNew)],
               ["customers", "👥 مشتریان"],
@@ -168,7 +176,7 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
               ["coupons", "🏷 کدهای تخفیف"],
               ["banners", studio ? "🖼 اسلایدها و اعضای تیم" : "🖼 بنرها و اسلایدها"],
               ["quotes", "⭐ نظرات صفحه‌ی اول"],
-              ["extras", studio ? "🎯 خدمات و لوگوها" : "✨ ویژگی‌ها، برندها و آرم‌ها"],
+              ["extras", clinic ? "📚 ویژگی‌های کتاب" : studio ? "🎯 خدمات و لوگوها" : "✨ ویژگی‌ها، برندها و آرم‌ها"],
               ["pages", "📄 صفحه‌ها و تماس"],
               ["blog", "📰 بلاگ", shop.posts?.length ? <i key="n" className="shm-count">{showNumber(shop.posts.length)}</i> : null],
               ["reports", "📈 گزارش‌ها"],
@@ -176,10 +184,10 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
               ["settings", "⚙️ تنظیمات فروشگاه"],
             ] as [Tab, string, ReactNode?][]
           )
-            .filter(([id]) => (studio ? STUDIO_TABS.includes(id) : (bookingKind || !STUDIO_ONLY.includes(id)) && (menu ? MENU_TABS.includes(id) : (menuSite && !services) || id !== "qr")))
+            .filter(([id]) => (clinic ? CLINIC_TABS.includes(id) : studio ? STUDIO_TABS.includes(id) : (bookingKind ? !["schedule", "events"].includes(id) : !STUDIO_ONLY.includes(id)) && (menu ? MENU_TABS.includes(id) : (menuSite && !services) || id !== "qr")))
             // Nothing in the manager the template has no place for: no blog tab without a blog page, no extras without sections.
             .filter(([id]) => !(panel?.hide ?? []).includes(id) && (id !== "blog" || hasBlog) && (id !== "extras" || !panel || Boolean(panel.extras && Object.keys(panel.extras).length)))
-            .sort(([a], [b]) => (studio ? STUDIO_TABS.indexOf(a) - STUDIO_TABS.indexOf(b) : menu ? MENU_TABS.indexOf(a) - MENU_TABS.indexOf(b) : bookingRank(a) - bookingRank(b)))
+            .sort(([a], [b]) => (clinic ? CLINIC_TABS.indexOf(a) - CLINIC_TABS.indexOf(b) : studio ? STUDIO_TABS.indexOf(a) - STUDIO_TABS.indexOf(b) : menu ? MENU_TABS.indexOf(a) - MENU_TABS.indexOf(b) : bookingRank(a) - bookingRank(b)))
             .map(([id, label, extra]) => (
             <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)}>
               <span>{label}</span>
@@ -189,7 +197,7 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
         </nav>
       <ShopApiContext.Provider value={source}>
       <div className="shm-body">
-        {mode === "sample" && !["products", "categories", "banners", "coupons", "quotes", "pages", "blog", "extras", "trash", "settings", "qr", "inbox", ...STUDIO_ONLY].includes(tab) && (
+        {mode === "sample" && !["products", "categories", "banners", "coupons", "quotes", "pages", "blog", "extras", "trash", "settings", "qr", "inbox", "schedule", "events", ...STUDIO_ONLY].includes(tab) && (
           <p className="shm-sample">
             <span>
               🧪 <b>این‌ها اطلاعات نمونه است</b> تا ببینید پنل چه کارهایی می‌کند. تغییرهای شما فقط در همین مرورگر است و کاربر دیگری آن‌ها را نمی‌بیند؛ بعد از ۳۰ دقیقه دوری خودش تازه می‌شود. با اولین سفارش یا مشتری واقعی، اطلاعات خود فروشگاه‌تان این‌جا می‌آید.
@@ -211,6 +219,8 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
         {mode !== "loading" && (
           <>
         {tab === "dashboard" && <Dashboard resumeId={rid} products={live.length} outOfStock={outOfStock} lowStock={lowStock} onTab={(t) => setTab(t as Tab)} />}
+        {tab === "schedule" && <ScheduleEditor shop={shop} setShop={setShop} />}
+        {tab === "events" && <EventsEditor shop={shop} setShop={setShop} />}
         {tab === "studio" && <StudioDashboard resumeId={resumeId} shop={shop} onTab={(t) => setTab(t as Tab)} kind={bookingKind} />}
         {tab === "calendar" && <StudioCalendar resumeId={resumeId} shop={shop} kind={bookingKind} />}
         {tab === "clients" && <StudioClients resumeId={resumeId} shop={shop} kind={bookingKind} />}

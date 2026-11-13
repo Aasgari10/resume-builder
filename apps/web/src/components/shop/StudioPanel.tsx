@@ -5,10 +5,10 @@
 // forms (see SiteInbox); before the site has any, sample bookings show what each tab does.
 
 import { useEffect, useMemo, useState } from "react";
-import type { Product, Shop } from "@rb/schema";
+import { addDay, defaultSchedule, slotsOf, todayTehran, type Product, type Schedule, type Shop } from "@rb/schema";
 import { api, type SiteMessage, type SiteMessageStatus } from "../../api";
 import { newId } from "../editor/list";
-import { Field, MoneyInput, showNumber } from "./fields";
+import { Field, ImagePicker, MoneyInput, showNumber } from "./fields";
 import { errorText } from "./ShopOrders";
 
 const STATUS: Record<SiteMessageStatus, string> = { NEW: "جدید", SEEN: "در حال بررسی", CONFIRMED: "تأییدشده", DONE: "انجام‌شده", CANCELED: "لغوشده" };
@@ -19,18 +19,19 @@ const toman = (n: number) => `${showNumber(Math.round(n))} تومان`;
 const live = (shop: Shop) => shop.products.filter((p) => !p.trashed);
 
 /** What is booked: a photo session (studio), an appointment (salon) or a table (restaurant). */
-export type BookingKind = "studio" | "salon" | "table";
+export type BookingKind = "studio" | "salon" | "table" | "clinic";
 const WORDS: Record<BookingKind, { one: string; many: string; who: string; what: string }> = {
   studio: { one: "نوبت", many: "نوبت‌ها", who: "مشتری", what: "پکیج" },
   salon: { one: "نوبت", many: "نوبت‌ها", who: "مشتری", what: "خدمت" },
   table: { one: "رزرو", many: "رزروها", who: "مهمان", what: "تعداد نفرات" },
+  clinic: { one: "نوبت", many: "نوبت‌ها", who: "مراجع", what: "نوع جلسه" },
 };
 /** What a booking is for, as shown in lists: the package or service, or the number of guests. */
 const subject = (b: SiteMessage, kind: BookingKind) => (kind === "table" ? (b.guests ? `${showNumber(b.guests)} نفر` : "میز") : b.service || "—");
 
 /** Sample bookings around today, with the studio's own package names (nothing reaches the server). */
 function sampleBookings(shop: Shop, kind: BookingKind): SiteMessage[] {
-  const names = kind === "salon" ? shop.categories.filter((c) => !c.sell).map((c) => c.name) : live(shop).map((p) => p.name);
+  const names = kind === "salon" && !shop.schedule ? shop.categories.filter((c) => !c.sell).map((c) => c.name) : live(shop).map((p) => p.name);
   const pick = (k: number) => names[k % Math.max(1, names.length)] ?? "پکیج عکاسی";
   const people = [
     ["مریم احمدی", "09121234567"],
@@ -506,6 +507,158 @@ export function StudioReports({ resumeId, shop, kind = "studio" }: { resumeId?: 
         </tbody>
       </table>
       {priced && <p className="muted shm-hint">درآمد از قیمت فعلی {kind === "studio" ? "پکیج‌ها" : "خدمات (کمترین قیمت هر خدمت)"} و {w.many}یی حساب می‌شود که در «پیام‌ها و نوبت‌ها» «انجام‌شده» زده‌اید.</p>}
+    </div>
+  );
+}
+
+/* ───────────── Working hours and capacity ───────────── */
+
+/** The browser's date box shows the Gregorian date; this shows the same day in the Persian calendar. */
+const jalaliHint = (d?: string) => (d ? new Date(`${d}T12:00:00Z`).toLocaleDateString("fa-IR-u-ca-persian", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long", year: "numeric" }) : undefined);
+
+const WEEKDAYS: [number, string][] = [
+  [6, "شنبه"],
+  [0, "یکشنبه"],
+  [1, "دوشنبه"],
+  [2, "سه‌شنبه"],
+  [3, "چهارشنبه"],
+  [4, "پنجشنبه"],
+  [5, "جمعه"],
+];
+
+/** The online booking rules: working days and hours, session length, places at a time, days off. */
+export function ScheduleEditor({ shop, setShop }: { shop: Shop; setShop: (s: Partial<Shop>) => void }) {
+  const s = shop.schedule ?? defaultSchedule();
+  const save = (patch: Partial<Schedule>) => setShop({ schedule: { ...s, ...patch } });
+  const [closedDay, setClosedDay] = useState("");
+  const today = todayTehran();
+  // A look at the next working day, to show the owner the times visitors will see.
+  let sampleDay = today;
+  for (let k = 0; k < 14 && slotsOf(s, sampleDay).length === 0; k++) sampleDay = addDay(today, k + 1);
+  const sample = slotsOf(s, sampleDay);
+  const per = (n: number) => `${showNumber(n)} دقیقه`;
+  return (
+    <div className="shm-studio">
+      <p className="muted">صفحه‌ی «نوبت آنلاین» فقط روزها و ساعت‌هایی را نشان می‌دهد که این‌جا تعیین کنید و هنوز پر نشده‌اند؛ سرور هم موقع ثبت دوباره بررسی می‌کند. تغییرها بعد از «انتشار» در سایت اعمال می‌شود.</p>
+      <h3>روزهای کاری</h3>
+      <div className="shm-row">
+        {WEEKDAYS.map(([d, label]) => (
+          <label key={d} className="shm-sell">
+            <input type="checkbox" checked={s.days.includes(d)} onChange={(e) => save({ days: e.target.checked ? [...s.days, d] : s.days.filter((x) => x !== d) })} />
+            {label}
+          </label>
+        ))}
+      </div>
+      <div className="shm-sched">
+        <Field label="ساعت شروع">
+          <input type="time" value={s.start} onChange={(e) => e.target.value && save({ start: e.target.value })} />
+        </Field>
+        <Field label="ساعت پایان">
+          <input type="time" value={s.end} onChange={(e) => e.target.value && save({ end: e.target.value })} />
+        </Field>
+        <Field label="طول هر جلسه">
+          <select value={s.slot} onChange={(e) => save({ slot: Number(e.target.value) })}>
+            {[15, 20, 30, 45, 60, 75, 90, 120].map((n) => (
+              <option key={n} value={n}>
+                {per(n)}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="ظرفیت هر نوبت" hint="چند نفر هم‌زمان (مثلاً چند درمانگر)">
+          <input type="number" min={1} max={50} value={s.capacity} onChange={(e) => save({ capacity: Math.max(1, Math.min(50, Number(e.target.value) || 1)) })} />
+        </Field>
+        <Field label="نوبت‌دهی تا چند روز آینده">
+          <input type="number" min={1} max={180} value={s.ahead} onChange={(e) => save({ ahead: Math.max(1, Math.min(180, Number(e.target.value) || 30)) })} />
+        </Field>
+        <Field label="استراحت (اختیاری)" hint="مثلاً ناهار؛ این بازه نوبت ندارد">
+          <span className="shm-row">
+            <input type="time" value={s.breakStart ?? ""} onChange={(e) => save({ breakStart: e.target.value || undefined })} aria-label="شروع استراحت" />
+            <input type="time" value={s.breakEnd ?? ""} onChange={(e) => save({ breakEnd: e.target.value || undefined })} aria-label="پایان استراحت" />
+          </span>
+        </Field>
+      </div>
+      <h3>روزهای تعطیل و مرخصی</h3>
+      <div className="shm-row">
+        <input type="date" value={closedDay} min={today} onChange={(e) => setClosedDay(e.target.value)} aria-label="روز تعطیل" />
+        {closedDay && <span className="muted">{jalaliHint(closedDay)}</span>}
+        <button type="button" className="btn small" disabled={!closedDay || s.closed.includes(closedDay)} onClick={() => (save({ closed: [...s.closed, closedDay].sort() }), setClosedDay(""))}>
+          + افزودن روز تعطیل
+        </button>
+      </div>
+      <div className="shm-row">
+        {s.closed.filter((d) => d >= today).map((d) => (
+          <span key={d} className="shm-chip">
+            {jalaliHint(d)}
+            <button type="button" aria-label="حذف" onClick={() => save({ closed: s.closed.filter((x) => x !== d) })}>
+              ✕
+            </button>
+          </span>
+        ))}
+        {!s.closed.some((d) => d >= today) && <span className="muted">روز تعطیلی ثبت نشده است.</span>}
+      </div>
+      <h3>پیش‌نمایش</h3>
+      <p className="muted">
+        {sample.length
+          ? `${new Date(`${sampleDay}T12:00:00Z`).toLocaleDateString("fa-IR-u-ca-persian", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" })}: ${showNumber(sample.length)} نوبت، هر کدام برای ${showNumber(s.capacity)} نفر — ${sample.join("، ")}`
+          : "با این تنظیم‌ها در دو هفته‌ی آینده نوبتی نمایش داده نمی‌شود؛ روزها و ساعت‌ها را بررسی کنید."}
+      </p>
+    </div>
+  );
+}
+
+/* ───────────── Events ───────────── */
+
+type Ev = NonNullable<Shop["events"]>[number];
+
+/** Dated events with a price (workshops, conferences); the site shows the ones not over yet. */
+export function EventsEditor({ shop, setShop }: { shop: Shop; setShop: (s: Partial<Shop>) => void }) {
+  const list = shop.events ?? [];
+  const save = (next: Ev[]) => setShop({ events: next.length ? next : undefined });
+  const update = (id: string, patch: Partial<Ev>) => save(list.map((e) => (e.id === id ? { ...e, ...patch } : e)));
+  const today = todayTehran();
+  return (
+    <div className="shm-studio">
+      <p className="muted">رویدادهایی که تاریخشان نگذشته در صفحه‌ی اول نمایش داده می‌شوند (دو رویداد نزدیک‌تر)؛ رویدادهای گذشته خودشان پنهان می‌شوند.</p>
+      {[...list]
+        .sort((a, b) => a.start.localeCompare(b.start))
+        .map((e) => (
+          <article key={e.id} className={`shm-pack${(e.end || e.start) < today ? " shm-past" : ""}`}>
+            <div className="shm-pack-top">
+              <Field label="عنوان">
+                <input value={e.title} maxLength={160} onChange={(x) => update(e.id, { title: x.target.value })} />
+              </Field>
+              <Field label="هزینه‌ی شرکت (خالی یعنی رایگان)">
+                <MoneyInput value={e.price} onChange={(n) => update(e.id, { price: n })} />
+              </Field>
+              <label className="shm-sell">
+                <input type="checkbox" checked={!e.hidden} onChange={(x) => update(e.id, { hidden: x.target.checked ? undefined : true })} />
+                نمایش در سایت
+              </label>
+            </div>
+            <div className="shm-sched">
+              <Field label="تاریخ شروع" hint={jalaliHint(e.start)}>
+                <input type="date" value={e.start} onChange={(x) => x.target.value && update(e.id, { start: x.target.value })} />
+              </Field>
+              <Field label="تاریخ پایان (اختیاری)" hint={jalaliHint(e.end)}>
+                <input type="date" value={e.end ?? ""} onChange={(x) => update(e.id, { end: x.target.value || undefined })} />
+              </Field>
+              <Field label="لینک ثبت‌نام (اختیاری)">
+                <input value={e.link ?? ""} dir="ltr" placeholder="https://…" onChange={(x) => update(e.id, { link: x.target.value || undefined })} />
+              </Field>
+            </div>
+            <div className="shm-row">
+              <ImagePicker value={e.image} onChange={(url) => update(e.id, { image: url })} />
+              {(e.end || e.start) < today && <span className="muted">برگزار شده (در سایت نمایش داده نمی‌شود)</span>}
+              <button type="button" className="btn ghost small danger" onClick={() => window.confirm(`رویداد «${e.title}» حذف شود؟`) && save(list.filter((x) => x.id !== e.id))}>
+                حذف
+              </button>
+            </div>
+          </article>
+        ))}
+      <button type="button" className="btn small" onClick={() => save([...list, { id: newId(), title: "رویداد جدید", start: addDay(today, 14), image: "" }])}>
+        + رویداد جدید
+      </button>
     </div>
   );
 }
