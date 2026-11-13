@@ -17,6 +17,7 @@ import { Pages, Quotes } from "./ShopPages";
 import { Blog } from "./ShopBlog";
 import { Extras } from "./ShopExtras";
 import { SiteInbox } from "./SiteInbox";
+import { StudioCalendar, StudioClients, StudioDashboard, StudioPackages, StudioReports } from "./StudioPanel";
 import { MenuQr } from "./MenuQr";
 import { Customers, Reviews, Tickets } from "./ShopPeople";
 import { Dashboard, Orders } from "./ShopOrders";
@@ -24,7 +25,7 @@ import { Products, stockOf } from "./ShopProducts";
 import { resetSample, sampleShopApi, sampleShopFor } from "./sampleData";
 import { ShopApiContext } from "./shopApi";
 
-type Tab = "inbox" | "qr" | "dashboard" | "quotes" | "pages" | "blog" | "extras" | "products" | "categories" | "banners" | "coupons" | "orders" | "reports" | "reviews" | "tickets" | "customers" | "trash" | "settings";
+type Tab = "studio" | "calendar" | "clients" | "studio-reports" | "inbox" | "qr" | "dashboard" | "quotes" | "pages" | "blog" | "extras" | "products" | "categories" | "banners" | "coupons" | "orders" | "reports" | "reviews" | "tickets" | "customers" | "trash" | "settings";
 
 type Props = {
   data: ResumeData;
@@ -53,8 +54,10 @@ type Props = {
 /** Tabs of a menu site, in this order. */
 const MENU_TABS: Tab[] = ["products", "categories", "inbox", "qr", "banners", "extras", "quotes", "pages", "trash"];
 
+/** Tabs only a photo studio has. */
+const STUDIO_ONLY: Tab[] = ["studio", "calendar", "clients", "studio-reports"];
 /** Tabs of a photo studio, in this order. */
-const STUDIO_TABS: Tab[] = ["inbox", "products", "categories", "banners", "extras", "quotes", "blog", "pages", "trash"];
+const STUDIO_TABS: Tab[] = ["studio", "inbox", "calendar", "products", "clients", "studio-reports", "categories", "banners", "extras", "quotes", "blog", "pages", "trash"];
 
 const EMPTY_SHOP: Shop = { categories: [], products: [] };
 
@@ -62,7 +65,7 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
   const sells = sellsMenu || services;
   // Only a menu site that sells nothing gets the short menu panel.
   const menu = menuSite && !sells;
-  const [tab, setTab] = useState<Tab>(studio ? "inbox" : focusProductId || menu ? "products" : "dashboard");
+  const [tab, setTab] = useState<Tab>(studio ? "studio" : focusProductId || menu ? "products" : "dashboard");
   // Counts for the "new" marks on the tabs; read again after changes in those tabs.
   const [counts, setCounts] = useState<Pick<ShopSummary, "newOrders" | "openTickets" | "waitingReviews"> | null>(null);
   const shop = data.site?.shop ?? EMPTY_SHOP;
@@ -137,6 +140,10 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
           {(
             [
               ["dashboard", "📊 داشبورد"],
+              ["studio", "📊 داشبورد"],
+              ["calendar", "🗓 تقویم نوبت‌ها"],
+              ["clients", "👥 مشتریان"],
+              ["studio-reports", "📈 گزارش‌ها"],
               ["products", studio ? "📸 پکیج‌های عکاسی" : menu ? "☕ منو" : services ? "💇 خدمات و محصولات" : menuSite ? "☕ منو و محصولات" : "📦 محصولات", <i key="n" className="shm-count">{showNumber(live.length)}</i>],
               ["qr", "▦ QR کد منو"],
               ["categories", "📂 دسته‌ها"],
@@ -156,7 +163,7 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
               ["settings", "⚙️ تنظیمات فروشگاه"],
             ] as [Tab, string, ReactNode?][]
           )
-            .filter(([id]) => (studio ? STUDIO_TABS.includes(id) : menu ? MENU_TABS.includes(id) : (menuSite && !services) || id !== "qr"))
+            .filter(([id]) => (studio ? STUDIO_TABS.includes(id) : !STUDIO_ONLY.includes(id) && (menu ? MENU_TABS.includes(id) : (menuSite && !services) || id !== "qr")))
             .sort(([a], [b]) => (studio ? STUDIO_TABS.indexOf(a) - STUDIO_TABS.indexOf(b) : menu ? MENU_TABS.indexOf(a) - MENU_TABS.indexOf(b) : 0))
             .map(([id, label, extra]) => (
             <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)}>
@@ -167,7 +174,7 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
         </nav>
       <ShopApiContext.Provider value={source}>
       <div className="shm-body">
-        {mode === "sample" && !["products", "categories", "banners", "coupons", "quotes", "pages", "blog", "extras", "trash", "settings", "qr", "inbox"].includes(tab) && (
+        {mode === "sample" && !["products", "categories", "banners", "coupons", "quotes", "pages", "blog", "extras", "trash", "settings", "qr", "inbox", ...STUDIO_ONLY].includes(tab) && (
           <p className="shm-sample">
             <span>
               🧪 <b>این‌ها اطلاعات نمونه است</b> تا ببینید پنل چه کارهایی می‌کند. تغییرهای شما فقط در همین مرورگر است و کاربر دیگری آن‌ها را نمی‌بیند؛ بعد از ۳۰ دقیقه دوری خودش تازه می‌شود. با اولین سفارش یا مشتری واقعی، اطلاعات خود فروشگاه‌تان این‌جا می‌آید.
@@ -189,7 +196,12 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
         {mode !== "loading" && (
           <>
         {tab === "dashboard" && <Dashboard resumeId={rid} products={live.length} outOfStock={outOfStock} lowStock={lowStock} onTab={(t) => setTab(t as Tab)} />}
-        {tab === "products" && <Products shop={shop} setShop={setShop} onSample={sample?.site?.shop ? startFromSample : undefined} focus={focusProductId} resumeId={rid} />}
+        {tab === "studio" && <StudioDashboard resumeId={resumeId} shop={shop} onTab={(t) => setTab(t as Tab)} />}
+        {tab === "calendar" && <StudioCalendar resumeId={resumeId} shop={shop} />}
+        {tab === "clients" && <StudioClients resumeId={resumeId} shop={shop} />}
+        {tab === "studio-reports" && <StudioReports resumeId={resumeId} shop={shop} />}
+        {tab === "products" && studio && <StudioPackages shop={shop} setShop={setShop} />}
+        {tab === "products" && !studio && <Products shop={shop} setShop={setShop} onSample={sample?.site?.shop ? startFromSample : undefined} focus={focusProductId} resumeId={rid} />}
         {tab === "categories" && <Categories shop={shop} setShop={setShop} sells={sells} services={services || studio} />}
         {tab === "banners" && <Banners shop={shop} setShop={setShop} />}
         {tab === "coupons" && <Coupons shop={shop} setShop={setShop} />}

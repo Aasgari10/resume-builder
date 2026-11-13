@@ -1465,3 +1465,40 @@ select {
 .shm-msg-edit input, .shm-msg-edit select, .shm-msg-note textarea { padding: 7px 9px; border: 1px solid var(--border); border-radius: 8px; font: inherit; background: #fff; color: var(--text); }
 .shm-row { display: flex; flex-wrap: wrap; gap: 8px; }
 @media (max-width: 640px) { .shm-msg-head { flex-wrap: wrap; } .shm-msg-body dl { grid-template-columns: 1fr; } }
+
+/* Photo studio panel: overview, week calendar, packages, clients, reports */
+.shm-studio { display: grid; gap: 14px; max-width: 1100px; margin: 0 auto; }
+.shm-studio h3 { margin: 10px 0 0; font-size: 1rem; }
+.shm-studio .shm-stats > button { display: grid; gap: 4px; padding: 14px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); font: inherit; color: inherit; text-align: start; cursor: pointer; }
+.shm-studio .shm-stats > button:hover { border-color: var(--primary); }
+.shm-day-list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.shm-day-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
+.shm-day-list li > span { flex: 1; min-width: 140px; }
+.shm-cal-head { align-items: center; }
+.shm-cal-head b { flex: 1; text-align: center; }
+.shm-cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.shm-cal-day { display: grid; align-content: start; gap: 6px; min-height: 180px; padding: 8px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+.shm-cal-day.today { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); }
+.shm-cal-day h4 { display: grid; margin: 0 0 4px; font-size: .9rem; }
+.shm-cal-day h4 small { color: var(--muted); font-weight: 400; }
+.shm-cal-day p { margin: 0; }
+.shm-cal-item { display: grid; gap: 2px; padding: 6px 8px; border-radius: 8px; background: #fdecc8; font-size: .82rem; }
+.shm-cal-item small { color: #555; }
+.shm-cal-item.s-confirmed { background: var(--success-bg); }
+.shm-cal-item.s-done { background: #e3eefc; }
+.shm-cal-item.s-canceled { background: #eee; text-decoration: line-through; opacity: .7; }
+.shm-pack { display: grid; gap: 12px; padding: 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+.shm-pack-top { display: grid; grid-template-columns: 1.4fr 1fr auto; gap: 12px; align-items: end; }
+.shm-pack-lines { display: grid; gap: 6px; }
+.shm-pack-lines input { flex: 1; padding: 7px 9px; border: 1px solid var(--border); border-radius: 8px; font: inherit; background: #fff; }
+.shm-bars { display: grid; gap: 8px; }
+.shm-bar-row { display: grid; grid-template-columns: 120px 1fr; gap: 4px 12px; align-items: center; }
+.shm-bar-row i { display: block; height: 14px; min-width: 2px; border-radius: 99px; background: var(--primary); }
+.shm-bar-row small { grid-column: 2; color: var(--muted); }
+.shm-table { width: 100%; border-collapse: collapse; background: var(--surface); }
+.shm-table th, .shm-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: start; }
+@media (max-width: 760px) {
+  .shm-cal { grid-template-columns: 1fr; }
+  .shm-cal-day { min-height: 0; }
+  .shm-pack-top { grid-template-columns: 1fr; }
+}
