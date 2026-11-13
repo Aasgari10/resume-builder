@@ -3,10 +3,10 @@
 // month, one-item-per-line list or tags. Sample text in the preview shows as a hint.
 
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
-import { ApiError } from "../../api";
+import { ApiError, api } from "../../api";
 import { uploadPicture } from "./uploadImage";
 
-export type EditKind = "text" | "multiline" | "image" | "url" | "period" | "month" | "lines" | "tags" | "newlink" | "newimage";
+export type EditKind = "text" | "multiline" | "image" | "url" | "audio" | "period" | "month" | "lines" | "tags" | "newlink" | "newimage";
 
 /** Ways to be reached that can be added from the page, in menu order. */
 const LINK_TYPES: { value: string; label: string; hint: string }[] = [
@@ -105,6 +105,19 @@ export function EditPopover({ target, value, shown, canRemove, canClear, onSave,
     };
   }, [onClose]);
 
+  const sound = useRef<HTMLInputElement>(null);
+  async function uploadSound(f: File) {
+    setError(null);
+    setBusy(true);
+    try {
+      onSave((await api.uploadAudio(f)).url);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "آپلود انجام نشد");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function upload(f: File) {
     setError(null);
     setBusy(true);
@@ -131,7 +144,7 @@ export function EditPopover({ target, value, shown, canRemove, canClear, onSave,
       const url = normalizeLink(linkType, text);
       return url ? onSave({ type: linkType, url }) : setError("آدرس یا شماره را کامل وارد کنید.");
     }
-    if (kind === "url" && text.trim()) {
+    if ((kind === "url" || kind === "audio") && text.trim()) {
       const url = normalizeLink("website", text);
       return url ? onSave(url) : setError("لینک کامل نیست؛ مثلاً https://example.com");
     }
@@ -158,7 +171,9 @@ export function EditPopover({ target, value, shown, canRemove, canClear, onSave,
           <input ref={file} type="file" accept="image/*" hidden onChange={(e) => e.target.files?.[0] && void upload(e.target.files[0])} />
           <small className="muted">
             {target.path === "projects"
-              ? "عکس رویداد را انتخاب کنید؛ بعد روی عنوان و متن رویداد کلیک کنید تا بنویسیدشان."
+              ? `عکس را انتخاب کنید؛ بعد روی عنوان و متن «${target.label}» کلیک کنید تا بنویسیدشان.`
+              : target.path === "site.shop.banners"
+                ? "عکس را انتخاب کنید؛ بعد روی نام، سمت و معرفی کلیک کنید تا بنویسیدشان."
               : target.path === "site.gallery" && target.label.includes("گالری")
                 ? "عکس به آخر گالری اضافه می‌شود."
                 : "بعد از آپلود، روی عنوان مدرک کلیک کنید تا اسمش را بنویسید."}
@@ -190,13 +205,23 @@ export function EditPopover({ target, value, shown, canRemove, canClear, onSave,
         </>
       )}
 
-      {(kind === "text" || kind === "url") && (
+      {kind === "audio" && (
+        <>
+          <button type="button" className="btn" disabled={busy} onClick={() => sound.current?.click()}>
+            {busy ? "در حال آپلود…" : "آپلود فایل آهنگ"}
+          </button>
+          <input ref={sound} type="file" accept="audio/mpeg,audio/mp4,audio/ogg,.mp3,.m4a,.ogg" hidden onChange={(e) => e.target.files?.[0] && void uploadSound(e.target.files[0])} />
+          <small className="muted">MP3، M4A یا OGG تا ۸ مگابایت؛ یا لینک فایل را بنویسید:</small>
+        </>
+      )}
+
+      {(kind === "text" || kind === "url" || kind === "audio") && (
         <input
           autoFocus
-          dir={kind === "url" ? "ltr" : undefined}
-          className={kind === "url" ? "ltr" : undefined}
+          dir={kind !== "text" ? "ltr" : undefined}
+          className={kind !== "text" ? "ltr" : undefined}
           value={text}
-          placeholder={kind === "url" ? "https://..." : hint}
+          placeholder={kind !== "text" ? "https://..." : hint}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={onEnter}
         />

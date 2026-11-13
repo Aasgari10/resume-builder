@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { addDay, freeAt, openDays, slotsOf, slotKey, takenFor, takenKey, todayTehran, type Schedule } from "@rb/schema";
+import { addDay, freeAt, openDays, slotsOf, freeFor, slotKey, spanTimes, takenFor, takenKey, todayTehran, type Schedule } from "@rb/schema";
 
 const s: Schedule = { days: [6, 0, 1, 2, 3], start: "09:00", end: "13:00", slot: 60, capacity: 2, ahead: 10, closed: [], breakStart: "11:00", breakEnd: "12:00" };
 // A Saturday comfortably in the future (Tehran calendar), so "today" never trims its times.
@@ -45,4 +45,13 @@ test("byService: each room has its own capacity", () => {
   assert.equal(freeAt(r, takenFor(r, taken, "شرلوک"), sat, "09:00"), 1);
   // Without a capacity per service every booking counts against the same time.
   assert.equal(takenKey(s, sat, "09:00", "زندان"), slotKey(sat, "09:00"));
+});
+
+test("span: a booking of hours takes each slot it runs through", () => {
+  const r: Schedule = { ...s, capacity: 1, span: true, slot: 60, start: "09:00", end: "13:00", breakStart: undefined, breakEnd: undefined };
+  assert.deepEqual(spanTimes(r, "10:00", 2), ["10:00", "11:00"]);
+  const taken = { [slotKey(sat, "11:00")]: 1 };
+  assert.equal(freeFor(r, taken, sat, "09:00", 2), 1); // 09:00 and 10:00 are free
+  assert.equal(freeFor(r, taken, sat, "10:00", 2), 0); // 11:00 is taken
+  assert.equal(freeFor(r, {}, sat, "12:00", 2), 0); // runs past the end of the day
 });

@@ -58,6 +58,10 @@ export type TemplateDefinition = {
   clinic?: boolean;
   /** An escape room: rooms booked one group at a time (a clinic-like manager with rooms). */
   escape?: boolean;
+  /** A page script (see web/scripts.ts): the published page runs it by its hash, the editor on the preview. */
+  script?: string;
+  /** Studios rented by the hour (a recording studio): a clinic-like manager with studios and services. */
+  rental?: boolean;
   /**
    * Shop manager pieces this template shows on its pages; a manager tab for content the template has
    * no place for is left out. "extras" lists the sections of that tab, each with the heading it gets.
@@ -66,5 +70,7 @@ export type TemplateDefinition = {
     extras?: { perks?: string; stats?: string; brands?: string; trust?: string };
     /** Tabs of content this template does not show (e.g. "banners", "quotes"). */
     hide?: string[];
+    /** The template groups its questions by category (the FAQ editor then asks for one). */
+    faqCategories?: boolean;
   };
 };

@@ -16,8 +16,8 @@ const YEAR_MONTH_OR_EMPTY = /^(\d{4}-(0[1-9]|1[0-2]))?$/;
 /** Sample pictures shipped with the app and served by the API (see SAMPLE_ASSETS_PATH in the API). */
 export const SAMPLE_ASSETS_PATH = "/_assets/samples/";
 /** Bumped when the pictures change, so browsers fetch the new files instead of cached ones. */
-export const SAMPLE_ASSETS_VERSION = 11;
-export const isSampleAsset = (v: string) => /^\/_assets\/samples\/[a-z0-9-]+\.(jpg|png|svg)(\?v=\d+)?$/.test(v);
+export const SAMPLE_ASSETS_VERSION = 12;
+export const isSampleAsset = (v: string) => /^\/_assets\/samples\/[a-z0-9-]+\.(jpg|png|svg|mp3)(\?v=\d+)?$/.test(v);
 
 function buildResumeSchemas(strict: boolean) {
   /* ───────────── Primitives ───────────── */
@@ -299,7 +299,7 @@ function buildResumeSchemas(strict: boolean) {
     freeShippingFrom: price.optional(), // orders from this amount ship free
     // Questions and answers (the "/faq" page) and simple text pages such as "about us" or "terms".
     faqTitle: z.string().max(120).optional(),
-    faq: z.array(z.object({ id, q: z.string().max(200), a: z.string().max(1500) })).max(30).optional(),
+    faq: z.array(z.object({ id, q: z.string().max(200), a: z.string().max(1500), category: z.string().max(40).optional() })).max(30).optional(), // category: templates that group the questions
     pages: z
       .array(z.object({ id, slug: z.string().regex(/^[a-z0-9-]{1,30}$/), title: z.string().max(80), text: z.string().max(8000), hidden: z.boolean().optional() }))
       .max(8)

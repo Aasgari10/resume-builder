@@ -2,7 +2,7 @@
 // (settings, assistant, publishing). "Show" turns the same workspace into a full-screen view.
 // Empty content is filled with sample text and pictures; publishing uses only the user's own content.
 
-import { useEffect, useMemo, useState, type FormEvent, type MouseEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { applyHiddenFields, changeCart, emptyVisitor, toggleWishlist, variantKey, type ResumeData, type Theme, type Visitor } from "@rb/schema";
 import { getTemplate, isDummyUrl, pageTitle, resolvePage, siteTheme, withPlaceholders } from "@rb/templates";
@@ -65,6 +65,16 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
     onThemeChange({ ...next, colors: { ...next.colors, background, surface, text, mutedText } });
   };
   const [editing, setEditing] = useState(true);
+  // The template's page script (a song player, tabs that follow the pointer) runs on the preview too.
+  const frame = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!site.script || !frame.current) return;
+    try {
+      new Function("document", site.script)(frame.current);
+    } catch {
+      // The preview still works without it, as the published page does.
+    }
+  });
   const [full, setFull] = useState(false);
   // In full-screen view the bar hides behind a small button.
   const [barOpen, setBarOpen] = useState(false);
@@ -80,6 +90,15 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
   const [shopFocus, setShopFocus] = useState<string | undefined>();
   const pages = site.pages?.(data) ?? ["/"];
   const page = resolvePage(site, data, requestedPage) ?? "/";
+  // A new page opens at its top, as on the published site; a link to a place on the page (#…) keeps it.
+  const keepScroll = useRef(false);
+  useEffect(() => {
+    if (keepScroll.current) {
+      keepScroll.current = false;
+      return;
+    }
+    frame.current?.closest(".ws-view")?.scrollTo({ top: 0 });
+  }, [page]);
 
   // HomeMart's own color is burgundy: a site still on the starting navy gets it (a color the user picked stays).
   useEffect(() => {
@@ -92,7 +111,7 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
   const sampleShop = sampleShopFor(raw.site?.shop, templateSample?.site?.shop);
   // The site's forms (bookings, messages, sign-ups) go into a sample inbox that follows the site's own hours.
   const demoShop = { ...sampleShop, schedule: data.site?.shop?.schedule };
-  const hasBookings = Boolean(site.bookings || site.studio || site.clinic || site.escape);
+  const hasBookings = Boolean(site.bookings || site.studio || site.clinic || site.escape || site.rental);
   const [, setSampleRound] = useState(0);
   useEffect(() => {
     const stop = onSampleChange(() => setSampleRound((n) => n + 1));
@@ -151,7 +170,13 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
     e.preventDefault();
     const to = a.getAttribute("data-page");
     const href = a.getAttribute("href") ?? "";
-    if (to) setPage(to);
+    // A page link may carry a query (a room or a studio chosen on the booking page): open that page with it.
+    if (to?.includes("?")) {
+      const url = new URL(to, "http://site");
+      setVisitor((v) => ({ ...v, query: Object.fromEntries(url.searchParams) }));
+      setPage(url.pathname);
+      window.setTimeout(() => frameTop(a), 60);
+    } else if (to) setPage(to);
     // Links inside the site with a query (a booking day, a month, a blog category or page): open that
     // page with the query, as the published site does, then go to its anchor or the top.
     else if (href.startsWith("/") && !href.startsWith("//")) {
@@ -159,6 +184,7 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
       setVisitor((v) => ({ ...v, query: Object.fromEntries(url.searchParams) }));
       setPage(url.pathname);
       const anchor = url.hash.slice(1);
+      keepScroll.current = Boolean(anchor);
       window.setTimeout(() => (anchor ? document.getElementById(anchor)?.scrollIntoView({ behavior: "smooth", block: "start" }) : frameTop(a)), 60);
     }
     // Project rule: a placeholder link ("#", example.com) takes the visitor to the top of the page.
@@ -311,7 +337,7 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
           دستیار
         </button>
         {site.shop && (
-          <button type="button" className="ws-chip" title={site.escape ? "مدیریت اتاق فرار: رزروها، سانس‌ها، اتاق‌ها و بلاگ" : site.clinic ? "مدیریت مطب: نوبت‌ها، ساعت کاری، تعرفه‌ها، رویدادها و بلاگ" : site.studio ? "مدیریت آتلیه: پیام‌ها و رزروها، پکیج‌ها، تیم، بلاگ" : site.services ? "مدیریت سایت: خدمات، فروشگاه، سفارش‌ها و بلاگ" : site.menu && site.sells ? "مدیریت سایت: منو، فروشگاه، سفارش‌ها و QR کد" : site.menu ? "مدیریت سایت: منو، QR کد و محتوای صفحه‌ها" : "مدیریت فروشگاه: سفارش‌ها، محصولات، تیکت‌ها و گزارش‌ها"} onClick={() => { setShopFocus(undefined); setShopOpen(true); }}>
+          <button type="button" className="ws-chip" title={site.rental ? "مدیریت استودیو: رزروها، ساعت کاری، استودیوها، خدمات و بلاگ" : site.escape ? "مدیریت اتاق فرار: رزروها، سانس‌ها، اتاق‌ها و بلاگ" : site.clinic ? "مدیریت مطب: نوبت‌ها، ساعت کاری، تعرفه‌ها، رویدادها و بلاگ" : site.studio ? "مدیریت آتلیه: پیام‌ها و رزروها، پکیج‌ها، تیم، بلاگ" : site.services ? "مدیریت سایت: خدمات، فروشگاه، سفارش‌ها و بلاگ" : site.menu && site.sells ? "مدیریت سایت: منو، فروشگاه، سفارش‌ها و QR کد" : site.menu ? "مدیریت سایت: منو، QR کد و محتوای صفحه‌ها" : "مدیریت فروشگاه: سفارش‌ها، محصولات، تیکت‌ها و گزارش‌ها"} onClick={() => { setShopFocus(undefined); setShopOpen(true); }}>
             ⚙️ مدیریت
           </button>
         )}
@@ -331,6 +357,7 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
       <div className="ws-body">
         <div className="ws-view">
           <div
+            ref={frame}
             className={`preview-frame${editing ? " editing" : ""}${device === "mobile" ? " mobile" : ""}`}
             style={{ width: device === "mobile" ? MOBILE_WIDTH : "100%" }}
             onClick={onFrameClick}
@@ -379,7 +406,7 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
         )}
       {shopOpen &&
         createPortal(
-          <ShopManager data={raw} sample={templateSample} onData={onDataChange} resumeId={resumeId} focusProductId={shopFocus} menu={Boolean(site.menu)} sells={Boolean(site.sells)} services={Boolean(site.services)} bookings={Boolean(site.bookings)} studio={Boolean(site.studio)} clinic={Boolean(site.clinic)} escape={Boolean(site.escape)} panel={site.panel} hasBlog={Boolean(site.escape || site.optionalPages?.some((p) => p.path === "/blog"))} onClose={() => { setShopOpen(false); setShopFocus(undefined); }} />,
+          <ShopManager data={raw} sample={templateSample} onData={onDataChange} resumeId={resumeId} focusProductId={shopFocus} menu={Boolean(site.menu)} sells={Boolean(site.sells)} services={Boolean(site.services)} bookings={Boolean(site.bookings)} studio={Boolean(site.studio)} clinic={Boolean(site.clinic)} escape={Boolean(site.escape)} rental={Boolean(site.rental)} panel={site.panel} hasBlog={Boolean(site.escape || site.rental || site.optionalPages?.some((p) => p.path === "/blog"))} onClose={() => { setShopOpen(false); setShopFocus(undefined); }} />,
           document.body,
         )}
       {target &&
@@ -405,9 +432,17 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
                 const site = raw.site ?? { gallery: [] };
                 const image = String(value);
                 if (target.path === "projects") {
-                  // A new event (escape room): the sample events stay, the new one joins them.
+                  // A new item of the template's list (an event, a record…): the sample ones stay, the new one joins them.
                   const list = raw.projects.length ? raw.projects : shown.projects;
-                  onDataChange({ ...raw, projects: [...structuredClone(list), { id: newId(), title: "رویداد تازه", description: "متن رویداد را این‌جا بنویسید.", technologies: [], images: [image] }] });
+                  onDataChange({ ...raw, projects: [...structuredClone(list), { id: newId(), title: target.label, description: "متن را این‌جا بنویسید.", technologies: [], images: [image] }] });
+                  setTarget(null);
+                  return;
+                }
+                if (target.path === "site.shop.banners") {
+                  // A new team member (music studio): name, role and a short text are written on the page.
+                  const shop = raw.site?.shop ?? shown.site?.shop ?? { categories: [], products: [] };
+                  const list = raw.site?.shop?.banners ?? shown.site?.shop?.banners ?? [];
+                  onDataChange({ ...raw, site: { ...site, shop: { ...shop, banners: [...structuredClone(list), { id: newId(), title: "عضو تازه", kicker: "سمت", text: "معرفی کوتاه", image }] } } });
                   setTarget(null);
                   return;
                 }

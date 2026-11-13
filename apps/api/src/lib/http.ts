@@ -50,6 +50,11 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
     res.status(400).json({ error: { code: "INVALID_JSON", message: "JSON ارسالی خراب است" } });
     return;
   }
+  // A body over the route's size limit (thrown by express.json / express.raw)
+  if (typeof err === "object" && err && (err as { type?: string }).type === "entity.too.large") {
+    res.status(413).json({ error: { code: "TOO_LARGE", message: "حجم فایل بیشتر از حد مجاز است" } });
+    return;
+  }
   console.error(err);
   res.status(500).json({ error: { code: "INTERNAL", message: "خطای داخلی سرور" } });
 }

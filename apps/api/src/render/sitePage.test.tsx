@@ -1,8 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { defaultTheme, type ResumeData } from "@rb/schema";
-import { sampleResume } from "@rb/templates";
-import { escapeHtml, jsonForScript, renderSitePage } from "./sitePage";
+import { createHash } from "node:crypto";
+import { getTemplate, sampleResume } from "@rb/templates";
+import { SITE_CSP, escapeHtml, jsonForScript, renderSitePage } from "./sitePage";
 
 const theme = defaultTheme("minimal-portfolio", "fa");
 
@@ -66,4 +67,17 @@ test("placeholder links lead to the top of the published page", () => {
   const html = renderSitePage({ data, theme: defaultTheme("vitrine-portfolio", "fa"), seo: {}, page: "/about" });
   assert.ok(!/href="https?:\/\/[^"]*example\.(com|ir)/.test(html));
   assert.ok(html.includes('href="#"'));
+});
+
+test("page: a template's own script runs only by its hash; user content adds none", () => {
+  const tanin = getTemplate("tanin-site");
+  const data = tanin.sample!("fa");
+  data.basics.fullName = `</script><script>alert(1)</script>`;
+  const html = renderSitePage({ data, theme: defaultTheme("tanin-site", "fa"), seo: {}, url: "https://studio.example.ir", page: "/" });
+  const scripts = [...html.matchAll(/<script(?![^>]*ld\+json)[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]!);
+  assert.equal(scripts.length, 1, "only the template's script");
+  const hash = `'sha256-${createHash("sha256").update(scripts[0]!).digest("base64")}'`;
+  assert.ok(SITE_CSP.includes(hash), "its hash is in the page's policy");
+  assert.ok(!html.includes("alert(1)</script>"), "user content cannot close or add a script");
+  assert.match(SITE_CSP, /media-src 'self' https:/);
 });

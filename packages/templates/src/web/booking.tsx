@@ -6,7 +6,7 @@
 // times radios. Each template colours it through the --bk-* variables.
 
 import type { ReactNode } from "react";
-import { addDay, freeAt, openDays, slotsOf, todayTehran, type Schedule } from "@rb/schema";
+import { addDay, freeFor, openDays, slotsOf, todayTehran, type Schedule } from "@rb/schema";
 import type { Visitor } from "@rb/schema";
 import { FormMeta } from "./parts";
 import { BookingTable } from "./shopkit";
@@ -41,6 +41,8 @@ type Props = {
   query: Record<string, string>;
   /** Places a booking needs (a restaurant's guests); 1 otherwise. */
   need?: number;
+  /** Slots in a row a booking takes (a studio rented for hours); 1 otherwise. */
+  length?: number;
   /** Query values carried by every day and month link (chosen service, guests…). */
   keep?: Record<string, string | undefined>;
   /** The template's fields of the form (name, phone, service…), shown under the times. */
@@ -50,9 +52,9 @@ type Props = {
   hint?: ReactNode;
 };
 
-export function BookingPicker({ link, path, schedule: s, taken, query, need = 1, keep = {}, children, button, hint }: Props) {
+export function BookingPicker({ link, path, schedule: s, taken, query, need = 1, length = 1, keep = {}, children, button, hint }: Props) {
   const today = todayTehran();
-  const open = new Set(openDays(s, taken, new Date(), need));
+  const open = new Set(openDays(s, taken, new Date(), need, length));
   const last = addDay(today, s.ahead);
   const months: string[] = [monthOf(today).first];
   while (months.length < 7) {
@@ -64,7 +66,7 @@ export function BookingPicker({ link, path, schedule: s, taken, query, need = 1,
   const { first, days } = monthOf(months[m]!);
   const lead = (new Date(`${first}T12:00:00Z`).getUTCDay() + 1) % 7; // weeks start on Saturday
   const picked = query.day && open.has(query.day) ? query.day : undefined;
-  const times = picked ? slotsOf(s, picked).filter((t) => freeAt(s, taken, picked, t) >= need) : [];
+  const times = picked ? slotsOf(s, picked).filter((t) => freeFor(s, taken, picked, t, length) >= need) : [];
   const href = (q: Record<string, string | number | undefined>) => {
     const p = new URLSearchParams();
     for (const [k, v] of Object.entries({ ...keep, ...q })) if (v !== undefined && v !== "" && !(k === "m" && Number(v) === 0)) p.set(k, String(v));

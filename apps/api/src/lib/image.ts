@@ -1,5 +1,14 @@
 // Image type detection from file bytes; the declared type of an upload is never trusted.
 
+/** Detects MP3, M4A or OGG sound from the file's first bytes, regardless of the declared type. */
+export function sniffAudio(bytes: Buffer): { mime: string; ext: string } | null {
+  if (bytes.length < 12) return null;
+  if (bytes.toString("ascii", 0, 3) === "ID3" || (bytes[0] === 0xff && (bytes[1]! & 0xe0) === 0xe0)) return { mime: "audio/mpeg", ext: "mp3" };
+  if (bytes.toString("ascii", 4, 8) === "ftyp") return { mime: "audio/mp4", ext: "m4a" };
+  if (bytes.toString("ascii", 0, 4) === "OggS") return { mime: "audio/ogg", ext: "ogg" };
+  return null;
+}
+
 /** Detects JPEG, PNG or WebP from the file signature, regardless of the declared type. */
 export function sniffImage(bytes: Buffer): { mime: string; ext: string } | null {
   if (bytes.length > 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return { mime: "image/jpeg", ext: "jpg" };

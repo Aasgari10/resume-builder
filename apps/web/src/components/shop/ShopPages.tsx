@@ -112,7 +112,7 @@ const slugify = (text: string, taken: string[]) => {
   return slug;
 };
 
-export function Pages({ data, onData, shop, setShop }: Props & { shop: Shop; setShop: (s: Partial<Shop>) => void }) {
+export function Pages({ data, onData, shop, setShop, faqCategories, textPages = true }: Props & { shop: Shop; setShop: (s: Partial<Shop>) => void; faqCategories?: boolean; textPages?: boolean }) {
   const setSite = setSiteOf(data, onData);
   const site = data.site;
   const b = data.basics;
@@ -155,6 +155,16 @@ export function Pages({ data, onData, shop, setShop }: Props & { shop: Shop; set
         <div key={x.id} className="shm-faq">
           <input value={x.q} maxLength={200} placeholder="سؤال" aria-label="سؤال" onChange={(e) => saveFaq(faq.map((f) => (f.id === x.id ? { ...f, q: e.target.value } : f)))} />
           <textarea rows={2} maxLength={1500} value={x.a} placeholder="پاسخ" aria-label="پاسخ" onChange={(e) => saveFaq(faq.map((f) => (f.id === x.id ? { ...f, a: e.target.value } : f)))} />
+          {faqCategories && (
+            <input
+              value={x.category ?? ""}
+              maxLength={40}
+              list="shm-faq-cats"
+              placeholder="دسته (مثلاً امکانات استودیو)"
+              aria-label="دسته"
+              onChange={(e) => saveFaq(faq.map((f) => (f.id === x.id ? { ...f, category: e.target.value || undefined } : f)))}
+            />
+          )}
           <div className="row gap">
             <OrderButtons k={k} count={faq.length} onMove={(by) => saveFaq(moved(faq, k, by))} />
             <button type="button" className="btn ghost small danger" onClick={() => saveFaq(faq.filter((f) => f.id !== x.id))}>
@@ -163,12 +173,21 @@ export function Pages({ data, onData, shop, setShop }: Props & { shop: Shop; set
           </div>
         </div>
       ))}
+      {faqCategories && (
+        <datalist id="shm-faq-cats">
+          {[...new Set(faq.map((f) => f.category).filter(Boolean))].map((c) => (
+            <option key={c} value={c} />
+          ))}
+        </datalist>
+      )}
       {faq.length < 30 && (
         <button type="button" className="btn small" onClick={() => saveFaq([...faq, { id: newId(), q: "", a: "" }])}>
           + سؤال جدید
         </button>
       )}
 
+      {textPages && (
+        <>
       <h3>📄 صفحه‌های متنی</h3>
       <p className="muted">مثل «درباره‌ی ما»، «قوانین و مقررات» یا «حریم خصوصی». لینکشان در پایین سایت می‌آید.</p>
       {pages.map((p, k) => (
@@ -242,6 +261,8 @@ export function Pages({ data, onData, shop, setShop }: Props & { shop: Shop; set
             + صفحه‌ی دلخواه
           </button>
         </div>
+      )}
+        </>
       )}
     </div>
   );

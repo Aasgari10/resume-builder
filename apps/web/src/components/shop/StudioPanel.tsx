@@ -20,17 +20,21 @@ const toman = (n: number) => `${showNumber(Math.round(n))} تومان`;
 const live = (shop: Shop) => shop.products.filter((p) => !p.trashed);
 
 /** What is booked: a photo session (studio), an appointment (salon) or a table (restaurant). */
-export type BookingKind = "studio" | "salon" | "table" | "clinic" | "room";
+export type BookingKind = "studio" | "salon" | "table" | "clinic" | "room" | "space";
 const WORDS: Record<BookingKind, { one: string; many: string; who: string; what: string }> = {
   studio: { one: "نوبت", many: "نوبت‌ها", who: "مشتری", what: "پکیج" },
   salon: { one: "نوبت", many: "نوبت‌ها", who: "مشتری", what: "خدمت" },
   table: { one: "رزرو", many: "رزروها", who: "مهمان", what: "تعداد نفرات" },
   clinic: { one: "نوبت", many: "نوبت‌ها", who: "مراجع", what: "نوع جلسه" },
   room: { one: "رزرو", many: "رزروها", who: "مشتری", what: "اتاق" },
+  space: { one: "رزرو", many: "رزروها", who: "مشتری", what: "استودیو" },
 };
 /** What a booking is for, as shown in lists: the package or service, or the number of guests. */
 const subject = (b: SiteMessage, kind: BookingKind) =>
-  kind === "table" ? (b.guests ? `${showNumber(b.guests)} نفر` : "میز") : kind === "room" && b.guests ? `${b.service || "—"} (${showNumber(b.guests)} نفر)` : b.service || "—";
+  kind === "table" ? (b.guests ? `${showNumber(b.guests)} نفر` : "میز")
+  : kind === "room" && b.guests ? `${b.service || "—"} (${showNumber(b.guests)} نفر)`
+  : kind === "space" && b.guests ? `${b.service || "—"} (${showNumber(b.guests)} ساعت)`
+  : b.service || "—";
 
 /** The studio's bookings (or the sample ones), shared by the tabs below. */
 export function useBookings(resumeId: string | undefined, _shop: Shop, _kind: BookingKind) {
@@ -203,7 +207,8 @@ export function StudioCalendar({ resumeId, shop, kind = "studio" }: { resumeId?:
 /* ───────────── 4. Packages ───────────── */
 
 /** A plain editor for the price packages: name, price, a row per feature, the highlighted one. */
-export function StudioPackages({ shop, setShop, rooms }: { shop: Shop; setShop: (s: Partial<Shop>) => void; rooms?: boolean }) {
+export function StudioPackages({ shop, setShop, rooms, spaces }: { shop: Shop; setShop: (s: Partial<Shop>) => void; rooms?: boolean; spaces?: boolean }) {
+  if (spaces) return <StudioSpaces shop={shop} setShop={setShop} />;
   // An escape room's rooms: a picture each, and short facts (players, time, difficulty) as the lines.
   const word = rooms ? "اتاق" : "پکیج";
   const list = live(shop);
@@ -276,6 +281,73 @@ export function StudioPackages({ shop, setShop, rooms }: { shop: Shop; setShop: 
         onClick={() => save([...list, rooms ? { id: newId(), name: "اتاق جدید", price: 0, images: [], description: "۲ تا ۶ نفر\n۶۰ دقیقه\nسختی: متوسط" } : { id: newId(), name: "پکیج جدید", price: 0, images: [], description: "حداکثر یک نفر\n۲ ساعت عکاسی\n۲۰ عکس روتوش‌شده" }])}
       >
         + {word} جدید
+      </button>
+    </div>
+  );
+}
+
+/** A recording studio's rooms rented by the hour: a picture, the hourly price, a short text, area and capacity. */
+function StudioSpaces({ shop, setShop }: { shop: Shop; setShop: (s: Partial<Shop>) => void }) {
+  const list = live(shop);
+  const save = (next: Product[]) => setShop({ products: [...next, ...shop.products.filter((p) => p.trashed)] });
+  const update = (id: string, patch: Partial<Product>) => save(list.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+  const spec = (p: Product, label: string) => p.specs?.find((x) => x.label === label)?.value ?? "";
+  const setSpec = (p: Product, label: string, value: string) =>
+    update(p.id, { specs: [...(p.specs ?? []).filter((x) => x.label !== label), ...(value.trim() ? [{ label, value }] : [])] });
+  const move = (k: number, by: number) => {
+    const next = [...list];
+    const [x] = next.splice(k, 1);
+    next.splice(Math.max(0, Math.min(next.length, k + by)), 0, x!);
+    save(next);
+  };
+  return (
+    <div className="shm-studio">
+      <p className="muted">استودیوها در بخش «استودیوی‌تان را انتخاب کنید» و فرم رزرو دیده می‌شوند. هر استودیو جدا و ساعتی رزرو می‌شود و هر رزرو در «پیام‌ها و نوبت‌ها» می‌آید. اگر نام را با « - » بنویسید (مثلاً «استودیو ۱ - ضبط»)، بخش دوم رنگی نمایش داده می‌شود.</p>
+      {list.map((p, k) => (
+        <article key={p.id} className="shm-pack">
+          <div className="shm-pack-top">
+            <Field label="نام استودیو">
+              <input value={p.name} maxLength={120} onChange={(e) => update(p.id, { name: e.target.value })} />
+            </Field>
+            <Field label="قیمت هر ساعت">
+              <MoneyInput value={p.price} onChange={(n) => update(p.id, { price: n ?? 0 })} />
+            </Field>
+            <ImagePicker value={p.images[0]} onChange={(url) => update(p.id, { images: url ? [url] : [] })} label="عکس استودیو" />
+            <label className="shm-sell">
+              <input type="checkbox" checked={!p.hidden} onChange={(e) => update(p.id, { hidden: e.target.checked ? undefined : true })} />
+              نمایش در سایت
+            </label>
+          </div>
+          <Field label="معرفی کوتاه">
+            <textarea rows={3} maxLength={600} value={p.description ?? ""} onChange={(e) => update(p.id, { description: e.target.value })} />
+          </Field>
+          <div className="shm-row">
+            <Field label="متراژ">
+              <input value={spec(p, "متراژ")} maxLength={40} placeholder="۴۵ متر مربع" onChange={(e) => setSpec(p, "متراژ", e.target.value)} />
+            </Field>
+            <Field label="ظرفیت">
+              <input value={spec(p, "ظرفیت")} maxLength={40} placeholder="تا ۸ نفر" onChange={(e) => setSpec(p, "ظرفیت", e.target.value)} />
+            </Field>
+          </div>
+          <div className="shm-row">
+            <button type="button" className="btn ghost small" disabled={k === 0} onClick={() => move(k, -1)}>
+              ↑ بالاتر
+            </button>
+            <button type="button" className="btn ghost small" disabled={k === list.length - 1} onClick={() => move(k, 1)}>
+              ↓ پایین‌تر
+            </button>
+            <button
+              type="button"
+              className="btn ghost small danger"
+              onClick={() => window.confirm(`استودیوی «${p.name}» به سطل زباله برود؟`) && setShop({ products: shop.products.map((x) => (x.id === p.id ? { ...x, trashed: true } : x)) })}
+            >
+              حذف
+            </button>
+          </div>
+        </article>
+      ))}
+      <button type="button" className="btn small" onClick={() => save([...list, { id: newId(), name: "استودیوی جدید", price: 0, images: [], description: "", specs: [{ label: "متراژ", value: "۳۰ متر مربع" }, { label: "ظرفیت", value: "تا ۶ نفر" }] }])}>
+        + استودیوی جدید
       </button>
     </div>
   );
@@ -386,7 +458,7 @@ export function StudioReports({ resumeId, shop, kind = "studio" }: { resumeId?: 
   });
   const max = Math.max(1, ...rows.map((r) => r.all));
   // Per package (studio), per service (salon) or per party size (restaurant).
-  const groups = kind === "studio" || kind === "room" ? live(shop).map((p) => p.name) : kind === "salon" ? shop.categories.filter((c) => !c.sell).map((c) => c.name) : [...new Set(bookings.map((b) => subject(b, kind)))].sort();
+  const groups = kind === "studio" || kind === "room" || kind === "space" ? live(shop).map((p) => p.name) : kind === "salon" ? shop.categories.filter((c) => !c.sell).map((c) => c.name) : [...new Set(bookings.map((b) => subject(b, kind)))].sort();
   const byPack = groups.map((name) => {
     const list = bookings.filter((b) => (kind === "table" ? subject(b, kind) : b.service) === name);
     const done = list.filter((b) => b.status === "DONE");
@@ -477,11 +549,12 @@ const WEEKDAYS: [number, string][] = [
 ];
 
 /** The online booking rules: working days and hours, session length, places at a time, days off. */
-export function ScheduleEditor({ shop, setShop, seats, rooms }: { shop: Shop; setShop: (s: Partial<Shop>) => void; seats?: boolean; rooms?: boolean }) {
+export function ScheduleEditor({ shop, setShop, seats, rooms, spaces }: { shop: Shop; setShop: (s: Partial<Shop>) => void; seats?: boolean; rooms?: boolean; spaces?: boolean }) {
   // A restaurant counts seats: each booking takes as many as its guests. An escape room books each
   // room on its own: the capacity is for one room.
-  const fixed = seats ? { seats: true } : rooms ? { byService: true } : {};
-  const s = shop.schedule ?? { ...defaultSchedule(), ...(seats ? { capacity: 40, slot: 90 } : rooms ? { capacity: 1, slot: 90 } : {}), ...fixed };
+  // A studio for rent: each studio on its own, booked by the hour (a booking takes several slots).
+  const fixed = seats ? { seats: true } : spaces ? { byService: true, span: true } : rooms ? { byService: true } : {};
+  const s = shop.schedule ?? { ...defaultSchedule(), ...(seats ? { capacity: 40, slot: 90 } : rooms ? { capacity: 1, slot: 90 } : spaces ? { capacity: 1, slot: 60 } : {}), ...fixed };
   const save = (patch: Partial<Schedule>) => setShop({ schedule: { ...s, ...patch, ...fixed } });
   const [closedDay, setClosedDay] = useState("");
   const today = todayTehran();
@@ -509,7 +582,7 @@ export function ScheduleEditor({ shop, setShop, seats, rooms }: { shop: Shop; se
         <Field label="ساعت پایان">
           <input type="time" value={s.end} onChange={(e) => e.target.value && save({ end: e.target.value })} />
         </Field>
-        <Field label={seats ? "فاصله‌ی نوبت‌های رزرو" : "طول هر جلسه"}>
+        <Field label={seats ? "فاصله‌ی نوبت‌های رزرو" : spaces ? "واحد رزرو (هر بلوک)" : "طول هر جلسه"}>
           <select value={s.slot} onChange={(e) => save({ slot: Number(e.target.value) })}>
             {[15, 20, 30, 45, 60, 75, 90, 120].map((n) => (
               <option key={n} value={n}>
@@ -519,8 +592,8 @@ export function ScheduleEditor({ shop, setShop, seats, rooms }: { shop: Shop; se
           </select>
         </Field>
         <Field
-          label={seats ? "صندلی در هر نوبت" : rooms ? "گروه هم‌زمان در هر اتاق" : "ظرفیت هر نوبت"}
-          hint={seats ? "هر رزرو به تعداد مهمان‌هایش صندلی کم می‌کند" : rooms ? "هر اتاق جدا حساب می‌شود؛ معمولاً ۱ گروه در هر سانس" : "چند نفر هم‌زمان (مثلاً چند آرایشگر یا درمانگر)"}
+          label={seats ? "صندلی در هر نوبت" : rooms ? "گروه هم‌زمان در هر اتاق" : spaces ? "رزرو هم‌زمان در هر استودیو" : "ظرفیت هر نوبت"}
+          hint={seats ? "هر رزرو به تعداد مهمان‌هایش صندلی کم می‌کند" : rooms ? "هر اتاق جدا حساب می‌شود؛ معمولاً ۱ گروه در هر سانس" : spaces ? "هر استودیو جدا حساب می‌شود؛ رزرو چندساعته همه‌ی ساعت‌هایش را می‌گیرد" : "چند نفر هم‌زمان (مثلاً چند آرایشگر یا درمانگر)"}
         >
           <input type="number" min={1} max={500} value={s.capacity} onChange={(e) => save({ capacity: Math.max(1, Math.min(500, Number(e.target.value) || 1)) })} />
         </Field>

@@ -18,6 +18,8 @@ export const scheduleSchema = z.object({
   seats: z.boolean().optional(),
   /** Each service has its own capacity (an escape room: one group per room at a time). */
   byService: z.boolean().optional(),
+  /** A booking may run several slots in a row (a studio rented for hours): its "guests" is how many. */
+  span: z.boolean().optional(),
   /** How many days ahead can be booked. */
   ahead: z.number().int().min(1).max(180).default(30),
   /** Days off (holidays, leave). */
@@ -81,6 +83,26 @@ export function takenFor(s: Pick<Schedule, "byService">, taken: Taken, service?:
   return out;
 }
 
+/** The start times a booking of `n` slots from `time` takes ("10:00", "11:00"… one slot apart). */
+export function spanTimes(s: Pick<Schedule, "slot">, time: string, n = 1): string[] {
+  return Array.from({ length: Math.max(1, n) }, (_, k) => toTime(toMin(time) + k * s.slot));
+}
+/** How many slots a booking takes: its guests on a schedule that spans slots, else one. */
+export const spanOf = (s: Pick<Schedule, "span">, guests?: number | null) => (s.span ? Math.min(8, Math.max(1, guests ?? 1)) : 1);
+/**
+ * Free places for a booking of `n` slots in a row from `time`: the fewest left among those slots, and
+ * 0 when one of them is not offered (past the end of the day, in the break, already gone).
+ */
+export function freeFor(s: Schedule, taken: Taken, day: string, time: string, n = 1, now = new Date()): number {
+  const offered = slotsOf(s, day, now);
+  let free = Infinity;
+  for (const t of spanTimes(s, time, n)) {
+    if (!offered.includes(t)) return 0;
+    free = Math.min(free, s.capacity - (taken[slotKey(day, t)] ?? 0));
+  }
+  return Math.max(0, free);
+}
+
 /** Free places left at a time (0 when full or not offered). */
 export function freeAt(s: Schedule, taken: Taken, day: string, time: string, now = new Date()): number {
   if (!slotsOf(s, day, now).includes(time)) return 0;
@@ -88,12 +110,12 @@ export function freeAt(s: Schedule, taken: Taken, day: string, time: string, now
 }
 
 /** The days of the booking window that still have a time with `need` free places. */
-export function openDays(s: Schedule, taken: Taken, now = new Date(), need = 1): string[] {
+export function openDays(s: Schedule, taken: Taken, now = new Date(), need = 1, length = 1): string[] {
   const today = todayTehran(now);
   const out: string[] = [];
   for (let k = 0; k <= s.ahead; k++) {
     const day = addDay(today, k);
-    if (slotsOf(s, day, now).some((t) => freeAt(s, taken, day, t, now) >= need)) out.push(day);
+    if (slotsOf(s, day, now).some((t) => freeFor(s, taken, day, t, length, now) >= need)) out.push(day);
   }
   return out;
 }

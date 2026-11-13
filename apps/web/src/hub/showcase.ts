@@ -33,6 +33,7 @@ export const SHOWCASE_COLORS: Record<string, string> = {
   "cropit-site": "#3A3A3A",
   "therapy-site": "#E9A68C",
   "escape-site": "#E8403A",
+  "tanin-site": "#D6A670",
   "patio-shop": "#DD5902",
 };
 
