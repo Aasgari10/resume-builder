@@ -8,6 +8,7 @@
  */
 
 import { z } from "zod";
+import { scheduleSchema } from "./schedule";
 
 const YEAR_MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
 const YEAR_MONTH_OR_EMPTY = /^(\d{4}-(0[1-9]|1[0-2]))?$/;
@@ -325,6 +326,13 @@ function buildResumeSchemas(strict: boolean) {
       .max(60)
       .optional(),
     paymentNote: z.string().max(600).optional(), // how to pay for now (card-to-card, on delivery…)
+    // Online booking: working days and hours, appointment length, places at a time, days off.
+    schedule: scheduleSchema.optional(),
+    // Events with dates and a price (a clinic's workshops, conferences); past ones hide themselves.
+    events: z
+      .array(z.object({ id, title: z.string().max(160), image: optionalUrl, start: z.string().max(10), end: z.string().max(10).optional(), price: price.optional(), link: optionalUrl, hidden: z.boolean().optional() }))
+      .max(40)
+      .optional(),
     orderNote: z.string().max(300).optional(), // shown after an order is placed
   });
 
