@@ -8,7 +8,7 @@
 // sign-ups): the preview saves them into a sample inbox that the manager's inbox and booking tabs
 // read, so every template can be tried end to end without touching the real site.
 
-import { addDay, allVariantKeys, defaultSchedule, freeAt, priceCart, slotsOf, takenFor, takenKey, todayTehran, type BookingView, type CartLine, type Product, type Shop, type ShopOrderStatus, type Visitor } from "@rb/schema";
+import { addDay, allVariantKeys, defaultSchedule, freeFor, priceCart, spanOf, spanTimes, slotsOf, takenFor, takenKey, todayTehran, type BookingView, type CartLine, type Product, type Shop, type ShopOrderStatus, type Visitor } from "@rb/schema";
 import type { SiteMessage, SiteMessages, SiteMessageStatus } from "../../api";
 import type { ShopCustomer, ShopCustomerDetail, ShopOrder, ShopOrderQuery, ShopProductStat, ShopReview, ShopSummary, ShopTicket, ShopTrash, ShopTrashKind } from "../../api";
 
@@ -822,7 +822,7 @@ function makeMessages(shop: Shop, bookings = true): SampleMessage[] {
       service: seats ? null : (names[k % Math.max(1, names.length)] ?? null),
       date: day,
       time,
-      guests: seats ? [2, 4, 3, 6, 2, 5, 2, 8, 4, 3][k]! : shop.schedule?.byService ? [4, 3, 5, 2, 6, 4, 3, 5, 2, 4][k]! : null,
+      guests: seats ? [2, 4, 3, 6, 2, 5, 2, 8, 4, 3][k]! : shop.schedule?.span ? [2, 1, 3, 2, 1, 2, 3, 1, 2, 2][k]! : shop.schedule?.byService ? [4, 3, 5, 2, 6, 4, 3, 5, 2, 4][k]! : null,
       page: "/",
       ownerNote: status === "CANCELED" ? "مراجع تماس گرفت و لغو کرد." : null,
       createdAt: new Date(new Date(`${day}T08:00:00Z`).getTime() - 3 * DAY).toISOString(),
@@ -925,8 +925,11 @@ export function sampleTaken(shop: Shop): Record<string, number> {
   const out: Record<string, number> = {};
   for (const m of messagesFor(shop)) {
     if (m.kind !== "BOOKING" || m.deletedAt || m.status === "CANCELED" || !m.date || !m.time || m.date < today) continue;
-    const key = takenKey(shop.schedule ?? {}, m.date, m.time, m.service);
-    out[key] = (out[key] ?? 0) + (seats ? Math.max(1, m.guests ?? 1) : 1);
+    const s = shop.schedule;
+    for (const t of s?.span ? spanTimes(s, m.time, spanOf(s, m.guests)) : [m.time]) {
+      const key = takenKey(s ?? {}, m.date, t, m.service);
+      out[key] = (out[key] ?? 0) + (seats ? Math.max(1, m.guests ?? 1) : 1);
+    }
   }
   return out;
 }
@@ -987,7 +990,7 @@ export function sampleSiteForm(shop: Shop, fields: Record<string, string>, withA
   if (s) {
     if (!base.date || !base.time || (s.byService && !base.service)) return { sent: "error" };
     const need = s.seats ? Math.max(1, base.guests ?? 1) : 1;
-    if (freeAt(s, takenFor(s, sampleTaken(shop), base.service), base.date, base.time) < need) return { sent: "full" };
+    if (freeFor(s, takenFor(s, sampleTaken(shop), base.service), base.date, base.time, spanOf(s, base.guests)) < need) return { sent: "full" };
   }
   let code = "";
   do code = `B${100000 + Math.floor(Math.random() * 900000)}`;

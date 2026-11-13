@@ -92,7 +92,7 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
   const sampleShop = sampleShopFor(raw.site?.shop, templateSample?.site?.shop);
   // The site's forms (bookings, messages, sign-ups) go into a sample inbox that follows the site's own hours.
   const demoShop = { ...sampleShop, schedule: data.site?.shop?.schedule };
-  const hasBookings = Boolean(site.bookings || site.studio || site.clinic || site.escape);
+  const hasBookings = Boolean(site.bookings || site.studio || site.clinic || site.escape || site.rental);
   const [, setSampleRound] = useState(0);
   useEffect(() => {
     const stop = onSampleChange(() => setSampleRound((n) => n + 1));
@@ -151,7 +151,13 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
     e.preventDefault();
     const to = a.getAttribute("data-page");
     const href = a.getAttribute("href") ?? "";
-    if (to) setPage(to);
+    // A page link may carry a query (a room or a studio chosen on the booking page): open that page with it.
+    if (to?.includes("?")) {
+      const url = new URL(to, "http://site");
+      setVisitor((v) => ({ ...v, query: Object.fromEntries(url.searchParams) }));
+      setPage(url.pathname);
+      window.setTimeout(() => frameTop(a), 60);
+    } else if (to) setPage(to);
     // Links inside the site with a query (a booking day, a month, a blog category or page): open that
     // page with the query, as the published site does, then go to its anchor or the top.
     else if (href.startsWith("/") && !href.startsWith("//")) {
@@ -311,7 +317,7 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
           دستیار
         </button>
         {site.shop && (
-          <button type="button" className="ws-chip" title={site.escape ? "مدیریت اتاق فرار: رزروها، سانس‌ها، اتاق‌ها و بلاگ" : site.clinic ? "مدیریت مطب: نوبت‌ها، ساعت کاری، تعرفه‌ها، رویدادها و بلاگ" : site.studio ? "مدیریت آتلیه: پیام‌ها و رزروها، پکیج‌ها، تیم، بلاگ" : site.services ? "مدیریت سایت: خدمات، فروشگاه، سفارش‌ها و بلاگ" : site.menu && site.sells ? "مدیریت سایت: منو، فروشگاه، سفارش‌ها و QR کد" : site.menu ? "مدیریت سایت: منو، QR کد و محتوای صفحه‌ها" : "مدیریت فروشگاه: سفارش‌ها، محصولات، تیکت‌ها و گزارش‌ها"} onClick={() => { setShopFocus(undefined); setShopOpen(true); }}>
+          <button type="button" className="ws-chip" title={site.rental ? "مدیریت استودیو: رزروها، ساعت کاری، استودیوها، خدمات و بلاگ" : site.escape ? "مدیریت اتاق فرار: رزروها، سانس‌ها، اتاق‌ها و بلاگ" : site.clinic ? "مدیریت مطب: نوبت‌ها، ساعت کاری، تعرفه‌ها، رویدادها و بلاگ" : site.studio ? "مدیریت آتلیه: پیام‌ها و رزروها، پکیج‌ها، تیم، بلاگ" : site.services ? "مدیریت سایت: خدمات، فروشگاه، سفارش‌ها و بلاگ" : site.menu && site.sells ? "مدیریت سایت: منو، فروشگاه، سفارش‌ها و QR کد" : site.menu ? "مدیریت سایت: منو، QR کد و محتوای صفحه‌ها" : "مدیریت فروشگاه: سفارش‌ها، محصولات، تیکت‌ها و گزارش‌ها"} onClick={() => { setShopFocus(undefined); setShopOpen(true); }}>
             ⚙️ مدیریت
           </button>
         )}
@@ -379,7 +385,7 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
         )}
       {shopOpen &&
         createPortal(
-          <ShopManager data={raw} sample={templateSample} onData={onDataChange} resumeId={resumeId} focusProductId={shopFocus} menu={Boolean(site.menu)} sells={Boolean(site.sells)} services={Boolean(site.services)} bookings={Boolean(site.bookings)} studio={Boolean(site.studio)} clinic={Boolean(site.clinic)} escape={Boolean(site.escape)} panel={site.panel} hasBlog={Boolean(site.escape || site.optionalPages?.some((p) => p.path === "/blog"))} onClose={() => { setShopOpen(false); setShopFocus(undefined); }} />,
+          <ShopManager data={raw} sample={templateSample} onData={onDataChange} resumeId={resumeId} focusProductId={shopFocus} menu={Boolean(site.menu)} sells={Boolean(site.sells)} services={Boolean(site.services)} bookings={Boolean(site.bookings)} studio={Boolean(site.studio)} clinic={Boolean(site.clinic)} escape={Boolean(site.escape)} rental={Boolean(site.rental)} panel={site.panel} hasBlog={Boolean(site.escape || site.rental || site.optionalPages?.some((p) => p.path === "/blog"))} onClose={() => { setShopOpen(false); setShopFocus(undefined); }} />,
           document.body,
         )}
       {target &&

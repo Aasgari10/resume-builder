@@ -16,6 +16,8 @@ import {
   variantKey,
   variantOf,
   takenKey,
+  spanOf,
+  spanTimes,
   todayTehran,
   type BookingView,
   type CartLine,
@@ -346,7 +348,7 @@ async function accountAction(req: Request, res: Response, subdomain: string, bas
  * Places already taken from today on, by "yyyy-mm-dd hh:mm" (canceled bookings free theirs): one per
  * booking, or its number of guests when the capacity is in seats (a restaurant).
  */
-export async function takenSlots(siteId: string, schedule: { seats?: boolean; byService?: boolean } = {}): Promise<Record<string, number>> {
+export async function takenSlots(siteId: string, schedule: { seats?: boolean; byService?: boolean; span?: boolean; slot?: number } = {}): Promise<Record<string, number>> {
   const seats = Boolean(schedule.seats);
   const rows = await prisma.siteMessage.findMany({
     where: { siteId, kind: "BOOKING", deletedAt: null, status: { not: "CANCELED" }, date: { gte: todayTehran() }, time: { not: null } },
@@ -355,8 +357,12 @@ export async function takenSlots(siteId: string, schedule: { seats?: boolean; by
   });
   const out: Record<string, number> = {};
   for (const r of rows) {
-    const key = takenKey(schedule, r.date!, r.time!, r.service);
-    out[key] = (out[key] ?? 0) + (seats ? Math.max(1, r.guests ?? 1) : 1);
+    // A booking of several slots in a row (a studio rented for hours) takes each of them.
+    const times = schedule.span ? spanTimes({ slot: schedule.slot ?? 60 }, r.time!, spanOf(schedule, r.guests)) : [r.time!];
+    for (const t of times) {
+      const key = takenKey(schedule, r.date!, t, r.service);
+      out[key] = (out[key] ?? 0) + (seats ? Math.max(1, r.guests ?? 1) : 1);
+    }
   }
   return out;
 }
@@ -376,7 +382,7 @@ const samePhone = (a: string | null | undefined, b: string | null | undefined) =
   return Boolean(d(a)) && d(a) === d(b);
 };
 
-export async function loadVisitor(req: Request, siteId: string, page: string, schedule?: { seats?: boolean; byService?: boolean }): Promise<Visitor> {
+export async function loadVisitor(req: Request, siteId: string, page: string, schedule?: { seats?: boolean; byService?: boolean; span?: boolean; slot?: number }): Promise<Visitor> {
   const visitor = readVisitor(req);
   if (schedule) visitor.taken = await takenSlots(siteId, schedule);
   // The tracking page: a booking found by its code and the phone it was made with.

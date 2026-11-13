@@ -52,8 +52,10 @@ type Props = {
   clinic?: boolean;
   /** An escape room: rooms booked one group at a time, with working hours. */
   escape?: boolean;
+  /** Studios rented by the hour (a recording studio): each studio on its own, a booking runs for hours. */
+  rental?: boolean;
   /** What the template shows of the manager's content (unused tabs are left out). */
-  panel?: { extras?: { perks?: string; stats?: string; brands?: string; trust?: string }; hide?: string[] };
+  panel?: { extras?: { perks?: string; stats?: string; brands?: string; trust?: string }; hide?: string[]; faqCategories?: boolean };
   onClose: () => void;
 };
 
@@ -68,25 +70,27 @@ const bookingRank = (t: Tab) => SHOP_ORDER.indexOf(t);
 /** Tabs of a photo studio, in this order. */
 const CLINIC_TABS_ALL: Tab[] = ["studio", "inbox", "calendar", "schedule", "products", "clients", "studio-reports", "events", "categories", "extras", "blog", "pages", "trash"];
 const ESCAPE_TABS: Tab[] = ["studio", "inbox", "calendar", "schedule", "products", "clients", "studio-reports", "quotes", "extras", "blog", "pages", "trash"];
+const RENTAL_TABS: Tab[] = ["studio", "inbox", "calendar", "schedule", "products", "categories", "clients", "studio-reports", "quotes", "extras", "blog", "pages", "trash"];
 const STUDIO_TABS: Tab[] = ["studio", "inbox", "calendar", "products", "clients", "studio-reports", "categories", "banners", "extras", "quotes", "blog", "pages", "trash"];
 
 const EMPTY_SHOP: Shop = { categories: [], products: [] };
 
-export function ShopManager({ data, sample, onData, resumeId, focusProductId, hasBlog, menu: menuSite, sells: sellsMenu, services, bookings, studio: studioSite, clinic: clinicSite, escape, panel, onClose }: Props) {
+export function ShopManager({ data, sample, onData, resumeId, focusProductId, hasBlog, menu: menuSite, sells: sellsMenu, services, bookings, studio: studioSite, clinic: clinicSite, escape, rental, panel, onClose }: Props) {
   // A clinic is managed like a studio (bookings first), plus its working hours and events; an escape
   // room the same, with its rooms and no events.
-  const clinic = clinicSite || escape;
-  const CLINIC_TABS = escape ? ESCAPE_TABS : CLINIC_TABS_ALL;
+  const clinic = clinicSite || escape || rental;
+  const CLINIC_TABS = rental ? RENTAL_TABS : escape ? ESCAPE_TABS : CLINIC_TABS_ALL;
   const studio = studioSite || clinic;
   const sells = sellsMenu || services;
   // Templates with a booking form get the bookings overview, calendar, clients and reports.
-  const bookingKind: BookingKind | undefined = escape ? "room" : clinic ? "clinic" : studio ? "studio" : bookings ? (services ? "salon" : "table") : undefined;
+  const bookingKind: BookingKind | undefined = rental ? "space" : escape ? "room" : clinic ? "clinic" : studio ? "studio" : bookings ? (services ? "salon" : "table") : undefined;
   const BOOKING_LABELS: Record<BookingKind, [string, string, string, string]> = {
     studio: ["📊 داشبورد", "🗓 تقویم نوبت‌ها", "👥 مشتریان", "📈 گزارش‌ها"],
     salon: ["📅 داشبورد نوبت‌ها", "🗓 تقویم نوبت‌ها", "🙋 نوبت‌گیرندگان", "📈 گزارش نوبت‌ها"],
     table: ["🍽 داشبورد رزروها", "🗓 تقویم رزروها", "🙋 مهمان‌ها", "📈 گزارش رزروها"],
     clinic: ["📊 داشبورد", "🗓 تقویم نوبت‌ها", "🙋 مراجعان", "📈 گزارش‌ها"],
     room: ["📊 داشبورد رزروها", "🗓 تقویم سانس‌ها", "🙋 مشتریان", "📈 گزارش‌ها"],
+    space: ["📊 داشبورد رزروها", "🗓 تقویم رزروها", "🙋 مشتریان", "📈 گزارش‌ها"],
   };
   const bl = bookingKind ? BOOKING_LABELS[bookingKind] : BOOKING_LABELS.studio;
   // Only a menu site that sells nothing gets the short menu panel.
@@ -160,7 +164,7 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
   return (
     <div className="shm" dir="rtl" role="dialog" aria-label={menu ? "مدیریت سایت" : "مدیریت فروشگاه"}>
       <header className="shm-head">
-        <h2>{escape ? "🔐 مدیریت اتاق فرار" : clinic ? "🩺 مدیریت مطب" : studio ? "📸 مدیریت آتلیه" : menu ? "☕ مدیریت سایت" : "🛍 مدیریت فروشگاه"}</h2>
+        <h2>{rental ? "🎙 مدیریت استودیو" : escape ? "🔐 مدیریت اتاق فرار" : clinic ? "🩺 مدیریت مطب" : studio ? "📸 مدیریت آتلیه" : menu ? "☕ مدیریت سایت" : "🛍 مدیریت فروشگاه"}</h2>
         <button type="button" className="btn small" onClick={onClose}>
           بستن و برگشت به سایت
         </button>
@@ -176,9 +180,9 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
               ["calendar", bl[1]],
               ["clients", bl[2]],
               ["studio-reports", bl[3]],
-              ["products", escape ? "🚪 اتاق‌ها" : clinic ? "💳 تعرفه‌ی جلسات" : studio ? "📸 پکیج‌های عکاسی" : menu ? "☕ منو" : services ? "💇 خدمات و محصولات" : menuSite ? "☕ منو و محصولات" : "📦 محصولات", <i key="n" className="shm-count">{showNumber(live.length)}</i>],
+              ["products", rental ? "🎚 استودیوها" : escape ? "🚪 اتاق‌ها" : clinic ? "💳 تعرفه‌ی جلسات" : studio ? "📸 پکیج‌های عکاسی" : menu ? "☕ منو" : services ? "💇 خدمات و محصولات" : menuSite ? "☕ منو و محصولات" : "📦 محصولات", <i key="n" className="shm-count">{showNumber(live.length)}</i>],
               ["qr", "▦ QR کد منو"],
-              ["categories", clinic ? "🧩 حوزه‌های درمان" : "📂 دسته‌ها"],
+              ["categories", rental ? "🎧 خدمات" : clinic ? "🧩 حوزه‌های درمان" : "📂 دسته‌ها"],
               ["orders", "📋 سفارش‌ها", badge(counts?.newOrders)],
               ["inbox", "📥 پیام‌ها و نوبت‌ها", badge(inboxNew)],
               ["customers", "👥 مشتریان"],
@@ -187,7 +191,7 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
               ["coupons", "🏷 کدهای تخفیف"],
               ["banners", studio ? "🖼 اسلایدها و اعضای تیم" : "🖼 بنرها و اسلایدها"],
               ["quotes", "⭐ نظرات صفحه‌ی اول"],
-              ["extras", escape ? "✨ «مناسب برای» و آمار" : clinic ? "📚 ویژگی‌های کتاب" : studio ? "🎯 خدمات و لوگوها" : "✨ ویژگی‌ها، برندها و آرم‌ها"],
+              ["extras", rental ? "✨ ویژگی‌ها، آمار و لوگوها" : escape ? "✨ «مناسب برای» و آمار" : clinic ? "📚 ویژگی‌های کتاب" : studio ? "🎯 خدمات و لوگوها" : "✨ ویژگی‌ها، برندها و آرم‌ها"],
               ["pages", "📄 صفحه‌ها و تماس"],
               ["blog", "📰 بلاگ", shop.posts?.length ? <i key="n" className="shm-count">{showNumber(shop.posts.length)}</i> : null],
               ["reports", "📈 گزارش‌ها"],
@@ -230,13 +234,13 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
         {mode !== "loading" && (
           <>
         {tab === "dashboard" && <Dashboard resumeId={rid} products={live.length} outOfStock={outOfStock} lowStock={lowStock} onTab={(t) => setTab(t as Tab)} />}
-        {tab === "schedule" && <ScheduleEditor shop={shop} setShop={setShop} seats={bookingKind === "table"} rooms={bookingKind === "room"} />}
+        {tab === "schedule" && <ScheduleEditor shop={shop} setShop={setShop} seats={bookingKind === "table"} rooms={bookingKind === "room"} spaces={bookingKind === "space"} />}
         {tab === "events" && <EventsEditor shop={shop} setShop={setShop} />}
         {tab === "studio" && <StudioDashboard resumeId={rid} shop={shop} onTab={(t) => setTab(t as Tab)} kind={bookingKind} />}
         {tab === "calendar" && <StudioCalendar resumeId={rid} shop={shop} kind={bookingKind} />}
         {tab === "clients" && <StudioClients resumeId={rid} shop={shop} kind={bookingKind} />}
         {tab === "studio-reports" && <StudioReports resumeId={rid} shop={shop} kind={bookingKind} />}
-        {tab === "products" && studio && <StudioPackages shop={shop} setShop={setShop} rooms={escape} />}
+        {tab === "products" && studio && <StudioPackages shop={shop} setShop={setShop} rooms={escape} spaces={rental} />}
         {tab === "products" && !studio && <Products shop={shop} setShop={setShop} onSample={sample?.site?.shop ? startFromSample : undefined} focus={focusProductId} resumeId={rid} />}
         {tab === "categories" && <Categories shop={shop} setShop={setShop} sells={sells} services={services || studio} />}
         {tab === "banners" && <Banners shop={shop} setShop={setShop} />}
@@ -246,7 +250,7 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
         {tab === "quotes" && <Quotes data={data} onData={onData} />}
         {tab === "extras" && <Extras data={data} onData={onData} shop={shop} setShop={setShop} menu={menu} sections={panel?.extras} />}
         {tab === "blog" && <Blog shop={shop} setShop={setShop} hasBlog={Boolean(hasBlog)} />}
-        {tab === "pages" && <Pages data={data} onData={onData} shop={shop} setShop={setShop} />}
+        {tab === "pages" && <Pages data={data} onData={onData} shop={shop} setShop={setShop} faqCategories={panel?.faqCategories} />}
         {tab === "reports" && <Reports resumeId={rid} shop={namesShop} />}
         {tab === "reviews" && <Reviews resumeId={rid} shop={namesShop} setShop={setShop} onChanged={refreshCounts} />}
         {tab === "tickets" && <Tickets resumeId={rid} onChanged={refreshCounts} />}
