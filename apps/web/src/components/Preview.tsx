@@ -2,7 +2,7 @@
 // (settings, assistant, publishing). "Show" turns the same workspace into a full-screen view.
 // Empty content is filled with sample text and pictures; publishing uses only the user's own content.
 
-import { useEffect, useMemo, useState, type FormEvent, type MouseEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { applyHiddenFields, changeCart, emptyVisitor, toggleWishlist, variantKey, type ResumeData, type Theme, type Visitor } from "@rb/schema";
 import { getTemplate, isDummyUrl, pageTitle, resolvePage, siteTheme, withPlaceholders } from "@rb/templates";
@@ -65,6 +65,16 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
     onThemeChange({ ...next, colors: { ...next.colors, background, surface, text, mutedText } });
   };
   const [editing, setEditing] = useState(true);
+  // The template's page script (a song player, tabs that follow the pointer) runs on the preview too.
+  const frame = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!site.script || !frame.current) return;
+    try {
+      new Function("document", site.script)(frame.current);
+    } catch {
+      // The preview still works without it, as the published page does.
+    }
+  });
   const [full, setFull] = useState(false);
   // In full-screen view the bar hides behind a small button.
   const [barOpen, setBarOpen] = useState(false);
@@ -80,6 +90,15 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
   const [shopFocus, setShopFocus] = useState<string | undefined>();
   const pages = site.pages?.(data) ?? ["/"];
   const page = resolvePage(site, data, requestedPage) ?? "/";
+  // A new page opens at its top, as on the published site; a link to a place on the page (#…) keeps it.
+  const keepScroll = useRef(false);
+  useEffect(() => {
+    if (keepScroll.current) {
+      keepScroll.current = false;
+      return;
+    }
+    frame.current?.closest(".ws-view")?.scrollTo({ top: 0 });
+  }, [page]);
 
   // HomeMart's own color is burgundy: a site still on the starting navy gets it (a color the user picked stays).
   useEffect(() => {
@@ -165,6 +184,7 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
       setVisitor((v) => ({ ...v, query: Object.fromEntries(url.searchParams) }));
       setPage(url.pathname);
       const anchor = url.hash.slice(1);
+      keepScroll.current = Boolean(anchor);
       window.setTimeout(() => (anchor ? document.getElementById(anchor)?.scrollIntoView({ behavior: "smooth", block: "start" }) : frameTop(a)), 60);
     }
     // Project rule: a placeholder link ("#", example.com) takes the visitor to the top of the page.
@@ -337,6 +357,7 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
       <div className="ws-body">
         <div className="ws-view">
           <div
+            ref={frame}
             className={`preview-frame${editing ? " editing" : ""}${device === "mobile" ? " mobile" : ""}`}
             style={{ width: device === "mobile" ? MOBILE_WIDTH : "100%" }}
             onClick={onFrameClick}

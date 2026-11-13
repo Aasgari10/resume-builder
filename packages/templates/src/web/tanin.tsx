@@ -18,6 +18,7 @@ import { FormMeta, Opt, PageLink, blockOn, ed, item, outside, partsCss } from ".
 import { mapEmbed } from "./golsara";
 import { AccountPage, shopkitCss } from "./shopkit";
 import { BookingPicker, TrackBooking, bookingCss } from "./booking";
+import { TANIN_SCRIPT, inlineScript } from "./scripts";
 
 export const TANIN_BLOCKS = [
   { key: "hero", label: "تصویر بزرگ و آهنگ تازه" },
@@ -73,6 +74,8 @@ export function TaninSite(props: TemplateProps) {
       <Header {...view} />
       <main key={page}>{body}</main>
       <Footer {...view} />
+      {/* The player and the studio tabs; allowed on the published page by its hash (see scripts.ts). */}
+      <script dangerouslySetInnerHTML={{ __html: inlineScript(TANIN_SCRIPT) }} />
     </WebPage>
   );
 }
@@ -96,17 +99,28 @@ const Para = ({ text }: { text?: string }) => (
 );
 /** A heading where a word written between stars sits on a painted brush stroke: "صدایت را *اوج* بده". */
 function Brush({ text }: { text?: string }) {
+  // A line break in the text starts a new line of the heading.
   return (
     <>
-      {(text ?? "").split(/(\*[^*]+\*)/).map((part, k) =>
-        part.startsWith("*") && part.endsWith("*") && part.length > 2 ? (
-          <span key={k} className="tn-brush">
-            {part.slice(1, -1)}
-          </span>
-        ) : (
-          part
-        ),
-      )}
+      {(text ?? "").split("\n").map((line, n) => (
+        <span key={n}>
+          {n > 0 && (
+            <>
+              {" "}
+              <br />
+            </>
+          )}
+          {line.split(/(\*[^*]+\*)/).map((part, k) =>
+            part.startsWith("*") && part.endsWith("*") && part.length > 2 ? (
+              <span key={k} className="tn-brush">
+                {part.slice(1, -1)}
+              </span>
+            ) : (
+              part
+            ),
+          )}
+        </span>
+      ))}
     </>
   );
 }
@@ -144,6 +158,11 @@ const ICONS: Record<string, string> = {
   plus: "M12 5v14M5 12h14",
   minus: "M5 12h14",
   down: "M6 9l6 6 6-6",
+  play: "M8 5v14l11-7z",
+  pause: "M7 5h3v14H7zM14 5h3v14h-3z",
+  // Drawn for right to left: "back" points right, "forward" points left.
+  fwd: "M13 6l7 6-7 6zM4 6l7 6-7 6z",
+  rew: "M11 6l-7 6 7 6zM20 6l-7 6 7 6z",
 };
 const Svg = ({ name, className = "tn-ico" }: { name: string; className?: string }) => (
   <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
@@ -401,7 +420,7 @@ function Home(view: View) {
             {hero && <img src={hero} alt="" />}
           </span>
           <div className="tn-wrap tn-hero-in">
-            <h1 className="tn-in-up" {...ed("site.shop.heroTitle", "text", "عنوان (کلمه‌ی رنگی بین دو ستاره)")}>
+            <h1 className="tn-in-up" {...ed("site.shop.heroTitle", "multiline", "عنوان (کلمه‌ی رنگی بین دو ستاره؛ هر خط یک سطر)")}>
               <Brush text={shop.heroTitle} />
             </h1>
             <p className="tn-in-up d2" {...ed("site.shop.heroText", "multiline", "متن")}>
@@ -490,8 +509,11 @@ function Home(view: View) {
       {on("features") && <Features view={view} />}
       {on("services") && <ServiceStrip view={view} />}
       {on("studios") && <StudioTabs view={view} />}
-      {on("artists") && <Artists view={view} />}
-      {on("booking") && <BookingBand view={view} />}
+      {/* As in the reference, the guitar picture of the booking band reaches up behind the artists. */}
+      <div className="tn-guitar">
+        {on("artists") && <Artists view={view} />}
+        {on("booking") && <BookingBand view={view} tall={on("artists") && (data.site?.gallery ?? []).length > 0} />}
+      </div>
       {on("reviews") && <Reviews view={view} />}
       {on("news") && <News view={view} />}
       {editing && !song && (
@@ -511,13 +533,33 @@ function Player({ view, song }: { view: View; song: ResumeData["projects"][numbe
   return (
     <div className="tn-player-box tn-in-up d4">
       <small>آخرین آهنگی که این‌جا ضبط شد…</small>
-      <div className="tn-player">
+      {/* The page script turns this into the player of the reference; without it the browser's own player shows. */}
+      <div className="tn-player" data-tn-player>
         <span className="tn-disc">{cover && <img src={cover} alt="" />}</span>
         <span className="tn-song">
-          <b>{song.title}</b>
-          <small>{song.role}</small>
+          <b {...ed(`${at}.title`, "text", "نام آهنگ")}>{song.title}</b>
+          <small {...ed(`${at}.role`, "text", "خواننده")}>{song.role}</small>
         </span>
-        <audio controls preload="none" src={src} {...(view.editing ? ed(`${at}.url`, "url", "لینک فایل آهنگ") : {})} />
+        <span className="tn-ctrl">
+          <button type="button" data-act="back" aria-label="ده ثانیه عقب">
+            <Svg name="fwd" />
+          </button>
+          <button type="button" data-act="play" className="tn-play" aria-label="پخش یا توقف">
+            <Svg name="play" className="tn-ico on-pause" />
+            <Svg name="pause" className="tn-ico on-play" />
+          </button>
+          <button type="button" data-act="fwd" aria-label="ده ثانیه جلو">
+            <Svg name="rew" />
+          </button>
+        </span>
+        <span className="tn-time">
+          <small data-cur>۰۰:۰۰</small>
+          <span className="tn-bar" data-bar {...(view.editing ? ed(`${at}.url`, "url", "لینک فایل آهنگ") : {})}>
+            <i data-fill />
+          </span>
+          <small data-dur>۰۰:۰۰</small>
+        </span>
+        <audio controls preload="metadata" src={src} />
       </div>
     </div>
   );
@@ -635,7 +677,7 @@ function StudioTabs({ view }: { view: View }) {
             </label>
           ))}
         </div>
-        <div className="tn-tab-panes">
+        <div className="tn-tab-panes" data-tn-snap>
           {list.map((s) => {
             const pic = safeUrl(s.images[0]);
             const spec = (label: string) => s.specs?.find((x) => x.label === label)?.value;
@@ -672,6 +714,7 @@ function StudioTabs({ view }: { view: View }) {
             );
           })}
         </div>
+        <Dots count={list.length} start={start} />
         <style>{list.map((_, k) => `#tn-st${k}:checked ~ .tn-tab-panes .tn-tab-pane:nth-child(${k + 1}) { opacity: 1; visibility: visible; transform: none; } #tn-st${k}:checked ~ .tn-tab-list label:nth-child(${k + 1}) { background: var(--tn-gold); color: #17141a; }`).join("\n")}</style>
       </div>
     </section>
@@ -741,7 +784,7 @@ function Artists({ view }: { view: View }) {
 const HOURS = [1, 2, 3, 4, 5, 6];
 
 /** "Secure your studio session": the address, email and phone beside a short form that opens the booking page. */
-function BookingBand({ view, full }: { view: View; full?: boolean }) {
+function BookingBand({ view, full, tall }: { view: View; full?: boolean; tall?: boolean }) {
   const { ctx, shop, link } = view;
   const b = ctx.data.basics;
   const site = ctx.data.site;
@@ -749,7 +792,7 @@ function BookingBand({ view, full }: { view: View; full?: boolean }) {
   const list = studiosOf(shop);
   const q = view.visitor.query;
   return (
-    <section className={`tn-sec tn-band${full ? " full" : ""}`}>
+    <section className={`tn-sec tn-band${full ? " full" : ""}${tall ? " tall" : ""}`}>
       <span className="tn-band-pic" {...ed("site.accentImage", "image", "عکس پس‌زمینه")}>
         {bg && <img src={bg} alt="" loading="lazy" />}
       </span>
@@ -846,7 +889,8 @@ function Reviews({ view }: { view: View }) {
   return (
     <section className="tn-sec tn-reviews">
       <Head title="هنرمندان ما *چه می‌گویند*" text={view.shop.bestText} center editText={ed("site.shop.bestText", "multiline", "متن")} />
-      <div className="tn-wrap tn-review-list">
+      <div className="tn-wrap tn-review-wrap">
+      <div className="tn-review-list" data-tn-snap>
         {list.slice(0, 4).map((t, k) => {
           const at = item("site.testimonials", t.id);
           const [title, ...rest] = t.text.split("\n");
@@ -876,6 +920,8 @@ function Reviews({ view }: { view: View }) {
             </article>
           );
         })}
+      </div>
+      <Dots count={Math.min(4, list.length)} dash />
       </div>
     </section>
   );
@@ -919,6 +965,18 @@ function News({ view }: { view: View }) {
         </aside>
       </div>
     </section>
+  );
+}
+
+/** The marks under a row that swipes on phones (the page script follows the swipe); hidden on larger screens. */
+function Dots({ count, start = 0, dash }: { count: number; start?: number; dash?: boolean }) {
+  if (count < 2) return null;
+  return (
+    <span className={`tn-dots${dash ? " dash" : ""}`} data-tn-dots aria-hidden="true">
+      {Array.from({ length: count }, (_, k) => (
+        <i key={k} className={k === start ? "on" : undefined} />
+      ))}
+    </span>
   );
 }
 
@@ -989,7 +1047,7 @@ function About(view: View) {
           <Features view={view} wide={false} />
         </div>
       </section>
-      <section className="tn-sec tn-wrap">
+      <section className="tn-sec tn-wrap tn-stats-sec">
         <Stats view={view} count={4} />
       </section>
       <ServiceStrip view={view} />
@@ -1125,7 +1183,7 @@ function Services(view: View) {
         </section>
       )}
       <StudioTabs view={view} />
-      <section className="tn-sec tn-wrap">
+      <section className="tn-sec tn-wrap tn-stats-sec">
         <Stats view={view} count={4} />
       </section>
       <Reviews view={view} />
@@ -1650,7 +1708,7 @@ export function taninSample(locale: ResumeData["locale"]): ResumeData {
       ],
       shop: {
         heroImage: img("hero"),
-        heroTitle: "صدایت را اوج بده، *شاهکارت* را بساز",
+        heroTitle: "صدایت را به اوج برسان و\n*شاهکارت* را خلق کن",
         heroText: "با آکوستیک حرفه‌ای و تجهیزات روز، استودیوی ما بهترین جا برای زنده کردن موسیقی شماست.",
         newTitle: "تازه‌ترین *آثار* را بشنوید!",
         newText: "تازه‌ترین قطعه‌هایی که در استودیو ضبط شده‌اند؛ آماده تا الهام‌بخش پروژه‌ی بعدی شما باشند.",
@@ -1765,8 +1823,13 @@ const css = /* css */ `
 .tn-radio { position: absolute; opacity: 0; pointer-events: none; }
 
 /* A word on a painted brush stroke. */
+/* As in the reference: a wide, rough stroke of paint behind the middle of the word, past both its ends. */
 .tn-brush { position: relative; z-index: 0; white-space: nowrap; }
-.tn-brush::before { content: ""; position: absolute; z-index: -1; inset: 38% -10% 4% -8%; background: url("${sampleImage("rs-brush", "png")}") center / 100% 100% no-repeat; opacity: .85; transform: scaleX(0); transform-origin: right; animation: tn-paint .9s .5s cubic-bezier(.2, .7, .2, 1) forwards; }
+.tn-brush::before { content: ""; position: absolute; z-index: -1; inset: 30% -14% 2% -12%; background: url("${sampleImage("rs-brush5", "png")}") center / 100% 100% no-repeat; opacity: .9; transform: scaleX(0); transform-origin: right; animation: tn-paint .9s .5s cubic-bezier(.2, .7, .2, 1) forwards; }
+.tn-headline.center .tn-brush::before { inset: 34% -18% 0 -16%; background-image: url("${sampleImage("rs-brush2", "png")}"); }
+.tn-records-head .tn-brush::before, .tn-news-letter .tn-brush::before { inset: 28% -16% -4% -20%; background-image: url("${sampleImage("rs-brush3", "png")}"); }
+.tn-split-head .tn-brush::before, .tn-artists-head .tn-brush::before { inset: 36% -18% -2% -18%; background-image: url("${sampleImage("rs-brush1", "png")}"); }
+.tn-hero .tn-brush::before { inset: 14% -12% 2% -16%; background-image: url("${sampleImage("rs-brush1", "png")}"); opacity: 1; filter: brightness(1.15); }
 
 .tn-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; padding: 0 30px; border: 1px solid var(--tn-gold); background: var(--tn-gold); color: #17141A !important; font: inherit; font-weight: 700; cursor: pointer; transition: background .35s, color .35s, transform .35s; }
 .tn-btn:hover { background: transparent; color: var(--tn-gold) !important; }
@@ -1778,7 +1841,8 @@ const css = /* css */ `
 /* Header */
 .tn-head { position: sticky; top: 0; z-index: 20; height: 0; }
 .tn-head-in { display: flex; align-items: center; gap: 30px; height: 90px; }
-.tn-head::before { content: ""; position: absolute; inset: 0 0 auto; height: 90px; background: rgb(23 20 26 / .92); backdrop-filter: blur(8px); opacity: 0; transition: opacity .4s; }
+/* After scrolling: a slightly see-through grey bar on a computer, a deep brown one on a phone. */
+.tn-head::before { content: ""; position: absolute; inset: 0 0 auto; height: 90px; background: rgb(54 52 58 / .82); backdrop-filter: blur(10px); box-shadow: 0 10px 30px -18px rgb(0 0 0 / .7); opacity: 0; transition: opacity .4s; }
 @supports (animation-timeline: scroll()) {
   .tn-head::before { animation: tn-solid linear both; animation-timeline: scroll(root); animation-range: 0 160px; }
 }
@@ -1814,20 +1878,38 @@ const css = /* css */ `
 .tn-hero-pic, .tn-band-pic { position: absolute; inset: 0; }
 .tn-hero-pic img, .tn-band-pic img { width: 100%; height: 100%; object-fit: cover; }
 .tn-hero-pic img { animation: tn-zoom 2.2s cubic-bezier(.2, .7, .2, 1) both; }
-.tn-hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(rgb(23 20 26 / .55), rgb(23 20 26 / .25) 40%, rgb(23 20 26 / .75) 85%, var(--tn-bg)); pointer-events: none; }
-.tn-hero-in { position: relative; z-index: 1; padding: 170px 0 60px; }
-.tn-hero h1 { max-width: 15ch; font-size: clamp(40px, 6cqi, 116px); line-height: 1.4; }
-.tn-hero p { max-width: 52ch; margin: 18px 0 34px; color: #DDD7DE; font-size: clamp(15px, 1.05cqi, 19px); }
-.tn-hero-btns { display: flex; flex-wrap: wrap; gap: 14px; }
+.tn-hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to left, rgb(23 20 26 / .7), rgb(23 20 26 / .25) 55%, transparent), linear-gradient(rgb(23 20 26 / .55), rgb(23 20 26 / .2) 40%, rgb(23 20 26 / .75) 85%, var(--tn-bg)); pointer-events: none; }
+.tn-hero-in { position: relative; z-index: 1; padding: clamp(150px, 13cqi, 240px) 0 60px; }
+.tn-hero h1 { font-size: clamp(34px, 7.7cqi, 150px); line-height: 1.32; }
+.tn-hero p { max-width: max(46%, 420px); margin: clamp(14px, 1.4cqi, 26px) 0 clamp(24px, 2.6cqi, 48px); color: #DDD7DE; font-size: clamp(15px, 1.4cqi, 26px); line-height: 1.85; }
+.tn-hero-btns { display: flex; flex-wrap: wrap; gap: clamp(12px, 1cqi, 18px); }
+.tn-hero-btns .tn-btn { min-height: clamp(50px, 4.6cqi, 84px); padding: 0 clamp(26px, 3cqi, 56px); font-size: clamp(15px, 1.6cqi, 28px); }
 .tn-player-box { margin-top: clamp(50px, 7cqi, 100px); }
 .tn-player-box > small { display: block; margin-bottom: 14px; color: #D8D2D9; }
-.tn-player { display: flex; align-items: center; gap: 22px; padding: 22px 24px; background: rgb(23 20 26 / .55); backdrop-filter: blur(14px); }
-.tn-disc { position: relative; width: 84px; height: 84px; flex: none; border-radius: 50%; overflow: hidden; animation: tn-spin 12s linear infinite; }
+.tn-player { display: flex; align-items: center; gap: clamp(16px, 2cqi, 36px); padding: clamp(14px, 1.6cqi, 30px) clamp(16px, 1.8cqi, 32px); background: linear-gradient(90deg, rgb(23 20 26 / .78), rgb(60 48 44 / .45)); backdrop-filter: blur(16px); }
+.tn-disc { position: relative; width: clamp(64px, 7cqi, 130px); height: clamp(64px, 7cqi, 130px); flex: none; border-radius: 50%; overflow: hidden; animation: tn-spin 12s linear infinite paused; }
+.tn-player.playing .tn-disc { animation-play-state: running; }
 .tn-disc img { width: 100%; height: 100%; object-fit: cover; }
 .tn-disc::after { content: ""; position: absolute; inset: 0; margin: auto; width: 18px; height: 18px; border: 2px solid #fff; border-radius: 50%; }
-.tn-song { display: grid; min-width: 150px; }
-.tn-song b { color: #fff; }
-.tn-song small { color: var(--tn-gold); }
+.tn-song { display: grid; min-width: 150px; line-height: 1.6; }
+.tn-song b { color: #fff; font-size: clamp(15px, 1.25cqi, 22px); }
+.tn-song small { color: var(--tn-gold); font-size: clamp(12px, .9cqi, 16px); }
+.tn-ctrl, .tn-time { display: none; }
+.tn-player.js .tn-ctrl { display: flex; align-items: center; gap: clamp(10px, 1.2cqi, 22px); }
+.tn-player.js .tn-time { display: block; position: relative; flex: 1; min-width: 0; padding-top: 22px; }
+.tn-player.js audio { display: none; }
+.tn-ctrl button { display: grid; place-items: center; padding: 0; border: 0; background: none; color: #fff; cursor: pointer; transition: color .3s, transform .3s; }
+.tn-ctrl button:hover { color: var(--tn-gold); transform: scale(1.1); }
+.tn-ctrl .tn-ico { width: clamp(18px, 1.5cqi, 26px); height: clamp(18px, 1.5cqi, 26px); fill: currentColor; stroke: none; }
+.tn-play .tn-ico { width: clamp(22px, 1.9cqi, 32px); height: clamp(22px, 1.9cqi, 32px); }
+.tn-play .on-play, .tn-player.playing .tn-play .on-pause { display: none; }
+.tn-player.playing .tn-play .on-play { display: block; }
+.tn-time small { position: absolute; top: 0; color: #fff; font-size: clamp(11px, .8cqi, 14px); line-height: 1; }
+.tn-time [data-cur] { inset-inline-start: 0; }
+.tn-time [data-dur] { inset-inline-end: 0; }
+.tn-bar { position: relative; display: block; height: 4px; border-radius: 2px; background: rgb(255 255 255 / .85); cursor: pointer; }
+.tn-bar::before { content: ""; position: absolute; inset: -10px 0; }
+.tn-bar i { position: absolute; inset-block: 0; inset-inline-start: 0; width: 0; border-radius: 2px; background: var(--tn-gold); }
 .tn-player audio { flex: 1; min-width: 0; height: 44px; filter: invert(.88) sepia(.3) hue-rotate(160deg) saturate(.6); opacity: .9; }
 
 /* Latest records */
@@ -1907,20 +1989,21 @@ const css = /* css */ `
 .tn-headline.center { max-width: 760px; margin-inline: auto; text-align: center; }
 .tn-headline h2 { font-size: clamp(30px, 3cqi, 54px); }
 .tn-headline p { margin: 12px 0 0; }
-.tn-tabs { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr); align-items: center; gap: 30px; }
-.tn-tab-list { position: relative; z-index: 2; display: grid; gap: 8px; align-self: center; width: min(310px, 100%); margin-inline-end: -120px; padding: 26px 22px; background: rgb(34 30 36 / .78); backdrop-filter: blur(10px); grid-row: 1; grid-column: 1; justify-self: start; }
-.tn-tab-list label { padding: 8px 12px; color: #CFC8CF; font-size: 19px; font-weight: 700; cursor: pointer; transition: background .35s, color .35s; }
-.tn-tab-list label:hover { color: #fff; }
+.tn-tabs { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr); align-items: center; gap: 30px; margin-inline: clamp(16px, 3cqi, 64px); }
+.tn-tab-list { position: relative; z-index: 2; display: grid; gap: 8px; align-self: center; width: max(240px, 24cqi); margin-inline-end: -120px; padding: clamp(18px, 2cqi, 40px) clamp(16px, 1.7cqi, 34px); background: rgb(34 30 36 / .78); backdrop-filter: blur(10px); grid-row: 1; grid-column: 1; justify-self: start; }
+.tn-tab-list label { padding: clamp(6px, .7cqi, 14px) clamp(10px, 1cqi, 18px); color: #CFC8CF; font-size: clamp(15px, 1.5cqi, 28px); font-weight: 700; cursor: pointer; transition: background .35s, color .35s; }
+.tn-tab-list label:hover { color: #fff; background: rgb(214 166 112 / .18); }
 .tn-tab-panes { display: grid; grid-column: 1 / -1; grid-row: 1; }
-.tn-tab-pane { grid-area: 1 / 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr); gap: 30px; align-items: center; opacity: 0; visibility: hidden; transform: translateY(14px); transition: opacity .5s, transform .5s, visibility .5s; }
-.tn-tab-pic { aspect-ratio: 1.3; margin-inline-start: clamp(60px, 9cqi, 150px); overflow: hidden; }
+.tn-tab-pane { grid-area: 1 / 1; display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 30px; align-items: center; opacity: 0; visibility: hidden; transform: translateY(14px); transition: opacity .5s, transform .5s, visibility .5s; }
+/* Only a small part of the picture sits under the frosted list, as in the reference. */
+.tn-tab-pic { display: block; aspect-ratio: 1.3; margin-inline-start: calc(max(240px, 24cqi) - clamp(50px, 5cqi, 100px)); overflow: hidden; }
 .tn-tab-pic img { width: 100%; height: 100%; object-fit: cover; }
-.tn-tab-pane h3 { font-size: 26px; }
+.tn-tab-pane h3 { font-size: clamp(20px, 2cqi, 38px); }
 .tn-tab-pane h3 em, .tn-tab-list label em { color: var(--tn-gold); font-style: normal; }
-.tn-tab-pane .tn-body { max-width: 52ch; margin: 12px 0 18px; font-size: 15px; }
-.tn-price { margin: 0 0 14px; color: #fff; font-size: 18px; }
-.tn-price b { color: var(--tn-gold); font-size: clamp(30px, 3cqi, 46px); }
-.tn-facts { display: flex; gap: 22px; margin: 0 0 22px; color: #fff; font-size: 14px; }
+.tn-tab-pane .tn-body { max-width: 52ch; margin: 12px 0 18px; font-size: clamp(14px, 1.15cqi, 21px); }
+.tn-price { margin: 0 0 14px; color: #fff; font-size: clamp(15px, 1.3cqi, 24px); }
+.tn-price b { color: var(--tn-gold); font-size: clamp(30px, 3.4cqi, 64px); }
+.tn-facts { display: flex; gap: 22px; margin: 0 0 22px; color: #fff; font-size: clamp(13px, 1cqi, 18px); }
 .tn-facts .tn-ico { color: var(--tn-gold); }
 
 /* Artists */
@@ -1931,21 +2014,33 @@ const css = /* css */ `
 .tn-slider { --tn-card: calc((100% - 3 * var(--tn-gap)) / 4); --tn-gap: 24px; position: relative; }
 .tn-slider-view { overflow: hidden; }
 .tn-slider-track { display: flex; gap: var(--tn-gap); transition: transform .7s cubic-bezier(.2, .7, .2, 1); }
-.tn-artist { position: relative; flex: 0 0 var(--tn-card); display: grid; grid-template-columns: 54px 1fr; align-items: end; }
-.tn-artist::before { content: ""; position: absolute; inset: 30% 0 0; background: #0E0C0F; z-index: 0; }
-.tn-artist-pic { position: relative; z-index: 1; grid-column: 2; aspect-ratio: .75; overflow: hidden; }
-.tn-artist-pic img { width: 100%; height: 100%; object-fit: cover; transition: transform .8s, filter .5s; }
-.tn-artist > b { position: relative; z-index: 1; grid-column: 1; grid-row: 1; align-self: end; padding-bottom: 14px; color: #fff; font-size: 22px; writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; transition: color .4s; }
-.tn-artist:hover > b { color: var(--tn-gold); }
-.tn-artist:hover img { transform: scale(1.06); }
+/*
+ * An artist: the picture beside a narrow column with the name written up it. On hover the picture
+ * grows over that column (it gets bigger, not zoomed in) and the name turns a quarter counterclockwise
+ * into a caption at the picture's bottom right.
+ */
+.tn-artist { --side: clamp(40px, 3.6cqi, 64px); position: relative; flex: 0 0 var(--tn-card); aspect-ratio: .78; }
+.tn-artist::before { content: ""; position: absolute; inset: 36% 0 0; background: #0E0C0F; }
+.tn-artist-pic { position: absolute; z-index: 1; top: 0; bottom: 0; right: var(--side); left: 0; overflow: hidden; transition: top .6s cubic-bezier(.2, .7, .2, 1), right .6s cubic-bezier(.2, .7, .2, 1), box-shadow .6s; }
+.tn-artist-pic img { width: 100%; height: 100%; object-fit: cover; }
+.tn-artist > b { position: absolute; z-index: 2; right: 0; bottom: 0; color: #fff; font-size: clamp(17px, 1.6cqi, 28px); line-height: 1.3; white-space: nowrap; transform-origin: 100% 100%; transform: translate(calc(var(--side) / -2 - .65em), -16px) rotate(90deg); transition: transform .6s cubic-bezier(.2, .7, .2, 1), color .4s, text-shadow .4s; }
+.tn-artist:hover .tn-artist-pic { top: -18px; right: 0; box-shadow: 0 24px 50px -24px rgb(0 0 0 / .8); }
+.tn-artist:hover > b { transform: translate(-18px, -16px) rotate(0deg); text-shadow: 0 2px 14px rgb(0 0 0 / .8); }
 .tn-arrows { display: flex; justify-content: center; margin-top: 30px; }
 .tn-arrow-set { display: none; gap: 14px; }
-.tn-arrow-set label { display: grid; place-items: center; width: 46px; height: 46px; border: 1px solid var(--tn-gold); border-radius: 50%; color: var(--tn-gold); cursor: pointer; transition: background .3s, color .3s; }
+.tn-arrow-set label { display: grid; place-items: center; width: 46px; height: 46px; border: 1px solid var(--tn-gold); border-radius: 50%; background: rgb(23 20 26 / .55); backdrop-filter: blur(6px); color: var(--tn-gold); cursor: pointer; transition: background .3s, color .3s; }
 .tn-arrow-set label:hover { background: var(--tn-gold); color: #17141A; }
-.tn-arrow-set label.off { opacity: .35; pointer-events: none; }
+.tn-arrow-set label.off { opacity: .45; pointer-events: none; }
 
 /* Booking band and forms */
 .tn-band { overflow: hidden; }
+.tn-guitar { position: relative; }
+.tn-guitar .tn-artists { position: relative; z-index: 1; overflow: visible; }
+.tn-slider-view { padding-top: 20px; }
+/* The band's picture starts halfway down the artists' cards, behind them. */
+.tn-band.tall { overflow: visible; }
+.tn-band.tall .tn-band-pic { top: calc(-1 * (var(--tn-reach, 27cqi) + 50px)); overflow: hidden; }
+.tn-band.tall .tn-band-pic::after { background: linear-gradient(var(--tn-bg), rgb(23 20 26 / .1) 6%, rgb(23 20 26 / .55)); }
 .tn-band-pic::after { content: ""; position: absolute; inset: 0; background: linear-gradient(rgb(23 20 26 / .2), rgb(23 20 26 / .6)); }
 .tn-band-in { position: relative; display: grid; grid-template-columns: 1fr 1fr; align-items: end; }
 .tn-band-text { padding: clamp(30px, 4cqi, 50px); background: linear-gradient(transparent, rgb(23 20 26 / .85) 40%); backdrop-filter: blur(16px); }
@@ -1980,6 +2075,7 @@ const css = /* css */ `
 
 /* Reviews */
 .tn-review-list { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+.tn-dots { display: none; }
 .tn-review { position: relative; display: grid; align-content: start; gap: 12px; padding: 26px 22px; background: var(--tn-panel); transition: transform .4s, background .4s; }
 .tn-review:hover { transform: translateY(-6px); background: #29242B; }
 .tn-review header { display: flex; gap: 12px; align-items: center; }
@@ -2178,6 +2274,7 @@ const css = /* css */ `
   .tn-from-end { animation: tn-from-end linear both; animation-timeline: view(); animation-range: entry 0% cover 26%; }
 }
 @keyframes tn-up { from { opacity: 0; transform: translateY(40px); } }
+@keyframes tn-drop { from { opacity: 0; transform: translateY(-12px); } }
 /* "start" is the right side in Persian: the element comes in from where the line begins. */
 @keyframes tn-from-start { from { opacity: 0; transform: translateX(60px); } }
 @keyframes tn-from-end { from { opacity: 0; transform: translateX(-60px); } }
@@ -2208,7 +2305,9 @@ const css = /* css */ `
   .tn-nav, .tn-head-contact { display: none; }
   .tn-logo { font-size: 28px; }
   .tn-vinyl { width: 28px; height: 28px; }
-  .tn-burger { display: block; margin-inline-start: auto; }
+  /* The menu opens under the whole header (not under the button): the button is not its frame. */
+  .tn-head-in { position: relative; }
+  .tn-head-in > .tn-burger { position: static; display: block; margin-inline-start: auto; }
   .tn-burger summary { display: grid; place-items: center; width: 44px; height: 44px; list-style: none; cursor: pointer; }
   .tn-burger summary::-webkit-details-marker { display: none; }
   .tn-burger summary span, .tn-burger summary span::before, .tn-burger summary span::after { display: block; width: 24px; height: 2px; background: #fff; position: relative; transition: transform .3s, background .3s; }
@@ -2218,35 +2317,59 @@ const css = /* css */ `
   .tn-burger[open] summary span { background: transparent; }
   .tn-burger[open] summary span::before { top: 0; transform: rotate(45deg); }
   .tn-burger[open] summary span::after { top: 0; transform: rotate(-45deg); }
-  .tn-drawer { position: absolute; top: 72px; inset-inline: -16px; display: grid; padding: 10px 24px 24px; background: rgb(23 20 26 / .97); backdrop-filter: blur(10px); animation: tn-up .4s ease both; }
-  .tn-drawer a { padding: 12px 0; border-bottom: 1px solid var(--tn-line); color: #E6E1E7; font-size: 17px; }
+  .tn-drawer { position: absolute; z-index: 30; top: 100%; inset-inline: -16px; display: grid; max-height: calc(100vh - 72px); overflow-y: auto; padding: 8px 24px 28px; background: #1F1A1D; border-top: 1px solid var(--tn-line); box-shadow: 0 30px 50px -20px rgb(0 0 0 / .8); animation: tn-drop .35s cubic-bezier(.2, .7, .2, 1) both; }
+  .tn-drawer a { display: block; padding: 14px 0; border-bottom: 1px solid var(--tn-line); color: #E6E1E7; font-size: 17px; white-space: nowrap; transition: color .3s, padding .3s; }
+  .tn-drawer a:last-child { border-bottom: 0; }
+  .tn-drawer a:hover { padding-inline-start: 6px; color: #fff; }
   .tn-drawer a[aria-current="page"] { color: var(--tn-gold); }
   .tn-hero { min-height: 0; }
   .tn-hero-in { padding: 120px 0 40px; }
-  .tn-hero h1 { font-size: 32px; }
+  .tn-hero h1 { font-size: 9.4cqi; }
+  .tn-hero h1 br { display: none; }
+  .tn-hero p { max-width: none; }
   .tn-hero-btns { display: grid; }
   .tn-player { flex-wrap: wrap; gap: 14px; padding: 16px; }
   .tn-disc { width: 64px; height: 64px; }
   .tn-player audio { flex-basis: 100%; }
+  .tn-player.js .tn-time { flex-basis: 100%; }
   .tn-records { grid-template-columns: minmax(0, 1fr); }
   .tn-unite, .tn-artists-head, .tn-split-head, .tn-band-in, .tn-band.full .tn-band-in, .tn-news-letter, .tn-contact, .tn-article-grid, .tn-faq-in, .tn-team-in { grid-template-columns: minmax(0, 1fr); }
-  .tn-stats, .tn-stats.n4 { --cols: 2; row-gap: 20px; }
-  .tn-stats > div:nth-child(odd) { border-inline-start: 0; }
+  .tn-stats, .tn-stats-sec { display: none; }
+  .tn-head::before { background: rgb(46 34 28 / .94); }
+  .tn-drawer { background: #2A201C; }
   .tn-features { grid-template-columns: minmax(0, 1fr); }
-  .tn-features.two { grid-template-columns: 1fr 1fr; }
+  .tn-features.two { grid-template-columns: 1fr 1fr; text-align: center; }
+  .tn-features.two article { justify-items: center; }
   .tn-strip { grid-template-columns: minmax(0, 1fr); height: auto; }
   .tn-strip-col { border-inline-start: 0; border-top: 1px solid rgb(255 255 255 / .3); min-height: 0; }
   .tn-strip-pic { inset: 0; width: 100%; opacity: .45; }
   .tn-strip-col > b { text-align: start; background: none !important; color: #fff !important; }
   .tn-strip-card { position: static; display: block; width: auto; margin: 0 16px 18px; padding: 14px 16px; opacity: 1 !important; transform: none !important; }
   .tn-strip-card em { display: none; }
-  .tn-tabs { grid-template-columns: minmax(0, 1fr); }
-  .tn-tab-list { grid-row: 1; width: 100%; margin: 0; display: flex; overflow-x: auto; padding: 10px; gap: 6px; }
-  .tn-tab-list label { flex: none; font-size: 15px; }
-  .tn-tab-panes { grid-row: 2; }
-  .tn-tab-pane { grid-template-columns: minmax(0, 1fr); }
-  .tn-tab-pic { margin: 0; }
+  /* Phones: every studio is a card; the cards swipe one at a time, the next one peeking in. */
+  .tn-tabs { display: block; margin: 0; }
+  .tn-tab-list { display: none; }
+  .tn-tab-panes { display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; margin-inline: -16px; padding: 4px 16px 6px; }
+  .tn-tab-panes::-webkit-scrollbar { display: none; }
+  .tn-tab-pane { flex: 0 0 84%; display: block; overflow: hidden; border-radius: 14px; background: var(--tn-panel); scroll-snap-align: center; opacity: 1 !important; visibility: visible !important; transform: none !important; }
+  .tn-tab-pic { display: block; margin: 0; aspect-ratio: 1.45; }
+  .tn-tab-pane > div { padding: 18px 18px 20px; }
+  .tn-tab-pane .tn-body { margin: 8px 0 12px; }
+  .tn-tab-pane .tn-btn { display: flex; width: 100%; box-sizing: border-box; }
+  .tn-dots { display: flex; justify-content: center; gap: 8px; margin-top: 18px; }
+  .tn-dots i { width: 8px; height: 8px; border-radius: 50%; background: #4A444C; cursor: pointer; transition: background .3s, width .3s; }
+  .tn-dots i.on { width: 22px; border-radius: 4px; background: var(--tn-gold); }
+  .tn-dots.dash i { width: 34px; height: 3px; border-radius: 2px; }
+  .tn-dots.dash i.on { width: 46px; }
+  /* Reviews: one at a time, the face and name in the middle, no card. */
+  .tn-review-list { display: flex; gap: 0; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+  .tn-review-list::-webkit-scrollbar { display: none; }
+  .tn-review { flex: 0 0 100%; box-sizing: border-box; padding: 10px 6px; background: none !important; transform: none !important; scroll-snap-align: center; }
+  .tn-review header { flex-direction: column; text-align: center; gap: 10px; }
+  .tn-review .tn-face { width: 74px; height: 74px; }
+  .tn-review header b { font-size: 21px; }
   .tn-slider { --tn-card: calc((100% - var(--tn-gap)) / 1.6); --tn-gap: 14px; }
+  .tn-guitar { --tn-reach: 52cqi; }
   .tn-review-list, .tn-news-grid, .tn-services, .tn-steps, .tn-blog.small { grid-template-columns: minmax(0, 1fr); }
   .tn-step.s1 { padding-top: 0; }
   .tn-step.s1 i { order: 0; }

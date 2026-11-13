@@ -25,6 +25,7 @@ import { BOUTIQUE_BLOCKS, BoutiqueShop, boutiquePages, boutiqueSample } from "./
 import { GOLSARA_BLOCKS, GOLSARA_OPTIONAL_PAGES, GolsaraShop, golsaraPages, golsaraSample } from "./web/golsara";
 import { HOMEMART_BLOCKS, HomeMartShop, homemartPages, homemartSample } from "./web/homemart";
 import { PATIO_BLOCKS, PATIO_OPTIONAL_PAGES, PatioShop, patioPages, patioSample } from "./web/patio";
+import { TANIN_SCRIPT } from "./web/scripts";
 import { TANIN_BLOCKS, TANIN_OPTIONAL_PAGES, TaninSite, taninPages, taninSample } from "./web/tanin";
 import { ESCAPE_BLOCKS, ESCAPE_OPTIONAL_PAGES, EscapeSite, escapePages, escapeSample } from "./web/escape";
 import { THERAPY_BLOCKS, THERAPY_OPTIONAL_PAGES, TherapySite, therapyPages, therapySample } from "./web/therapy";
@@ -38,6 +39,7 @@ import type { TemplateDefinition, TemplateTag } from "./types";
 
 export type { TemplateDefinition, TemplateProps, TemplateTag } from "./types";
 export { sampleResume } from "./sample";
+export { SITE_SCRIPTS, inlineScript } from "./web/scripts";
 export { withPlaceholders } from "./placeholders";
 export { isDummyUrl } from "./format";
 export { Silhouette } from "./avatar";
@@ -101,7 +103,7 @@ export const PORTFOLIO_TEMPLATES: readonly TemplateDefinition[] = [
   { ...web("kafe-site", "کورتو (کافه)", KafeSite), pages: kafePages, sample: kafeSample, blocks: KAFE_BLOCKS, optionalPages: KAFE_OPTIONAL_PAGES, shop: true, menu: true, sells: true, panel: { extras: { perks: "☕ آنچه ارائه می‌دهیم (آیکون‌ها)", stats: "🔢 اعداد", brands: "🏷 آرم همکاران" } } },
   { ...web("ladiva-site", "لا دیوا (آرایشگاه)", LadivaSite), pages: ladivaPages, sample: ladivaSample, blocks: LADIVA_BLOCKS, optionalPages: LADIVA_OPTIONAL_PAGES, shop: true, services: true, bookings: true, panel: { extras: { perks: "📍 شعبه‌ها (صفحه‌ی تماس)", stats: "🔢 اعداد", brands: "📰 لوگوی رسانه‌ها" } } },
   { ...web("cropit-site", "کراپ ایت (آتلیه عکاسی)", CropitSite), pages: cropitPages, sample: cropitSample, blocks: CROPIT_BLOCKS, optionalPages: CROPIT_OPTIONAL_PAGES, shop: true, menu: true, studio: true, bookings: true, panel: { extras: { perks: "🎯 خدمات ما (۶ خدمت با آیکون)", brands: "🤝 لوگوی همکاران" } } },
-  { ...web("tanin-site", "طنین (استودیوی موسیقی)", TaninSite), pages: taninPages, sample: taninSample, blocks: TANIN_BLOCKS, optionalPages: TANIN_OPTIONAL_PAGES, shop: true, rental: true, bookings: true, panel: { extras: { perks: "✨ ویژگی‌ها (۴ مورد با آیکون)", stats: "🔢 اعداد", brands: "🤝 لوگوی همکاران" }, hide: ["banners"], faqCategories: true } },
+  { ...web("tanin-site", "طنین (استودیوی موسیقی)", TaninSite), pages: taninPages, sample: taninSample, blocks: TANIN_BLOCKS, optionalPages: TANIN_OPTIONAL_PAGES, script: TANIN_SCRIPT, shop: true, rental: true, bookings: true, panel: { extras: { perks: "✨ ویژگی‌ها (۴ مورد با آیکون)", stats: "🔢 اعداد", brands: "🤝 لوگوی همکاران" }, hide: ["banners"], faqCategories: true } },
   { ...web("escape-site", "گریزگاه (اتاق فرار)", EscapeSite), pages: escapePages, sample: escapeSample, blocks: ESCAPE_BLOCKS, optionalPages: ESCAPE_OPTIONAL_PAGES, shop: true, escape: true, bookings: true, panel: { extras: { perks: "🧩 «بازی‌های ما مناسب‌اند برای» (۴ مورد)", stats: "🔢 اعداد صفحه‌ی درباره" }, hide: ["banners", "categories"] } },
   { ...web("therapy-site", "مهرپویا (مطب روان‌شناسی)", TherapySite), pages: therapyPages, sample: therapySample, blocks: THERAPY_BLOCKS, optionalPages: THERAPY_OPTIONAL_PAGES, shop: true, clinic: true, bookings: true, panel: { extras: { perks: "📚 ویژگی‌های کنار کتاب (۴ ویژگی)" }, hide: ["banners", "quotes"] } },
   { ...web("juno-shop", "جونو (اسباب‌بازی)", JunoShop), pages: junoPages, sample: junoSample, blocks: JUNO_BLOCKS, optionalPages: JUNO_OPTIONAL_PAGES, shop: true, panel: { extras: { perks: "✨ ویژگی‌های فروشگاه", brands: "🏷 آرم مشتری‌ها", trust: "💳 آرم‌های پایین صفحه" } } },

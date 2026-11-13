@@ -58,6 +58,8 @@ export type TemplateDefinition = {
   clinic?: boolean;
   /** An escape room: rooms booked one group at a time (a clinic-like manager with rooms). */
   escape?: boolean;
+  /** A page script (see web/scripts.ts): the published page runs it by its hash, the editor on the preview. */
+  script?: string;
   /** Studios rented by the hour (a recording studio): a clinic-like manager with studios and services. */
   rental?: boolean;
   /**

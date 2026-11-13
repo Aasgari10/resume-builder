@@ -3,7 +3,8 @@
 
 import { renderToStaticMarkup } from "react-dom/server";
 import { applyHiddenFields, saleEnded, unitPrice, type ResumeData, type Theme, type Visitor } from "@rb/schema";
-import { buildSeo, getTemplate, type SeoOverrides, pageTitle, truncate } from "@rb/templates";
+import { createHash } from "node:crypto";
+import { SITE_SCRIPTS, buildSeo, getTemplate, inlineScript, type SeoOverrides, pageTitle, truncate } from "@rb/templates";
 import { env } from "../env";
 
 /** Escapes text for HTML element content and quoted attribute values. */
@@ -28,13 +29,19 @@ export function jsonForScript(value: unknown): string {
 
 export const FONT_ASSETS_PATH = "/_assets/vazirmatn";
 
+/** The hashes of the few page scripts templates ship (see the templates' web/scripts.ts). */
+const scriptHashes = SITE_SCRIPTS.map((body) => `'sha256-${createHash("sha256").update(inlineScript(body)).digest("base64")}'`);
+
 /**
- * Content Security Policy for published pages: no scripts at all, styles and fonts from this origin
+ * Content Security Policy for published pages: no scripts but the templates' own few, each allowed
+ * by its hash (so nothing else, user content included, can run); styles and fonts from this origin
  * (inline styles are needed for theme variables), images from any HTTPS source.
  */
 export const SITE_CSP = [
   "default-src 'none'",
-  "script-src 'none'",
+  `script-src ${scriptHashes.join(" ") || "'none'"}`,
+  // Songs of music templates: sample files here, or the owner's links.
+  "media-src 'self' https:",
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self'",
   // The app origin is listed so uploaded photos also load in development over plain HTTP.
