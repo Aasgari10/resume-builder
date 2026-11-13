@@ -88,7 +88,7 @@ async function renderSite(req: Request, res: Response, rawSubdomain: string, pat
     page,
     link: (p) => (p === "/" ? base || "/" : base + p),
     // Booking pages also need the times already taken (to offer only free ones).
-    visitor: shop ? await loadVisitor(req, site.id, page, Boolean(data.data.site?.shop?.schedule)) : undefined,
+    visitor: shop ? await loadVisitor(req, site.id, page, data.data.site?.shop?.schedule) : undefined,
     sent: typeof req.query.sent === "string" ? { kind: req.query.sent.slice(0, 20), code: typeof req.query.code === "string" ? req.query.code.slice(0, 12) : undefined } : undefined,
   });
   sendPage(res, 200, html, shop || typeof req.query.sent === "string");

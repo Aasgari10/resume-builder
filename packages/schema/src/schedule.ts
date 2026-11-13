@@ -12,8 +12,10 @@ export const scheduleSchema = z.object({
   end: hhmm.default("17:00"),
   /** Length of one appointment, in minutes. */
   slot: z.number().int().min(10).max(480).default(60),
-  /** Appointments that can be booked at the same time. */
-  capacity: z.number().int().min(1).max(50).default(1),
+  /** Appointments that can be booked at the same time (seats, when `seats` is on). */
+  capacity: z.number().int().min(1).max(500).default(1),
+  /** A restaurant: the capacity is in seats and each booking takes as many as its guests. */
+  seats: z.boolean().optional(),
   /** How many days ahead can be booked. */
   ahead: z.number().int().min(1).max(180).default(30),
   /** Days off (holidays, leave). */
@@ -69,13 +71,13 @@ export function freeAt(s: Schedule, taken: Taken, day: string, time: string, now
   return Math.max(0, s.capacity - (taken[slotKey(day, time)] ?? 0));
 }
 
-/** The days of the booking window that still have a free time. */
-export function openDays(s: Schedule, taken: Taken, now = new Date()): string[] {
+/** The days of the booking window that still have a time with `need` free places. */
+export function openDays(s: Schedule, taken: Taken, now = new Date(), need = 1): string[] {
   const today = todayTehran(now);
   const out: string[] = [];
   for (let k = 0; k <= s.ahead; k++) {
     const day = addDay(today, k);
-    if (slotsOf(s, day, now).some((t) => freeAt(s, taken, day, t, now) > 0)) out.push(day);
+    if (slotsOf(s, day, now).some((t) => freeAt(s, taken, day, t, now) >= need)) out.push(day);
   }
   return out;
 }

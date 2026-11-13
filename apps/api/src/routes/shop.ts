@@ -326,19 +326,27 @@ async function accountAction(req: Request, res: Response, subdomain: string, bas
  * Cart and wishlist (cookie) plus, for shop pages, the signed-in customer with their orders,
  * addresses and tickets, product ratings, and the approved comments of the product on screen.
  */
-/** Appointments already taken from today on, by "yyyy-mm-dd hh:mm" (canceled ones free their place). */
-export async function takenSlots(siteId: string): Promise<Record<string, number>> {
-  const rows = await prisma.siteMessage.groupBy({
-    by: ["date", "time"],
+/**
+ * Places already taken from today on, by "yyyy-mm-dd hh:mm" (canceled bookings free theirs): one per
+ * booking, or its number of guests when the capacity is in seats (a restaurant).
+ */
+export async function takenSlots(siteId: string, seats = false): Promise<Record<string, number>> {
+  const rows = await prisma.siteMessage.findMany({
     where: { siteId, kind: "BOOKING", deletedAt: null, status: { not: "CANCELED" }, date: { gte: todayTehran() }, time: { not: null } },
-    _count: true,
+    select: { date: true, time: true, guests: true },
+    take: 20000,
   });
-  return Object.fromEntries(rows.map((r) => [slotKey(r.date!, r.time!), r._count]));
+  const out: Record<string, number> = {};
+  for (const r of rows) {
+    const key = slotKey(r.date!, r.time!);
+    out[key] = (out[key] ?? 0) + (seats ? Math.max(1, r.guests ?? 1) : 1);
+  }
+  return out;
 }
 
-export async function loadVisitor(req: Request, siteId: string, page: string, booking = false): Promise<Visitor> {
+export async function loadVisitor(req: Request, siteId: string, page: string, schedule?: { seats?: boolean }): Promise<Visitor> {
   const visitor = readVisitor(req);
-  if (booking) visitor.taken = await takenSlots(siteId);
+  if (schedule) visitor.taken = await takenSlots(siteId, Boolean(schedule.seats));
   const reviews = await prisma.shopReview.findMany({ where: { siteId, approved: true, deletedAt: null }, select: { productId: true, rating: true } });
   const ratings: Record<string, { avg: number; count: number }> = {};
   for (const r of reviews) {

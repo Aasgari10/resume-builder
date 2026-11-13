@@ -105,8 +105,9 @@ async function sendForm(req: Request, res: Response, rawSubdomain: string, base:
   const schedule = published.success ? published.data.site?.shop?.schedule : undefined;
   if (kind === "BOOKING" && schedule) {
     if (!f.date || !f.time) return go({ sent: "error" });
-    const taken = await takenSlots(site.id);
-    if (freeAt(schedule, taken, f.date, f.time) < 1) return go({ sent: "full" });
+    const taken = await takenSlots(site.id, Boolean(schedule.seats));
+    const need = schedule.seats ? Math.max(1, f.guests ?? 1) : 1;
+    if (freeAt(schedule, taken, f.date, f.time) < need) return go({ sent: "full" });
   }
   if (kind === "CONTACT" && !message && !f.subject) return go({ sent: "error" });
 

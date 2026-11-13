@@ -28,3 +28,12 @@ test("a day whose every time is taken is not offered", () => {
   assert.ok(openDays(s, {}).includes(sat));
   assert.ok(!openDays(s, full).includes(sat));
 });
+
+test("seats: a party needs as many free seats as its guests", () => {
+  const r: Schedule = { ...s, capacity: 40, seats: true };
+  const taken = { [slotKey(sat, "09:00")]: 36 };
+  assert.equal(freeAt(r, taken, sat, "09:00"), 4);
+  assert.ok(openDays(r, taken, new Date(), 4).includes(sat));
+  const allButFour = Object.fromEntries(["09:00", "10:00", "12:00"].map((t) => [slotKey(sat, t), 37]));
+  assert.ok(!openDays(r, allButFour, new Date(), 4).includes(sat));
+});
