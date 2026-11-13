@@ -146,6 +146,15 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
     const to = a.getAttribute("data-page");
     const href = a.getAttribute("href") ?? "";
     if (to) setPage(to);
+    // Links inside the site with a query (a booking day, a month, a blog category or page): open that
+    // page with the query, as the published site does, then go to its anchor or the top.
+    else if (href.startsWith("/") && !href.startsWith("//")) {
+      const url = new URL(href, "http://site");
+      setVisitor((v) => ({ ...v, query: Object.fromEntries(url.searchParams) }));
+      setPage(url.pathname);
+      const anchor = url.hash.slice(1);
+      window.setTimeout(() => (anchor ? document.getElementById(anchor)?.scrollIntoView({ behavior: "smooth", block: "start" }) : frameTop(a)), 60);
+    }
     // Project rule: a placeholder link ("#", example.com) takes the visitor to the top of the page.
     else if (isDummyUrl(href)) a.closest(".ws-view")?.scrollTo({ top: 0, behavior: "smooth" });
     else if (href.startsWith("#")) document.getElementById(href.slice(1))?.scrollIntoView({ behavior: "smooth" });
