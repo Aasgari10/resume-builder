@@ -15,6 +15,8 @@ import {
   toggleWishlist,
   variantKey,
   variantOf,
+  slotKey,
+  todayTehran,
   type CartLine,
   type Visitor,
 } from "@rb/schema";
@@ -324,8 +326,19 @@ async function accountAction(req: Request, res: Response, subdomain: string, bas
  * Cart and wishlist (cookie) plus, for shop pages, the signed-in customer with their orders,
  * addresses and tickets, product ratings, and the approved comments of the product on screen.
  */
-export async function loadVisitor(req: Request, siteId: string, page: string): Promise<Visitor> {
+/** Appointments already taken from today on, by "yyyy-mm-dd hh:mm" (canceled ones free their place). */
+export async function takenSlots(siteId: string): Promise<Record<string, number>> {
+  const rows = await prisma.siteMessage.groupBy({
+    by: ["date", "time"],
+    where: { siteId, kind: "BOOKING", deletedAt: null, status: { not: "CANCELED" }, date: { gte: todayTehran() }, time: { not: null } },
+    _count: true,
+  });
+  return Object.fromEntries(rows.map((r) => [slotKey(r.date!, r.time!), r._count]));
+}
+
+export async function loadVisitor(req: Request, siteId: string, page: string, booking = false): Promise<Visitor> {
   const visitor = readVisitor(req);
+  if (booking) visitor.taken = await takenSlots(siteId);
   const reviews = await prisma.shopReview.findMany({ where: { siteId, approved: true, deletedAt: null }, select: { productId: true, rating: true } });
   const ratings: Record<string, { avg: number; count: number }> = {};
   for (const r of reviews) {
