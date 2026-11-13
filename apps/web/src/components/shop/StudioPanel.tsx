@@ -2,11 +2,12 @@
 // and reports, for every template with a booking form — a photo studio (sessions for a package), a
 // salon (appointments for a service) and a restaurant (tables for a number of guests). The studio also
 // gets a plain editor for its price packages. Everything is read from the bookings saved by the site's
-// forms (see SiteInbox); before the site has any, sample bookings show what each tab does.
+// forms (see SiteInbox); before the site has any, the sample inbox (sampleData.ts) shows what each tab does.
 
 import { useEffect, useMemo, useState } from "react";
 import { addDay, defaultSchedule, slotsOf, todayTehran, type Product, type Schedule, type Shop } from "@rb/schema";
-import { api, type SiteMessage, type SiteMessageStatus } from "../../api";
+import type { SiteMessage, SiteMessageStatus } from "../../api";
+import { useShopApi } from "./shopApi";
 import { newId } from "../editor/list";
 import { Field, ImagePicker, MoneyInput, showNumber } from "./fields";
 import { errorText } from "./ShopOrders";
@@ -29,79 +30,19 @@ const WORDS: Record<BookingKind, { one: string; many: string; who: string; what:
 /** What a booking is for, as shown in lists: the package or service, or the number of guests. */
 const subject = (b: SiteMessage, kind: BookingKind) => (kind === "table" ? (b.guests ? `${showNumber(b.guests)} نفر` : "میز") : b.service || "—");
 
-/** Sample bookings around today, with the studio's own package names (nothing reaches the server). */
-function sampleBookings(shop: Shop, kind: BookingKind): SiteMessage[] {
-  const names = kind === "salon" && !shop.schedule ? shop.categories.filter((c) => !c.sell).map((c) => c.name) : live(shop).map((p) => p.name);
-  const pick = (k: number) => names[k % Math.max(1, names.length)] ?? "پکیج عکاسی";
-  const people = [
-    ["مریم احمدی", "09121234567"],
-    ["سارا کریمی", "09351234567"],
-    ["علی رضایی", "09191234567"],
-    ["نگار حسینی", "09121112233"],
-    ["رضا موسوی", "09361234567"],
-    ["مریم احمدی", "09121234567"],
-    ["الهام نوری", "09131234567"],
-    ["سارا کریمی", "09351234567"],
-  ];
-  const plan: [number, string, SiteMessageStatus][] = [
-    [0, "10:00", "CONFIRMED"],
-    [0, "16:30", "NEW"],
-    [1, "11:00", "CONFIRMED"],
-    [3, "15:00", "NEW"],
-    [-2, "12:00", "DONE"],
-    [-9, "10:30", "DONE"],
-    [-20, "17:00", "DONE"],
-    [-35, "13:00", "CANCELED"],
-  ];
-  const now = new Date();
-  return plan.map(([days, time, status], k) => {
-    const day = addDays(now, days);
-    return {
-      id: `sample-${k}`,
-      kind: "BOOKING",
-      status,
-      code: `B${100200 + k}`,
-      name: people[k]![0]!,
-      phone: people[k]![1]!,
-      email: null,
-      subject: null,
-      text: k % 3 === 0 ? "عکس پرتره برای پرونده‌ی کاری" : null,
-      service: kind === "table" ? null : pick(k),
-      date: iso(day),
-      time,
-      guests: kind === "table" ? 2 + (k % 5) : null,
-      page: kind === "table" ? "/reservation" : kind === "salon" ? "/appointment" : "/contact",
-      ownerNote: null,
-      createdAt: addDays(day, -3).toISOString(),
-      deletedAt: null,
-    };
-  });
-}
-
 /** The studio's bookings (or the sample ones), shared by the tabs below. */
-export function useBookings(resumeId: string | undefined, shop: Shop, kind: BookingKind) {
+export function useBookings(resumeId: string | undefined, _shop: Shop, _kind: BookingKind) {
+  const source = useShopApi();
   const [rows, setRows] = useState<SiteMessage[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     if (!resumeId) return setRows([]);
-    api.siteMessages(resumeId).then(
+    source.siteMessages(resumeId).then(
       (r) => setRows(r.messages.filter((m) => m.kind === "BOOKING")),
       (e) => setError(errorText(e, "دریافت رزروها ممکن نشد")),
     );
-  }, [resumeId]);
-  const sample = rows !== null && rows.length === 0;
-  const bookings = useMemo(() => (rows === null ? null : sample ? sampleBookings(shop, kind) : rows), [rows, sample, shop, kind]);
-  return { bookings, sample, error };
-}
-
-function SampleNote({ on }: { on: boolean }) {
-  return on ? (
-    <p className="shm-sample">
-      <span>
-        🧪 <b>این‌ها نمونه است</b> تا ببینید این بخش چه نشان می‌دهد. با اولین نوبت یا رزرو واقعی سایت منتشرشده، اطلاعات خودتان این‌جا می‌آید.
-      </span>
-    </p>
-  ) : null;
+  }, [resumeId, source]);
+  return { bookings: rows, error };
 }
 
 /** The price of what was booked: the package's price, or the lowest price of the service's items; tables have none. */
@@ -117,7 +58,7 @@ const priceOf = (shop: Shop, service: string | null) => {
 /* ───────────── 1. Overview ───────────── */
 
 export function StudioDashboard({ resumeId, shop, onTab, kind = "studio" }: { resumeId?: string; shop: Shop; onTab: (tab: string) => void; kind?: BookingKind }) {
-  const { bookings, sample, error } = useBookings(resumeId, shop, kind);
+  const { bookings, error } = useBookings(resumeId, shop, kind);
   const w = WORDS[kind];
   if (error) return <p className="error">{error}</p>;
   if (!bookings) return <p className="muted shm-hint">در حال بارگذاری…</p>;
@@ -135,7 +76,6 @@ export function StudioDashboard({ resumeId, shop, onTab, kind = "studio" }: { re
   const guestsToday = todays.reduce((s, b) => s + (b.guests ?? 0), 0);
   return (
     <div className="shm-studio">
-      <SampleNote on={sample} />
       <div className="shm-stats">
         <button type="button" onClick={() => onTab("inbox")}>
           <small>درخواست‌های جدید</small>
@@ -200,7 +140,7 @@ export function StudioDashboard({ resumeId, shop, onTab, kind = "studio" }: { re
 /* ───────────── 2. Week calendar ───────────── */
 
 export function StudioCalendar({ resumeId, shop, kind = "studio" }: { resumeId?: string; shop: Shop; kind?: BookingKind }) {
-  const { bookings, sample, error } = useBookings(resumeId, shop, kind);
+  const { bookings, error } = useBookings(resumeId, shop, kind);
   const w = WORDS[kind];
   // Weeks start on Saturday, as in the Iranian calendar.
   const [offset, setOffset] = useState(0);
@@ -213,7 +153,6 @@ export function StudioCalendar({ resumeId, shop, kind = "studio" }: { resumeId?:
   const undated = bookings.filter((b) => !b.date && b.status !== "CANCELED");
   return (
     <div className="shm-studio">
-      <SampleNote on={sample} />
       <div className="shm-row shm-cal-head">
         <button type="button" className="btn ghost small" onClick={() => setOffset((o) => o - 1)}>
           → هفته‌ی قبل
@@ -332,7 +271,7 @@ export function StudioPackages({ shop, setShop }: { shop: Shop; setShop: (s: Par
 /* ───────────── 5. Clients ───────────── */
 
 export function StudioClients({ resumeId, shop, kind = "studio" }: { resumeId?: string; shop: Shop; kind?: BookingKind }) {
-  const { bookings, sample, error } = useBookings(resumeId, shop, kind);
+  const { bookings, error } = useBookings(resumeId, shop, kind);
   const w = WORDS[kind];
   const [q, setQ] = useState("");
   const [open, setOpen] = useState<string | null>(null);
@@ -362,7 +301,6 @@ export function StudioClients({ resumeId, shop, kind = "studio" }: { resumeId?: 
     .sort((a, b) => (b.last ?? "").localeCompare(a.last ?? ""));
   return (
     <div className="shm-studio">
-      <SampleNote on={sample} />
       <p className="muted">هر کسی که از سایت {kind === "table" ? "میز رزرو کرده" : "نوبت گرفته"}، با همه‌ی {w.many}یش؛ با شماره‌ی تلفن از هم جدا می‌شوند.</p>
       <div className="shm-toolbar">
         <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="جستجو در نام، تلفن یا ایمیل…" aria-label="جستجو" />
@@ -418,7 +356,7 @@ export function StudioClients({ resumeId, shop, kind = "studio" }: { resumeId?: 
 /* ───────────── 6. Reports ───────────── */
 
 export function StudioReports({ resumeId, shop, kind = "studio" }: { resumeId?: string; shop: Shop; kind?: BookingKind }) {
-  const { bookings, sample, error } = useBookings(resumeId, shop, kind);
+  const { bookings, error } = useBookings(resumeId, shop, kind);
   const w = WORDS[kind];
   const priced = kind !== "table";
   if (error) return <p className="error">{error}</p>;
@@ -446,7 +384,6 @@ export function StudioReports({ resumeId, shop, kind = "studio" }: { resumeId?: 
   const canceled = bookings.filter((b) => b.status === "CANCELED").length;
   return (
     <div className="shm-studio">
-      <SampleNote on={sample} />
       <div className="shm-stats">
         <div>
           <small>همه‌ی {w.many}</small>

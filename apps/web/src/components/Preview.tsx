@@ -12,7 +12,9 @@ import { SitePanel, type PanelTab } from "./site-edit/SitePanel";
 import { getAt, isItemPath, removeItem, setAt } from "./site-edit/paths";
 import { SiteInbox } from "./shop/SiteInbox";
 import { ShopManager } from "./shop/ShopManager";
-import { onSampleChange, sampleAccountAction, sampleOrder, sampleShopFor, sampleVisitor, touchSample } from "./shop/sampleData";
+import { onSampleChange, resetSampleInbox, sampleAccountAction, sampleBookingVisitor, sampleMessagesApi, sampleOrder, sampleShopFor, sampleSiteForm, sampleVisitor, touchSample } from "./shop/sampleData";
+import { ShopApiContext } from "./shop/shopApi";
+import { api } from "../api";
 
 type Device = "desktop" | "mobile";
 
@@ -88,9 +90,11 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
   // Shop templates: the customer's side (signing in, orders, tickets, comments) runs on the sample
   // shop activity that the shop manager shows too, kept in this browser only.
   const sampleShop = sampleShopFor(raw.site?.shop, templateSample?.site?.shop);
+  // The site's forms (bookings, messages, sign-ups) go into a sample inbox that follows the site's own hours.
+  const demoShop = { ...sampleShop, schedule: data.site?.shop?.schedule };
+  const hasBookings = Boolean(site.bookings || site.studio || site.clinic);
   const [, setSampleRound] = useState(0);
   useEffect(() => {
-    if (!site.shop) return;
     const stop = onSampleChange(() => setSampleRound((n) => n + 1));
     touchSample();
     const timer = setInterval(touchSample, 60000);
@@ -99,7 +103,9 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
       clearInterval(timer);
     };
   }, [site.shop]);
-  const shownVisitor: Visitor = site.shop ? { ...visitor, ...sampleVisitor(sampleShop, page) } : visitor;
+  const shownVisitor: Visitor = site.shop
+    ? { ...visitor, ...sampleVisitor(sampleShop, page), ...(hasBookings ? sampleBookingVisitor(demoShop, page, visitor.query, true) : {}) }
+    : visitor;
 
   // Esc leaves the full-screen view (an open popover closes first).
   useEffect(() => {
@@ -186,7 +192,7 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
     } else if (action.endsWith("/_account")) {
       // The preview signs in sample customers; their tickets and comments join the sample the manager shows.
       const r = sampleAccountAction(sampleShop, fields, Boolean(raw.site?.shop?.reviewsAutoApprove));
-      const query: Record<string, string> = r.error ? { error: r.error } : r.msg ? { msg: r.msg } : {};
+      const query: Record<string, string> = { ...r.query, ...(r.error ? { error: r.error } : r.msg ? { msg: r.msg } : {}) };
       setVisitor((v) => ({ ...v, query }));
       if (r.page) setPage(r.page);
       frameTop(form);
@@ -198,15 +204,30 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
       if (r.page) setPage(r.page);
       frameTop(form);
     } else if (action.endsWith("/_form")) {
-      // Bookings, messages and sign-ups are saved only from the published site; the preview says so.
+      // Demo: bookings, messages and sign-ups join the sample inbox (with the server's checks), so the
+      // manager shows them right away; nothing reaches the real site.
+      const r = sampleSiteForm(demoShop, fields, Boolean(site.shop), hasBookings);
+      const where = site.shop ? "«⚙️ مدیریت»" : "«📥 پیام‌ها»";
       setFormNote(
-        fields.kind === "booking"
-          ? "در سایت منتشرشده، این درخواست نوبت ثبت می‌شود و در «📥 پیام‌ها و نوبت‌ها» می‌بینیدش."
-          : fields.kind === "newsletter"
-            ? "در سایت منتشرشده، این عضویت خبرنامه ثبت می‌شود و در «📥 پیام‌ها» می‌بینیدش."
-            : "در سایت منتشرشده، این پیام ثبت می‌شود و در «📥 پیام‌ها» می‌بینیدش.",
+        r.sent === "booking"
+          ? `درخواست نوبت ثبت شد؛ کد پیگیری ${r.code}. آن را در ${where} ببینید و تأیید یا لغو کنید.`
+          : r.sent === "full"
+            ? "این زمان دیگر خالی نیست؛ لطفاً زمان دیگری انتخاب کنید."
+            : r.sent === "error"
+              ? "فرستاده نشد؛ لطفاً فیلدهای لازم را کامل کنید."
+              : r.sent === "newsletter"
+                ? `عضویت خبرنامه ثبت شد؛ در ${where} می‌بینیدش.`
+                : `پیام فرستاده شد؛ در ${where} می‌بینیدش.`,
       );
-      window.setTimeout(() => setFormNote(null), 6000);
+      window.setTimeout(() => setFormNote(null), 7000);
+      if (r.sent === "booking" || r.sent === "contact" || r.sent === "newsletter") {
+        form.reset();
+        // A booking page starts again from the calendar, as after the published site's redirect.
+        if (r.sent === "booking") {
+          setVisitor((v) => ({ ...v, query: {} }));
+          if (fields.back) setPage(fields.back);
+        }
+      }
     } else if ((form.getAttribute("method") ?? "get").toLowerCase() === "get" && action.startsWith("/")) {
       // Search boxes and shop filters: open that page with the filled-in fields as its query.
       const query = Object.fromEntries(Object.entries(fields).filter(([, v]) => typeof v === "string" && v.trim()));
@@ -352,9 +373,7 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
                 بستن و برگشت به سایت
               </button>
             </header>
-            <div className="shm-body">
-              <SiteInbox resumeId={resumeId} />
-            </div>
+            <PortfolioInbox resumeId={resumeId} shop={demoShop} />
           </div>,
           document.body,
         )}
@@ -413,3 +432,43 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
   );
 }
 
+
+/** The inbox of a site without a manager: the real one once visitors wrote, the sample (demo) one before. */
+function PortfolioInbox({ resumeId, shop }: { resumeId?: string; shop: Parameters<typeof sampleMessagesApi>[0] }) {
+  const [real, setReal] = useState<boolean | null>(resumeId ? null : false);
+  const [round, setRound] = useState(0);
+  useEffect(() => {
+    if (!resumeId) return setReal(false);
+    api.siteMessages(resumeId).then(
+      (r) => setReal(r.messages.length > 0),
+      () => setReal(false),
+    );
+  }, [resumeId]);
+  const sample = useMemo(() => ({ ...api, ...sampleMessagesApi(shop, false) }), [shop]);
+  if (real === null) return <p className="muted shm-hint">در حال بارگذاری…</p>;
+  return (
+    <ShopApiContext.Provider value={real ? api : sample}>
+      <div className="shm-body">
+        {!real && (
+          <p className="shm-sample">
+            <span>
+              🧪 <b>حالت دمو:</b> این پیام‌ها نمونه‌اند؛ از فرم تماس سایت (پیش‌نمایش) هم پیام بفرستید تا این‌جا بیاید. تغییرها فقط در همین مرورگر است و بعد از ۱۰ دقیقه دوری به حالت اول برمی‌گردد.
+            </span>
+            <button
+              type="button"
+              className="btn ghost small"
+              onClick={() => {
+                if (!window.confirm("همه‌ی تغییرهای دمو پاک شود و پیام‌های نمونه از اول ساخته شوند؟")) return;
+                resetSampleInbox(shop, false);
+                setRound((n) => n + 1);
+              }}
+            >
+              ↺ ریست داده‌های دمو
+            </button>
+          </p>
+        )}
+        <SiteInbox key={round} resumeId={real ? resumeId : `sample-${round}`} />
+      </div>
+    </ShopApiContext.Provider>
+  );
+}

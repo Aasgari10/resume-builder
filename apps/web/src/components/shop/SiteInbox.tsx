@@ -3,10 +3,11 @@
 // site manager, and on its own for website templates without a shop.
 
 import { useEffect, useMemo, useState } from "react";
-import { api, type SiteMessage, type SiteMessageKind, type SiteMessageStatus, type SiteMessages } from "../../api";
+import { type SiteMessage, type SiteMessageKind, type SiteMessageStatus, type SiteMessages } from "../../api";
 import { showNumber } from "./fields";
 import { SelectAll, errorText, faDate, useSelection } from "./ShopOrders";
 import { NeedsPublish } from "./ShopPeople";
+import { useShopApi } from "./shopApi";
 
 type View = "BOOKING" | "CONTACT" | "NEWSLETTER" | "TRASH";
 
@@ -22,6 +23,7 @@ const shownDay = (d: string | null) => {
 const today = () => new Date().toISOString().slice(0, 10);
 
 export function SiteInbox({ resumeId, onChanged, bookings }: { resumeId?: string; onChanged?: () => void; bookings?: boolean }) {
+  const api = useShopApi();
   const [view, setView] = useState<View>(bookings ? "BOOKING" : "CONTACT");
   const [data, setData] = useState<SiteMessages | null>(null);
   const [trash, setTrash] = useState<SiteMessage[] | null>(null);
