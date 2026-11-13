@@ -30,7 +30,14 @@ export type Visitor = {
   reviews?: { id: string; name: string; rating: number; text: string; reply?: string; at: string }[];
   /** Booking templates: appointments already taken in the booking window, by "yyyy-mm-dd hh:mm". */
   taken?: Record<string, number>;
+  /** The signed-in customer's bookings (newest first). */
+  bookings?: BookingView[];
+  /** The booking looked up on the tracking page by its code and phone (null: not found). */
+  tracked?: BookingView | null;
 };
+
+/** A booking as its visitor sees it (account and tracking pages). */
+export type BookingView = { code: string; date?: string; time?: string; service?: string; guests?: number; status: "NEW" | "SEEN" | "CONFIRMED" | "DONE" | "CANCELED"; at: string };
 
 export const emptyVisitor = (): Visitor => ({ cart: [], wishlist: [], query: {} });
 

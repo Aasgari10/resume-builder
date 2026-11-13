@@ -12,7 +12,7 @@ import { env } from "../env";
 import { asyncHandler } from "../lib/http";
 import { subdomainFromHost, validateSubdomain } from "../lib/subdomain";
 import { freeAt, resumeDataSchema } from "@rb/schema";
-import { takenSlots } from "./shop";
+import { signedInCustomer, takenSlots } from "./shop";
 
 export const siteFormsRouter = Router();
 const form = express.urlencoded({ extended: false, limit: "20kb", parameterLimit: 40 });
@@ -111,7 +111,8 @@ async function sendForm(req: Request, res: Response, rawSubdomain: string, base:
   }
   if (kind === "CONTACT" && !message && !f.subject) return go({ sent: "error" });
 
-  const data = { siteId: site.id, kind, name, phone, email, subject: f.subject, text: message, service: f.service, date: f.date, time: f.time, guests: f.guests, page: back } as const;
+  const customerId = (await signedInCustomer(req, site.id)) ?? undefined;
+  const data = { siteId: site.id, kind, name, phone, email, subject: f.subject, text: message, service: f.service, date: f.date, time: f.time, guests: f.guests, page: back, customerId } as const;
   if (kind === "BOOKING") {
     for (let i = 0; ; i++) {
       try {

@@ -3,7 +3,7 @@
 // ratings, product comments and the customer account page. They work without scripts (plain
 // forms posting to the server). Each template sets the --sk-* colours so they match its look.
 
-import { SHOP_ORDER_STATUS_LABELS, allVariantKeys, formatToman, productOptions, saleEnded, unitPrice, variantOf, type Product, type ResumeData, type Shop, type Visitor } from "@rb/schema";
+import { SHOP_ORDER_STATUS_LABELS, allVariantKeys, formatToman, productOptions, saleEnded, unitPrice, variantOf, type Product, type ResumeData, type Shop, type Visitor, type BookingView } from "@rb/schema";
 import { safeUrl } from "../format";
 import { Opt, PageLink, ed, item, outside } from "./parts";
 
@@ -173,7 +173,56 @@ export function Reviews({ p, link, visitor }: Base & { p: Product }) {
 }
 
 /** Customer account: sign in / sign up, or the customer's orders, addresses and support tickets. */
-export function AccountPage({ link, visitor }: Base) {
+const BOOKING_STATUS: Record<BookingView["status"], string> = { NEW: "در انتظار تأیید", SEEN: "در حال بررسی", CONFIRMED: "تأیید شد", DONE: "انجام شد", CANCELED: "لغو شد" };
+const bookingDay = (d?: string) => (d ? new Date(`${d}T12:00:00Z`).toLocaleDateString("fa-IR-u-ca-persian", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" }) : "—");
+const bookingTime = (t?: string) => (t ? t.replace(/\d/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[Number(d)]!) : "");
+const bookingWhat = (b: BookingView) => [b.service, b.guests ? `${fa(b.guests)} نفر` : ""].filter(Boolean).join("، ") || "—";
+/** Whether the visitor may still cancel it (not done, not canceled, not in the past). */
+export const canCancel = (b: BookingView) => b.status !== "CANCELED" && b.status !== "DONE" && (b.date ?? "") >= new Date().toISOString().slice(0, 10);
+
+/** Bookings as cards: day and time, what was booked, the state and the code, with a cancel button while it can be canceled. */
+export function BookingTable({ list, link, back, phone }: { list: BookingView[]; link: Link; back: "/account" | "/track"; phone?: string }) {
+  return (
+    <ul className="sk-bookings">
+      {list.map((b) => (
+        <li key={b.code} className={b.status === "CANCELED" ? "off" : undefined}>
+          <div className="sk-bk-when">
+            <b>{bookingDay(b.date)}</b>
+            {b.time && (
+              <span>
+                ساعت <bdi>{bookingTime(b.time)}</bdi>
+              </span>
+            )}
+          </div>
+          <div className="sk-bk-what">
+            {bookingWhat(b) !== "—" && <span>{bookingWhat(b)}</span>}
+            <small>
+              کد پیگیری: <span dir="ltr">{b.code}</span>
+            </small>
+          </div>
+          <span className={`sk-status st-${b.status.toLowerCase()}`}>{BOOKING_STATUS[b.status]}</span>
+          {canCancel(b) && (
+            <form method="post" action={link("/_account")}>
+              <input type="hidden" name="op" value="booking-cancel" />
+              <input type="hidden" name="code" value={b.code} />
+              <input type="hidden" name="back" value={back} />
+              {phone && <input type="hidden" name="phone" value={phone} />}
+              <button type="submit" className="sk-link">
+                لغو نوبت
+              </button>
+            </form>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/**
+ * The customer's account. A booking site (`bookings`) shows "my bookings": "only" instead of orders,
+ * addresses and support (a practice), "also" next to them (a shop that books, e.g. a restaurant).
+ */
+export function AccountPage({ link, visitor, bookings }: Base & { bookings?: "only" | "also" }) {
   const c = visitor.customer;
   const msg = visitor.query.msg;
   const error = visitor.query.error;
@@ -208,6 +257,18 @@ export function AccountPage({ link, visitor }: Base) {
         </form>
       </div>
 
+      {bookings && (
+        <section className="sk-card">
+          <h2>نوبت‌های من</h2>
+          {(visitor.bookings ?? []).length === 0 ? (
+            <p className="sk-muted">هنوز نوبتی نگرفته‌اید. نوبت‌هایی که بعد از ورود بگیرید این‌جا نمایش داده می‌شوند و تا روز نوبت می‌توانید لغوشان کنید.</p>
+          ) : (
+            <BookingTable list={visitor.bookings!} link={link} back="/account" />
+          )}
+        </section>
+      )}
+      {bookings !== "only" && (
+      <>
       <section className="sk-card">
         <h2>سفارش‌های من</h2>
         {acc.orders.length === 0 ? (
@@ -294,6 +355,8 @@ export function AccountPage({ link, visitor }: Base) {
           تیکت‌ها و پشتیبانی
         </PageLink>
       </section>
+      </>
+      )}
     </div>
   );
 }
@@ -885,8 +948,23 @@ a.sk-btn, a.sk-btn:hover, a.sk-btn:visited { color: #fff !important; text-decora
 .sk-orders { width: 100%; border-collapse: collapse; font-size: .88em; }
 .sk-orders th { padding: 8px; color: var(--sk-muted, #6B7280); font-weight: 600; text-align: start; border-bottom: 1px solid var(--sk-line, #EEE); }
 .sk-orders td { padding: 10px 8px; border-bottom: 1px solid var(--sk-line, #EEE); vertical-align: top; }
+.sk-bookings { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.sk-bookings li { display: grid; grid-template-columns: minmax(150px, 1fr) minmax(0, 1.4fr) auto 70px; grid-template-areas: "when what status cancel"; align-items: center; gap: 8px 22px; padding: 14px 18px; border: 1px solid var(--sk-line, #EEE); border-radius: 12px; }
+.sk-bookings li.off { opacity: .65; }
+.sk-bk-when, .sk-bk-what { display: grid; gap: 3px; justify-items: start; }
+.sk-bk-when { grid-area: when; } .sk-bk-what { grid-area: what; }
+.sk-bookings .sk-status { grid-area: status; justify-self: start; }
+.sk-bookings form { grid-area: cancel; justify-self: end; }
+.sk-bk-when span { font-size: .95em; }
+.sk-bk-what small { color: var(--sk-muted, #6B7280); }
+@container (max-width: 560px) {
+  .sk-bookings li { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "when status" "what cancel"; align-items: start; }
+  .sk-bookings .sk-status { justify-self: end; }
+  .sk-bookings form { align-self: end; }
+}
 .sk-status { display: inline-block; padding: 2px 10px; border-radius: 999px; background: #EEF2FF; color: #3730A3; font-size: .85em; white-space: nowrap; }
 .sk-status.st-new, .sk-status.tk-open { background: #FEF3C7; color: #92400E; }
+.sk-status.st-confirmed { background: #DBEAFE; color: #1E40AF; }
 .sk-status.st-done, .sk-status.tk-answered { background: #DCFCE7; color: #166534; }
 .sk-status.st-canceled, .sk-status.tk-closed { background: #F3F4F6; color: #6B7280; }
 .sk-address { display: flex; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--sk-line, #EEE); }

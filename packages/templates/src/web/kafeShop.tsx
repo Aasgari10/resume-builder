@@ -448,11 +448,11 @@ export function CheckoutView(view: ShopView) {
   );
 }
 
-export function AccountView(view: ShopView) {
+export function AccountView(view: ShopView & { bookings?: "only" | "also" }) {
   return (
     <section className="kf-wrap kf-inner">
       <Heading title={view.visitor.customer ? "حساب کاربری" : "ورود یا ثبت‌نام"} />
-      <AccountPage link={view.link} page={view.page} visitor={view.visitor} />
+      <AccountPage link={view.link} page={view.page} visitor={view.visitor} bookings={view.bookings} />
     </section>
   );
 }

@@ -202,10 +202,11 @@ model ShopCustomer {
   createdAt    DateTime  @default(now())
   deletedAt    DateTime? // in the panel's trash since then (hidden everywhere); removed for good after 30 days
 
-  site    Site         @relation(fields: [siteId], references: [id], onDelete: Cascade)
-  orders  ShopOrder[]
-  reviews ShopReview[]
-  tickets ShopTicket[]
+  site     Site          @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  orders   ShopOrder[]
+  reviews  ShopReview[]
+  tickets  ShopTicket[]
+  messages SiteMessage[]
 
   @@unique([siteId, phone])
 }
@@ -266,29 +267,32 @@ enum ShopOrderStatus {
 // A booking (salon appointment, restaurant table), a contact message or a newsletter sign-up, sent
 // through a form of a published site; the owner sees and manages them in the panel's inbox.
 model SiteMessage {
-  id        String            @id @default(cuid())
-  siteId    String
-  kind      SiteMessageKind
-  status    SiteMessageStatus @default(NEW)
-  code      String?           @unique // tracking code of a booking, shown to the visitor
-  name      String?
-  phone     String?
-  email     String?
-  subject   String?
-  text      String?
-  service   String? // the chosen service of a booking
-  date      String? // as the visitor entered it (yyyy-mm-dd)
-  time      String? // hh:mm
-  guests    Int?
-  page      String? // the page the form was sent from
-  ownerNote String? // the owner's own note, never shown to the visitor
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
-  deletedAt DateTime? // in the panel's trash since then; removed for good after 30 days
+  id         String            @id @default(cuid())
+  siteId     String
+  kind       SiteMessageKind
+  status     SiteMessageStatus @default(NEW)
+  code       String?           @unique // tracking code of a booking, shown to the visitor
+  name       String?
+  phone      String?
+  email      String?
+  subject    String?
+  text       String?
+  service    String? // the chosen service of a booking
+  date       String? // as the visitor entered it (yyyy-mm-dd)
+  time       String? // hh:mm
+  guests     Int?
+  page       String? // the page the form was sent from
+  ownerNote  String? // the owner's own note, never shown to the visitor
+  customerId String? // the site's signed-in customer who sent it (their "my bookings")
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  deletedAt  DateTime? // in the panel's trash since then; removed for good after 30 days
 
-  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  site     Site          @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  customer ShopCustomer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
 
   @@index([siteId, kind, createdAt])
+  @@index([customerId])
 }
 
 enum SiteMessageKind {

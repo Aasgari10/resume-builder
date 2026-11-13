@@ -15,6 +15,8 @@ import { sampleImage, sampleResume } from "../sample";
 import type { TemplateProps } from "../types";
 import { FormMeta, Opt, PageLink, Socials, blockOn, ed, item, outside, partsCss } from "./parts";
 import { mapEmbed } from "./golsara";
+import { AccountPage, shopkitCss } from "./shopkit";
+import { TrackBooking, bookingCss } from "./booking";
 
 export const THERAPY_BLOCKS = [
   { key: "hero", label: "اسلایدر بالای صفحه" },
@@ -38,7 +40,7 @@ const hasBlog = (data: ResumeData) => livePosts(data.site?.shop).length > 0 && p
 
 export function therapyPages(data: ResumeData): string[] {
   const blog = hasBlog(data) ? ["/blog", ...livePosts(data.site?.shop).map((p) => `/blog/${p.id}`)] : [];
-  return ["/", ...(pageOn(data, "/about") ? ["/about"] : []), "/booking", ...blog, "/contact"];
+  return ["/", ...(pageOn(data, "/about") ? ["/about"] : []), "/booking", ...blog, "/contact", "/account", "/track"];
 }
 
 type View = { ctx: Ctx; shop: Shop; link: (p: string) => string; editing: boolean; page: string; visitor: Visitor };
@@ -54,9 +56,12 @@ export function TherapySite(props: TemplateProps) {
     : page === "/about" ? <About {...view} />
     : page === "/booking" ? <Booking {...view} />
     : kind === "blog" ? (id ? <Post {...view} id={id} /> : <Blog {...view} />)
+    : page === "/account" ? <Account {...view} />
+    : page === "/track" ? <Track {...view} />
     : <Contact {...view} />;
+  const visitorPage = page === "/account" || page === "/track";
   return (
-    <WebPage ctx={ctx} className="th" css={partsCss + css}>
+    <WebPage ctx={ctx} className="th" css={partsCss + (visitorPage ? shopkitCss + bookingCss : "") + css}>
       <Header {...view} />
       <main key={page}>{body}</main>
       <Footer {...view} />
@@ -212,6 +217,7 @@ function Header(view: View) {
             <nav className="th-drawer">{nav}</nav>
           </details>
           <nav className="th-nav">{nav}</nav>
+          <div className="th-tools">
           {hasBlog(ctx.data) && (
             <details className="th-search">
               <summary aria-label="جستجو">
@@ -225,6 +231,10 @@ function Header(view: View) {
               </form>
             </details>
           )}
+            <PageLink to="/account" link={link} className="th-acc" current={view.page === "/account"} label={view.visitor.customer ? "نوبت‌های من" : "ورود و نوبت‌های من"}>
+              <Svg name="user" />
+            </PageLink>
+          </div>
         </div>
       </div>
     </header>
@@ -755,11 +765,11 @@ function Booking(view: View) {
               )}
               <label>
                 نام و نام خانوادگی *
-                <input name="name" required autoComplete="name" />
+                <input name="name" required autoComplete="name" defaultValue={visitor.customer?.name} />
               </label>
               <label>
                 شماره‌ی موبایل *
-                <input name="phone" required inputMode="tel" dir="ltr" autoComplete="tel" placeholder="09xx xxx xxxx" />
+                <input name="phone" required inputMode="tel" dir="ltr" autoComplete="tel" placeholder="09xx xxx xxxx" defaultValue={visitor.customer?.phone} />
               </label>
               <label className="th-full">
                 ایمیل (اختیاری)
@@ -775,8 +785,46 @@ function Booking(view: View) {
               <p className="th-muted">پس از ثبت، کد پیگیری نمایش داده می‌شود و برای تأیید با شما تماس می‌گیریم.</p>
             </form>
           )}
+          <p className="th-mine">
+            {visitor.customer ? (
+              <PageLink to="/account" link={link}>نوبت‌های من</PageLink>
+            ) : (
+              <PageLink to="/account" link={link}>ورود یا ثبت‌نام</PageLink>
+            )}
+            <span>·</span>
+            <PageLink to="/track" link={link}>پیگیری نوبت با کد</PageLink>
+          </p>
           {editing && <p className="th-muted">روزها و ساعت‌های کاری، طول هر جلسه و تعطیلی‌ها را در پنل مدیریت، بخش «ساعت کاری و ظرفیت» تعیین کنید.</p>}
         </div>
+      </section>
+    </>
+  );
+}
+
+/* ───────────── The visitor's bookings ───────────── */
+
+function Account(view: View) {
+  return (
+    <>
+      <PageTop view={view} title={view.visitor.customer ? "نوبت‌های من" : "ورود یا ثبت‌نام"} />
+      <section className="th-sec th-wrap th-visitor">
+        <AccountPage link={view.link} page={view.page} visitor={view.visitor} bookings="only" />
+        {!view.visitor.customer && (
+          <p className="th-muted th-center">
+            بدون حساب هم می‌توانید نوبت بگیرید و آن را با <PageLink to="/track" link={view.link}>کد پیگیری</PageLink> دنبال کنید.
+          </p>
+        )}
+      </section>
+    </>
+  );
+}
+
+function Track(view: View) {
+  return (
+    <>
+      <PageTop view={view} title="پیگیری نوبت" />
+      <section className="th-sec th-wrap th-visitor">
+        <TrackBooking link={view.link} visitor={view.visitor} />
       </section>
     </>
   );
@@ -1239,6 +1287,15 @@ const css = /* css */ `
 .th-search input { flex: 1; padding: 14px 16px; font: inherit; }
 .th-search button { display: grid; place-items: center; width: 52px; border: 0; background: var(--th-peach); color: #fff; cursor: pointer; }
 .th-burger { display: none; }
+.th-tools { display: flex; align-items: center; gap: 18px; }
+.th-acc { display: grid; place-items: center; color: #5A544F; transition: color .3s; }
+.th-acc:hover, .th-acc[aria-current="page"] { color: var(--th-peach); }
+.th-acc .th-ico { width: 26px; height: 26px; stroke-width: 1.4; }
+.th-mine { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 18px 0 0; font-size: 14px; color: var(--th-muted); }
+.th-mine a { color: var(--th-ink); text-decoration: underline; text-underline-offset: 4px; }
+.th-visitor { --sk-accent: var(--th-peach); --sk-line: var(--th-line); --sk-muted: var(--th-muted); }
+.th-visitor .bk { --bk-accent: var(--th-peach); --bk-ink: var(--th-ink); --bk-soft: var(--th-cream); --bk-line: var(--th-line); --bk-dark: var(--th-dark); --bk-head: var(--th-head); }
+.th-center { text-align: center; }
 
 /* Hero slider */
 .th-hero { position: relative; overflow: hidden; height: clamp(460px, 52cqi, 1000px); color: #fff; background: #333; }

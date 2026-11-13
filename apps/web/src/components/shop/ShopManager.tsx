@@ -94,7 +94,7 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
   useEffect(() => {
     if (!resumeId) return setMode("sample");
     api.shopSummary(resumeId).then(
-      (r) => setMode(!r.summary || (r.summary.orders === 0 && r.summary.customers === 0) ? "sample" : "real"),
+      (r) => setMode(!r.summary || (r.summary.orders === 0 && r.summary.customers === 0 && !r.summary.messages) ? "sample" : "real"),
       () => setMode("real"),
     );
   }, [resumeId]);

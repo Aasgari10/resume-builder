@@ -14,7 +14,7 @@ import { WebPage, webCtx, type Ctx } from "./kit";
 import { safeUrl } from "../format";
 import { sampleImage, sampleResume } from "../sample";
 import type { TemplateProps } from "../types";
-import { BookingPicker, bookingCss } from "./booking";
+import { BookingPicker, TrackBooking, bookingCss } from "./booking";
 import { FormMeta, Opt, PageLink, Socials, blockOn, ed, item, outside, partsCss } from "./parts";
 import { ZoomOpen } from "./zoom";
 import { InfoPage, infoPages, onSale, shopkitCss } from "./shopkit";
@@ -61,10 +61,10 @@ export function ladivaPages(data: ResumeData): string[] {
   const shop = data.site?.shop;
   const sold = soldProducts(shop);
   const shopPages = sold.length
-    ? ["/shop", ...soldCategories(shop).filter((c) => sold.some((p) => p.categoryId === c.id)).map((c) => `/category/${c.id}`), ...sold.map((p) => `/product/${p.id}`), "/cart", "/checkout", "/thanks", "/account", ...infoPages(shop).filter((p) => p !== "/contact")]
+    ? ["/shop", ...soldCategories(shop).filter((c) => sold.some((p) => p.categoryId === c.id)).map((c) => `/category/${c.id}`), ...sold.map((p) => `/product/${p.id}`), "/cart", "/checkout", "/thanks", ...infoPages(shop).filter((p) => p !== "/contact")]
     : [];
   const blog = hasBlog(data) ? ["/blog", ...livePosts(shop).map((p) => `/blog/${p.id}`)] : [];
-  return ["/", "/services", ...servicesOf(shop).map((c) => `/services/${c.id}`), ...(pageOn(data, "/about") ? ["/about"] : []), "/appointment", ...blog, "/contact", ...shopPages];
+  return ["/", "/services", ...servicesOf(shop).map((c) => `/services/${c.id}`), ...(pageOn(data, "/about") ? ["/about"] : []), "/appointment", ...blog, "/contact", ...shopPages, "/account", "/track"];
 }
 
 type View = { ctx: Ctx; shop: Shop; link: (p: string) => string; editing: boolean; page: string; visitor: Visitor };
@@ -88,7 +88,8 @@ export function LadivaSite(props: TemplateProps) {
     : page === "/cart" ? <CartView {...view} />
     : page === "/checkout" ? <CheckoutView {...view} />
     : page === "/thanks" ? <ThanksView {...view} />
-    : page === "/account" ? <AccountView {...view} />
+    : page === "/account" ? <AccountView {...view} bookings={soldProducts(shop).length ? "also" : "only"} />
+    : page === "/track" ? <Track {...view} />
     : (
       <div className="kf-wrap kf-inner">
         <InfoPage data={ctx.data} page={page} link={view.link} editing={view.editing} visitor={view.visitor} />
@@ -364,15 +365,11 @@ function Header(view: View) {
           <nav className="ld-nav">{nav(false)}</nav>
           <Logo view={view} />
           <div className="ld-tools">
-            {sells && (
-              <>
-                <PageLink to="/account" link={link} className="kf-bag" current={view.page === "/account"}>
-                  <KIcon name="user" />
-                  <span className="sr-only">حساب کاربری</span>
-                </PageLink>
-                <BagLink view={view} />
-              </>
-            )}
+            <PageLink to="/account" link={link} className="kf-bag" current={view.page === "/account"}>
+              <KIcon name="user" />
+              <span className="sr-only">{sells ? "حساب کاربری" : "نوبت‌های من"}</span>
+            </PageLink>
+            {sells && <BagLink view={view} />}
             <PageLink to="/appointment" link={link} className="ld-btn line ld-book" current={view.page === "/appointment"}>
               رزرو نوبت
             </PageLink>
@@ -393,11 +390,11 @@ function BookingForm({ view, className, full, button = "ثبت درخواست ن
       <form method="get" action={view.link("/appointment")} className={`ld-form ${className ?? ""}`}>
         <label className="ld-field">
           <span>نام شما</span>
-          <input name="name" autoComplete="name" />
+          <input name="name" autoComplete="name" defaultValue={view.visitor.customer?.name} />
         </label>
         <label className="ld-field">
           <span>شماره‌ی تماس</span>
-          <input name="phone" inputMode="tel" dir="ltr" autoComplete="tel" />
+          <input name="phone" inputMode="tel" dir="ltr" autoComplete="tel" defaultValue={view.visitor.customer?.phone} />
         </label>
         <label className="ld-field ld-full">
           <span>خدمت</span>
@@ -1234,11 +1231,11 @@ function SalonPicker({ view }: { view: View }) {
       )}
       <label className="half">
         نام و نام خانوادگی *
-        <input name="name" required autoComplete="name" defaultValue={q.name} />
+        <input name="name" required autoComplete="name" defaultValue={q.name ?? view.visitor.customer?.name} />
       </label>
       <label className="half">
         شماره‌ی موبایل *
-        <input name="phone" required inputMode="tel" dir="ltr" autoComplete="tel" defaultValue={q.phone} />
+        <input name="phone" required inputMode="tel" dir="ltr" autoComplete="tel" defaultValue={q.phone ?? view.visitor.customer?.phone} />
       </label>
       <label>
         توضیحات (اختیاری)
@@ -1262,11 +1259,28 @@ function Appointment(view: View) {
           <p>رزرو نوبت فقط چند دقیقه طول می‌کشد؛ پس از بررسی برای تأیید با شما تماس می‌گیریم.</p>
           {view.shop.schedule ? <SalonPicker view={view} /> : <BookingForm view={view} full className="ld-form-wide" />}
           {site?.contactNote && <p className="ld-muted ld-appt-hours">ساعات کاری: {site.contactNote.split("\n").join(" · ")}</p>}
+          <p className="ld-mine">
+            <PageLink to="/account" link={view.link}>{view.visitor.customer ? "نوبت‌های من" : "ورود یا ثبت‌نام"}</PageLink>
+            <span>·</span>
+            <PageLink to="/track" link={view.link}>پیگیری نوبت با کد</PageLink>
+          </p>
         </div>
         <span className="ld-appt-pic" {...ed("site.shop.trendImage", "image", "عکس کنار فرم")}>
           {pic && <img src={pic} alt="" />}
         </span>
       </div>
+    </section>
+  );
+}
+
+function Track(view: View) {
+  return (
+    <section className="ld-wrap ld-inner">
+      <h1 className="ld-title ld-track-head">
+        <Fancy text="پیگیری *نوبت*" />
+      </h1>
+      <p className="ld-muted ld-track-head">کد پیگیری و شماره‌ای را که با آن نوبت گرفتید وارد کنید تا وضعیت نوبت را ببینید یا آن را لغو کنید.</p>
+      <TrackBooking link={view.link} visitor={view.visitor} />
     </section>
   );
 }
@@ -1899,6 +1913,10 @@ const css = /* css */ `
 .ld-appt { display: grid; grid-template-columns: 1.2fr 1fr; background: var(--ld-cream); }
 .ld-appt:has(.bk) { grid-template-columns: 1fr; }
 .ld-appt:has(.bk) .ld-appt-pic { display: none; }
+.ld-track-head { text-align: center; }
+.ld-track-head + .bk-track { margin-top: 30px; }
+.ld-mine { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 0; font-size: 14px; opacity: .85; }
+.ld-mine a { text-decoration: underline; text-underline-offset: 4px; }
 .ld .bk { --bk-accent: var(--ld-rose); --bk-ink: var(--ld-ink); --bk-soft: #fff; --bk-line: var(--ld-line); --bk-dark: var(--ld-ink); --bk-head: var(--ld-head); margin-top: 10px; }
 .ld-appt-form { display: grid; align-content: center; gap: 16px; padding: 60px clamp(24px, 6cqi, 80px); }
 .ld-appt-form > p { color: var(--ld-muted); }

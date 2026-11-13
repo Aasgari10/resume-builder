@@ -204,7 +204,7 @@ export type ShopCustomerDetail = {
   tickets: { id: string; subject: string; status: ShopTicket["status"]; updatedAt: string }[];
 };
 export type ShopProductStat = { sold: number; revenue: number; rating?: number; reviews?: number };
-export type ShopSummary = { customers: number; orders: number; newOrders: number; openTickets: number; waitingReviews: number; sales: number; monthSales: number; monthOrders: number; recent: ShopOrder[] };
+export type ShopSummary = { customers: number; orders: number; messages?: number; newOrders: number; openTickets: number; waitingReviews: number; sales: number; monthSales: number; monthOrders: number; recent: ShopOrder[] };
 /** The panel's trash: deleted orders, customers, comments and tickets, removed for good after `days`. */
 export type ShopTrashKind = "orders" | "customers" | "reviews" | "tickets";
 export type ShopTrash = {

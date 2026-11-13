@@ -12,7 +12,7 @@ import { WebPage, webCtx, type Ctx } from "./kit";
 import { safeUrl } from "../format";
 import { sampleImage, sampleResume } from "../sample";
 import type { TemplateProps } from "../types";
-import { BookingPicker, bookingCss } from "./booking";
+import { BookingPicker, TrackBooking, bookingCss } from "./booking";
 import { FormMeta, Icon, Opt, PageLink, Socials, blockOn, ed, item, outside, partsCss } from "./parts";
 import { ZoomOpen } from "./zoom";
 import { AccountPage, CouponBox, hasChoices, InfoPage, infoPages, onSale, OptionPicker, percentOff, Reviews, SORTS, SpecsTable, Stars, filterProducts, shopkitCss } from "./shopkit";
@@ -37,7 +37,7 @@ export function patioPages(data: ResumeData): string[] {
   const products = visible(shop);
   const cats = (shop?.categories ?? []).filter((c) => products.some((p) => p.categoryId === c.id));
   const info = infoPages(shop).filter((p) => p !== "/contact");
-  return ["/", "/menu", "/shop", ...(pageOn(data, "/about") ? ["/about"] : []), "/reservation", "/contact", ...cats.map((c) => `/category/${c.id}`), ...products.map((p) => `/product/${p.id}`), "/cart", "/wishlist", "/search", "/checkout", "/thanks", "/account", ...info];
+  return ["/", "/menu", "/shop", ...(pageOn(data, "/about") ? ["/about"] : []), "/reservation", "/contact", ...cats.map((c) => `/category/${c.id}`), ...products.map((p) => `/product/${p.id}`), "/cart", "/wishlist", "/search", "/checkout", "/thanks", "/account", "/track", ...info];
 }
 
 type View = { ctx: Ctx; shop: Shop; link: (p: string) => string; editing: boolean; visitor: Visitor; page: string };
@@ -62,6 +62,7 @@ export function PatioShop(props: TemplateProps) {
   else if (kind === "search") body = <Search {...view} />;
   else if (kind === "checkout") body = <Checkout {...view} />;
   else if (kind === "account") body = <Account {...view} />;
+  else if (kind === "track") body = <Track {...view} />;
   else if (kind === "thanks") body = <Thanks {...view} />;
   else
     body = (
@@ -977,11 +978,11 @@ function TablePicker({ view }: { view: View }) {
         <p className="pt-res-party">میز برای {fa(guests)} نفر</p>
         <label className="half">
           نام و نام خانوادگی *
-          <input name="name" required autoComplete="name" />
+          <input name="name" required autoComplete="name" defaultValue={view.visitor.customer?.name} />
         </label>
         <label className="half">
           شماره‌ی تماس *
-          <input name="phone" inputMode="tel" dir="ltr" required autoComplete="tel" />
+          <input name="phone" inputMode="tel" dir="ltr" required autoComplete="tel" defaultValue={view.visitor.customer?.phone} />
         </label>
         <label>
           توضیحات (اختیاری)
@@ -1017,17 +1018,24 @@ function Reservation(view: View) {
       </div>
       <div className="pt-contact-text pt-res-form pt-rise">
         {shop.schedule ? (
-          <TablePicker view={view} />
+          <>
+            <TablePicker view={view} />
+            <p className="pt-mine">
+              <PageLink to="/account" link={view.link}>{view.visitor.customer ? "رزروهای من" : "ورود یا ثبت‌نام"}</PageLink>
+              <span>·</span>
+              <PageLink to="/track" link={view.link}>پیگیری رزرو با کد</PageLink>
+            </p>
+          </>
         ) : (
         <form method="post" action={view.link("/_form")} className="pt-form">
 <FormMeta kind="booking" back={view.page} />
             <label>
               نام و نام خانوادگی
-              <input name="name" required />
+              <input name="name" required defaultValue={view.visitor.customer?.name} />
             </label>
             <label>
               شماره‌ی تماس
-              <input name="phone" inputMode="tel" dir="ltr" required />
+              <input name="phone" inputMode="tel" dir="ltr" required defaultValue={view.visitor.customer?.phone} />
             </label>
             <label>
               تاریخ
@@ -1532,7 +1540,16 @@ function Account(view: View) {
   return (
     <section className="pt-wrap pt-inner">
       <PageHead view={view} title={view.visitor.customer ? "حساب کاربری" : "ورود یا ثبت‌نام"} />
-      <AccountPage link={view.link} page={view.page} visitor={view.visitor} />
+      <AccountPage link={view.link} page={view.page} visitor={view.visitor} bookings="also" />
+    </section>
+  );
+}
+
+function Track(view: View) {
+  return (
+    <section className="pt-wrap pt-inner">
+      <PageHead view={view} title="پیگیری رزرو" />
+      <TrackBooking link={view.link} visitor={view.visitor} />
     </section>
   );
 }
@@ -1976,6 +1993,8 @@ section[id^="pt-cat-"] { scroll-margin-top: 160px; }
 .pt-guests label { display: grid; gap: 8px; font-size: 14px; }
 .pt-guests select { min-width: 160px; padding: 11px 12px; border: 1px solid var(--pt-line); background: #151515; color: #fff; font: inherit; }
 .pt-res-party { margin: 0; color: var(--pt-gold); font-weight: 700; }
+.pt-mine { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; font-size: 14px; opacity: .85; }
+.pt-mine a { text-decoration: underline; text-underline-offset: 4px; }
 .pt .bk { --bk-accent: var(--pt-orange); --bk-ink: #fff; --bk-soft: #1C1C1C; --bk-line: rgb(255 255 255 / .14); --bk-dark: var(--pt-orange); --bk-on: #fff; --bk-head: var(--pt-head); }
 .pt .bk-cal { background: #111; }
 .pt .bk-day { color: rgb(255 255 255 / .25); }
