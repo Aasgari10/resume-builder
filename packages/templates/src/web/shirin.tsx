@@ -2418,6 +2418,13 @@ const css = /* css */ `
 .sn-menu[open] .sn-x { position: absolute; top: 16px; inset-inline-end: 16px; display: block; width: 40px; height: 40px; padding: 9px; border-radius: 50%; background: #fff; color: #111; }
 .sn-drawer { position: fixed; top: 0; inset-inline-start: 0; z-index: 101; display: grid; align-content: start; gap: 4px; width: min(340px, 86%); height: 100vh; padding: 18px 22px 90px; overflow-y: auto; background: var(--color-bg); box-shadow: 0 0 40px rgb(0 0 0 / .2); animation: sn-drawer .35s cubic-bezier(.2, 1, .3, 1); }
 @keyframes sn-drawer { from { transform: translateX(100%); } }
+/* The open phone menu sits above everything of the page (the header is its own layer, under the bar of shortcuts otherwise). */
+.sn-head:has(.sn-menu[open]) { z-index: 200; }
+.sn:has(.sn-menu[open]) .sn-phonebar { visibility: hidden; }
+.sn .sn-drawer .sn-nav-item > a { color: var(--sn-brown); padding: 12px 0; }
+.sn .sn-drawer .sn-nav-item > a[aria-current="page"] { color: var(--sn-red); }
+.sn .sn-drawer { color: var(--sn-brown); }
+.sn .sn-menu[open] .sn-x { width: 42px; height: 42px; padding: 10px; color: #111; stroke-width: 2; }
 .sn-drawer-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .sn .sn-drawer-head { margin: -18px -22px 10px; padding: 14px 22px; background: var(--sn-choc); }
 .sn-drawer-search { display: flex; margin-bottom: 8px; border: 1px solid var(--sn-line); }

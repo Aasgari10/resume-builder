@@ -2681,6 +2681,9 @@ const css = /* css */ `
 .zr-menu[open] .zr-x { position: absolute; top: 16px; inset-inline-end: 16px; display: block; width: 40px; height: 40px; padding: 9px; border-radius: 50%; background: #fff; color: #111; }
 .zr-drawer { position: fixed; top: 0; inset-inline-start: 0; z-index: 101; display: grid; align-content: start; gap: 4px; width: min(340px, 86%); height: 100vh; padding: 18px 22px 90px; overflow-y: auto; background: var(--color-bg); box-shadow: 0 0 40px rgb(0 0 0 / .2); animation: zr-drawer .35s cubic-bezier(.2, 1, .3, 1); }
 @keyframes zr-drawer { from { transform: translateX(100%); } }
+/* The open phone menu sits above everything of the page (the header is its own layer, under the bar of shortcuts otherwise). */
+.zr-head:has(.zr-menu[open]) { z-index: 200; }
+.zr:has(.zr-menu[open]) .zr-phonebar { visibility: hidden; }
 .zr-drawer-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .zr-drawer-search { display: flex; margin-bottom: 8px; border: 1px solid var(--zr-line); }
 .zr-drawer-nav { display: grid; }
