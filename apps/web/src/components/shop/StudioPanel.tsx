@@ -20,7 +20,7 @@ const toman = (n: number) => `${showNumber(Math.round(n))} تومان`;
 const live = (shop: Shop) => shop.products.filter((p) => !p.trashed);
 
 /** What is booked: a photo session (studio), an appointment (salon) or a table (restaurant). */
-export type BookingKind = "studio" | "salon" | "table" | "clinic" | "room" | "space";
+export type BookingKind = "studio" | "salon" | "table" | "clinic" | "room" | "space" | "stay";
 const WORDS: Record<BookingKind, { one: string; many: string; who: string; what: string }> = {
   studio: { one: "نوبت", many: "نوبت‌ها", who: "مشتری", what: "پکیج" },
   salon: { one: "نوبت", many: "نوبت‌ها", who: "مشتری", what: "خدمت" },
@@ -28,12 +28,14 @@ const WORDS: Record<BookingKind, { one: string; many: string; who: string; what:
   clinic: { one: "نوبت", many: "نوبت‌ها", who: "مراجع", what: "نوع جلسه" },
   room: { one: "رزرو", many: "رزروها", who: "مشتری", what: "اتاق" },
   space: { one: "رزرو", many: "رزروها", who: "مشتری", what: "استودیو" },
+  stay: { one: "رزرو", many: "رزروها", who: "مهمان", what: "اتاق" },
 };
 /** What a booking is for, as shown in lists: the package or service, or the number of guests. */
 const subject = (b: SiteMessage, kind: BookingKind) =>
   kind === "table" ? (b.guests ? `${showNumber(b.guests)} نفر` : "میز")
   : kind === "room" && b.guests ? `${b.service || "—"} (${showNumber(b.guests)} نفر)`
   : kind === "space" && b.guests ? `${b.service || "—"} (${showNumber(b.guests)} ساعت)`
+  : kind === "stay" ? `${b.service || "—"} (${showNumber(b.nights ?? 1)} شب${b.guests ? `، ${showNumber(b.guests)} نفر` : ""})`
   : b.service || "—";
 
 /** The studio's bookings (or the sample ones), shared by the tabs below. */
@@ -458,7 +460,7 @@ export function StudioReports({ resumeId, shop, kind = "studio" }: { resumeId?: 
   });
   const max = Math.max(1, ...rows.map((r) => r.all));
   // Per package (studio), per service (salon) or per party size (restaurant).
-  const groups = kind === "studio" || kind === "room" || kind === "space" ? live(shop).map((p) => p.name) : kind === "salon" ? shop.categories.filter((c) => !c.sell).map((c) => c.name) : [...new Set(bookings.map((b) => subject(b, kind)))].sort();
+  const groups = kind === "studio" || kind === "room" || kind === "space" || kind === "stay" ? live(shop).map((p) => p.name) : kind === "salon" ? shop.categories.filter((c) => !c.sell).map((c) => c.name) : [...new Set(bookings.map((b) => subject(b, kind)))].sort();
   const byPack = groups.map((name) => {
     const list = bookings.filter((b) => (kind === "table" ? subject(b, kind) : b.service) === name);
     const done = list.filter((b) => b.status === "DONE");
@@ -536,9 +538,9 @@ export function StudioReports({ resumeId, shop, kind = "studio" }: { resumeId?: 
 /* ───────────── Working hours and capacity ───────────── */
 
 /** The browser's date box shows the Gregorian date; this shows the same day in the Persian calendar. */
-const jalaliHint = (d?: string) => (d ? new Date(`${d}T12:00:00Z`).toLocaleDateString("fa-IR-u-ca-persian", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long", year: "numeric" }) : undefined);
+export const jalaliHint = (d?: string) => (d ? new Date(`${d}T12:00:00Z`).toLocaleDateString("fa-IR-u-ca-persian", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long", year: "numeric" }) : undefined);
 
-const WEEKDAYS: [number, string][] = [
+export const WEEKDAYS: [number, string][] = [
   [6, "شنبه"],
   [0, "یکشنبه"],
   [1, "دوشنبه"],

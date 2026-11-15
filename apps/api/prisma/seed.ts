@@ -39,6 +39,7 @@ const templates = [
   { id: "boutique-shop", name: "بوتیک (فروشگاه)", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
   { id: "patio-shop", name: "پاتیوتایم (رستوران)", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
   { id: "tanin-site", name: "طنین (استودیوی موسیقی)", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
+  { id: "narenj-site", name: "نارنج (اقامتگاه)", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
   { id: "escape-site", name: "گریزگاه (اتاق فرار)", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
   { id: "therapy-site", name: "مهرپویا (مطب روان‌شناسی)", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
   { id: "cropit-site", name: "کراپ ایت (آتلیه عکاسی)", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
@@ -47,6 +48,7 @@ const templates = [
   { id: "juno-shop", name: "جونو (اسباب‌بازی)", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
   { id: "grogin-shop", name: "گروگین (سوپرمارکت)", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
   { id: "homemart-shop", name: "هوم‌مارت (فروشگاه لوازم خانگی)", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
+  { id: "zarin-shop", name: "زرین (طلا و جواهر)", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
 ];
 
 async function main() {

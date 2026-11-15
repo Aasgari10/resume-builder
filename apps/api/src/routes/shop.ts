@@ -15,10 +15,11 @@ import {
   toggleWishlist,
   variantKey,
   variantOf,
-  takenKey,
-  spanOf,
-  spanTimes,
+  addDay,
+  countTaken,
+  defaultSchedule,
   todayTehran,
+  type Schedule,
   type BookingView,
   type CartLine,
   type Visitor,
@@ -348,31 +349,25 @@ async function accountAction(req: Request, res: Response, subdomain: string, bas
  * Places already taken from today on, by "yyyy-mm-dd hh:mm" (canceled bookings free theirs): one per
  * booking, or its number of guests when the capacity is in seats (a restaurant).
  */
-export async function takenSlots(siteId: string, schedule: { seats?: boolean; byService?: boolean; span?: boolean; slot?: number } = {}): Promise<Record<string, number>> {
-  const seats = Boolean(schedule.seats);
+export async function takenSlots(siteId: string, schedule: Partial<Schedule> = {}): Promise<Record<string, number>> {
+  const s = { ...defaultSchedule(), ...schedule };
+  // A stay that began up to a month ago may still hold tonight.
+  const from = s.nights ? addDay(todayTehran(), -31) : todayTehran();
   const rows = await prisma.siteMessage.findMany({
-    where: { siteId, kind: "BOOKING", deletedAt: null, status: { not: "CANCELED" }, date: { gte: todayTehran() }, time: { not: null } },
-    select: { date: true, time: true, guests: true, service: true },
+    where: { siteId, kind: "BOOKING", deletedAt: null, status: { not: "CANCELED" }, date: { gte: from }, time: { not: null } },
+    select: { date: true, time: true, guests: true, service: true, nights: true },
     take: 20000,
   });
-  const out: Record<string, number> = {};
-  for (const r of rows) {
-    // A booking of several slots in a row (a studio rented for hours) takes each of them.
-    const times = schedule.span ? spanTimes({ slot: schedule.slot ?? 60 }, r.time!, spanOf(schedule, r.guests)) : [r.time!];
-    for (const t of times) {
-      const key = takenKey(schedule, r.date!, t, r.service);
-      out[key] = (out[key] ?? 0) + (seats ? Math.max(1, r.guests ?? 1) : 1);
-    }
-  }
-  return out;
+  return countTaken(s, rows);
 }
 
-const asView = (m: { code: string | null; date: string | null; time: string | null; service: string | null; guests: number | null; status: BookingView["status"]; createdAt: Date }): BookingView => ({
+const asView = (m: { code: string | null; date: string | null; time: string | null; service: string | null; guests: number | null; nights?: number | null; status: BookingView["status"]; createdAt: Date }): BookingView => ({
   code: m.code ?? "",
   date: m.date ?? undefined,
   time: m.time ?? undefined,
   service: m.service ?? undefined,
   guests: m.guests ?? undefined,
+  nights: m.nights ?? undefined,
   status: m.status,
   at: m.createdAt.toISOString(),
 });
@@ -382,7 +377,7 @@ const samePhone = (a: string | null | undefined, b: string | null | undefined) =
   return Boolean(d(a)) && d(a) === d(b);
 };
 
-export async function loadVisitor(req: Request, siteId: string, page: string, schedule?: { seats?: boolean; byService?: boolean; span?: boolean; slot?: number }): Promise<Visitor> {
+export async function loadVisitor(req: Request, siteId: string, page: string, schedule?: Partial<Schedule>): Promise<Visitor> {
   const visitor = readVisitor(req);
   if (schedule) visitor.taken = await takenSlots(siteId, schedule);
   // The tracking page: a booking found by its code and the phone it was made with.

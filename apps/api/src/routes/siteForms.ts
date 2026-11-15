@@ -11,7 +11,7 @@ import { prisma } from "../db";
 import { env } from "../env";
 import { asyncHandler } from "../lib/http";
 import { subdomainFromHost, validateSubdomain } from "../lib/subdomain";
-import { freeFor, resumeDataSchema, spanOf, takenFor } from "@rb/schema";
+import { freeFor, resumeDataSchema, spanOf, stayFree, stayNights, takenFor } from "@rb/schema";
 import { signedInCustomer, takenSlots } from "./shop";
 
 export const siteFormsRouter = Router();
@@ -55,6 +55,8 @@ const body = z.object({
   date: text(20),
   time: text(10),
   guests: z.coerce.number().int().min(1).max(500).optional().catch(undefined),
+  nights: z.coerce.number().int().min(1).max(30).optional().catch(undefined), // a guesthouse stay
+
   website: z.string().max(200).optional(), // left empty by people, filled only by robots
 });
 
@@ -103,7 +105,15 @@ async function sendForm(req: Request, res: Response, rawSubdomain: string, base:
   // A site with online booking hours only takes a free time inside them (checked here again: the page may be old).
   const published = resumeDataSchema.safeParse(site.publishedData);
   const schedule = published.success ? published.data.site?.shop?.schedule : undefined;
-  if (kind === "BOOKING" && schedule) {
+  // A stay: the room must be free every night from the check-in day; its time is the check-in time.
+  if (kind === "BOOKING" && schedule?.nights) {
+    const room = published.success ? published.data.site?.shop?.products.find((p) => p.name === f.service && !p.hidden && !p.trashed) : undefined;
+    if (!f.date || !room) return go({ sent: "error" });
+    f.time = schedule.start;
+    f.nights = stayNights(f.nights);
+    const taken = takenFor({ byService: true }, await takenSlots(site.id, schedule), f.service);
+    if (stayFree(schedule, taken, f.date, f.nights, room.stock ?? schedule.capacity) < 1) return go({ sent: "full" });
+  } else if (kind === "BOOKING" && schedule) {
     if (!f.date || !f.time || (schedule.byService && !f.service)) return go({ sent: "error" });
     const taken = takenFor(schedule, await takenSlots(site.id, schedule), f.service);
     const need = schedule.seats ? Math.max(1, f.guests ?? 1) : 1;
@@ -112,7 +122,7 @@ async function sendForm(req: Request, res: Response, rawSubdomain: string, base:
   if (kind === "CONTACT" && !message && !f.subject) return go({ sent: "error" });
 
   const customerId = (await signedInCustomer(req, site.id)) ?? undefined;
-  const data = { siteId: site.id, kind, name, phone, email, subject: f.subject, text: message, service: f.service, date: f.date, time: f.time, guests: f.guests, page: back, customerId } as const;
+  const data = { siteId: site.id, kind, name, phone, email, subject: f.subject, text: message, service: f.service, date: f.date, time: f.time, guests: f.guests, nights: schedule?.nights ? f.nights : undefined, page: back, customerId } as const;
   if (kind === "BOOKING") {
     for (let i = 0; ; i++) {
       try {

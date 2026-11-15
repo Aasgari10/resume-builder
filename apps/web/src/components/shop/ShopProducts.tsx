@@ -9,8 +9,9 @@ import { newId } from "../editor/list";
 import { Field, ImagePicker, MoneyInput, readNumber, showNumber } from "./fields";
 import { DateTimeInput, OptionsEditor, SaleEndField, SpecsEditor } from "./ProductExtras";
 import { Pager, SelectAll, useSelection } from "./ShopOrders";
+import { GoldFields } from "./GoldPanel";
 
-type Props = { shop: Shop; setShop: (s: Partial<Shop>) => void; onSample?: () => void; focus?: string; resumeId?: string };
+type Props = { shop: Shop; setShop: (s: Partial<Shop>) => void; onSample?: () => void; focus?: string; resumeId?: string; /** A gold shop: products get weight, karat and wage, priced from the day's rate. */ gold?: boolean };
 
 type Sort = "new" | "best" | "cheap" | "dear" | "stock" | "rating" | "name";
 type StockFilter = "" | "out" | "low" | "in";
@@ -31,7 +32,7 @@ const onSale = (p: Product) => unitPrice(p) < p.price;
 /** Rounds a price to whole thousands of tomans. */
 const roundPrice = (n: number) => Math.max(0, Math.round(n / 1000) * 1000);
 
-export function Products({ shop, setShop, onSample, focus, resumeId }: Props) {
+export function Products({ shop, setShop, onSample, focus, resumeId, gold }: Props) {
   const api = useShopApi();
   const [editing, setEditing] = useState<string | null>(focus ?? null);
   const [f, setF] = useState<Filters>(NO_FILTERS);
@@ -95,6 +96,7 @@ export function Products({ shop, setShop, onSample, focus, resumeId }: Props) {
           p={current}
           categories={shop.categories}
           stat={stats[current.id]}
+          gold={gold ? shop.goldRate ?? { rate: 0, profit: 7, tax: 10 } : undefined}
           onChange={(patch) => update(current.id, patch)}
           onCopy={() => {
             const id = newId();
@@ -390,6 +392,7 @@ function ProductForm({
   p,
   categories,
   stat,
+  gold,
   onChange,
   onCopy,
   onRemove,
@@ -397,6 +400,8 @@ function ProductForm({
   p: Product;
   categories: Shop["categories"];
   stat?: ShopProductStat;
+  /** The gold rate of a gold shop (its products are priced from it). */
+  gold?: NonNullable<Shop["goldRate"]>;
   onChange: (patch: Partial<Product>) => void;
   onCopy: () => void;
   onRemove: () => void;
@@ -464,12 +469,20 @@ function ProductForm({
         <Field label="برچسب روی عکس" hint="مثلاً «جدید» یا «حراج»؛ خالی بگذارید تا نمایش داده نشود.">
           <input value={p.badge ?? ""} maxLength={20} onChange={(e) => onChange({ badge: e.target.value || undefined })} />
         </Field>
-        <Field label="قیمت">
-          <MoneyInput value={p.price} onChange={(n) => onChange({ price: n ?? 0 })} />
-        </Field>
-        <Field label="قیمت حراج" hint="اگر پر شود، قیمت اصلی خط‌خورده نمایش داده می‌شود.">
-          <MoneyInput value={p.salePrice} placeholder="بدون حراج" onChange={(n) => onChange({ salePrice: n, saleEndsAt: n === undefined ? undefined : p.saleEndsAt })} />
-        </Field>
+        {gold && p.gold ? (
+          <Field label="قیمت" hint="از وزن، عیار و اجرت با نرخ روز حساب می‌شود (بخش «طلا» پایین‌تر).">
+            <input readOnly value={formatToman(unitPrice(p))} />
+          </Field>
+        ) : (
+          <>
+            <Field label="قیمت">
+              <MoneyInput value={p.price} onChange={(n) => onChange({ price: n ?? 0 })} />
+            </Field>
+            <Field label="قیمت حراج" hint="اگر پر شود، قیمت اصلی خط‌خورده نمایش داده می‌شود.">
+              <MoneyInput value={p.salePrice} placeholder="بدون حراج" onChange={(n) => onChange({ salePrice: n, saleEndsAt: n === undefined ? undefined : p.saleEndsAt })} />
+            </Field>
+          </>
+        )}
         <Field label="موجودی" hint="خالی: نامحدود · ۰: ناموجود">
           <input
             inputMode="numeric"
@@ -486,6 +499,7 @@ function ProductForm({
           <textarea rows={4} maxLength={3000} value={p.description ?? ""} onChange={(e) => onChange({ description: e.target.value || undefined })} />
         </Field>
       </div>
+      {gold && <GoldFields p={p} rate={gold} onChange={onChange} />}
       <OptionsEditor p={p} onChange={onChange} />
       <SpecsEditor p={p} onChange={onChange} />
       <details className="shm-seo">

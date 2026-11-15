@@ -62,6 +62,10 @@ export type TemplateDefinition = {
   script?: string;
   /** Studios rented by the hour (a recording studio): a clinic-like manager with studios and services. */
   rental?: boolean;
+  /** A guesthouse: rooms booked by the night (check-in and check-out days), with extras; its own manager tabs. */
+  stay?: boolean;
+  /** A gold shop: the panel has the day's gold rate, and products are priced from weight, karat and wage. */
+  gold?: boolean;
   /**
    * Shop manager pieces this template shows on its pages; a manager tab for content the template has
    * no place for is left out. "extras" lists the sections of that tab, each with the heading it gets.

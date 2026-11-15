@@ -1333,6 +1333,11 @@ select {
 .shm-img-tools { display: flex; justify-content: center; gap: 2px; padding: 3px !important; }
 .shm-img-tools button { position: static !important; width: auto !important; height: auto !important; padding: 1px 6px !important; border-radius: 6px !important; background: rgb(255 255 255 / .22) !important; font-size: .7rem; }
 .shm-seo { border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+.shm-gold { display: grid; gap: 14px; }
+.shm-gold-fields { display: grid; gap: 10px; margin: 0; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+.shm-gold-fields legend { padding: 0 6px; font-weight: 700; }
+.shm-gold-fields p { margin: 0; font-size: .85rem; }
+.shm-gold-bill { padding: 8px 10px; border-radius: 8px; background: var(--surface-2, rgba(0,0,0,.04)); line-height: 1.9; }
 .shm-seo summary { cursor: pointer; font-weight: 600; }
 .shm-seo[open] { display: grid; gap: 10px; }
 .shm-seo p { margin: 6px 0 0; font-size: .85rem; }

@@ -231,6 +231,8 @@ export type SiteMessage = {
   date: string | null;
   time: string | null;
   guests: number | null;
+  /** A guesthouse stay: nights from the check-in day (date). */
+  nights?: number | null;
   page: string | null;
   ownerNote: string | null;
   createdAt: string;

@@ -281,6 +281,7 @@ model SiteMessage {
   date       String? // as the visitor entered it (yyyy-mm-dd)
   time       String? // hh:mm
   guests     Int?
+  nights     Int? // a guesthouse stay: nights from the check-in day (date)
   page       String? // the page the form was sent from
   ownerNote  String? // the owner's own note, never shown to the visitor
   customerId String? // the site's signed-in customer who sent it (their "my bookings")

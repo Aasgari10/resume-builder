@@ -37,7 +37,7 @@ export type Visitor = {
 };
 
 /** A booking as its visitor sees it (account and tracking pages). */
-export type BookingView = { code: string; date?: string; time?: string; service?: string; guests?: number; status: "NEW" | "SEEN" | "CONFIRMED" | "DONE" | "CANCELED"; at: string };
+export type BookingView = { code: string; date?: string; time?: string; service?: string; guests?: number; nights?: number; status: "NEW" | "SEEN" | "CONFIRMED" | "DONE" | "CANCELED"; at: string };
 
 export const emptyVisitor = (): Visitor => ({ cart: [], wishlist: [], query: {} });
 
@@ -192,3 +192,37 @@ export const SHOP_ORDER_STATUS_LABELS: Record<ShopOrderStatus, string> = {
 /** Whole tomans with digit grouping, in the page's language. */
 export const formatToman = (n: number, locale: "fa" | "en" = "fa") =>
   `${new Intl.NumberFormat(locale === "fa" ? "fa-IR" : "en-US").format(n)} ${locale === "fa" ? "تومان" : "Toman"}`;
+
+/* ───────────── Gold ───────────── */
+
+export type GoldRate = NonNullable<Shop["goldRate"]>;
+export type GoldPiece = NonNullable<Product["gold"]>;
+/** The price of a gold piece, part by part, the way Iranian gold shops write it on the bill. */
+export type GoldQuote = { gold: number; wage: number; profit: number; tax: number; stone: number; total: number; rate: number };
+
+/** Prices are rounded to whole thousands of tomans. */
+const thousands = (n: number) => Math.round(n / 1000) * 1000;
+
+/**
+ * The bill of a gold piece: gold (weight × the rate of its karat), the maker's wage (a percent of the
+ * gold), the seller's profit (a percent of gold and wage), the tax (a percent of wage and profit) and
+ * stones. The rate is for 18 karat; other karats are worked out from it (a gram of 24 karat is 24/18).
+ */
+export function goldQuote(piece: Pick<GoldPiece, "weight" | "karat" | "wage" | "stone">, rate: Pick<GoldRate, "rate" | "profit" | "tax">, wage = piece.wage): GoldQuote {
+  const perGram = (rate.rate * (piece.karat || 18)) / 18;
+  const gold = piece.weight * perGram;
+  const w = (gold * (wage || 0)) / 100;
+  const profit = ((gold + w) * (rate.profit ?? 0)) / 100;
+  const tax = ((w + profit) * (rate.tax ?? 0)) / 100;
+  const stone = piece.stone ?? 0;
+  const total = thousands(gold + w + profit + tax + stone);
+  return { gold: Math.round(gold), wage: Math.round(w), profit: Math.round(profit), tax: Math.round(tax), stone, total, rate: Math.round(perGram) };
+}
+
+/** A gold product with its price (and sale price) worked out again from the rate; other products as they are. */
+export function withGoldPrice(p: Product, rate: GoldRate | undefined): Product {
+  if (!p.gold || !rate?.rate) return p;
+  const price = goldQuote(p.gold, rate).total;
+  const salePrice = p.gold.saleWage !== undefined && p.gold.saleWage < p.gold.wage ? goldQuote(p.gold, rate, p.gold.saleWage).total : undefined;
+  return { ...p, price, salePrice };
+}

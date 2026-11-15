@@ -20,6 +20,13 @@ export const scheduleSchema = z.object({
   byService: z.boolean().optional(),
   /** A booking may run several slots in a row (a studio rented for hours): its "guests" is how many. */
   span: z.boolean().optional(),
+  /**
+   * Stays (a guesthouse): each service is a room, a booking takes it for some nights from its check-in
+   * day, and `start` is the check-in time. A room's own stock is how many of it there are.
+   */
+  nights: z.boolean().optional(),
+  /** A stay's check-out time (its check-in time is `start`). */
+  checkOut: hhmm.optional(),
   /** How many days ahead can be booked. */
   ahead: z.number().int().min(1).max(180).default(30),
   /** Days off (holidays, leave). */
@@ -116,6 +123,67 @@ export function openDays(s: Schedule, taken: Taken, now = new Date(), need = 1, 
   for (let k = 0; k <= s.ahead; k++) {
     const day = addDay(today, k);
     if (slotsOf(s, day, now).some((t) => freeFor(s, taken, day, t, length, now) >= need)) out.push(day);
+  }
+  return out;
+}
+
+/* ───────────── Stays: rooms booked by the night ───────────── */
+
+/** What a booking row needs for counting taken places (the API's rows and the preview's sample alike). */
+export type BookingRow = { date?: string | null; time?: string | null; guests?: number | null; service?: string | null; nights?: number | null; status?: string | null };
+
+/** A guesthouse's booking rules: every night open, each room on its own, check-in at 14:00 and out at 12:00. */
+export const stayDefaults = (): Schedule => ({ ...defaultSchedule(), days: [0, 1, 2, 3, 4, 5, 6], start: "14:00", end: "15:00", slot: 60, capacity: 1, ahead: 120, byService: true, nights: true, checkOut: "12:00" });
+
+/** Nights of a stay, kept between 1 and 30. */
+export const stayNights = (n?: number | null) => Math.min(30, Math.max(1, Math.floor(n ?? 1)));
+/** The nights a stay takes, as their days ("yyyy-mm-dd", one per night from the check-in day). */
+export const stayDays = (checkIn: string, nights: number) => Array.from({ length: stayNights(nights) }, (_, k) => addDay(checkIn, k));
+/** Whole days from one "yyyy-mm-dd" to another. */
+export const daysBetween = (from: string, to: string) => Math.round((Date.parse(`${to}T12:00:00Z`) - Date.parse(`${from}T12:00:00Z`)) / 86400000);
+/** Nights of Wednesday and Thursday: the Iranian weekend, often priced higher. */
+export const isWeekendNight = (day: string) => [3, 4].includes(weekdayOf(day));
+
+/** A night can be booked: inside the booking window, on an open weekday and not a day off. */
+export function nightOpen(s: Schedule, day: string, now = new Date()): boolean {
+  const today = todayTehran(now);
+  return day >= today && day <= addDay(today, s.ahead) && s.days.includes(weekdayOf(day)) && !s.closed.includes(day);
+}
+
+/**
+ * Rooms of one kind still free for a whole stay: the fewest left over its nights, and 0 when one of
+ * them cannot be booked. `taken` is that room's own count (see takenFor), `units` how many it has.
+ */
+export function stayFree(s: Schedule, taken: Taken, checkIn: string, nights: number, units = 1, now = new Date()): number {
+  let free = Math.max(1, units);
+  for (const day of stayDays(checkIn, nights)) {
+    if (!nightOpen(s, day, now)) return 0;
+    free = Math.min(free, Math.max(1, units) - (taken[slotKey(day, s.start)] ?? 0));
+  }
+  return Math.max(0, free);
+}
+
+/**
+ * Places taken from today on, by takenKey: each slot of a booking (several in a row on a schedule
+ * that spans them), each night of a stay, and guests instead of bookings on a restaurant's seats.
+ * The API and the editor's preview both count with this, so they agree.
+ */
+export function countTaken(s: Schedule | undefined, rows: BookingRow[], now = new Date()): Taken {
+  const sch = s ?? defaultSchedule();
+  const today = todayTehran(now);
+  const out: Taken = {};
+  const put = (day: string, time: string, service: string | null | undefined, n: number) => {
+    if (day < today) return;
+    const key = takenKey(sch.nights ? { byService: true } : sch, day, time, service); // every room of a stay counts on its own
+    out[key] = (out[key] ?? 0) + n;
+  };
+  for (const r of rows) {
+    if (!r.date || !r.time || r.status === "CANCELED") continue;
+    if (sch.nights) for (const day of stayDays(r.date, stayNights(r.nights))) put(day, sch.start, r.service, 1);
+    else {
+      const times = sch.span ? spanTimes(sch, r.time, spanOf(sch, r.guests)) : [r.time];
+      for (const t of times) put(r.date, t, r.service, sch.seats ? Math.max(1, r.guests ?? 1) : 1);
+    }
   }
   return out;
 }

@@ -148,3 +148,29 @@ test("shop: customer passwords", () => {
   assert.ok(!checkPassword("secret-124", stored));
   assert.ok(!checkPassword("x", "garbage"));
 });
+
+/* ───────────── Gold prices ───────────── */
+import { goldQuote, withGoldPrice } from "@rb/schema";
+
+test("goldQuote: gold, wage, profit and tax the way gold shops write the bill", () => {
+  // 2 g of 18 karat at 10,000,000 a gram, 20% wage, 7% profit, 10% tax on wage and profit.
+  const q = goldQuote({ weight: 2, karat: 18, wage: 20 }, { rate: 10_000_000, profit: 7, tax: 10 });
+  assert.equal(q.gold, 20_000_000);
+  assert.equal(q.wage, 4_000_000);
+  assert.equal(q.profit, 1_680_000); // 7% of gold + wage
+  assert.equal(q.tax, 568_000); // 10% of wage + profit
+  assert.equal(q.total, 26_248_000);
+  // 24 karat is 24/18 of the 18 karat rate; stones are added as they are.
+  assert.equal(goldQuote({ weight: 1, karat: 24, wage: 0, stone: 500_000 }, { rate: 9_000_000, profit: 0, tax: 0 }).total, 12_500_000);
+});
+
+test("withGoldPrice: the price and the sale price follow the rate; other products stay", () => {
+  const rate = { rate: 10_000_000, profit: 0, tax: 0 };
+  const p = withGoldPrice({ id: "a", name: "انگشتر", price: 1, images: [], gold: { weight: 1, karat: 18, wage: 20, saleWage: 10 } }, rate);
+  assert.equal(p.price, 12_000_000);
+  assert.equal(p.salePrice, 11_000_000);
+  const plain = { id: "b", name: "ساعت", price: 5_000_000, images: [] };
+  assert.deepEqual(withGoldPrice(plain, rate), plain);
+  // No rate yet: the price typed by hand stays.
+  assert.equal(withGoldPrice({ ...p, price: 7 }, undefined).price, 7);
+});

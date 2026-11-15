@@ -229,6 +229,24 @@ function buildResumeSchemas(strict: boolean) {
       .optional(),
     variants: z.array(z.object({ key: z.string().max(70), price: price.optional(), stock: z.number().int().min(0).max(100000).optional() })).max(144).optional(),
     trashed: z.boolean().optional(), // in the panel's trash (also hidden); can be restored
+    // A guesthouse's room: guests it sleeps, what it has (shown with icons) and a higher price for
+    // weekend nights (Wednesday and Thursday). Its stock is how many rooms of this kind there are.
+    maxGuests: z.number().int().min(1).max(50).optional(),
+    amenities: z.array(z.string().max(30)).max(16).optional(),
+    weekendPrice: price.optional(),
+    // A piece of gold jewellery (the gold shop template): weight in grams, karat, the maker's wage as a
+    // percent of the gold, stones and fittings at a fixed price, and a lower wage while on sale. The
+    // panel works its price out from the shop's gold rate (goldQuote in shop.ts) and keeps price and
+    // salePrice in step with it, so carts and orders need nothing else.
+    gold: z
+      .object({
+        weight: z.number().min(0.001).max(10000),
+        karat: z.number().int().min(8).max(24).default(18),
+        wage: z.number().min(0).max(100).default(0),
+        stone: price.optional(),
+        saleWage: z.number().min(0).max(100).optional(),
+      })
+      .optional(),
   });
   const perk = z.object({ id, title: z.string().max(60), text: z.string().max(200).optional(), image: optionalUrl }); // image: an icon some templates show
   // One picture of the home page slider, with its own heading and line of text.
@@ -326,6 +344,10 @@ function buildResumeSchemas(strict: boolean) {
       .max(60)
       .optional(),
     paymentNote: z.string().max(600).optional(), // how to pay for now (card-to-card, on delivery…)
+    // Paid extras a guest can add to a stay (breakfast, airport transfer…), priced per stay, per night or per guest.
+    extras: z.array(z.object({ id, title: z.string().max(60), price, per: z.enum(["stay", "night", "guest"]).default("stay"), hidden: z.boolean().optional() })).max(12).optional(),
+    // The day's gold rate (tomans per gram of 18 karat), the seller's profit and the tax on wage and profit, in percent.
+    goldRate: z.object({ rate: price, profit: z.number().min(0).max(50).default(7), tax: z.number().min(0).max(30).default(10), updatedAt: z.string().max(40).optional() }).optional(),
     // Online booking: working days and hours, appointment length, places at a time, days off.
     schedule: scheduleSchema.optional(),
     // Events with dates and a price (a clinic's workshops, conferences); past ones hide themselves.

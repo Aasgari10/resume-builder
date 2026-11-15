@@ -8,7 +8,7 @@
 // sign-ups): the preview saves them into a sample inbox that the manager's inbox and booking tabs
 // read, so every template can be tried end to end without touching the real site.
 
-import { addDay, allVariantKeys, defaultSchedule, freeFor, priceCart, spanOf, spanTimes, slotsOf, takenFor, takenKey, todayTehran, type BookingView, type CartLine, type Product, type Shop, type ShopOrderStatus, type Visitor } from "@rb/schema";
+import { addDay, allVariantKeys, countTaken, defaultSchedule, freeFor, priceCart, spanOf, slotsOf, stayFree, stayNights, takenFor, todayTehran, type BookingView, type CartLine, type Product, type Shop, type ShopOrderStatus, type Visitor } from "@rb/schema";
 import type { SiteMessage, SiteMessages, SiteMessageStatus } from "../../api";
 import type { ShopCustomer, ShopCustomerDetail, ShopOrder, ShopOrderQuery, ShopProductStat, ShopReview, ShopSummary, ShopTicket, ShopTrash, ShopTrashKind } from "../../api";
 
@@ -822,7 +822,8 @@ function makeMessages(shop: Shop, bookings = true): SampleMessage[] {
       service: seats ? null : (names[k % Math.max(1, names.length)] ?? null),
       date: day,
       time,
-      guests: seats ? [2, 4, 3, 6, 2, 5, 2, 8, 4, 3][k]! : shop.schedule?.span ? [2, 1, 3, 2, 1, 2, 3, 1, 2, 2][k]! : shop.schedule?.byService ? [4, 3, 5, 2, 6, 4, 3, 5, 2, 4][k]! : null,
+      nights: shop.schedule?.nights ? [2, 3, 1, 2, 4, 2, 1, 3, 2, 2][k]! : null,
+      guests: seats ? [2, 4, 3, 6, 2, 5, 2, 8, 4, 3][k]! : shop.schedule?.nights ? [2, 2, 1, 3, 2, 4, 2, 2, 1, 2][k]! : shop.schedule?.span ? [2, 1, 3, 2, 1, 2, 3, 1, 2, 2][k]! : shop.schedule?.byService ? [4, 3, 5, 2, 6, 4, 3, 5, 2, 4][k]! : null,
       page: "/",
       ownerNote: status === "CANCELED" ? "مراجع تماس گرفت و لغو کرد." : null,
       createdAt: new Date(new Date(`${day}T08:00:00Z`).getTime() - 3 * DAY).toISOString(),
@@ -830,7 +831,7 @@ function makeMessages(shop: Shop, bookings = true): SampleMessage[] {
     });
   });
   const ago = (h: number) => new Date(Date.now() - h * 3600000).toISOString();
-  const row = (id: string, x: Partial<SiteMessage>): SampleMessage => ({ id, kind: "CONTACT", status: "NEW", code: null, name: null, phone: null, email: null, subject: null, text: null, service: null, date: null, time: null, guests: null, page: "/contact", ownerNote: null, createdAt: ago(1), deletedAt: null, ...x });
+  const row = (id: string, x: Partial<SiteMessage>): SampleMessage => ({ id, kind: "CONTACT", status: "NEW", code: null, name: null, phone: null, email: null, subject: null, text: null, service: null, date: null, time: null, guests: null, nights: null, page: "/contact", ownerNote: null, createdAt: ago(1), deletedAt: null, ...x });
   list.push(
     row("sm-c1", { name: "نازنین رستمی", email: "nazanin@example.com", phone: "09123334455", subject: "سؤال درباره‌ی هزینه‌ها", text: "سلام، امکان پرداخت قسطی هم دارید؟ ممنون می‌شوم راهنمایی کنید.", createdAt: ago(3) }),
     row("sm-c2", { name: "بهزاد کاظمی", phone: "09367778899", subject: "همکاری", text: "سلام وقت بخیر. برای یک همکاری کاری می‌خواستم با شما صحبت کنم؛ لطفاً تماس بگیرید.", status: "SEEN", createdAt: ago(30) }),
@@ -918,23 +919,12 @@ export function sampleMessagesApi(shop: Shop, bookings = true): Pick<ShopApi, "s
   };
 }
 
-/** Places taken at each time from today on, as the server counts them (guests on a restaurant). */
+/** Places taken at each time from today on, counted as the server counts them. */
 export function sampleTaken(shop: Shop): Record<string, number> {
-  const seats = Boolean(shop.schedule?.seats);
-  const today = todayTehran();
-  const out: Record<string, number> = {};
-  for (const m of messagesFor(shop)) {
-    if (m.kind !== "BOOKING" || m.deletedAt || m.status === "CANCELED" || !m.date || !m.time || m.date < today) continue;
-    const s = shop.schedule;
-    for (const t of s?.span ? spanTimes(s, m.time, spanOf(s, m.guests)) : [m.time]) {
-      const key = takenKey(s ?? {}, m.date, t, m.service);
-      out[key] = (out[key] ?? 0) + (seats ? Math.max(1, m.guests ?? 1) : 1);
-    }
-  }
-  return out;
+  return countTaken(shop.schedule, messagesFor(shop).filter((m) => m.kind === "BOOKING" && !m.deletedAt));
 }
 
-const asView = (m: SampleMessage): BookingView => ({ code: m.code ?? "", date: m.date ?? undefined, time: m.time ?? undefined, service: m.service ?? undefined, guests: m.guests ?? undefined, status: m.status, at: m.createdAt });
+const asView = (m: SampleMessage): BookingView => ({ code: m.code ?? "", date: m.date ?? undefined, time: m.time ?? undefined, service: m.service ?? undefined, guests: m.guests ?? undefined, nights: m.nights ?? undefined, status: m.status, at: m.createdAt });
 const samePhone = (a: string | null | undefined, b: string | undefined) => Boolean(a && b && mobile(a).slice(-10) === mobile(b).slice(-10) && mobile(b).length >= 10);
 
 /** The preview's booking side: free times, the signed-in visitor's bookings (/account) and a tracked one (/track). */
@@ -971,7 +961,7 @@ export function sampleSiteForm(shop: Shop, fields: Record<string, string>, withA
   const body = text(fields.text, 3000) || text(fields.body, 3000) || text(fields.message, 3000);
   const list = messagesFor(shop, bookings);
   const at = new Date().toISOString();
-  const base = { status: "NEW" as const, code: null, name: name || null, phone: phone || null, email: email || null, subject: text(fields.subject, 160) || null, text: body || null, service: text(fields.service, 80) || null, date: text(fields.date, 20) || null, time: text(fields.time, 10) || null, guests: Number(fields.guests) > 0 ? Math.min(500, Math.floor(Number(fields.guests))) : null, page: text(fields.back, 200) || "/", ownerNote: null, createdAt: at, deletedAt: null };
+  const base = { status: "NEW" as const, code: null, name: name || null, phone: phone || null, email: email || null, subject: text(fields.subject, 160) || null, text: body || null, service: text(fields.service, 80) || null, date: text(fields.date, 20) || null, time: text(fields.time, 10) || null, guests: Number(fields.guests) > 0 ? Math.min(500, Math.floor(Number(fields.guests))) : null, nights: shop.schedule?.nights ? stayNights(Number(fields.nights) || 1) : null, page: text(fields.back, 200) || "/", ownerNote: null, createdAt: at, deletedAt: null };
   const id = `sm-${Date.now().toString(36)}`;
   if (kind === "NEWSLETTER") {
     if (!isEmail(email)) return { sent: "error" };
@@ -987,7 +977,13 @@ export function sampleSiteForm(shop: Shop, fields: Record<string, string>, withA
   }
   if (!name || !phone) return { sent: "error" };
   const s = shop.schedule;
-  if (s) {
+  if (s?.nights) {
+    // A stay: the room must be free every night; the booking's time is the check-in time.
+    const room = shop.products.find((p) => p.name === base.service && !p.hidden && !p.trashed);
+    if (!base.date || !room) return { sent: "error" };
+    base.time = s.start;
+    if (stayFree(s, takenFor({ byService: true }, sampleTaken(shop), base.service), base.date, base.nights ?? 1, room.stock ?? s.capacity) < 1) return { sent: "full" };
+  } else if (s) {
     if (!base.date || !base.time || (s.byService && !base.service)) return { sent: "error" };
     const need = s.seats ? Math.max(1, base.guests ?? 1) : 1;
     if (freeFor(s, takenFor(s, sampleTaken(shop), base.service), base.date, base.time, spanOf(s, base.guests)) < need) return { sent: "full" };

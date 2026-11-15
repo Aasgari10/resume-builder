@@ -23,11 +23,13 @@ import { SIMPLE_BLOCKS, SimplePortfolio, simplePages, simpleSample } from "./web
 import { SEPID_BLOCKS, SEPID_OPTIONAL_PAGES, SepidPortfolio, sepidPages, sepidSample } from "./web/sepid";
 import { BOUTIQUE_BLOCKS, BoutiqueShop, boutiquePages, boutiqueSample } from "./web/boutique";
 import { GOLSARA_BLOCKS, GOLSARA_OPTIONAL_PAGES, GolsaraShop, golsaraPages, golsaraSample } from "./web/golsara";
+import { ZARIN_BLOCKS, ZARIN_OPTIONAL_PAGES, ZarinShop, zarinPages, zarinSample } from "./web/zarin";
 import { HOMEMART_BLOCKS, HomeMartShop, homemartPages, homemartSample } from "./web/homemart";
 import { PATIO_BLOCKS, PATIO_OPTIONAL_PAGES, PatioShop, patioPages, patioSample } from "./web/patio";
 import { TANIN_SCRIPT } from "./web/scripts";
 import { TANIN_BLOCKS, TANIN_OPTIONAL_PAGES, TaninSite, taninPages, taninSample } from "./web/tanin";
 import { ESCAPE_BLOCKS, ESCAPE_OPTIONAL_PAGES, EscapeSite, escapePages, escapeSample } from "./web/escape";
+import { NARENJ_BLOCKS, NARENJ_OPTIONAL_PAGES, NarenjSite, narenjPages, narenjSample } from "./web/narenj";
 import { THERAPY_BLOCKS, THERAPY_OPTIONAL_PAGES, TherapySite, therapyPages, therapySample } from "./web/therapy";
 import { CROPIT_BLOCKS, CROPIT_OPTIONAL_PAGES, CropitSite, cropitPages, cropitSample } from "./web/cropit";
 import { LADIVA_BLOCKS, LADIVA_OPTIONAL_PAGES, LadivaSite, ladivaPages, ladivaSample } from "./web/ladiva";
@@ -104,11 +106,13 @@ export const PORTFOLIO_TEMPLATES: readonly TemplateDefinition[] = [
   { ...web("ladiva-site", "لا دیوا (آرایشگاه)", LadivaSite), pages: ladivaPages, sample: ladivaSample, blocks: LADIVA_BLOCKS, optionalPages: LADIVA_OPTIONAL_PAGES, shop: true, services: true, bookings: true, panel: { extras: { perks: "📍 شعبه‌ها (صفحه‌ی تماس)", stats: "🔢 اعداد", brands: "📰 لوگوی رسانه‌ها" } } },
   { ...web("cropit-site", "کراپ ایت (آتلیه عکاسی)", CropitSite), pages: cropitPages, sample: cropitSample, blocks: CROPIT_BLOCKS, optionalPages: CROPIT_OPTIONAL_PAGES, shop: true, menu: true, studio: true, bookings: true, panel: { extras: { perks: "🎯 خدمات ما (۶ خدمت با آیکون)", brands: "🤝 لوگوی همکاران" }, hide: ["text-pages"] } },
   { ...web("tanin-site", "طنین (استودیوی موسیقی)", TaninSite), pages: taninPages, sample: taninSample, blocks: TANIN_BLOCKS, optionalPages: TANIN_OPTIONAL_PAGES, script: TANIN_SCRIPT, shop: true, rental: true, bookings: true, panel: { extras: { perks: "✨ ویژگی‌ها (۴ مورد با آیکون)", stats: "🔢 اعداد", brands: "🤝 لوگوی همکاران" }, hide: ["banners", "text-pages"], faqCategories: true } },
+  { ...web("narenj-site", "نارنج (اقامتگاه)", NarenjSite), pages: narenjPages, sample: narenjSample, blocks: NARENJ_BLOCKS, optionalPages: NARENJ_OPTIONAL_PAGES, shop: true, stay: true, bookings: true, panel: { extras: { perks: "🛎 نوار امکانات صفحه‌ی اول (۶ مورد)", stats: "✨ ویژگی‌های صفحه‌ی درباره (۶ مورد)", trust: "🏅 آرم‌های پایین صفحه" } } },
   { ...web("escape-site", "گریزگاه (اتاق فرار)", EscapeSite), pages: escapePages, sample: escapeSample, blocks: ESCAPE_BLOCKS, optionalPages: ESCAPE_OPTIONAL_PAGES, shop: true, escape: true, bookings: true, panel: { extras: { perks: "🧩 «بازی‌های ما مناسب‌اند برای» (۴ مورد)", stats: "🔢 اعداد صفحه‌ی درباره" }, hide: ["banners", "categories", "text-pages"] } },
   { ...web("therapy-site", "مهرپویا (مطب روان‌شناسی)", TherapySite), pages: therapyPages, sample: therapySample, blocks: THERAPY_BLOCKS, optionalPages: THERAPY_OPTIONAL_PAGES, shop: true, clinic: true, bookings: true, panel: { extras: { perks: "📚 ویژگی‌های کنار کتاب (۴ ویژگی)" }, hide: ["banners", "quotes", "text-pages"] } },
   { ...web("juno-shop", "جونو (اسباب‌بازی)", JunoShop), pages: junoPages, sample: junoSample, blocks: JUNO_BLOCKS, optionalPages: JUNO_OPTIONAL_PAGES, shop: true, panel: { extras: { perks: "✨ ویژگی‌های فروشگاه", brands: "🏷 آرم مشتری‌ها", trust: "💳 آرم‌های پایین صفحه" } } },
   { ...web("grogin-shop", "گروگین (سوپرمارکت)", GroginShop), pages: groginPages, sample: groginSample, blocks: GROGIN_BLOCKS, optionalPages: GROGIN_OPTIONAL_PAGES, shop: true, panel: { extras: { perks: "✨ ویژگی‌های فروشگاه", brands: "🏷 برندهای محبوب", trust: "💳 آرم‌های پایین صفحه" }, hide: ["quotes"] } },
   { ...web("homemart-shop", "هوم‌مارت (فروشگاه لوازم خانگی)", HomeMartShop), pages: homemartPages, sample: homemartSample, blocks: HOMEMART_BLOCKS, shop: true, panel: { extras: { perks: "✨ ویژگی‌های فروشگاه" } } },
+  { ...web("zarin-shop", "زرین (طلا و جواهر)", ZarinShop), pages: zarinPages, sample: zarinSample, blocks: ZARIN_BLOCKS, optionalPages: ZARIN_OPTIONAL_PAGES, shop: true, gold: true, panel: { extras: { perks: "✨ ویژگی‌ها (صفحه‌ی محصول و درباره)", stats: "🎯 مأموریت و چشم‌انداز (صفحه‌ی درباره)", brands: "👥 اعضای تیم (صفحه‌ی درباره)", trust: "🏷 آرم برندها (صفحه‌ی اول)" } } },
   minimalPortfolio,
   web("studio-portfolio", "استودیو", StudioPortfolio),
   web("split-portfolio", "دوستونه", SplitPortfolio),
@@ -176,6 +180,9 @@ const PAGE_TITLES: Record<string, Record<ResumeData["locale"], string>> = {
   "/team": { fa: "تیم ما", en: "Our team" },
   "/menu": { fa: "منو", en: "Menu" },
   "/offer": { fa: "آنچه ارائه می‌دهیم", en: "What we offer" },
+  "/offers": { fa: "پیشنهادها و تخفیف‌ها", en: "Offers" },
+  "/rooms": { fa: "اتاق‌ها", en: "Rooms" },
+  "/track": { fa: "پیگیری رزرو", en: "Track a booking" },
 };
 
 /** Title of an inner page for the browser tab ("About", a project's name); empty for the home page. */
@@ -183,6 +190,7 @@ export function pageTitle(data: ResumeData, page: string): string {
   if (page.startsWith("/projects/")) {
     return data.projects.find((p) => `/projects/${encodeURIComponent(p.id)}` === page)?.title ?? "";
   }
+  if (page.startsWith("/room/")) return data.site?.shop?.products.find((p) => `/room/${p.id}` === page)?.name ?? "";
   if (page.startsWith("/product/")) return data.site?.shop?.products.find((p) => `/product/${p.id}` === page)?.name ?? "";
   if (page.startsWith("/page/")) return data.site?.shop?.pages?.find((p) => `/page/${p.slug}` === page)?.title ?? "";
   if (page.startsWith("/blog/")) return data.site?.shop?.posts?.find((p) => `/blog/${p.id}` === page)?.title ?? "";

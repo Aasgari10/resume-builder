@@ -26,6 +26,7 @@ export const SHOWCASE_COLORS: Record<string, string> = {
   "boutique-shop": "#E5484D",
   "golsara-shop": "#A7896A",
   "homemart-shop": "#800E2F",
+  "zarin-shop": "#B08D57",
   "grogin-shop": "#634C9F",
   "juno-shop": "#12AEE0",
   "kafe-site": "#BE9C79",
@@ -33,6 +34,7 @@ export const SHOWCASE_COLORS: Record<string, string> = {
   "cropit-site": "#3A3A3A",
   "therapy-site": "#E9A68C",
   "escape-site": "#E8403A",
+  "narenj-site": "#B4603F",
   "tanin-site": "#D6A670",
   "patio-shop": "#DD5902",
 };

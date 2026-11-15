@@ -19,6 +19,7 @@ export const SITE_PALETTES: Record<string, PageColors> = {
   "golsara-shop": { background: "#FFFFFF", surface: "#FDF6F3", text: "#3B3330", mutedText: "#8A807A" },
   "patio-shop": { background: "#0B0B0B", surface: "#151515", text: "#FFFFFF", mutedText: "#A8A8A8" },
   "tanin-site": { background: "#17141A", surface: "#221E24", text: "#FFFFFF", mutedText: "#BEB8BF" },
+  "narenj-site": { background: "#FFFFFF", surface: "#FAF8F4", text: "#2B2724", mutedText: "#857E77" },
   "escape-site": { background: "#0B0A0A", surface: "#141212", text: "#FFFFFF", mutedText: "#BDB6B0" },
   "therapy-site": { background: "#FFFFFF", surface: "#FBF6F1", text: "#2E2A27", mutedText: "#7A746F" },
   "cropit-site": { background: "#FFFFFF", surface: "#EDEDED", text: "#333333", mutedText: "#777777" },
@@ -27,6 +28,7 @@ export const SITE_PALETTES: Record<string, PageColors> = {
   "juno-shop": { background: "#FFFFFF", surface: "#F5F6F7", text: "#181D4E", mutedText: "#6B6F8C" },
   "grogin-shop": { background: "#FFFFFF", surface: "#F3F4F6", text: "#030712", mutedText: "#6B7280" },
   "homemart-shop": { background: "#FEFCF9", surface: "#FFFFFF", text: "#1F2937", mutedText: "#6B7280" },
+  "zarin-shop": { background: "#FFFFFF", surface: "#F5F5F5", text: "#111111", mutedText: "#777777" },
 };
 
 /** Ready-made page color sets for the editor (the template's own colors come first). */

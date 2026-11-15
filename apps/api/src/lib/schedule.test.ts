@@ -55,3 +55,29 @@ test("span: a booking of hours takes each slot it runs through", () => {
   assert.equal(freeFor(r, taken, sat, "10:00", 2), 0); // 11:00 is taken
   assert.equal(freeFor(r, {}, sat, "12:00", 2), 0); // runs past the end of the day
 });
+
+/* ───── Stays: rooms booked by the night ───── */
+
+test("stay: each night of a booking takes its room, and a stay needs every night free", async () => {
+  const { countTaken, stayDefaults, stayFree, takenFor, daysBetween } = await import("@rb/schema");
+  const st = stayDefaults();
+  const d0 = addDay(todayTehran(), 3);
+  // Two rooms of "Loft": one booked for 3 nights from d0, the other for 1 night from d0 + 1.
+  const taken = countTaken(st, [
+    { date: d0, time: st.start, service: "Loft", nights: 3 },
+    { date: addDay(d0, 1), time: st.start, service: "Loft", nights: 1 },
+    { date: d0, time: st.start, service: "Loft", nights: 2, status: "CANCELED" },
+  ]);
+  const loft = takenFor({ byService: true }, taken, "Loft");
+  assert.equal(stayFree(st, loft, d0, 1, 2), 1);
+  assert.equal(stayFree(st, loft, d0, 2, 2), 0); // the second night has both rooms taken
+  assert.equal(stayFree(st, loft, addDay(d0, 3), 2, 2), 2); // after the stays end
+  assert.equal(stayFree(st, takenFor({ byService: true }, taken, "Suite"), d0, 5, 1), 1); // another room
+  // A stay that began before today still holds its remaining nights.
+  const old = countTaken(st, [{ date: addDay(todayTehran(), -1), time: st.start, service: "Loft", nights: 3 }]);
+  assert.equal(stayFree(st, takenFor({ byService: true }, old, "Loft"), todayTehran(), 1, 1), 0);
+  // Closed nights and nights past the window cannot be booked.
+  assert.equal(stayFree({ ...st, closed: [addDay(d0, 1)] }, {}, d0, 3, 1), 0);
+  assert.equal(stayFree({ ...st, ahead: 4 }, {}, d0, 3, 1), 0);
+  assert.equal(daysBetween(d0, addDay(d0, 4)), 4);
+});

@@ -100,9 +100,11 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
     frame.current?.closest(".ws-view")?.scrollTo({ top: 0 });
   }, [page]);
 
-  // HomeMart's own color is burgundy: a site still on the starting navy gets it (a color the user picked stays).
+  // Some templates have their own color (HomeMart burgundy, Zarin gold): a site still on the starting
+  // navy gets it (a color the user picked stays).
   useEffect(() => {
-    if (theme.templateId === "homemart-shop" && theme.colors.primary.toUpperCase() === "#1E3A5F") onThemeChange({ ...theme, colors: { ...theme.colors, primary: "#800E2F" } });
+    const own = ({ "homemart-shop": "#800E2F", "zarin-shop": "#B08D57" } as Record<string, string>)[theme.templateId];
+    if (own && theme.colors.primary.toUpperCase() === "#1E3A5F") onThemeChange({ ...theme, colors: { ...theme.colors, primary: own } });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [theme.templateId, theme.colors.primary]);
 
@@ -111,7 +113,7 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
   const sampleShop = sampleShopFor(raw.site?.shop, templateSample?.site?.shop);
   // The site's forms (bookings, messages, sign-ups) go into a sample inbox that follows the site's own hours.
   const demoShop = { ...sampleShop, schedule: data.site?.shop?.schedule };
-  const hasBookings = Boolean(site.bookings || site.studio || site.clinic || site.escape || site.rental);
+  const hasBookings = Boolean(site.bookings || site.studio || site.clinic || site.escape || site.rental || site.stay);
   const [, setSampleRound] = useState(0);
   useEffect(() => {
     const stop = onSampleChange(() => setSampleRound((n) => n + 1));
@@ -201,7 +203,9 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
     e.preventDefault();
     const form = e.target as HTMLFormElement;
     const action = form.getAttribute("action") ?? "";
-    const fields = Object.fromEntries(new FormData(form)) as Record<string, string>;
+    // The pressed button's own name and value count too (a "buy now" button that goes to the checkout).
+    const submitter = (e.nativeEvent as SubmitEvent).submitter;
+    const fields = Object.fromEntries(new FormData(form, submitter ?? null)) as Record<string, string>;
     if (action.endsWith("/_cart")) {
       const qty = Math.max(0, Math.floor(Number(fields.qty ?? 1)) || 0);
       // Choices come as opt0/opt1 from a product page, or as the stored key from the cart.
@@ -337,7 +341,7 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
           دستیار
         </button>
         {site.shop && (
-          <button type="button" className="ws-chip" title={site.rental ? "مدیریت استودیو: رزروها، ساعت کاری، استودیوها، خدمات و بلاگ" : site.escape ? "مدیریت اتاق فرار: رزروها، سانس‌ها، اتاق‌ها و بلاگ" : site.clinic ? "مدیریت مطب: نوبت‌ها، ساعت کاری، تعرفه‌ها، رویدادها و بلاگ" : site.studio ? "مدیریت آتلیه: پیام‌ها و رزروها، پکیج‌ها، تیم، بلاگ" : site.services ? "مدیریت سایت: خدمات، فروشگاه، سفارش‌ها و بلاگ" : site.menu && site.sells ? "مدیریت سایت: منو، فروشگاه، سفارش‌ها و QR کد" : site.menu ? "مدیریت سایت: منو، QR کد و محتوای صفحه‌ها" : "مدیریت فروشگاه: سفارش‌ها، محصولات، تیکت‌ها و گزارش‌ها"} onClick={() => { setShopFocus(undefined); setShopOpen(true); }}>
+          <button type="button" className="ws-chip" title={site.stay ? "مدیریت اقامتگاه: رزروها، اتاق‌ها، خدمات اضافه، کدهای تخفیف و بلاگ" : site.rental ? "مدیریت استودیو: رزروها، ساعت کاری، استودیوها، خدمات و بلاگ" : site.escape ? "مدیریت اتاق فرار: رزروها، سانس‌ها، اتاق‌ها و بلاگ" : site.clinic ? "مدیریت مطب: نوبت‌ها، ساعت کاری، تعرفه‌ها، رویدادها و بلاگ" : site.studio ? "مدیریت آتلیه: پیام‌ها و رزروها، پکیج‌ها، تیم، بلاگ" : site.services ? "مدیریت سایت: خدمات، فروشگاه، سفارش‌ها و بلاگ" : site.menu && site.sells ? "مدیریت سایت: منو، فروشگاه، سفارش‌ها و QR کد" : site.menu ? "مدیریت سایت: منو، QR کد و محتوای صفحه‌ها" : site.gold ? "مدیریت طلافروشی: نرخ روز طلا، محصولات، سفارش‌ها، کدهای تخفیف و گزارش‌ها" : "مدیریت فروشگاه: سفارش‌ها، محصولات، تیکت‌ها و گزارش‌ها"} onClick={() => { setShopFocus(undefined); setShopOpen(true); }}>
             ⚙️ مدیریت
           </button>
         )}
@@ -406,7 +410,7 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
         )}
       {shopOpen &&
         createPortal(
-          <ShopManager data={raw} sample={templateSample} onData={onDataChange} resumeId={resumeId} focusProductId={shopFocus} menu={Boolean(site.menu)} sells={Boolean(site.sells)} services={Boolean(site.services)} bookings={Boolean(site.bookings)} studio={Boolean(site.studio)} clinic={Boolean(site.clinic)} escape={Boolean(site.escape)} rental={Boolean(site.rental)} panel={site.panel} hasBlog={Boolean(site.escape || site.rental || site.optionalPages?.some((p) => p.path === "/blog"))} onClose={() => { setShopOpen(false); setShopFocus(undefined); }} />,
+          <ShopManager data={raw} sample={templateSample} onData={onDataChange} resumeId={resumeId} focusProductId={shopFocus} menu={Boolean(site.menu)} sells={Boolean(site.sells)} services={Boolean(site.services)} bookings={Boolean(site.bookings)} studio={Boolean(site.studio)} clinic={Boolean(site.clinic)} escape={Boolean(site.escape)} rental={Boolean(site.rental)} stay={Boolean(site.stay)} gold={Boolean(site.gold)} panel={site.panel} hasBlog={Boolean(site.escape || site.rental || site.stay || site.optionalPages?.some((p) => p.path === "/blog"))} onClose={() => { setShopOpen(false); setShopFocus(undefined); }} />,
           document.body,
         )}
       {target &&
