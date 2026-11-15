@@ -127,6 +127,14 @@ export function openDays(s: Schedule, taken: Taken, now = new Date(), need = 1, 
   return out;
 }
 
+/**
+ * A bakery's custom cakes: a number of cakes a day on the open weekdays, one booking time a day at
+ * midnight (so today is never offered: a cake needs a day), up to a month ahead.
+ */
+export const cakeDefaults = (): Schedule => ({ ...defaultSchedule(), days: [6, 0, 1, 2, 3, 4], start: "00:00", end: "01:00", slot: 60, capacity: 4, ahead: 30 });
+/** The fixed parts of a bakery's schedule, whatever was stored. */
+export const CAKE_FIXED = { start: "00:00", end: "01:00", slot: 60, byService: false, nights: false, seats: false, span: false } as const;
+
 /* ───────────── Stays: rooms booked by the night ───────────── */
 
 /** What a booking row needs for counting taken places (the API's rows and the preview's sample alike). */

@@ -49,6 +49,7 @@ const templates = [
   { id: "grogin-shop", name: "گروگین (سوپرمارکت)", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
   { id: "homemart-shop", name: "هوم‌مارت (فروشگاه لوازم خانگی)", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
   { id: "zarin-shop", name: "زرین (طلا و جواهر)", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
+  { id: "shirin-shop", name: "شیرین (شیرینی‌پزی)", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
 ];
 
 async function main() {

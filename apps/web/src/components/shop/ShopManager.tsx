@@ -7,6 +7,7 @@
 
 import { StayRooms, StaySchedule } from "./StayPanel";
 import { GoldRateTab } from "./GoldPanel";
+import { CakeSchedule } from "./CakePanel";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { type Product, type ResumeData, type Shop } from "@rb/schema";
 import { api, type ShopSummary } from "../../api";
@@ -60,6 +61,8 @@ type Props = {
   stay?: boolean;
   /** A gold shop: the day's gold rate tab, and products priced from weight, karat and wage. */
   gold?: boolean;
+  /** A pastry shop: custom cakes are bookings with a number of cakes a day. */
+  cake?: boolean;
   /** What the template shows of the manager's content (unused tabs are left out). */
   panel?: { extras?: { perks?: string; stats?: string; brands?: string; trust?: string }; hide?: string[]; faqCategories?: boolean };
   onClose: () => void;
@@ -82,7 +85,7 @@ const STUDIO_TABS: Tab[] = ["studio", "inbox", "calendar", "products", "clients"
 
 const EMPTY_SHOP: Shop = { categories: [], products: [] };
 
-export function ShopManager({ data, sample, onData, resumeId, focusProductId, hasBlog, menu: menuSite, sells: sellsMenu, services, bookings, studio: studioSite, clinic: clinicSite, escape, rental, stay, gold, panel, onClose }: Props) {
+export function ShopManager({ data, sample, onData, resumeId, focusProductId, hasBlog, menu: menuSite, sells: sellsMenu, services, bookings, studio: studioSite, clinic: clinicSite, escape, rental, stay, gold, cake, panel, onClose }: Props) {
   // A clinic is managed like a studio (bookings first), plus its working hours and events; an escape
   // room the same, with its rooms and no events.
   const clinic = clinicSite || escape || rental || stay;
@@ -90,7 +93,7 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
   const studio = studioSite || clinic;
   const sells = sellsMenu || services;
   // Templates with a booking form get the bookings overview, calendar, clients and reports.
-  const bookingKind: BookingKind | undefined = stay ? "stay" : rental ? "space" : escape ? "room" : clinic ? "clinic" : studio ? "studio" : bookings ? (services ? "salon" : "table") : undefined;
+  const bookingKind: BookingKind | undefined = cake ? "cake" : stay ? "stay" : rental ? "space" : escape ? "room" : clinic ? "clinic" : studio ? "studio" : bookings ? (services ? "salon" : "table") : undefined;
   const BOOKING_LABELS: Record<BookingKind, [string, string, string, string]> = {
     studio: ["📊 داشبورد", "🗓 تقویم نوبت‌ها", "👥 مشتریان", "📈 گزارش‌ها"],
     salon: ["📅 داشبورد نوبت‌ها", "🗓 تقویم نوبت‌ها", "🙋 نوبت‌گیرندگان", "📈 گزارش نوبت‌ها"],
@@ -99,6 +102,7 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
     room: ["📊 داشبورد رزروها", "🗓 تقویم سانس‌ها", "🙋 مشتریان", "📈 گزارش‌ها"],
     space: ["📊 داشبورد رزروها", "🗓 تقویم رزروها", "🙋 مشتریان", "📈 گزارش‌ها"],
     stay: ["📊 داشبورد رزروها", "🗓 تقویم ورودها", "🙋 مهمان‌ها", "📈 گزارش‌ها"],
+    cake: ["🎂 سفارش‌های کیک", "🗓 تقویم تحویل کیک", "🙋 سفارش‌دهندگان کیک", "📈 گزارش کیک‌ها"],
   };
   const bl = bookingKind ? BOOKING_LABELS[bookingKind] : BOOKING_LABELS.studio;
   // Only a menu site that sells nothing gets the short menu panel.
@@ -172,7 +176,7 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
   return (
     <div className="shm" dir="rtl" role="dialog" aria-label={menu ? "مدیریت سایت" : "مدیریت فروشگاه"}>
       <header className="shm-head">
-        <h2>{stay ? "🏡 مدیریت اقامتگاه" : rental ? "🎙 مدیریت استودیو" : escape ? "🔐 مدیریت اتاق فرار" : clinic ? "🩺 مدیریت مطب" : studio ? "📸 مدیریت آتلیه" : menu ? "☕ مدیریت سایت" : gold ? "💍 مدیریت طلافروشی" : "🛍 مدیریت فروشگاه"}</h2>
+        <h2>{stay ? "🏡 مدیریت اقامتگاه" : rental ? "🎙 مدیریت استودیو" : escape ? "🔐 مدیریت اتاق فرار" : clinic ? "🩺 مدیریت مطب" : studio ? "📸 مدیریت آتلیه" : menu ? "☕ مدیریت سایت" : gold ? "💍 مدیریت طلافروشی" : cake ? "🧁 مدیریت شیرینی‌پزی" : "🛍 مدیریت فروشگاه"}</h2>
         <button type="button" className="btn small" onClick={onClose}>
           بستن و برگشت به سایت
         </button>
@@ -184,7 +188,7 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
               ["dashboard", "📊 داشبورد"],
               ["gold", "💰 نرخ روز طلا"],
               ["studio", bl[0]],
-              ["schedule", stay ? "⏰ ورود، خروج و شب‌های بسته" : "⏰ ساعت کاری و ظرفیت"],
+              ["schedule", stay ? "⏰ ورود، خروج و شب‌های بسته" : cake ? "🎂 روزهای تحویل و ظرفیت کیک" : "⏰ ساعت کاری و ظرفیت"],
               ["events", "🎟 رویدادها"],
               ["calendar", bl[1]],
               ["clients", bl[2]],
@@ -246,7 +250,8 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
         {tab === "gold" && <GoldRateTab shop={shop} setShop={setShop} />}
         {tab === "dashboard" && <Dashboard resumeId={rid} products={live.length} outOfStock={outOfStock} lowStock={lowStock} onTab={(t) => setTab(t as Tab)} />}
         {tab === "schedule" && stay && <StaySchedule shop={shop} setShop={setShop} />}
-        {tab === "schedule" && !stay && <ScheduleEditor shop={shop} setShop={setShop} seats={bookingKind === "table"} rooms={bookingKind === "room"} spaces={bookingKind === "space"} />}
+        {tab === "schedule" && cake && <CakeSchedule shop={shop} setShop={setShop} />}
+        {tab === "schedule" && !stay && !cake && <ScheduleEditor shop={shop} setShop={setShop} seats={bookingKind === "table"} rooms={bookingKind === "room"} spaces={bookingKind === "space"} />}
         {tab === "events" && <EventsEditor shop={shop} setShop={setShop} />}
         {tab === "studio" && <StudioDashboard resumeId={rid} shop={shop} onTab={(t) => setTab(t as Tab)} kind={bookingKind} />}
         {tab === "calendar" && <StudioCalendar resumeId={rid} shop={shop} kind={bookingKind} />}

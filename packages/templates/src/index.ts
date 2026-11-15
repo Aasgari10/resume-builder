@@ -23,6 +23,7 @@ import { SIMPLE_BLOCKS, SimplePortfolio, simplePages, simpleSample } from "./web
 import { SEPID_BLOCKS, SEPID_OPTIONAL_PAGES, SepidPortfolio, sepidPages, sepidSample } from "./web/sepid";
 import { BOUTIQUE_BLOCKS, BoutiqueShop, boutiquePages, boutiqueSample } from "./web/boutique";
 import { GOLSARA_BLOCKS, GOLSARA_OPTIONAL_PAGES, GolsaraShop, golsaraPages, golsaraSample } from "./web/golsara";
+import { SHIRIN_BLOCKS, SHIRIN_OPTIONAL_PAGES, ShirinShop, shirinPages, shirinSample } from "./web/shirin";
 import { ZARIN_BLOCKS, ZARIN_OPTIONAL_PAGES, ZarinShop, zarinPages, zarinSample } from "./web/zarin";
 import { HOMEMART_BLOCKS, HomeMartShop, homemartPages, homemartSample } from "./web/homemart";
 import { PATIO_BLOCKS, PATIO_OPTIONAL_PAGES, PatioShop, patioPages, patioSample } from "./web/patio";
@@ -113,6 +114,7 @@ export const PORTFOLIO_TEMPLATES: readonly TemplateDefinition[] = [
   { ...web("grogin-shop", "گروگین (سوپرمارکت)", GroginShop), pages: groginPages, sample: groginSample, blocks: GROGIN_BLOCKS, optionalPages: GROGIN_OPTIONAL_PAGES, shop: true, panel: { extras: { perks: "✨ ویژگی‌های فروشگاه", brands: "🏷 برندهای محبوب", trust: "💳 آرم‌های پایین صفحه" }, hide: ["quotes"] } },
   { ...web("homemart-shop", "هوم‌مارت (فروشگاه لوازم خانگی)", HomeMartShop), pages: homemartPages, sample: homemartSample, blocks: HOMEMART_BLOCKS, shop: true, panel: { extras: { perks: "✨ ویژگی‌های فروشگاه" } } },
   { ...web("zarin-shop", "زرین (طلا و جواهر)", ZarinShop), pages: zarinPages, sample: zarinSample, blocks: ZARIN_BLOCKS, optionalPages: ZARIN_OPTIONAL_PAGES, shop: true, gold: true, panel: { extras: { perks: "✨ ویژگی‌ها (صفحه‌ی محصول و درباره)", stats: "🎯 مأموریت و چشم‌انداز (صفحه‌ی درباره)", brands: "👥 اعضای تیم (صفحه‌ی درباره)", trust: "🏷 آرم برندها (صفحه‌ی اول)" } } },
+  { ...web("shirin-shop", "شیرین (شیرینی‌پزی)", ShirinShop), pages: shirinPages, sample: shirinSample, blocks: SHIRIN_BLOCKS, optionalPages: SHIRIN_OPTIONAL_PAGES, shop: true, bookings: true, cake: true, panel: { extras: { perks: "✨ ویژگی‌ها (صفحه‌ی محصول و درباره)", stats: "🎯 مأموریت و چشم‌انداز (صفحه‌ی درباره)", brands: "👥 قنادهای ما (صفحه‌ی درباره)" } } },
   minimalPortfolio,
   web("studio-portfolio", "استودیو", StudioPortfolio),
   web("split-portfolio", "دوستونه", SplitPortfolio),
@@ -181,6 +183,7 @@ const PAGE_TITLES: Record<string, Record<ResumeData["locale"], string>> = {
   "/menu": { fa: "منو", en: "Menu" },
   "/offer": { fa: "آنچه ارائه می‌دهیم", en: "What we offer" },
   "/offers": { fa: "پیشنهادها و تخفیف‌ها", en: "Offers" },
+  "/custom": { fa: "سفارش کیک سفارشی", en: "Custom cake" },
   "/rooms": { fa: "اتاق‌ها", en: "Rooms" },
   "/track": { fa: "پیگیری رزرو", en: "Track a booking" },
 };

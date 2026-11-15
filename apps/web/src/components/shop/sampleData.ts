@@ -8,7 +8,7 @@
 // sign-ups): the preview saves them into a sample inbox that the manager's inbox and booking tabs
 // read, so every template can be tried end to end without touching the real site.
 
-import { addDay, allVariantKeys, countTaken, defaultSchedule, freeFor, priceCart, spanOf, slotsOf, stayFree, stayNights, takenFor, todayTehran, type BookingView, type CartLine, type Product, type Shop, type ShopOrderStatus, type Visitor } from "@rb/schema";
+import { addDay, allVariantKeys, withDeliveryDay, countTaken, defaultSchedule, freeFor, priceCart, spanOf, slotsOf, stayFree, stayNights, takenFor, todayTehran, type BookingView, type CartLine, type Product, type Shop, type ShopOrderStatus, type Visitor } from "@rb/schema";
 import type { SiteMessage, SiteMessages, SiteMessageStatus } from "../../api";
 import type { ShopCustomer, ShopCustomerDetail, ShopOrder, ShopOrderQuery, ShopProductStat, ShopReview, ShopSummary, ShopTicket, ShopTrash, ShopTrashKind } from "../../api";
 
@@ -755,7 +755,7 @@ export function sampleOrder(shop: Shop, cart: CartLine[], coupon: string | undef
     city: text(fields.city, 60) || null,
     address: text(fields.address, 400),
     postalCode: text(fields.postalCode, 20) || null,
-    note: text(fields.note, 500) || null,
+    note: withDeliveryDay(text(fields.note, 500), fields.deliveryDay) ?? null,
     items: priced.lines.map((l) => ({ id: l.id, name: l.product.name, size: l.size ?? null, qty: l.qty, unit: l.unit, total: l.total })),
     subtotal: priced.subtotal,
     discount: priced.discount,

@@ -176,7 +176,16 @@ export const checkoutSchema = z.object({
   address: z.string().trim().min(5, "نشانی را کامل بنویسید").max(400),
   postalCode: z.string().trim().max(20).optional(),
   note: z.string().trim().max(400).optional(),
+  // A shop that bakes to order (pastry shop): the day the customer wants it, "yyyy-mm-dd".
+  deliveryDay: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal("").transform(() => undefined)),
 });
+
+/** The order note with the chosen delivery day in front of it, in the Persian calendar. */
+export function withDeliveryDay(note: string | undefined | null, day: string | undefined | null): string | undefined {
+  const d = day && /^\d{4}-\d{2}-\d{2}$/.test(day) ? new Date(`${day}T12:00:00Z`) : null;
+  const when = d && !Number.isNaN(d.getTime()) ? `روز تحویل: ${d.toLocaleDateString("fa-IR-u-ca-persian", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" })}` : "";
+  return [when, (note ?? "").trim()].filter(Boolean).join(" — ") || undefined;
+}
 export type Checkout = z.infer<typeof checkoutSchema>;
 
 export const SHOP_ORDER_STATUSES = ["NEW", "CONFIRMED", "SENT", "DONE", "CANCELED"] as const;

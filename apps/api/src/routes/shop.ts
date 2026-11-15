@@ -23,6 +23,7 @@ import {
   type BookingView,
   type CartLine,
   type Visitor,
+  withDeliveryDay,
 } from "@rb/schema";
 import { Prisma } from "@prisma/client";
 import { getTemplate } from "@rb/templates";
@@ -193,7 +194,7 @@ async function placeOrder(req: Request, res: Response, subdomain: string, base: 
           city: parsed.data.city || null,
           address: parsed.data.address,
           postalCode: parsed.data.postalCode || null,
-          note: parsed.data.note || null,
+          note: withDeliveryDay(parsed.data.note, parsed.data.deliveryDay) ?? null,
           items: priced.lines.map((l) => ({ id: l.id, name: l.product.name, size: l.size ?? null, qty: l.qty, unit: l.unit, total: l.total })),
           subtotal: priced.subtotal,
           discount: priced.discount,

@@ -20,7 +20,7 @@ const toman = (n: number) => `${showNumber(Math.round(n))} تومان`;
 const live = (shop: Shop) => shop.products.filter((p) => !p.trashed);
 
 /** What is booked: a photo session (studio), an appointment (salon) or a table (restaurant). */
-export type BookingKind = "studio" | "salon" | "table" | "clinic" | "room" | "space" | "stay";
+export type BookingKind = "studio" | "salon" | "table" | "clinic" | "room" | "space" | "stay" | "cake";
 const WORDS: Record<BookingKind, { one: string; many: string; who: string; what: string }> = {
   studio: { one: "نوبت", many: "نوبت‌ها", who: "مشتری", what: "پکیج" },
   salon: { one: "نوبت", many: "نوبت‌ها", who: "مشتری", what: "خدمت" },
@@ -29,6 +29,7 @@ const WORDS: Record<BookingKind, { one: string; many: string; who: string; what:
   room: { one: "رزرو", many: "رزروها", who: "مشتری", what: "اتاق" },
   space: { one: "رزرو", many: "رزروها", who: "مشتری", what: "استودیو" },
   stay: { one: "رزرو", many: "رزروها", who: "مهمان", what: "اتاق" },
+  cake: { one: "سفارش کیک", many: "سفارش‌های کیک", who: "مشتری", what: "طرح کیک" },
 };
 /** What a booking is for, as shown in lists: the package or service, or the number of guests. */
 const subject = (b: SiteMessage, kind: BookingKind) =>
@@ -36,6 +37,7 @@ const subject = (b: SiteMessage, kind: BookingKind) =>
   : kind === "room" && b.guests ? `${b.service || "—"} (${showNumber(b.guests)} نفر)`
   : kind === "space" && b.guests ? `${b.service || "—"} (${showNumber(b.guests)} ساعت)`
   : kind === "stay" ? `${b.service || "—"} (${showNumber(b.nights ?? 1)} شب${b.guests ? `، ${showNumber(b.guests)} نفر` : ""})`
+  : kind === "cake" ? `${b.service || "کیک"}${b.guests ? ` (${showNumber(b.guests)} کیلو)` : ""}`
   : b.service || "—";
 
 /** The studio's bookings (or the sample ones), shared by the tabs below. */

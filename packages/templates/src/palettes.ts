@@ -29,6 +29,7 @@ export const SITE_PALETTES: Record<string, PageColors> = {
   "grogin-shop": { background: "#FFFFFF", surface: "#F3F4F6", text: "#030712", mutedText: "#6B7280" },
   "homemart-shop": { background: "#FEFCF9", surface: "#FFFFFF", text: "#1F2937", mutedText: "#6B7280" },
   "zarin-shop": { background: "#FFFFFF", surface: "#F5F5F5", text: "#111111", mutedText: "#777777" },
+  "shirin-shop": { background: "#FBFAF8", surface: "#FFFFFF", text: "#3E2620", mutedText: "#7A6A64" },
 };
 
 /** Ready-made page color sets for the editor (the template's own colors come first). */
