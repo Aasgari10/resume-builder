@@ -94,6 +94,8 @@ export function ZarinShop(props: TemplateProps) {
       {blockOn(ctx.data, "newsletter") && <Newsletter view={view} />}
       <Footer {...view} />
       <PhoneBar {...view} />
+      {!view.visitor.customer && <LoginPopup view={view} />}
+      <MiniCart view={view} />
     </WebPage>
   );
 }
@@ -448,28 +450,105 @@ function TopStrip(view: View) {
   );
 }
 
-function Nav({ view, className }: { view: View; className: string }) {
-  const cats = (view.shop.categories ?? []).filter((c) => visible(view.shop).some((p) => p.categoryId === c.id));
+const shopCats = (shop: Shop) => (shop.categories ?? []).filter((c) => visible(shop).some((p) => p.categoryId === c.id));
+
+function Nav({ view, className, mega }: { view: View; className: string; mega?: boolean }) {
+  const cats = shopCats(view.shop);
   return (
     <nav className={className}>
       {menu(view).map((m) => (
-        <span key={m.to} className={`zr-nav-item${m.cats && cats.length ? " has-sub" : ""}`}>
+        <span key={m.to} className={`zr-nav-item${m.cats && cats.length ? (mega ? " has-mega" : " has-sub") : ""}`}>
           <PageLink to={m.to} link={view.link} current={isHere(view, m.to)}>
             {m.label}
             {m.cats && cats.length > 0 && <Svg name="down" className="zr-ico zr-caret" />}
           </PageLink>
-          {m.cats && cats.length > 0 && (
-            <span className="zr-sub">
-              {cats.map((c) => (
-                <PageLink key={c.id} to={`/category/${c.id}`} link={view.link}>
-                  {c.name}
-                </PageLink>
-              ))}
-            </span>
-          )}
+          {m.cats && cats.length > 0 &&
+            (mega ? (
+              <MegaPanel view={view} />
+            ) : (
+              <span className="zr-sub">
+                {cats.map((c) => (
+                  <PageLink key={c.id} to={`/category/${c.id}`} link={view.link}>
+                    {c.name}
+                  </PageLink>
+                ))}
+              </span>
+            ))}
         </span>
       ))}
     </nav>
+  );
+}
+
+/** The big menu under "shop": categories, karats, weights, quick lists and the sale picture (opens on hover or focus). */
+function MegaPanel({ view }: { view: View }) {
+  const { shop, link } = view;
+  const all = visible(shop);
+  const cats = shopCats(shop);
+  const karats = [18, 21, 24].filter((k) => all.some((p) => p.gold?.karat === k));
+  const weights = WEIGHTS.filter((w) => all.some((p) => p.gold && p.gold.weight >= w[2] && p.gold.weight < w[3]));
+  const sale = saleProducts(all);
+  const top = sale.length ? Math.max(...sale.map(percentOff)) : 0;
+  const img = safeUrl(shop.newImage);
+  return (
+    <div className="zr-mega">
+      <div className="zr-wrap zr-mega-in">
+        <div>
+          <h4>بر اساس دسته</h4>
+          {cats.map((c) => (
+            <PageLink key={c.id} to={`/category/${c.id}`} link={link}>
+              {c.name}
+            </PageLink>
+          ))}
+        </div>
+        {karats.length > 0 && (
+          <div>
+            <h4>بر اساس عیار</h4>
+            {karats.map((k) => (
+              <PageLink key={k} to={`/shop?k${k}=1`} link={link}>
+                طلای {fa(k)} عیار
+              </PageLink>
+            ))}
+            {weights.length > 0 && (
+              <>
+                <h4 className="zr-mega-h2">بر اساس وزن</h4>
+                {weights.map((w) => (
+                  <PageLink key={w[0]} to={`/shop?w=${w[0]}`} link={link}>
+                    {w[1]}
+                  </PageLink>
+                ))}
+              </>
+            )}
+          </div>
+        )}
+        <div>
+          <h4>پیشنهاد ما</h4>
+          <PageLink to="/shop" link={link}>
+            محصولات جدید
+          </PageLink>
+          {sale.length > 0 && (
+            <PageLink to="/shop?sale=1" link={link}>
+              حراج امروز
+            </PageLink>
+          )}
+          <PageLink to="/shop?sort=cheap" link={link}>
+            ارزان‌ترین‌ها
+          </PageLink>
+          <PageLink to="/shop?stock=1" link={link}>
+            آماده‌ی ارسال
+          </PageLink>
+        </div>
+        <PageLink to={sale.length ? "/shop?sale=1" : "/shop"} link={link} className="zr-mega-card">
+          <span className="zr-mega-pic" {...ed("site.shop.newImage", "image", "عکس منوی بزرگ")}>
+            {img && <img src={img} alt="" loading="lazy" />}
+          </span>
+          <span className="zr-mega-note">
+            <b>{sale.length ? "حراج و پیشنهاد ویژه" : "کالکشن جدید"}</b>
+            {top > 0 && <small>تا {fa(top)}٪ تخفیف</small>}
+          </span>
+        </PageLink>
+      </div>
+    </div>
   );
 }
 
@@ -485,10 +564,17 @@ function Icons({ view, search }: { view: View; search?: boolean }) {
           <span className="sr-only">جست‌وجو</span>
         </PageLink>
       )}
-      <PageLink to="/account" link={link} className="zr-icon zr-icon-user">
-        <Svg name="user" />
-        <span className="sr-only">{visitor.customer ? `حساب ${visitor.customer.name}` : "ورود / ثبت‌نام"}</span>
-      </PageLink>
+      {visitor.customer ? (
+        <PageLink to="/account" link={link} className="zr-icon zr-icon-user">
+          <Svg name="user" />
+          <span className="sr-only">حساب {visitor.customer.name}</span>
+        </PageLink>
+      ) : (
+        <label htmlFor="zr-login" className="zr-icon zr-icon-user" title="ورود / ثبت‌نام">
+          <Svg name="user" />
+          <span className="sr-only">ورود / ثبت‌نام</span>
+        </label>
+      )}
       <PageLink to="/wishlist" link={link} className="zr-icon zr-icon-wish">
         <Svg name="heart" />
         <i>{fa(wishes)}</i>
@@ -508,13 +594,14 @@ function Drawer({ view }: { view: View }) {
   const { link } = view;
   return (
     <details className="zr-menu">
+      {/* Open, the summary covers the page behind the menu: a click there (or on its close button) shuts it. */}
       <summary className="zr-icon zr-burger" aria-label="منو">
-        <Svg name="menu" />
+        <Svg name="menu" className="zr-ico zr-burger-ico" />
+        <Svg name="close" className="zr-ico zr-x" />
       </summary>
       <div className="zr-drawer">
         <div className="zr-drawer-head">
           <Logo view={view} />
-          <Svg name="close" className="zr-ico zr-x" />
         </div>
         <form method="get" action={link("/search")} className="zr-drawer-search">
           <input name="q" placeholder="جست‌وجوی محصول" aria-label="جست‌وجوی محصول" />
@@ -522,14 +609,37 @@ function Drawer({ view }: { view: View }) {
             <Svg name="search" />
           </button>
         </form>
-        <Nav view={view} className="zr-drawer-nav" />
-        <hr />
-        <PageLink to="/wishlist" link={link}>
-          علاقه‌مندی‌ها
-        </PageLink>
-        <PageLink to="/account" link={link}>
-          حساب من
-        </PageLink>
+        <input type="radio" name="zr-dtab" id="zr-dtab-1" className="zr-dtab" defaultChecked />
+        <input type="radio" name="zr-dtab" id="zr-dtab-2" className="zr-dtab" />
+        <div className="zr-dtabs">
+          <label htmlFor="zr-dtab-1">منو</label>
+          <label htmlFor="zr-dtab-2">دسته‌ها</label>
+        </div>
+        <div className="zr-dpanel zr-dpanel-1">
+          <Nav view={view} className="zr-drawer-nav" />
+          <PageLink to="/wishlist" link={link}>
+            علاقه‌مندی‌ها
+          </PageLink>
+          <PageLink to="/account" link={link}>
+            {view.visitor.customer ? "حساب من" : "ورود / ثبت‌نام"}
+          </PageLink>
+        </div>
+        <div className="zr-dpanel zr-dpanel-2">
+          <PageLink to="/shop" link={link}>
+            محصولات جدید
+          </PageLink>
+          {saleProducts(visible(view.shop)).length > 0 && (
+            <PageLink to="/shop?sale=1" link={link}>
+              حراج امروز
+            </PageLink>
+          )}
+          {shopCats(view.shop).map((c) => (
+            <PageLink key={c.id} to={`/category/${c.id}`} link={link}>
+              {c.name}
+            </PageLink>
+          ))}
+        </div>
+        <Socials ctx={view.ctx} editing={false} className="zr-socials zr-drawer-socials" />
         <RateNote view={view} />
       </div>
     </details>
@@ -549,7 +659,7 @@ function Header(view: View) {
           <div className="zr-wrap zr-head-in">
             <Drawer view={view} />
             <Logo view={view} />
-            <Nav view={view} className="zr-nav" />
+            <Nav view={view} className="zr-nav" mega />
             <Icons view={view} search />
           </div>
         ) : (
@@ -572,9 +682,21 @@ function Header(view: View) {
                     دسته‌بندی محصولات <Svg name="down" className="zr-ico zr-caret" />
                   </summary>
                   <div>
+                    <PageLink to="/shop" link={link} className="strong">
+                      محصولات جدید
+                    </PageLink>
+                    {saleProducts(visible(shop)).length > 0 && (
+                      <PageLink to="/shop?sale=1" link={link} className="strong">
+                        حراج امروز
+                      </PageLink>
+                    )}
+                    <PageLink to="/shop?sort=sale" link={link} className="strong">
+                      پیشنهاد ویژه
+                    </PageLink>
                     {cats.map((c) => (
                       <PageLink key={c.id} to={`/category/${c.id}`} link={link}>
                         {c.name}
+                        <Svg name="left" className="zr-ico zr-caret" />
                       </PageLink>
                     ))}
                   </div>
@@ -582,7 +704,7 @@ function Header(view: View) {
               ) : (
                 <span />
               )}
-              <Nav view={view} className="zr-nav" />
+              <Nav view={view} className="zr-nav" mega />
               <div className="zr-head-contact">
                 {phone && (
                   <a href={telHref(phone)} dir="ltr" {...ed("basics.phone", "text", "تلفن")}>
@@ -743,6 +865,145 @@ function PhoneBar(view: View) {
         حساب
       </PageLink>
     </nav>
+  );
+}
+
+/**
+ * Sign in or sign up over the page (no script): the person icon is a label of a hidden checkbox, and
+ * two radio buttons switch between the forms. Signing in goes on to the account page.
+ */
+function LoginPopup({ view }: { view: View }) {
+  const { link } = view;
+  return (
+    <>
+      <input type="checkbox" id="zr-login" className="zr-pop-in" aria-hidden="true" tabIndex={-1} />
+      <div className="zr-pop" role="dialog" aria-label="ورود یا ثبت‌نام">
+        <label htmlFor="zr-login" className="zr-pop-shade" aria-label="بستن" />
+        <div className="zr-pop-box">
+          <label htmlFor="zr-login" className="zr-pop-x" aria-label="بستن">
+            <Svg name="close" />
+          </label>
+          <input type="radio" name="zr-lt" id="zr-lt-1" className="zr-lt" defaultChecked />
+          <input type="radio" name="zr-lt" id="zr-lt-2" className="zr-lt" />
+          <div className="zr-lt-tabs">
+            <label htmlFor="zr-lt-1">ورود</label>
+            <label htmlFor="zr-lt-2">ثبت‌نام</label>
+          </div>
+          <form method="post" action={link("/_account")} className="zr-pop-form">
+            <input type="hidden" name="op" value="login" />
+            <label>
+              <span>
+                شماره‌ی موبایل <i>*</i>
+              </span>
+              <input name="phone" required inputMode="tel" dir="ltr" autoComplete="tel" placeholder="09xx xxx xxxx" />
+            </label>
+            <label>
+              <span>
+                رمز عبور <i>*</i>
+              </span>
+              <input name="password" type="password" required autoComplete="current-password" />
+            </label>
+            <button type="submit" className="zr-btn wide">
+              ورود
+            </button>
+            <small>
+              رمز را فراموش کرده‌اید؟{" "}
+              <PageLink to="/contact" link={link}>
+                با ما تماس بگیرید
+              </PageLink>
+            </small>
+          </form>
+          <form method="post" action={link("/_account")} className="zr-pop-form">
+            <input type="hidden" name="op" value="register" />
+            <label>
+              <span>
+                نام و نام خانوادگی <i>*</i>
+              </span>
+              <input name="name" required maxLength={80} autoComplete="name" />
+            </label>
+            <label>
+              <span>
+                شماره‌ی موبایل <i>*</i>
+              </span>
+              <input name="phone" required inputMode="tel" dir="ltr" autoComplete="tel" placeholder="09xx xxx xxxx" />
+            </label>
+            <label>
+              <span>
+                رمز عبور (دست‌کم ۶ نویسه) <i>*</i>
+              </span>
+              <input name="password" type="password" required minLength={6} autoComplete="new-password" />
+            </label>
+            <button type="submit" className="zr-btn wide">
+              ساخت حساب
+            </button>
+          </form>
+        </div>
+      </div>
+    </>
+  );
+}
+
+/** The cart from the side, opened by the page shown after "add to cart" (?added=<id>); closes with a click. */
+function MiniCart({ view }: { view: View }) {
+  const { shop, visitor, link } = view;
+  const added = visitor.query.added;
+  if (!added || !visible(shop).some((p) => p.id === added)) return null;
+  const cart = priceCart(shop, visitor.cart, visitor.coupon);
+  return (
+    <>
+      <input type="checkbox" id="zr-mc" className="zr-pop-in zr-mc-in" defaultChecked aria-hidden="true" tabIndex={-1} />
+      <div className="zr-mc" role="dialog" aria-label="سبد خرید">
+        <label htmlFor="zr-mc" className="zr-pop-shade" aria-label="بستن" />
+        <aside className="zr-mc-box">
+          <header>
+            <h2>سبد خرید شما ({fa(cart.count)})</h2>
+            <label htmlFor="zr-mc">بستن</label>
+          </header>
+          <div className="zr-mc-lines">
+            {cart.lines.map((l) => (
+              <div key={l.id + (l.size ?? "")} className="zr-mc-line">
+                <PageLink to={productPath(l.product)} link={link} className="zr-line-pic">
+                  {pic(l.product) && <img src={pic(l.product)} alt="" />}
+                </PageLink>
+                <div>
+                  <PageLink to={productPath(l.product)} link={link}>
+                    {l.product.name}
+                  </PageLink>
+                  {l.size && <small>{l.size}</small>}
+                  <div className="zr-stepper">
+                    <Act view={view} op="set" id={l.id} size={l.size} qty={l.qty - 1} label="یکی کمتر">
+                      −
+                    </Act>
+                    <span>{fa(l.qty)}</span>
+                    <Act view={view} op="set" id={l.id} size={l.size} qty={l.qty + 1} label="یکی بیشتر">
+                      +
+                    </Act>
+                  </div>
+                  <small>
+                    {fa(l.qty)} × {money(view, l.unit)}
+                  </small>
+                </div>
+                <Act view={view} op="remove" id={l.id} size={l.size ?? ""} className="zr-remove" label="حذف از سبد">
+                  <Svg name="close" />
+                </Act>
+              </div>
+            ))}
+          </div>
+          <footer>
+            <p>
+              <span>جمع کالاها:</span>
+              <b>{money(view, cart.subtotal)}</b>
+            </p>
+            <PageLink to="/cart" link={link} className="zr-btn ghost wide">
+              دیدن سبد خرید
+            </PageLink>
+            <PageLink to="/checkout" link={link} className="zr-btn wide">
+              ادامه و پرداخت
+            </PageLink>
+          </footer>
+        </aside>
+      </div>
+    </>
   );
 }
 
@@ -1453,7 +1714,7 @@ function ProductPage(view: View & { id: string }) {
                   <span className="sr-only">تعداد</span>
                   <input type="number" name="qty" min={1} max={p.stock ?? 20} defaultValue={1} />
                 </label>
-                <button type="submit" name="back" value="/cart" className="zr-btn">
+                <button type="submit" name="back" value={view.page} className="zr-btn">
                   افزودن به سبد خرید
                 </button>
               </div>
@@ -2261,6 +2522,7 @@ export function zarinSample(locale: ResumeData["locale"]): ResumeData {
         goldRate,
         announcements: ["حراج پاییزه: تا ۴۰٪ تخفیف اجرت روی کالاهای منتخب"],
         heroImage: img("shop-top"),
+        newImage: img("mega"),
         heroKicker: "زیورآلاتی که با دقت انتخاب و با عشق ساخته می‌شوند.",
         heroTitle: "طراحی در تهران، ساخت دست استادکاران ایرانی",
         banners: [
@@ -2338,6 +2600,9 @@ const css = /* css */ `
   background: var(--color-bg); color: var(--zr-ink); min-height: 100%; font-size: 14px; font-weight: 300; line-height: 1.8; }
 .zr a { color: inherit; text-decoration: none; }
 .zr button { font: inherit; color: inherit; }
+.zr .sk-btn { border-radius: 0; background: #111; color: #fff; }
+.zr .sk-btn:hover { background: var(--zr-acc); }
+.zr .sk-form input, .zr .sk-form textarea, .zr .sk-coupon input, .zr .sk-card { border-radius: 0; }
 .zr b, .zr strong, .zr h3 { font-weight: 600; }
 .zr h1, .zr h2 { font-weight: 400; letter-spacing: 0; line-height: 1.5; }
 .zr .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
@@ -2434,7 +2699,10 @@ const css = /* css */ `
 .zr-menu { display: none; }
 .zr-menu > summary { list-style: none; cursor: pointer; }
 .zr-menu > summary::-webkit-details-marker { display: none; }
-.zr-menu[open]::before { content: ""; position: fixed; inset: 0; z-index: 100; background: rgb(0 0 0 / .4); }
+.zr-burger .zr-x { display: none; }
+.zr-menu[open] > summary { position: fixed; inset: 0; z-index: 100; display: block; background: rgb(0 0 0 / .4); }
+.zr-menu[open] .zr-burger-ico { display: none; }
+.zr-menu[open] .zr-x { position: absolute; top: 16px; inset-inline-end: 16px; display: block; width: 40px; height: 40px; padding: 9px; border-radius: 50%; background: #fff; color: #111; }
 .zr-drawer { position: fixed; top: 0; inset-inline-start: 0; z-index: 101; display: grid; align-content: start; gap: 4px; width: min(340px, 86%); height: 100vh; padding: 18px 22px 90px; overflow-y: auto; background: var(--color-bg); box-shadow: 0 0 40px rgb(0 0 0 / .2); animation: zr-drawer .35s cubic-bezier(.2, 1, .3, 1); }
 @keyframes zr-drawer { from { transform: translateX(100%); } }
 .zr-drawer-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
@@ -2491,13 +2759,14 @@ const css = /* css */ `
 .zr-edit p { color: var(--zr-muted); font-size: .86em; }
 .zr-edit .zr-under { margin-top: 8px; }
 
-/* Home: two pictures and the pale-blue card over them */
-.zr-craft { position: relative; display: grid; grid-template-columns: 1fr 1fr 1.05fr; align-items: center; }
-.zr-craft-1, .zr-craft-2 { aspect-ratio: 490 / 510; }
-.zr-craft-2 { margin-inline-end: -8%; }
-.zr-craft-card { position: relative; z-index: 1; display: grid; justify-items: center; gap: 12px; padding: clamp(26px, 4cqi, 60px) clamp(20px, 3cqi, 46px); background: var(--zr-blue); text-align: center; }
-.zr-craft-card h2 { font-size: clamp(1.6em, 2.6cqi, 2.4em); }
-.zr-craft-card p { color: #555; font-size: .9em; line-height: 1.9; }
+/* Home: two pictures side by side and the pale-blue card over the edge of the second one, a third of
+   the way down and running below them (sizes measured on the reference at 1920px). */
+.zr-craft { display: grid; grid-template-columns: 32.5% 32.5% minmax(0, 1fr); column-gap: .85%; align-items: start; width: min(1880px, 100% - 2 * clamp(14px, 1.2cqi, 22px)); }
+.zr-craft-1, .zr-craft-2 { aspect-ratio: 610 / 636; }
+.zr-craft-card { position: relative; z-index: 1; display: grid; place-content: center; justify-items: center; gap: clamp(10px, 1.2cqi, 22px); aspect-ratio: 638 / 618; margin-inline-start: -12.6%; margin-top: 34.2%; margin-inline-end: 13.2%; padding: clamp(18px, 3cqi, 56px); background: var(--zr-blue); text-align: center; }
+.zr-craft-card h2 { font-size: clamp(1.5em, 2.9cqi, 2.85em); font-weight: 300; line-height: 1.3; }
+.zr-craft-card p { max-width: 20em; color: #6B6B6B; font-size: clamp(.86em, 1.05cqi, 1.15em); line-height: 1.8; }
+.zr-craft-card .zr-btn { margin-top: 8px; }
 .zr-why { display: grid; justify-items: center; gap: 14px; width: min(760px, var(--zr-wrap)); padding-top: 0; text-align: center; }
 .zr-why h2 { font-size: clamp(1.5em, 2.2cqi, 2em); }
 .zr-why p { color: var(--zr-muted); line-height: 2; }
@@ -2564,7 +2833,7 @@ const css = /* css */ `
 .zr-trail-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 16px; }
 .zr-prevnext { display: flex; gap: 6px; }
 .zr-prevnext .zr-ico { width: 18px; height: 18px; }
-.zr-plp { display: grid; grid-template-columns: minmax(0, 1fr) 270px; gap: clamp(24px, 3cqi, 40px); align-items: start; padding-block: 26px clamp(40px, 5cqi, 70px); }
+.zr-plp { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: clamp(24px, 3cqi, 40px); align-items: start; padding-block: 26px clamp(40px, 5cqi, 70px); }
 .zr-plp-bar { display: flex; align-items: center; gap: 16px; margin-bottom: 22px; font-size: .86em; }
 .zr-plp-bar > small { margin-inline-end: auto; color: var(--zr-muted); font-size: 1em; }
 .zr-views { display: flex; gap: 6px; }
@@ -2592,6 +2861,7 @@ const css = /* css */ `
 .zr-pager a[aria-current] { border-color: #111; }
 .zr-pager .zr-ico { width: 16px; height: 16px; }
 .zr-side { display: grid; gap: 0; align-content: start; }
+.zr-plp > .zr-side { order: -1; }
 .zr-side-box { padding-block: 16px; border-bottom: 1px solid var(--zr-line); }
 .zr-side-box > summary { display: flex; align-items: center; justify-content: space-between; font-size: 1.05em; font-weight: 400; cursor: pointer; list-style: none; }
 .zr-side-box > summary::-webkit-details-marker { display: none; }
@@ -2692,7 +2962,7 @@ ${[1, 2, 3, 4].map((n) => `.zr-tab-in:nth-of-type(${n}):checked ~ .zr-tab-labels
 .zr-tab-panels .sk-reviews { width: min(860px, 100%); margin-inline: auto; }
 
 /* About */
-.zr-about-top { display: grid; justify-items: center; gap: 6px; padding-block: clamp(20px, 3cqi, 40px) clamp(26px, 3cqi, 44px); text-align: center; }
+.zr-about-top { display: grid; justify-items: center; gap: 4px; padding-block: 0 clamp(18px, 2.4cqi, 32px); text-align: center; }
 .zr-about-top h1, .zr-page-title { font-size: clamp(1.8em, 2.8cqi, 2.5em); }
 .zr-page-title { padding-block: 6px 18px; }
 .zr-about-top p { max-width: 40em; color: var(--zr-muted); }
@@ -2869,13 +3139,80 @@ ${[1, 2, 3, 4, 5].map((n) => `.zr-q-in:nth-of-type(${n}):checked ~ .zr-q-list > 
 .zr-phonebar { display: none; }
 .zr-ftog, .zr-ftog-btn { display: none; }
 
+
+/* Big menu under "shop" */
+.zr-nav-item.has-mega { position: static; }
+.zr-mega { position: absolute; inset-inline: 0; top: 100%; z-index: 6; border-top: 1px solid var(--zr-line); background: var(--color-bg); box-shadow: 0 20px 30px -24px rgb(0 0 0 / .35); opacity: 0; visibility: hidden; transform: translateY(8px); transition: opacity .25s, transform .25s, visibility .25s; }
+.zr-nav-item.has-mega:hover .zr-mega, .zr-nav-item.has-mega:focus-within .zr-mega { opacity: 1; visibility: visible; transform: none; }
+.zr-mega-in { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) 280px; gap: 30px; padding-block: 30px; }
+.zr-mega-in > div { display: grid; align-content: start; gap: 10px; }
+.zr-mega h4 { margin: 0 0 4px; font-size: 1em; font-weight: 600; }
+.zr-mega h4.zr-mega-h2 { margin-top: 18px; }
+.zr-mega-in > div a { color: #666; font-weight: 300; }
+.zr-mega-in > div a:hover { color: #111; }
+.zr-mega-card { position: relative; display: block; aspect-ratio: 305 / 400; overflow: hidden; background: var(--zr-soft); }
+.zr-mega-pic, .zr-mega-pic img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.zr-mega-pic img { object-fit: cover; }
+.zr-mega-note { position: absolute; inset-inline: 12px; bottom: 12px; display: grid; justify-items: center; gap: 2px; padding: 14px 10px; background: #fff; text-align: center; }
+.zr-mega-note b { font-size: 1.2em; font-weight: 400; }
+.zr-mega-note small { color: #555; }
+.zr-browse > summary { min-width: 270px; padding: 13px 18px; background: #111; color: #fff; justify-content: space-between; }
+.zr-browse > div { min-width: 270px; padding: 0; border-top: 0; }
+.zr-browse > div a { display: flex; align-items: center; justify-content: space-between; padding: 11px 18px; border-bottom: 1px solid var(--zr-line); color: #555; }
+.zr-browse > div a.strong { color: #111; font-weight: 500; }
+.zr-browse > div a .zr-caret { opacity: .5; }
+.zr-head-row2 { min-height: 46px; }
+
+/* Phone menu: two tabs, menu and categories */
+.zr-dtab { position: absolute; opacity: 0; pointer-events: none; }
+.zr-dtabs { display: flex; gap: 22px; margin: 6px 0 8px; border-bottom: 1px solid var(--zr-line); }
+.zr-dtabs label { padding: 8px 0; color: var(--zr-muted); cursor: pointer; border-bottom: 1px solid transparent; margin-bottom: -1px; }
+#zr-dtab-1:checked ~ .zr-dtabs label:first-child, #zr-dtab-2:checked ~ .zr-dtabs label:last-child { color: #111; border-color: #111; }
+.zr-dpanel { display: none; }
+#zr-dtab-1:checked ~ .zr-dpanel-1, #zr-dtab-2:checked ~ .zr-dpanel-2 { display: grid; }
+.zr-dpanel > a { padding: 10px 0; border-bottom: 1px solid var(--zr-line); }
+.zr-drawer-socials { margin-top: 14px; }
+
+/* Sign-in window and side cart (hidden checkboxes open them) */
+.zr-pop-in { position: fixed; opacity: 0; pointer-events: none; }
+.zr-pop, .zr-mc { position: fixed; inset: 0; z-index: 120; display: none; }
+#zr-login:checked + .zr-pop, .zr-mc-in:checked + .zr-mc { display: grid; }
+.zr-pop { place-items: center; padding: 16px; }
+.zr-pop-shade { position: absolute; inset: 0; background: rgb(0 0 0 / .45); cursor: pointer; }
+.zr-pop-box { position: relative; display: grid; gap: 14px; width: min(440px, 100%); max-height: calc(100vh - 32px); overflow-y: auto; padding: 30px 28px; background: var(--color-bg); animation: zr-in .35s ease both; }
+.zr-pop-x { position: absolute; top: 14px; inset-inline-end: 14px; cursor: pointer; }
+.zr-lt { position: absolute; opacity: 0; pointer-events: none; }
+.zr-lt-tabs { display: flex; justify-content: center; gap: 30px; }
+.zr-lt-tabs label { font-size: 1.6em; font-weight: 300; color: #BBB; cursor: pointer; }
+#zr-lt-1:checked ~ .zr-lt-tabs label:first-child, #zr-lt-2:checked ~ .zr-lt-tabs label:last-child { color: #111; }
+.zr-pop-form { display: none; gap: 14px; }
+#zr-lt-1:checked ~ .zr-pop-form:nth-of-type(1), #zr-lt-2:checked ~ .zr-pop-form:nth-of-type(2) { display: grid; }
+.zr-pop-form label { display: grid; gap: 6px; font-size: .92em; font-weight: 500; }
+.zr-pop-form label i { color: var(--zr-hot); font-style: normal; }
+.zr-pop-form input { width: 100%; padding: 12px 14px; border: 1px solid var(--zr-line); background: var(--color-bg); color: inherit; font: inherit; }
+.zr-pop-form input:focus { outline: none; border-color: #111; }
+.zr-pop-form small { color: var(--zr-muted); text-align: center; }
+.zr-pop-form small a { color: #111; text-decoration: underline; }
+.zr-icon-user { cursor: pointer; }
+.zr-mc-box { position: absolute; inset-block: 0; inset-inline-end: 0; display: grid; grid-template-rows: auto 1fr auto; width: min(400px, 92%); background: var(--color-bg); animation: zr-mc .35s cubic-bezier(.2, 1, .3, 1); }
+@keyframes zr-mc { from { transform: translateX(-100%); } }
+.zr-mc-box header { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; border-bottom: 1px solid var(--zr-line); }
+.zr-mc-box header h2 { font-size: 1.3em; }
+.zr-mc-box header label { cursor: pointer; }
+.zr-mc-lines { display: grid; align-content: start; gap: 4px; padding: 6px 22px; overflow-y: auto; }
+.zr-mc-line { display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; gap: 14px; align-items: start; padding: 14px 0; border-bottom: 1px solid var(--zr-line); }
+.zr-mc-line > div { display: grid; justify-items: start; gap: 6px; }
+.zr-mc-line small { color: var(--zr-muted); }
+.zr-mc-box footer { display: grid; gap: 10px; padding: 18px 22px 22px; border-top: 1px solid var(--zr-line); }
+.zr-mc-box footer p { display: flex; justify-content: space-between; font-size: 1.05em; }
+
 /* Tablets */
 @container (max-width: 1100px) {
   .zr-nav { gap: 16px; font-size: .82em; }
   .zr-head-contact a:last-child { display: none; }
   .zr-cats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .zr-slide-row { grid-auto-columns: calc((100% - 2 * 20px) / 3); }
-  .zr-plp { grid-template-columns: minmax(0, 1fr) 230px; }
+  .zr-plp { grid-template-columns: 230px minmax(0, 1fr); }
   .zr-cols-4 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .zr-foot-cols { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .zr-foot-brand { grid-column: 1 / -1; }
@@ -2893,9 +3230,8 @@ ${[1, 2, 3, 4, 5].map((n) => `.zr-q-in:nth-of-type(${n}):checked ~ .zr-q-list > 
   .zr-pb.big { grid-column: 1 / -1; grid-row: auto; aspect-ratio: 1 / 1.05; }
   .zr-pb:not(.big) { aspect-ratio: 1 / 1.1; }
   .zr-pb-text { width: 80%; }
-  .zr-craft { grid-template-columns: 1fr 1fr; }
-  .zr-craft-2 { margin: 0; }
-  .zr-craft-card { grid-column: 1 / -1; margin: -40px 8% 0; }
+  .zr-craft { grid-template-columns: 1fr 1fr; column-gap: 10px; }
+  .zr-craft-card { grid-column: 1 / -1; aspect-ratio: auto; margin: -50px 8% 0; }
   .zr-since-in { grid-template-columns: 1fr; }
   .zr-plp { grid-template-columns: 1fr; }
   .zr-side { order: -1; display: none; grid-template-columns: 1fr 1fr; column-gap: 20px; margin-bottom: 10px; padding: 4px 16px 16px; border: 1px solid var(--zr-line); }

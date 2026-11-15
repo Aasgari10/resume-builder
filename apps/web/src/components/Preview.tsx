@@ -213,7 +213,8 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
       setVisitor((v) => {
         if (fields.op === "coupon") return { ...v, coupon: fields.code?.trim() || undefined };
         if (fields.op === "wish") return { ...v, wishlist: toggleWishlist(v.wishlist, fields.id!) };
-        if (fields.op === "add") return { ...v, cart: changeCart(v.cart, "add", fields.id!, Math.max(1, qty), size) };
+        // As on the published site, the next page is told what went into the cart (?added=<id>), except the cart page itself.
+        if (fields.op === "add") return { ...v, cart: changeCart(v.cart, "add", fields.id!, Math.max(1, qty), size), query: (fields.back || page) !== "/cart" ? { added: fields.id! } : v.query };
         if (fields.op === "set") return { ...v, cart: changeCart(v.cart, "set", fields.id!, qty, size) };
         if (fields.op === "remove") return { ...v, cart: changeCart(v.cart, "remove", fields.id!, 0, size) };
         return v;

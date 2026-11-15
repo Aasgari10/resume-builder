@@ -460,6 +460,7 @@ export function Customers({ resumeId }: { resumeId?: string }) {
                 <tr key={c.id} tabIndex={0} onClick={() => setOpen(c.id)} onKeyDown={(e) => e.key === "Enter" && setOpen(c.id)}>
                   <td>
                     <b>{c.name}</b>
+                    {c.guest && <small className="muted"> (فقط نظر داده، ثبت‌نام نکرده)</small>}
                   </td>
                   <td dir="ltr">{c.phone}</td>
                   <td>{faDate(c.createdAt)}</td>

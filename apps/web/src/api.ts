@@ -192,7 +192,7 @@ export type Availability = { available: true } | { available: false; reason: str
 /* ───────────── Endpoints ───────────── */
 
 /** An order placed on a published shop (see apps/api/src/routes/shop.ts). */
-export type ShopCustomer = { id: string; name: string; phone: string; createdAt: string; orders: number; spent: number; lastOrderAt: string | null };
+export type ShopCustomer = { id: string; name: string; phone: string; createdAt: string; orders: number; spent: number; lastOrderAt: string | null; /** Only left a comment; has not signed up. */ guest?: boolean };
 export type ShopCustomerDetail = {
   id: string;
   name: string;

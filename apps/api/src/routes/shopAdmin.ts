@@ -219,12 +219,13 @@ shopAdminRouter.get(
   asyncHandler(async (req, res) => {
     const site = await siteOf(req);
     const [customers, spent] = await Promise.all([
-      prisma.shopCustomer.findMany({ where: { siteId: site.id, ...live }, orderBy: { createdAt: "desc" }, take: 2000, select: { id: true, name: true, phone: true, createdAt: true, _count: { select: { orders: { where: live } } } } }),
+      prisma.shopCustomer.findMany({ where: { siteId: site.id, ...live }, orderBy: { createdAt: "desc" }, take: 2000, select: { id: true, name: true, phone: true, createdAt: true, passwordHash: true, _count: { select: { orders: { where: live } } } } }),
       prisma.shopOrder.groupBy({ by: ["customerId"], where: { siteId: site.id, ...live, customerId: { not: null }, status: { not: "CANCELED" } }, _sum: { total: true }, _max: { createdAt: true } }),
     ]);
     const byId = new Map(spent.map((s) => [s.customerId, s]));
     res.json({
-      customers: customers.map(({ _count, ...c }) => ({ ...c, orders: _count.orders, spent: byId.get(c.id)?._sum.total ?? 0, lastOrderAt: byId.get(c.id)?._max.createdAt ?? null })),
+      // "guest": left a comment without signing up (no password yet).
+      customers: customers.map(({ _count, passwordHash, ...c }) => ({ ...c, guest: !passwordHash, orders: _count.orders, spent: byId.get(c.id)?._sum.total ?? 0, lastOrderAt: byId.get(c.id)?._max.createdAt ?? null })),
     });
   })
 );

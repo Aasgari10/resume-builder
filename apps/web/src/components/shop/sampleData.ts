@@ -197,6 +197,31 @@ function makeStore(shop: Shop): Store {
       });
     }
   }
+  // Every product of the demo has a few comments to show and manage: at least two approved, often one waiting.
+  for (const p of products) {
+    const own = reviews.filter((r) => r.productId === p.id);
+    const missing = Math.max(0, 2 - own.filter((r) => r.approved).length) + (chance(0.4) ? 1 : 0);
+    for (let k = 0; k < missing; k++) {
+      const c = pick(customers);
+      if (own.some((r) => r.customer.phone === c.phone)) continue;
+      const rating = weighted([5, 4, 3], (r) => ({ 5: 7, 4: 4, 3: 1 })[r]!);
+      const waiting = k === 2;
+      const at = now - (waiting ? int(1, 40) * 3600000 : int(5, 120) * DAY);
+      const r = {
+        id: id("r"),
+        productId: p.id,
+        rating,
+        text: rating >= 4 ? pick(PRAISE) : pick(OKAY),
+        approved: !waiting,
+        reply: !waiting && chance(0.3) ? pick(REPLIES_GOOD) : null,
+        createdAt: new Date(at).toISOString(),
+        customer: { name: c.name, phone: c.phone },
+        customerId: c.id,
+      };
+      own.push(r);
+      reviews.push(r);
+    }
+  }
   reviews.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
 
   const tickets: Store["tickets"] = [];
@@ -654,7 +679,21 @@ function sampleAccountStep(s: Store, shop: Shop, op: string | undefined, fields:
     changed();
     return { msg: "ثبت‌نام انجام شد؛ خوش آمدید!", page: "/account" };
   }
-  const me = s.customers.find((c) => c.id === s.me);
+  let me = s.customers.find((c) => c.id === s.me);
+  // A comment from a visitor who has not signed in: kept under their name and mobile number, waiting for approval.
+  if (!me && op === "review") {
+    const back = `/product/${text(fields.productId, 40)}`;
+    const name = text(fields.name, 80);
+    const phone = mobile(fields.phone);
+    if (name.length < 2) return { error: "نام خود را بنویسید.", page: back };
+    if (!/^09\d{9}$/.test(phone)) return { error: "شماره‌ی موبایل درست نیست.", page: back };
+    me = s.customers.find((c) => c.phone === phone);
+    if (!me) {
+      me = { id: `c-${Date.now().toString(36)}`, name, phone, places: [], addresses: [], joined: Date.now(), createdAt: new Date().toISOString() };
+      s.customers.unshift(me);
+    }
+    return sampleReview(s, me, fields, false);
+  }
   if (!me) return { error: "اول وارد حساب خود شوید.", page: "/account" };
   if (op === "logout") {
     s.me = undefined;
@@ -671,25 +710,8 @@ function sampleAccountStep(s: Store, shop: Shop, op: string | undefined, fields:
     changed();
     return { msg: op === "address-add" ? "نشانی ذخیره شد." : "نشانی حذف شد.", page: "/account" };
   }
-  if (op === "review") {
-    const productId = text(fields.productId, 40);
-    const back = `/product/${productId}`;
-    const comment = text(fields.text, 1000);
-    if (comment.length < 3) return { error: "متن نظر را بنویسید.", page: back };
-    s.reviews.unshift({
-      id: `r-${Date.now().toString(36)}`,
-      productId,
-      rating: Math.max(1, Math.min(5, Math.round(Number(fields.rating) || 5))),
-      text: comment,
-      approved: autoApprove,
-      reply: null,
-      createdAt: new Date().toISOString(),
-      customer: { name: me.name, phone: me.phone },
-      customerId: me.id,
-    });
-    changed();
-    return { msg: autoApprove ? "نظر شما ثبت شد. ممنون!" : "نظر شما ثبت شد و پس از تأیید فروشگاه نمایش داده می‌شود. (در پنل مدیریت، بخش «نظرات»، تأییدش کنید.)", page: back };
-  }
+  if (op === "review") return sampleReview(s, me, fields, autoApprove);
+
   if (op === "ticket-close") {
     const t = s.tickets.find((x) => x.id === fields.ticketId && x.customerId === me.id);
     if (t) t.status = "CLOSED";
@@ -1010,4 +1032,25 @@ function sampleCancelBooking(shop: Shop, fields: Record<string, string>, withAcc
   m.ownerNote = [m.ownerNote, "لغو شده توسط خود مراجع"].filter(Boolean).join("\n");
   messagesChanged();
   return answer("نوبت لغو شد.");
+}
+
+/** A comment on a product, from a signed-in customer or a visitor who gave their name and number. */
+function sampleReview(s: Store, me: SampleCustomer, fields: Record<string, string>, autoApprove: boolean): Result {
+  const productId = text(fields.productId, 40);
+  const back = `/product/${productId}`;
+  const comment = text(fields.text, 1000);
+  if (comment.length < 3) return { error: "متن نظر را بنویسید.", page: back };
+  s.reviews.unshift({
+    id: `r-${Date.now().toString(36)}`,
+    productId,
+    rating: Math.max(1, Math.min(5, Math.round(Number(fields.rating) || 5))),
+    text: comment,
+    approved: autoApprove,
+    reply: null,
+    createdAt: new Date().toISOString(),
+    customer: { name: me.name, phone: me.phone },
+    customerId: me.id,
+  });
+  changed();
+  return { msg: autoApprove ? "نظر شما ثبت شد. ممنون!" : "نظر شما ثبت شد و پس از تأیید فروشگاه نمایش داده می‌شود. (در پنل مدیریت، بخش «نظرات»، تأییدش کنید.)", page: back };
 }

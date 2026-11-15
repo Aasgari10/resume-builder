@@ -228,7 +228,11 @@ function Logo({ view }: { view: View }) {
   const b = view.ctx.data.basics;
   return (
     <PageLink to="/" link={view.link} className="nr-logo">
-      <b {...ed("basics.fullName", "text", "نام اقامتگاه")}>{b.fullName}</b>
+      {safeUrl(b.avatarUrl) ? (
+        <img src={safeUrl(b.avatarUrl)} alt={b.fullName} {...ed("basics.avatarUrl", "image", "لوگو (خالی: نام اقامتگاه)")} />
+      ) : (
+        <b {...ed("basics.fullName", "text", "نام اقامتگاه")}>{b.fullName}</b>
+      )}
     </PageLink>
   );
 }
@@ -473,16 +477,37 @@ function Home(view: View) {
   );
 }
 
+/**
+ * The check-in day as a list of days in the Persian calendar ("پنجشنبه ۲۹ آبان"), from today up to
+ * the days ahead the guesthouse takes bookings for. Browsers' own date fields show the Gregorian
+ * calendar; this needs no script and sends the same yyyy-mm-dd value.
+ */
+function DaySelect({ name, value, ahead }: { name: string; value?: string; ahead: number }) {
+  const today = todayTehran();
+  const days = Array.from({ length: Math.max(1, Math.min(ahead, 365)) + 1 }, (_, k) => addDay(today, k));
+  const year = faDay(today, { year: "numeric" });
+  return (
+    <select name={name} defaultValue={value && days.includes(value) ? value : days[1] ?? today} required>
+      {days.map((d, k) => (
+        <option key={d} value={d}>
+          {k === 0 ? "امروز، " : k === 1 ? "فردا، " : ""}
+          {shortDay(d)}
+          {faDay(d, { year: "numeric" }) !== year ? ` ${faDay(d, { year: "numeric" })}` : ""}
+        </option>
+      ))}
+    </select>
+  );
+}
+
 /** Check-in day, nights and guests: shows the rooms free for them. */
 function SearchForm({ view, title }: { view: View; title?: string }) {
   const q = view.visitor.query;
-  const today = todayTehran();
   return (
     <form method="get" action={view.link("/rooms")} className="nr-form">
       {title && <h3>{title}</h3>}
       <label>
         <span>تاریخ ورود</span>
-        <input type="date" name="in" min={today} defaultValue={q.in ?? addDay(today, 1)} required />
+        <DaySelect name="in" value={q.in} ahead={scheduleOf(view.shop).ahead} />
       </label>
       <label>
         <span>تعداد شب</span>
@@ -878,7 +903,7 @@ function Room(view: View & { id: string }) {
             <form method="get" action={`${link(`/room/${room.id}`)}#nr-book`} className="nr-form">
               <label>
                 <span>تاریخ ورود</span>
-                <input type="date" name="in" min={todayTehran()} defaultValue={checkIn} required />
+                <DaySelect name="in" value={checkIn} ahead={s.ahead} />
               </label>
               <label>
                 <span>تعداد شب</span>
@@ -1495,6 +1520,8 @@ export function narenjSample(locale: ResumeData["locale"]): ResumeData {
     basics: {
       ...base.basics,
       fullName: "نارنج",
+      // The reference's logo, for now (to be replaced by the designer's).
+      avatarUrl: sampleImage("nr-logo-temp", "png"),
       jobTitle: "اقامتگاه بوتیک",
       email: "info@example.com",
       phone: "071 1234 5678",
@@ -1645,6 +1672,8 @@ a:hover .nr-plus, .nr-more:hover .nr-plus { transform: rotate(90deg); }
 .nr-home .nr-head { position: absolute; inset: var(--nr-frame-pad) var(--nr-frame-pad) auto; background: none; }
 .nr-home .nr-head-in { color: #fff; padding-inline: clamp(16px, 2.6cqi, 52px); }
 .nr-logo b { font-family: var(--nr-head); font-size: 1.9em; font-weight: 400; line-height: 1; }
+.nr-logo img { display: block; width: auto; height: clamp(30px, 3cqi, 42px); }
+.nr-home .nr-head .nr-logo img { filter: invert(1); }
 .nr-nav { display: flex; gap: clamp(16px, 2.4cqi, 38px); margin-inline-start: auto; font-size: .82em; font-weight: 600; }
 .nr-nav a { padding: 6px 0; transition: color .25s; }
 .nr-nav a:hover, .nr-nav a[aria-current="page"] { color: var(--nr-accent); }

@@ -252,6 +252,12 @@ async function accountAction(req: Request, res: Response, subdomain: string, bas
       if (name.length < 2) return go(account(base, "نام را وارد کنید.", true, home));
       if (password.length < 6) return go(account(base, "رمز باید دست‌کم ۶ نویسه باشد.", true, home));
       const exists = await prisma.shopCustomer.findUnique({ where: { siteId_phone: { siteId, phone } } });
+      // A visitor who only left a comment (no password yet) makes the account their own by signing up.
+      if (exists && !exists.passwordHash && !exists.deletedAt) {
+        await prisma.shopCustomer.update({ where: { id: exists.id }, data: { name, passwordHash: hashPassword(password) } });
+        setCustomer(res, base, customerToken(exists.id, siteId, env.sessionSecret));
+        return go(account(base, "ثبت‌نام انجام شد؛ خوش آمدید!", false, home));
+      }
       if (exists) return go(account(base, exists.deletedAt ? "این حساب غیرفعال شده است؛ با فروشگاه تماس بگیرید." : "با این شماره قبلاً ثبت‌نام شده است؛ وارد شوید.", true, home));
       const c = await prisma.shopCustomer.create({ data: { siteId, name, phone, passwordHash: hashPassword(password) } });
       setCustomer(res, base, customerToken(c.id, siteId, env.sessionSecret));
@@ -280,6 +286,32 @@ async function accountAction(req: Request, res: Response, subdomain: string, bas
   }
 
   const customerId = await signedInCustomer(req, siteId);
+  // A comment from a visitor who has not signed in: kept under their mobile number as a customer
+  // without a password (listed in the panel's customers; signing up later with that number claims
+  // it). It always waits for the shop's approval.
+  if (!customerId && op === "review") {
+    const productId = text(body.productId, 40);
+    const back = `${to(base, `/product/${encodeURIComponent(productId)}`)}`;
+    const fail = (msg: string) => go(`${back}?error=${encodeURIComponent(msg)}`);
+    if (body.website) return go(back);
+    if (tooMany(`review:${req.ip}`)) return fail("نظرهای زیادی ثبت کرده‌اید؛ کمی بعد دوباره امتحان کنید.");
+    const name = text(body.name, 80);
+    const phone = mobile(body.phone);
+    const comment = text(body.text, 1000);
+    const rating = Math.max(1, Math.min(5, Math.round(Number(body.rating) || 0)));
+    if (!found.shop?.products.some((p) => p.id === productId)) return go(to(base, "/"));
+    if (name.length < 2) return fail("نام خود را بنویسید.");
+    if (!/^09\d{9}$/.test(phone)) return fail("شماره‌ی موبایل درست نیست.");
+    if (comment.length < 3) return fail("متن نظر را بنویسید.");
+    let c = await prisma.shopCustomer.findUnique({ where: { siteId_phone: { siteId, phone } } });
+    if (c?.deletedAt) return fail("ثبت نظر با این شماره ممکن نیست.");
+    if (c?.passwordHash) return fail("با این شماره حساب دارید؛ اول وارد شوید.");
+    c ??= await prisma.shopCustomer.create({ data: { siteId, name, phone, passwordHash: "" } });
+    const recent = await prisma.shopReview.count({ where: { siteId, customerId: c.id, createdAt: { gt: new Date(Date.now() - 3600_000) } } });
+    if (recent >= 3) return fail("نظرهای زیادی ثبت کرده‌اید؛ کمی بعد دوباره امتحان کنید.");
+    await prisma.shopReview.create({ data: { siteId, productId, customerId: c.id, rating, text: comment, approved: false } });
+    return go(`${back}?msg=${encodeURIComponent("نظر شما ثبت شد و پس از تأیید فروشگاه نمایش داده می‌شود.")}`);
+  }
   if (!customerId) return go(account(base, "اول وارد حساب خود شوید.", true, home));
   if (op === "logout") {
     setCustomer(res, base, null);

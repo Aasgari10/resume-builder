@@ -13,7 +13,7 @@ import { sampleImage, sampleResume } from "../sample";
 import type { TemplateProps } from "../types";
 import { FormMeta, Icon, Opt, PageLink, Socials, blockOn, ed, item, outside, partsCss } from "./parts";
 import { ZoomOpen } from "./zoom";
-import { AccountPage, CouponBox, InfoLinks, InfoPage, OptionPicker, Reviews, SORTS, Stars, filterProducts, infoPages, onSale, percentOff, shopkitCss, timeLeft } from "./shopkit";
+import { AccountPage, CouponBox, InfoPage, OptionPicker, Reviews, SORTS, Stars, filterProducts, infoPages, onSale, percentOff, shopkitCss, timeLeft } from "./shopkit";
 
 /** Home page sections the user can switch off. */
 export const HOMEMART_BLOCKS = [
@@ -324,7 +324,6 @@ function Footer({ ctx, link, editing, shop, page }: View) {
           <PageLink to="/wishlist" link={link}>
             علاقه‌مندی‌ها
           </PageLink>
-          <InfoLinks shop={shop} link={link} />
         </div>
         <div>
           <h4>خدمات مشتریان</h4>
@@ -361,11 +360,6 @@ function Footer({ ctx, link, editing, shop, page }: View) {
       <div className="hm-wrap hm-foot-end">
         <span>
           © {fa(new Date().getFullYear())} {b.fullName}. تمامی حقوق محفوظ است.
-        </span>
-        <span>
-          <a href="#">حریم خصوصی</a>
-          <i>|</i>
-          <a href="#">قوانین و مقررات</a>
         </span>
       </div>
     </footer>

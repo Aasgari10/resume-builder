@@ -66,7 +66,7 @@ type Props = {
 };
 
 /** Tabs of a menu site, in this order. */
-const MENU_TABS: Tab[] = ["products", "categories", "inbox", "qr", "banners", "extras", "quotes", "pages", "trash"];
+const MENU_TABS: Tab[] = ["products", "categories", "inbox", "customers", "qr", "banners", "extras", "quotes", "pages", "trash"];
 
 /** Tabs only templates with a booking form have. */
 const STUDIO_ONLY: Tab[] = ["studio", "calendar", "clients", "studio-reports", "schedule", "events"];
@@ -74,11 +74,11 @@ const STUDIO_ONLY: Tab[] = ["studio", "calendar", "clients", "studio-reports", "
 const SHOP_ORDER: Tab[] = ["dashboard", "gold", "products", "categories", "orders", "inbox", ...STUDIO_ONLY, "customers", "reviews", "tickets", "coupons", "banners", "quotes", "extras", "pages", "blog", "reports", "trash", "settings", "qr"];
 const bookingRank = (t: Tab) => SHOP_ORDER.indexOf(t);
 /** Tabs of a photo studio, in this order. */
-const CLINIC_TABS_ALL: Tab[] = ["studio", "inbox", "calendar", "schedule", "products", "clients", "studio-reports", "events", "categories", "extras", "blog", "pages", "trash"];
-const ESCAPE_TABS: Tab[] = ["studio", "inbox", "calendar", "schedule", "products", "clients", "studio-reports", "quotes", "extras", "blog", "pages", "trash"];
-const STAY_TABS: Tab[] = ["studio", "inbox", "calendar", "products", "schedule", "clients", "studio-reports", "coupons", "categories", "banners", "quotes", "extras", "blog", "pages", "trash"];
-const RENTAL_TABS: Tab[] = ["studio", "inbox", "calendar", "schedule", "products", "categories", "clients", "studio-reports", "quotes", "extras", "blog", "pages", "trash"];
-const STUDIO_TABS: Tab[] = ["studio", "inbox", "calendar", "products", "clients", "studio-reports", "categories", "banners", "extras", "quotes", "blog", "pages", "trash"];
+const CLINIC_TABS_ALL: Tab[] = ["studio", "inbox", "calendar", "schedule", "products", "clients", "customers", "studio-reports", "events", "categories", "extras", "blog", "pages", "trash"];
+const ESCAPE_TABS: Tab[] = ["studio", "inbox", "calendar", "schedule", "products", "clients", "customers", "studio-reports", "quotes", "extras", "blog", "pages", "trash"];
+const STAY_TABS: Tab[] = ["studio", "inbox", "calendar", "products", "schedule", "clients", "customers", "studio-reports", "coupons", "categories", "banners", "quotes", "extras", "blog", "pages", "trash"];
+const RENTAL_TABS: Tab[] = ["studio", "inbox", "calendar", "schedule", "products", "categories", "clients", "customers", "studio-reports", "quotes", "extras", "blog", "pages", "trash"];
+const STUDIO_TABS: Tab[] = ["studio", "inbox", "calendar", "products", "clients", "customers", "studio-reports", "categories", "banners", "extras", "quotes", "blog", "pages", "trash"];
 
 const EMPTY_SHOP: Shop = { categories: [], products: [] };
 
@@ -194,7 +194,7 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
               ["categories", stay ? "🏷 نوع اتاق‌ها" : rental ? "🎧 خدمات" : clinic ? "🧩 حوزه‌های درمان" : "📂 دسته‌ها"],
               ["orders", "📋 سفارش‌ها", badge(counts?.newOrders)],
               ["inbox", "📥 پیام‌ها و نوبت‌ها", badge(inboxNew)],
-              ["customers", "👥 مشتریان"],
+              ["customers", studio || menu ? "🔐 حساب‌های کاربری سایت" : "👥 مشتریان"],
               ["reviews", "💬 نظرات", badge(counts?.waitingReviews)],
               ["tickets", "🎫 تیکت‌ها", badge(counts?.openTickets)],
               ["coupons", "🏷 کدهای تخفیف"],

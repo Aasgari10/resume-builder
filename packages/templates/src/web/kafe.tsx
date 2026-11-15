@@ -46,7 +46,8 @@ export function kafePages(data: ResumeData): string[] {
   const shopPages = sold.length
     ? ["/shop", ...soldCategories(shop).filter((c) => sold.some((p) => p.categoryId === c.id)).map((c) => `/category/${c.id}`), ...sold.map((p) => `/product/${p.id}`), "/cart", "/checkout", "/thanks", "/account", ...infoPages(shop).filter((p) => p !== "/contact")]
     : [];
-  return ["/", "/menu", ...KAFE_OPTIONAL_PAGES.map((p) => p.path).filter((p) => pageOn(data, p)), "/contact", ...shopPages];
+  // Every site has sign-in and sign-up, selling or not (the accounts are listed in the panel).
+  return ["/", "/menu", ...KAFE_OPTIONAL_PAGES.map((p) => p.path).filter((p) => pageOn(data, p)), "/contact", ...shopPages, ...(sold.length ? [] : ["/account"])];
 }
 
 type View = { ctx: Ctx; shop: Shop; link: (p: string) => string; editing: boolean; page: string; visitor: Visitor };
@@ -185,15 +186,13 @@ function Header(view: View) {
       <div className="kf-wrap kf-head-in">
         <Logo view={view} />
         <nav className="kf-nav">{nav}</nav>
-        {soldProducts(view.shop).length > 0 && (
-          <div className="kf-head-tools">
-            <PageLink to="/account" link={view.link} className="kf-bag" current={view.page === "/account"}>
-              <KIcon name="user" />
-              <span className="sr-only">حساب کاربری</span>
-            </PageLink>
-            <BagLink view={view} />
-          </div>
-        )}
+        <div className="kf-head-tools">
+          <PageLink to="/account" link={view.link} className="kf-bag" current={view.page === "/account"}>
+            <KIcon name="user" />
+            <span className="sr-only">{view.visitor.customer ? "حساب کاربری" : "ورود / ثبت‌نام"}</span>
+          </PageLink>
+          {soldProducts(view.shop).length > 0 && <BagLink view={view} />}
+        </div>
         {/* Phone menu without scripts: a details element whose summary turns into the close button. */}
         <details className="kf-burger">
           <summary aria-label="منو">

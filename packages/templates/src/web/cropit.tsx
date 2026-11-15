@@ -15,6 +15,7 @@ import { sampleImage, sampleResume } from "../sample";
 import type { TemplateProps } from "../types";
 import { FormMeta, Opt, PageLink, Socials, blockOn, ed, item, outside, partsCss } from "./parts";
 import { ZoomOpen } from "./zoom";
+import { AccountPage, shopkitCss } from "./shopkit";
 import { mapEmbed } from "./golsara";
 
 export const CROPIT_BLOCKS = [
@@ -41,7 +42,8 @@ const hasBlog = (data: ResumeData) => livePosts(data.site?.shop).length > 0 && p
 
 export function cropitPages(data: ResumeData): string[] {
   const blog = hasBlog(data) ? ["/blog", ...livePosts(data.site?.shop).map((p) => `/blog/${p.id}`)] : [];
-  return ["/", "/services", ...(pageOn(data, "/about") ? ["/about"] : []), "/gallery", ...blog, "/contact"];
+  // Every site has sign-in and sign-up; the accounts are listed in the panel.
+  return ["/", "/services", ...(pageOn(data, "/about") ? ["/about"] : []), "/gallery", ...blog, "/contact", "/account"];
 }
 
 type View = { ctx: Ctx; shop: Shop; link: (p: string) => string; editing: boolean; page: string; visitor: Visitor };
@@ -60,9 +62,15 @@ export function CropitSite(props: TemplateProps) {
     : page === "/about" ? <About {...view} />
     : page === "/gallery" ? <Gallery {...view} />
     : kind === "blog" ? (id ? <Post {...view} id={id} /> : <Blog {...view} />)
+    : page === "/account" ? (
+      <section className="cr-wrap cr-account">
+        <h1>{view.visitor.customer ? "حساب کاربری" : "ورود یا ثبت‌نام"}</h1>
+        <AccountPage link={view.link} page={view.page} visitor={view.visitor} bookings="only" />
+      </section>
+    )
     : <Contact {...view} />;
   return (
-    <WebPage ctx={ctx} className={`cr${PHOTO_TOP.includes(page) ? " cr-over" : ""}`} css={partsCss + css}>
+    <WebPage ctx={ctx} className={`cr${PHOTO_TOP.includes(page) ? " cr-over" : ""}`} css={partsCss + shopkitCss + css}>
       <Header {...view} />
       <main key={page}>{body}</main>
       <Footer {...view} />
@@ -113,6 +121,7 @@ const Para = ({ text }: { text?: string }) => (
 
 const ICONS: Record<string, string> = {
   search: "M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20 20l-4-4",
+  user: "M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8z M4.5 20.5a7.5 7.5 0 0 1 15 0",
   menu: "M3 6h18M3 12h18M3 18h18",
   close: "M6 6l12 12M18 6L6 18",
   prev: "M9 4l8 8-8 8",
@@ -208,6 +217,9 @@ function Header(view: View) {
               </form>
             </details>
           )}
+          <PageLink to="/account" link={link} className="cr-user" label={view.visitor.customer ? "حساب کاربری" : "ورود / ثبت‌نام"}>
+            <Svg name="user" />
+          </PageLink>
           {/* Side menu: the pages on a phone; on a wide screen the contacts and the socials. */}
           <details className="cr-side">
             <summary aria-label="منو">
@@ -1328,6 +1340,10 @@ const css = /* css */ `
 .cr-tools summary { display: grid; place-items: center; list-style: none; cursor: pointer; }
 .cr-tools summary::-webkit-details-marker { display: none; }
 .cr-tools .cr-ico { width: 30px; height: 30px; stroke-width: 2.2; }
+.cr-user { display: grid; place-items: center; color: inherit; }
+.cr-tools .cr-user .cr-ico { width: 24px; height: 24px; stroke-width: 1.8; }
+.cr-account { display: grid; gap: 20px; padding-block: clamp(40px, 6cqi, 80px); }
+.cr-account h1 { font-size: clamp(1.6em, 3cqi, 2.4em); }
 .cr-search { position: relative; }
 .cr-search form { position: absolute; top: calc(100% + 22px); inset-inline-end: -10px; display: flex; width: 320px; background: #fff; color: var(--cr-ink); box-shadow: 0 20px 40px -20px rgb(0 0 0 / .4); }
 .cr-search input { flex: 1; padding: 14px 16px; font: inherit; }

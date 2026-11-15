@@ -139,10 +139,24 @@ export function Reviews({ p, link, visitor }: Base & { p: Product }) {
           )}
         </article>
       ))}
-      {visitor.customer ? (
-        <form method="post" action={link("/_account")} className="sk-form">
+      {/* Signed-in customers comment under their account; visitors give their name and mobile number. */}
+      <form method="post" action={link("/_account")} className="sk-form">
+          <h3 className="sk-form-title">نظر خود را بنویسید</h3>
           <input type="hidden" name="op" value="review" />
           <input type="hidden" name="productId" value={p.id} />
+          {!visitor.customer && (
+            <div className="sk-two-fields">
+              <label>
+                نام شما
+                <input name="name" required minLength={2} maxLength={80} autoComplete="name" />
+              </label>
+              <label>
+                شماره‌ی موبایل (نمایش داده نمی‌شود)
+                <input name="phone" required inputMode="tel" dir="ltr" autoComplete="tel" placeholder="09xx xxx xxxx" />
+              </label>
+              <input name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: "absolute", width: 1, height: 1, opacity: 0, pointerEvents: "none" }} />
+            </div>
+          )}
           <fieldset className="sk-rate">
             <legend>امتیاز شما:</legend>
             {[5, 4, 3, 2, 1].map((n) => (
@@ -158,16 +172,15 @@ export function Reviews({ p, link, visitor }: Base & { p: Product }) {
           <button type="submit" className="sk-btn">
             ثبت نظر
           </button>
-        </form>
-      ) : (
-        <p className="sk-muted">
-          برای ثبت نظر{" "}
-          <PageLink to="/account" link={link}>
-            وارد حساب خود شوید
-          </PageLink>
-          .
-        </p>
-      )}
+          {!visitor.customer && (
+            <small className="sk-muted">
+              نظر پس از تأیید فروشگاه نمایش داده می‌شود. حساب دارید؟{" "}
+              <PageLink to="/account" link={link}>
+                وارد شوید
+              </PageLink>
+            </small>
+          )}
+      </form>
     </section>
   );
 }
@@ -854,6 +867,10 @@ export const shopkitCss = /* css */ `
 .sk-filters input:not([type=checkbox]), .sk-filters select { width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid var(--sk-line, #E5E5E5); border-radius: var(--sk-radius, 10px); background: var(--sk-card, #fff); color: inherit; font: inherit; font-weight: 400; }
 .sk-filters .sk-check { display: flex; align-items: center; gap: 8px; font-weight: 400; cursor: pointer; }
 .sk-filters .sk-check input { width: 17px; height: 17px; accent-color: var(--sk-accent, #111); }
+.sk-form-title { margin: 6px 0 0; font-size: 1em; }
+.sk-two-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.sk-two-fields label { display: grid; gap: 6px; font-size: .9em; }
+@container (max-width: 600px) { .sk-two-fields { grid-template-columns: 1fr; } }
 .sk-specs h2 { margin: 0 0 10px; font-size: 1.1em; }
 .sk-specs dl { display: grid; margin: 0; border: 1px solid var(--sk-line, #EEE); border-radius: var(--sk-card-radius, 12px); overflow: hidden; }
 .sk-specs dl > div { display: grid; grid-template-columns: minmax(110px, 34%) 1fr; }
@@ -884,7 +901,7 @@ a.sk-btn, a.sk-btn:hover, a.sk-btn:visited { color: #fff !important; text-decora
 .sk-muted { color: var(--sk-muted, #6B7280); }
 .sk-ok { padding: 10px 14px; border-radius: 10px; background: #F0FDF4; color: #15803D; }
 .sk-err { padding: 10px 14px; border-radius: 10px; background: #FEF2F2; color: #B91C1C; }
-.sk-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 11px 22px; border: none; border-radius: var(--sk-radius, 999px); background: var(--sk-accent, #111); color: #fff; font: inherit; font-weight: 700; cursor: pointer; justify-self: start; }
+.sk-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 11px 22px; border: none; border-radius: var(--sk-radius, 999px); background: var(--sk-accent, #111); color: #fff !important; font: inherit; font-weight: 700; cursor: pointer; justify-self: start; }
 .sk-btn:hover { filter: brightness(1.1); }
 .sk-link { padding: 0; border: none; background: none; color: var(--sk-accent, #111); font: inherit; text-decoration: underline; cursor: pointer; }
 .sk-card { padding: 20px; border: 1px solid var(--sk-line, #EEE); border-radius: var(--sk-card-radius, 14px); background: var(--sk-card, #fff); }
