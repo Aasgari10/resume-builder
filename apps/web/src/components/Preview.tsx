@@ -178,7 +178,11 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
       setVisitor((v) => ({ ...v, query: Object.fromEntries(url.searchParams) }));
       setPage(url.pathname);
       window.setTimeout(() => frameTop(a), 60);
-    } else if (to) setPage(to);
+    } else if (to) {
+      // A plain page link starts clean, as on the published site: filters and messages of the last page do not follow.
+      setVisitor((v) => (Object.keys(v.query).length ? { ...v, query: {} } : v));
+      setPage(to);
+    }
     // Links inside the site with a query (a booking day, a month, a blog category or page): open that
     // page with the query, as the published site does, then go to its anchor or the top.
     else if (href.startsWith("/") && !href.startsWith("//")) {

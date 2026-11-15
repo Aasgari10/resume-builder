@@ -17,7 +17,7 @@ import { sampleImage, sampleResume } from "../sample";
 import type { TemplateProps } from "../types";
 import { FormMeta, Icon, Opt, PageLink, Socials, blockOn, ed, item, outside, partsCss } from "./parts";
 import { ZoomOpen } from "./zoom";
-import { AccountPage, CouponBox, hasChoices, InfoPage, infoPages, onSale, OptionPicker, percentOff, Reviews, saleProducts, shopkitCss, SORTS, SpecsTable, Stars, timeLeft, filterProducts } from "./shopkit";
+import { AccountPage, CouponBox, hasChoices, InfoPage, infoPages, onSale, OptionPicker, percentOff, Reviews, saleProducts, shopkitCss, SORTS, SpecsTable, Stars, timeLeft, filterProducts, PriceFilterBox } from "./shopkit";
 import { mapEmbed } from "./golsara";
 import { TrackBooking, bookingCss } from "./booking";
 
@@ -395,98 +395,17 @@ function Logo({ view, className = "sn-logo" }: { view: View; className?: string 
 
 const shopCats = (shop: Shop) => (shop.categories ?? []).filter((c) => visible(shop).some((p) => p.categoryId === c.id));
 
-function Nav({ view, className, mega }: { view: View; className: string; mega?: boolean }) {
-  const cats = shopCats(view.shop);
+function Nav({ view, className }: { view: View; className: string }) {
   return (
     <nav className={className}>
       {menu(view).map((m) => (
-        <span key={m.to} className={`sn-nav-item${m.cats && cats.length ? (mega ? " has-mega" : " has-sub") : ""}`}>
+        <span key={m.to} className="sn-nav-item">
           <PageLink to={m.to} link={view.link} current={isHere(view, m.to)}>
             {m.label}
-            {m.cats && cats.length > 0 && <Svg name="down" className="sn-ico sn-caret" />}
           </PageLink>
-          {m.cats && cats.length > 0 &&
-            (mega ? (
-              <MegaPanel view={view} />
-            ) : (
-              <span className="sn-sub">
-                {cats.map((c) => (
-                  <PageLink key={c.id} to={`/category/${c.id}`} link={view.link}>
-                    {c.name}
-                  </PageLink>
-                ))}
-              </span>
-            ))}
         </span>
       ))}
     </nav>
-  );
-}
-
-/** The big menu under "shop": categories, special orders, quick lists and the sale picture (opens on hover or focus). */
-function MegaPanel({ view }: { view: View }) {
-  const { shop, link } = view;
-  const all = visible(shop);
-  const cats = shopCats(shop);
-  const sale = saleProducts(all);
-  const top = sale.length ? Math.max(...sale.map(percentOff)) : 0;
-  const img = safeUrl(shop.newImage);
-  const data = view.ctx.data;
-  return (
-    <div className="sn-mega">
-      <div className="sn-wrap sn-mega-in">
-        <div>
-          <h4>دسته‌ها</h4>
-          {cats.map((c) => (
-            <PageLink key={c.id} to={`/category/${c.id}`} link={link}>
-              {c.name}
-            </PageLink>
-          ))}
-        </div>
-        <div>
-          <h4>سفارش ویژه</h4>
-          {pageOn(data, "/custom") && (
-            <PageLink to="/custom" link={link}>
-              کیک سفارشی
-            </PageLink>
-          )}
-          {pageOn(data, "/gallery") && (
-            <PageLink to="/gallery" link={link}>
-              نمونه‌کارها
-            </PageLink>
-          )}
-          <PageLink to="/track" link={link}>
-            پیگیری سفارش کیک
-          </PageLink>
-        </div>
-        <div>
-          <h4>پیشنهاد ما</h4>
-          <PageLink to="/shop" link={link}>
-            محصولات جدید
-          </PageLink>
-          {sale.length > 0 && (
-            <PageLink to="/shop?sale=1" link={link}>
-              حراج امروز
-            </PageLink>
-          )}
-          <PageLink to="/shop?sort=cheap" link={link}>
-            ارزان‌ترین‌ها
-          </PageLink>
-          <PageLink to="/shop?stock=1" link={link}>
-            آماده‌ی ارسال
-          </PageLink>
-        </div>
-        <PageLink to={sale.length ? "/shop?sale=1" : "/shop"} link={link} className="sn-mega-card">
-          <span className="sn-mega-pic" {...ed("site.shop.newImage", "image", "عکس منوی بزرگ")}>
-            {img && <img src={img} alt="" loading="lazy" />}
-          </span>
-          <span className="sn-mega-note">
-            <b>{sale.length ? "حراج و پیشنهاد ویژه" : "کالکشن جدید"}</b>
-            {top > 0 && <small>تا {fa(top)}٪ تخفیف</small>}
-          </span>
-        </PageLink>
-      </div>
-    </div>
   );
 }
 
@@ -600,7 +519,7 @@ function Header(view: View) {
         <Icons view={view} search />
       </div>
       <div className="sn-wrap sn-head-nav">
-        <Nav view={view} className="sn-nav" mega />
+        <Nav view={view} className="sn-nav" />
       </div>
     </header>
   );
@@ -1228,33 +1147,9 @@ function SortMenu({ view, here }: { view: View; here: string }) {
 function PriceFilter({ view, here }: { view: View; here: string }) {
   const prices = visible(view.shop).map(unitPrice);
   if (!prices.length) return null;
-  const step = 500000;
-  const lo = Math.floor(Math.min(...prices) / step) * step;
-  const hi = Math.max(lo + step, Math.ceil(Math.max(...prices) / step) * step);
-  const q = view.visitor.query;
-  const read = (v: string | undefined, d: number) => {
-    const n = Number(String(v ?? "").replace(/[^\d]/g, ""));
-    return n ? Math.min(hi, Math.max(lo, n)) : d;
-  };
-  const min = read(q.min, lo);
-  const max = read(q.max, hi);
   return (
-    <SideBox title="فیلتر قیمت">
-      <form method="get" action={view.link(here)} className="sn-price-filter">
-        <Keep query={q} skip={["min", "max", "p"]} />
-        <div className="sn-range">
-          <input type="range" name="min" min={lo} max={hi} step={step} defaultValue={min} aria-label="کمترین قیمت" />
-          <input type="range" name="max" min={lo} max={hi} step={step} defaultValue={max} aria-label="بیشترین قیمت" />
-        </div>
-        <div className="sn-range-foot">
-          <button type="submit" className="sn-btn tiny">
-            فیلتر
-          </button>
-          <small>
-            {money(view, min)} — {money(view, max)}
-          </small>
-        </div>
-      </form>
+    <SideBox title="قیمت">
+      <PriceFilterBox link={view.link} here={here} query={view.visitor.query} prices={prices} buttonClass="sn-btn tiny" />
     </SideBox>
   );
 }

@@ -14,7 +14,7 @@ import { sampleImage, sampleResume } from "../sample";
 import type { TemplateProps } from "../types";
 import { FormMeta, Icon, Opt, PageLink, Socials, blockOn, ed, item, outside, partsCss } from "./parts";
 import { ZoomOpen } from "./zoom";
-import { AccountPage, CouponBox, FilterForm, filterProducts, hasChoices, InfoPage, infoPages, onSale, OptionPicker, percentOff, Reviews, saleProducts, shopkitCss, SORTS, SpecsTable, timeLeft } from "./shopkit";
+import { AccountPage, CouponBox, FilterForm, filterProducts, hasChoices, InfoPage, infoPages, onSale, OptionPicker, percentOff, Reviews, saleProducts, shopkitCss, SORTS, SpecsTable, timeLeft, PriceFilterBox } from "./shopkit";
 
 export const GOLSARA_BLOCKS = [
   { key: "intro", label: "معرفی فروشگاه با دو عکس" },
@@ -943,35 +943,11 @@ function SortMenu({ view, here }: { view: GView; here: string }) {
 
 /** Price filter of the side column: two handles on one line (plain range inputs) and a filter button. */
 function PriceFilter({ view, here }: { view: GView; here: string }) {
-  const prices = visible(view.shop).map(unitPrice);
-  if (!prices.length) return null;
-  const step = 50000;
-  const lo = Math.floor(Math.min(...prices) / step) * step;
-  const hi = Math.max(lo + step, Math.ceil(Math.max(...prices) / step) * step);
-  const q = view.visitor.query;
-  const read = (v: string | undefined, d: number) => {
-    const n = Number(String(v ?? "").replace(/[^\d]/g, ""));
-    return n ? Math.min(hi, Math.max(lo, n)) : d;
-  };
-  const min = read(q.min, lo);
-  const max = read(q.max, hi);
   return (
-    <form method="get" action={view.link(here)} className="gs-side-box gs-price-filter">
+    <div className="gs-side-box gs-price-filter">
       <h3>فیلتر بر اساس قیمت</h3>
-      <Keep query={q} skip={["min", "max"]} />
-      <div className="gs-range">
-        <input type="range" name="min" min={lo} max={hi} step={step} defaultValue={min} aria-label="کمترین قیمت" />
-        <input type="range" name="max" min={lo} max={hi} step={step} defaultValue={max} aria-label="بیشترین قیمت" />
-      </div>
-      <div className="gs-range-foot">
-        <small>
-          قیمت: {money(view, min)} تا {money(view, max)}
-        </small>
-        <button type="submit" className="gs-btn small">
-          فیلتر
-        </button>
-      </div>
-    </form>
+      <PriceFilterBox link={view.link} here={here} query={view.visitor.query} prices={visible(view.shop).map(unitPrice)} buttonClass="gs-btn small" />
+    </div>
   );
 }
 

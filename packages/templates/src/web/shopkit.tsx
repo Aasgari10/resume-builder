@@ -413,8 +413,10 @@ const readAmount = (v?: string) => {
 export function filterProducts(products: Product[], categories: Shop["categories"], query: Record<string, string>, categoryId?: string) {
   const cats = categories.filter((c) => products.some((p) => p.categoryId === c.id));
   const cat = cats.find((c) => c.id === (categoryId ?? query.cat));
-  const min = readAmount(query.min);
-  const max = readAmount(query.max);
+  // A minimum above the maximum (typed the wrong way round) still means the range between them.
+  let min = readAmount(query.min);
+  let max = readAmount(query.max);
+  if (min !== undefined && max !== undefined && min > max) [min, max] = [max, min];
   const words = (query.q ?? "").trim().split(/\s+/).filter(Boolean);
   let list = products.filter(
     (p) =>
@@ -430,6 +432,69 @@ export function filterProducts(products: Product[], categories: Shop["categories
   else if (query.sort === "sale") list = [...list].sort((a, b) => (onSale(b) ? percentOff(b) : 0) - (onSale(a) ? percentOff(a) : 0));
   const active = ["q", "min", "max", "sale", "stock"].some((k) => query[k]) || Boolean(!categoryId && query.cat) || (query.sort ?? "new") !== "new";
   return { list, cats, cat, active };
+}
+
+/** A round price for a range boundary: 1, 2 or 5 times a power of ten (50,000, 200,000…). */
+function nicePrice(n: number): number {
+  if (n <= 0) return 0;
+  const p = 10 ** Math.floor(Math.log10(n));
+  return [1, 2, 5, 10].map((k) => k * p).reduce((a, b) => (Math.abs(b - n) < Math.abs(a - n) ? b : a));
+}
+
+/** Up to four price bands that split the shop's prices about evenly ("up to 100,000", "100,000 to 300,000"…). */
+export function priceBands(prices: number[]): [number | undefined, number | undefined][] {
+  const sorted = [...prices].filter((n) => n > 0).sort((a, b) => a - b);
+  if (sorted.length < 4) return [];
+  const cuts = [...new Set([0.25, 0.5, 0.75].map((f) => nicePrice(sorted[Math.floor(f * (sorted.length - 1))]!)))].filter((c) => c > sorted[0]! && c < sorted.at(-1)!);
+  if (!cuts.length) return [];
+  return [[undefined, cuts[0]], ...cuts.slice(1).map((c, k) => [cuts[k], c] as [number, number]), [cuts.at(-1), undefined]];
+}
+
+/**
+ * The price filter of a shop page, without scripts: quick price bands (links) and two boxes for the
+ * lowest and highest price. (Sliders cannot show the price they are on without a script.)
+ */
+export function PriceFilterBox({ link, here, query, prices, className, buttonClass }: { link: Link; here: string; query: Record<string, string>; prices: number[]; className?: string; buttonClass?: string }) {
+  if (!prices.length) return null;
+  const bands = priceBands(prices);
+  const t = (n: number) => (n >= 1_000_000 && n % 100_000 === 0 ? `${fa(n / 1_000_000)} میلیون` : n >= 1000 && n % 1000 === 0 ? `${fa(n / 1000)} هزار` : fa(n));
+  const label = ([a, b]: [number | undefined, number | undefined]) => (a === undefined ? `تا ${t(b!)} تومان` : b === undefined ? `بالای ${t(a)} تومان` : `${t(a)} تا ${t(b)} تومان`);
+  const keep = Object.entries(query).filter(([k, v]) => v && !["min", "max", "p"].includes(k));
+  const href = (a?: number, b?: number) => {
+    const qs = new URLSearchParams([...keep, ...(a !== undefined ? [["min", String(a)]] : []), ...(b !== undefined ? [["max", String(b)]] : [])] as [string, string][]).toString();
+    return `${link(here)}${qs ? `?${qs}` : ""}`;
+  };
+  const cur = (v?: string) => (v ? readAmount(v) : undefined);
+  const on = (a?: number, b?: number) => cur(query.min) === a && cur(query.max) === b;
+  return (
+    <div className={`sk-price ${className ?? ""}`}>
+      {bands.length > 0 && (
+        <div className="sk-price-bands">
+          {bands.map(([a, b]) => (
+            <a key={`${a}-${b}`} href={on(a, b) ? href() : href(a, b)} aria-current={on(a, b) || undefined}>
+              {label([a, b])}
+            </a>
+          ))}
+        </div>
+      )}
+      <form method="get" action={link(here)} className="sk-price-form">
+        {keep.map(([k, v]) => (
+          <input key={k} type="hidden" name={k} value={v} />
+        ))}
+        <label>
+          <small>از</small>
+          <input name="min" inputMode="numeric" placeholder="کمترین" defaultValue={query.min ? fa(cur(query.min) ?? 0) : undefined} aria-label="کمترین قیمت (تومان)" />
+        </label>
+        <label>
+          <small>تا</small>
+          <input name="max" inputMode="numeric" placeholder="بیشترین" defaultValue={query.max ? fa(cur(query.max) ?? 0) : undefined} aria-label="بیشترین قیمت (تومان)" />
+        </label>
+        <button type="submit" className={buttonClass ?? "sk-btn"}>
+          اعمال
+        </button>
+      </form>
+    </div>
+  );
 }
 
 /**
@@ -867,6 +932,15 @@ export const shopkitCss = /* css */ `
 .sk-filters input:not([type=checkbox]), .sk-filters select { width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid var(--sk-line, #E5E5E5); border-radius: var(--sk-radius, 10px); background: var(--sk-card, #fff); color: inherit; font: inherit; font-weight: 400; }
 .sk-filters .sk-check { display: flex; align-items: center; gap: 8px; font-weight: 400; cursor: pointer; }
 .sk-filters .sk-check input { width: 17px; height: 17px; accent-color: var(--sk-accent, #111); }
+.sk-price { display: grid; gap: 12px; }
+.sk-price-bands { display: grid; gap: 4px; }
+.sk-price-bands a { padding: 6px 10px; border-radius: 8px; color: inherit; font-size: .9em; text-decoration: none; transition: background .2s; }
+.sk-price-bands a:hover { background: var(--sk-soft, #F5F5F5); }
+.sk-price-bands a[aria-current] { background: var(--sk-accent, #111); color: #fff; }
+.sk-price-form { display: grid; grid-template-columns: 1fr 1fr; align-items: end; gap: 8px; }
+.sk-price-form label { display: grid; gap: 4px; font-size: .8em; color: var(--sk-muted, #6B7280); }
+.sk-price-form input { width: 100%; min-width: 0; padding: 8px 10px; border: 1px solid var(--sk-line, #E5E5E5); border-radius: 8px; background: var(--sk-card, #fff); color: inherit; font: inherit; font-size: 1.1em; }
+.sk-price-form button { grid-column: 1 / -1; justify-self: start; padding: 9px 18px; }
 .sk-form-title { margin: 6px 0 0; font-size: 1em; }
 .sk-two-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .sk-two-fields label { display: grid; gap: 6px; font-size: .9em; }

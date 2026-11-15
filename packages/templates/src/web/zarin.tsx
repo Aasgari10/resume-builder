@@ -16,7 +16,7 @@ import { sampleImage, sampleResume } from "../sample";
 import type { TemplateProps } from "../types";
 import { FormMeta, Icon, Opt, PageLink, Socials, blockOn, ed, item, outside, partsCss } from "./parts";
 import { ZoomOpen } from "./zoom";
-import { AccountPage, CouponBox, hasChoices, InfoPage, infoPages, onSale, OptionPicker, percentOff, Reviews, saleProducts, shopkitCss, SORTS, SpecsTable, Stars, timeLeft, filterProducts } from "./shopkit";
+import { AccountPage, CouponBox, hasChoices, InfoPage, infoPages, onSale, OptionPicker, percentOff, Reviews, saleProducts, shopkitCss, SORTS, SpecsTable, Stars, timeLeft, filterProducts, PriceFilterBox } from "./shopkit";
 import { mapEmbed } from "./golsara";
 
 export const ZARIN_BLOCKS = [
@@ -1522,33 +1522,9 @@ function SortMenu({ view, here }: { view: View; here: string }) {
 function PriceFilter({ view, here }: { view: View; here: string }) {
   const prices = visible(view.shop).map(unitPrice);
   if (!prices.length) return null;
-  const step = 500000;
-  const lo = Math.floor(Math.min(...prices) / step) * step;
-  const hi = Math.max(lo + step, Math.ceil(Math.max(...prices) / step) * step);
-  const q = view.visitor.query;
-  const read = (v: string | undefined, d: number) => {
-    const n = Number(String(v ?? "").replace(/[^\d]/g, ""));
-    return n ? Math.min(hi, Math.max(lo, n)) : d;
-  };
-  const min = read(q.min, lo);
-  const max = read(q.max, hi);
   return (
-    <SideBox title="فیلتر قیمت">
-      <form method="get" action={view.link(here)} className="zr-price-filter">
-        <Keep query={q} skip={["min", "max", "p"]} />
-        <div className="zr-range">
-          <input type="range" name="min" min={lo} max={hi} step={step} defaultValue={min} aria-label="کمترین قیمت" />
-          <input type="range" name="max" min={lo} max={hi} step={step} defaultValue={max} aria-label="بیشترین قیمت" />
-        </div>
-        <div className="zr-range-foot">
-          <button type="submit" className="zr-btn tiny">
-            فیلتر
-          </button>
-          <small>
-            {money(view, min)} — {money(view, max)}
-          </small>
-        </div>
-      </form>
+    <SideBox title="قیمت">
+      <PriceFilterBox link={view.link} here={here} query={view.visitor.query} prices={prices} buttonClass="zr-btn tiny" />
     </SideBox>
   );
 }
