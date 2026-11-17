@@ -10,8 +10,9 @@ import { Field, ImagePicker, MoneyInput, readNumber, showNumber } from "./fields
 import { DateTimeInput, OptionsEditor, SaleEndField, SpecsEditor } from "./ProductExtras";
 import { Pager, SelectAll, useSelection } from "./ShopOrders";
 import { GoldFields } from "./GoldPanel";
+import { SessionsEditor } from "./GymPanel";
 
-type Props = { shop: Shop; setShop: (s: Partial<Shop>) => void; onSample?: () => void; focus?: string; resumeId?: string; /** A gold shop: products get weight, karat and wage, priced from the day's rate. */ gold?: boolean };
+type Props = { shop: Shop; setShop: (s: Partial<Shop>) => void; onSample?: () => void; focus?: string; resumeId?: string; /** A gold shop: products get weight, karat and wage, priced from the day's rate. */ gold?: boolean; /** A gym: classes get their weekly sessions. */ gym?: boolean };
 
 type Sort = "new" | "best" | "cheap" | "dear" | "stock" | "rating" | "name";
 type StockFilter = "" | "out" | "low" | "in";
@@ -32,7 +33,7 @@ const onSale = (p: Product) => unitPrice(p) < p.price;
 /** Rounds a price to whole thousands of tomans. */
 const roundPrice = (n: number) => Math.max(0, Math.round(n / 1000) * 1000);
 
-export function Products({ shop, setShop, onSample, focus, resumeId, gold }: Props) {
+export function Products({ shop, setShop, onSample, focus, resumeId, gold, gym }: Props) {
   const api = useShopApi();
   const [editing, setEditing] = useState<string | null>(focus ?? null);
   const [f, setF] = useState<Filters>(NO_FILTERS);
@@ -97,6 +98,7 @@ export function Products({ shop, setShop, onSample, focus, resumeId, gold }: Pro
           categories={shop.categories}
           stat={stats[current.id]}
           gold={gold ? shop.goldRate ?? { rate: 0, profit: 7, tax: 10 } : undefined}
+          gym={Boolean(gym) && (current.categoryId === shop.showcaseCategoryId || Boolean(current.sessions?.length))}
           onChange={(patch) => update(current.id, patch)}
           onCopy={() => {
             const id = newId();
@@ -393,6 +395,7 @@ function ProductForm({
   categories,
   stat,
   gold,
+  gym,
   onChange,
   onCopy,
   onRemove,
@@ -402,6 +405,8 @@ function ProductForm({
   stat?: ShopProductStat;
   /** The gold rate of a gold shop (its products are priced from it). */
   gold?: NonNullable<Shop["goldRate"]>;
+  /** A gym's class: its weekly sessions. */
+  gym?: boolean;
   onChange: (patch: Partial<Product>) => void;
   onCopy: () => void;
   onRemove: () => void;
@@ -500,6 +505,7 @@ function ProductForm({
         </Field>
       </div>
       {gold && <GoldFields p={p} rate={gold} onChange={onChange} />}
+      {gym && <SessionsEditor p={p} onChange={onChange} />}
       <OptionsEditor p={p} onChange={onChange} />
       <SpecsEditor p={p} onChange={onChange} />
       <details className="shm-seo">

@@ -135,6 +135,36 @@ export const cakeDefaults = (): Schedule => ({ ...defaultSchedule(), days: [6, 0
 /** The fixed parts of a bakery's schedule, whatever was stored. */
 export const CAKE_FIXED = { start: "00:00", end: "01:00", slot: 60, byService: false, nights: false, seats: false, span: false } as const;
 
+/* ───────────── A gym: classes that meet at set times every week ───────────── */
+
+/**
+ * A gym's timetable: every weekday open, a class books per class (its own places), quarter-hour
+ * times so any start time of a class fits, two weeks ahead.
+ */
+export const gymDefaults = (): Schedule => ({ ...defaultSchedule(), days: [0, 1, 2, 3, 4, 5, 6], start: "00:00", end: "23:59", slot: 15, capacity: 20, ahead: 14, byService: true });
+/** The fixed parts of a gym's schedule, whatever was stored (the owner sets days, places, days off and how far ahead). */
+export const GYM_FIXED = { start: "00:00", end: "23:59", slot: 15, byService: true, nights: false, seats: false, span: false } as const;
+
+export type Session = { day: number; time: string };
+/** A class meeting that can be booked: its day, its time and the places left in it. */
+export type Meeting = { date: string; time: string; free: number };
+
+/**
+ * The coming meetings of a class within the booking window, in order: its weekly sessions on open
+ * days that are still ahead (today's from half an hour from now), with the places left of `places`.
+ */
+export function meetingsOf(s: Schedule, sessions: Session[] | undefined, places: number, taken: Taken, now = new Date()): Meeting[] {
+  const today = todayTehran(now);
+  const out: Meeting[] = [];
+  const list = [...(sessions ?? [])].sort((a, b) => a.time.localeCompare(b.time));
+  for (let k = 0; k <= s.ahead; k++) {
+    const day = addDay(today, k);
+    const offered = slotsOf({ ...s, ...GYM_FIXED }, day, now);
+    for (const m of list) if (m.day === weekdayOf(day) && offered.includes(m.time)) out.push({ date: day, time: m.time, free: Math.max(0, places - (taken[slotKey(day, m.time)] ?? 0)) });
+  }
+  return out;
+}
+
 /* ───────────── Stays: rooms booked by the night ───────────── */
 
 /** What a booking row needs for counting taken places (the API's rows and the preview's sample alike). */

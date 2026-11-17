@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { normalizeIranPhone } from "./phone";
 import { OTP_LENGTH, generateOtp, hashOtp, verifyOtpHash } from "./otp";
 import { SESSION_TTL_MS, createSessionToken, readCookie, verifySessionToken } from "./session";
-import { priceCart, variantOf, type Shop } from "@rb/schema";
+import { gymDefaults, meetingsOf, priceCart, variantOf, type Shop } from "@rb/schema";
 import { adjustShop, checkPassword, hashPassword } from "./shopData";
 
 const SECRET = "test-secret-test-secret-test-secret-1234";
@@ -173,4 +173,23 @@ test("withGoldPrice: the price and the sale price follow the rate; other product
   assert.deepEqual(withGoldPrice(plain, rate), plain);
   // No rate yet: the price typed by hand stays.
   assert.equal(withGoldPrice({ ...p, price: 7 }, undefined).price, 7);
+});
+
+test("gym classes: only their weekly meetings, with the places left", () => {
+  const now = new Date("2026-11-16T06:00:00Z"); // Monday 9:30 in Tehran
+  const s = { ...gymDefaults(), ahead: 7 };
+  const sessions = [
+    { day: 1, time: "08:00" }, // Monday: today's is already over
+    { day: 1, time: "18:00" },
+    { day: 3, time: "18:00" },
+  ];
+  const taken = { "2026-11-16 18:00": 3 };
+  const list = meetingsOf(s, sessions, 4, taken, now);
+  assert.deepEqual(
+    list.map((m) => `${m.date} ${m.time} ${m.free}`),
+    ["2026-11-16 18:00 1", "2026-11-18 18:00 4", "2026-11-23 08:00 4", "2026-11-23 18:00 4"],
+  );
+  // A day off leaves its meetings out; so do closed weekdays.
+  assert.equal(meetingsOf({ ...s, closed: ["2026-11-18"] }, sessions, 4, {}, now).some((m) => m.date === "2026-11-18"), false);
+  assert.equal(meetingsOf({ ...s, days: [6, 0, 2, 4] }, sessions, 4, {}, now).length, 0);
 });

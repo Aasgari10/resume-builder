@@ -8,6 +8,7 @@ import { applyHiddenFields, changeCart, emptyVisitor, toggleWishlist, variantKey
 import { getTemplate, isDummyUrl, pageTitle, resolvePage, siteTheme, withPlaceholders } from "@rb/templates";
 import { newId } from "./editor/list";
 import { EditPopover, type EditTarget } from "./site-edit/EditPopover";
+import { PreviewGuard } from "./PreviewGuard";
 import { SitePanel, type PanelTab } from "./site-edit/SitePanel";
 import { getAt, isItemPath, removeItem, setAt } from "./site-edit/paths";
 import { SiteInbox } from "./shop/SiteInbox";
@@ -54,6 +55,15 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
   // Each template may bring its own example persona and pictures.
   const templateSample = useMemo(() => site.sample?.(raw.locale), [site, raw.locale]);
   const shown = withPlaceholders(raw, templateSample);
+  // The content before the last change, for "undo" when a change breaks the preview.
+  const current = useRef(raw);
+  const before = useRef<ResumeData | null>(null);
+  useEffect(() => {
+    if (current.current !== raw) {
+      before.current = current.current;
+      current.current = raw;
+    }
+  }, [raw]);
   const data = applyHiddenFields(shown, theme.hiddenFields);
   // The colors the site is drawn with: the template's own page colors until the user picks others.
   const effective = siteTheme(theme);
@@ -103,7 +113,7 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
   // Some templates have their own color (HomeMart burgundy, Zarin gold): a site still on the starting
   // navy gets it (a color the user picked stays).
   useEffect(() => {
-    const own = ({ "homemart-shop": "#800E2F", "zarin-shop": "#B08D57", "shirin-shop": "#F2474B" } as Record<string, string>)[theme.templateId];
+    const own = ({ "homemart-shop": "#800E2F", "zarin-shop": "#B08D57", "shirin-shop": "#F2474B", "pulad-site": "#F5094B", "papo-shop": "#FF782D" } as Record<string, string>)[theme.templateId];
     if (own && theme.colors.primary.toUpperCase() === "#1E3A5F") onThemeChange({ ...theme, colors: { ...theme.colors, primary: own } });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [theme.templateId, theme.colors.primary]);
@@ -346,7 +356,7 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
           دستیار
         </button>
         {site.shop && (
-          <button type="button" className="ws-chip" title={site.stay ? "مدیریت اقامتگاه: رزروها، اتاق‌ها، خدمات اضافه، کدهای تخفیف و بلاگ" : site.rental ? "مدیریت استودیو: رزروها، ساعت کاری، استودیوها، خدمات و بلاگ" : site.escape ? "مدیریت اتاق فرار: رزروها، سانس‌ها، اتاق‌ها و بلاگ" : site.clinic ? "مدیریت مطب: نوبت‌ها، ساعت کاری، تعرفه‌ها، رویدادها و بلاگ" : site.studio ? "مدیریت آتلیه: پیام‌ها و رزروها، پکیج‌ها، تیم، بلاگ" : site.services ? "مدیریت سایت: خدمات، فروشگاه، سفارش‌ها و بلاگ" : site.menu && site.sells ? "مدیریت سایت: منو، فروشگاه، سفارش‌ها و QR کد" : site.menu ? "مدیریت سایت: منو، QR کد و محتوای صفحه‌ها" : site.cake ? "مدیریت شیرینی‌پزی: سفارش‌ها، کیک‌های سفارشی، محصولات، کدهای تخفیف و بلاگ" : site.gold ? "مدیریت طلافروشی: نرخ روز طلا، محصولات، سفارش‌ها، کدهای تخفیف و گزارش‌ها" : "مدیریت فروشگاه: سفارش‌ها، محصولات، تیکت‌ها و گزارش‌ها"} onClick={() => { setShopFocus(undefined); setShopOpen(true); }}>
+          <button type="button" className="ws-chip" title={site.stay ? "مدیریت اقامتگاه: رزروها، اتاق‌ها، خدمات اضافه، کدهای تخفیف و بلاگ" : site.rental ? "مدیریت استودیو: رزروها، ساعت کاری، استودیوها، خدمات و بلاگ" : site.escape ? "مدیریت اتاق فرار: رزروها، سانس‌ها، اتاق‌ها و بلاگ" : site.clinic ? "مدیریت مطب: نوبت‌ها، ساعت کاری، تعرفه‌ها، رویدادها و بلاگ" : site.studio ? "مدیریت آتلیه: پیام‌ها و رزروها، پکیج‌ها، تیم، بلاگ" : site.services ? "مدیریت سایت: خدمات، فروشگاه، سفارش‌ها و بلاگ" : site.menu && site.sells ? "مدیریت سایت: منو، فروشگاه، سفارش‌ها و QR کد" : site.menu ? "مدیریت سایت: منو، QR کد و محتوای صفحه‌ها" : site.gym ? "مدیریت باشگاه: رزرو کلاس‌ها، برنامه‌ی هفتگی، اشتراک‌ها، فروشگاه، رویدادها و بلاگ" : site.cake ? "مدیریت شیرینی‌پزی: سفارش‌ها، کیک‌های سفارشی، محصولات، کدهای تخفیف و بلاگ" : site.gold ? "مدیریت طلافروشی: نرخ روز طلا، محصولات، سفارش‌ها، کدهای تخفیف و گزارش‌ها" : "مدیریت فروشگاه: سفارش‌ها، محصولات، تیکت‌ها و گزارش‌ها"} onClick={() => { setShopFocus(undefined); setShopOpen(true); }}>
             ⚙️ مدیریت
           </button>
         )}
@@ -372,7 +382,9 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
             onClick={onFrameClick}
             onSubmit={onFrameSubmit}
           >
-            <site.component data={data} theme={effective} page={page} editing={editing} visitor={shownVisitor} />
+            <PreviewGuard resetKey={`${page}|${theme.templateId}|${JSON.stringify(raw).length}`} onUndo={before.current ? () => before.current && onDataChange(before.current) : undefined}>
+              <site.component data={data} theme={effective} page={page} editing={editing} visitor={shownVisitor} />
+            </PreviewGuard>
           </div>
         </div>
         {panel && (!full || barOpen) && (
@@ -415,7 +427,7 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
         )}
       {shopOpen &&
         createPortal(
-          <ShopManager data={raw} sample={templateSample} onData={onDataChange} resumeId={resumeId} focusProductId={shopFocus} menu={Boolean(site.menu)} sells={Boolean(site.sells)} services={Boolean(site.services)} bookings={Boolean(site.bookings)} studio={Boolean(site.studio)} clinic={Boolean(site.clinic)} escape={Boolean(site.escape)} rental={Boolean(site.rental)} stay={Boolean(site.stay)} gold={Boolean(site.gold)} cake={Boolean(site.cake)} panel={site.panel} hasBlog={Boolean(site.escape || site.rental || site.stay || site.optionalPages?.some((p) => p.path === "/blog"))} onClose={() => { setShopOpen(false); setShopFocus(undefined); }} />,
+          <ShopManager data={raw} sample={templateSample} onData={onDataChange} resumeId={resumeId} focusProductId={shopFocus} menu={Boolean(site.menu)} sells={Boolean(site.sells)} services={Boolean(site.services)} bookings={Boolean(site.bookings)} studio={Boolean(site.studio)} clinic={Boolean(site.clinic)} escape={Boolean(site.escape)} rental={Boolean(site.rental)} stay={Boolean(site.stay)} gold={Boolean(site.gold)} cake={Boolean(site.cake)} gym={Boolean(site.gym)} pet={Boolean(site.pet)} panel={site.panel} hasBlog={Boolean(site.escape || site.rental || site.stay || site.optionalPages?.some((p) => p.path === "/blog"))} onClose={() => { setShopOpen(false); setShopFocus(undefined); }} />,
           document.body,
         )}
       {target &&

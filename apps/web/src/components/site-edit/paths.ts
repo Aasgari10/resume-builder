@@ -9,7 +9,9 @@ type Seg = { key: string } | { id: string } | { index: number };
 function parse(path: string): Seg[] {
   const segs: Seg[] = [];
   for (const part of path.match(/[^.[\]]+|\[[^\]]+\]/g) ?? []) {
-    if (part.startsWith("[")) segs.push({ id: part.slice(1, -1) });
+    // "[3]" is a position too (images[0], bandItems[2]); any other "[x]" is an item id.
+    if (/^\[\d+\]$/.test(part)) segs.push({ index: Number(part.slice(1, -1)) });
+    else if (part.startsWith("[")) segs.push({ id: part.slice(1, -1) });
     else if (/^\d+$/.test(part)) segs.push({ index: Number(part) });
     else segs.push({ key: part });
   }
@@ -39,7 +41,10 @@ export function setAt(data: ResumeData, shown: ResumeData, path: string, value: 
     if (i === segs.length) return value;
     const seg = segs[i]!;
     if ("key" in seg) {
-      const base = node && typeof node === "object" ? node : {};
+      // A shop starts with the lists every shop has (the sample's categories, so copied products keep theirs).
+      const inShop = i === 2 && segs.slice(0, 2).map((x) => ("key" in x ? x.key : "")).join(".") === "site.shop";
+      const fresh = inShop ? { categories: structuredClone(sample?.categories ?? []), products: [] } : {};
+      const base = node && typeof node === "object" ? node : fresh;
       return { ...base, [seg.key]: write(base[seg.key], sample?.[seg.key], i + 1) };
     }
     const list: any[] = Array.isArray(node) ? node : [];
@@ -51,6 +56,10 @@ export function setAt(data: ResumeData, shown: ResumeData, path: string, value: 
     const at = list.findIndex((x) => x?.id === seg.id);
     const sampleItem = Array.isArray(sample) ? sample.find((x: any) => x?.id === seg.id) : undefined;
     if (at >= 0) return list.map((x, k) => (k === at ? write(x, sampleItem, i + 1) : x));
+    // On a site, editing one sample item (a product, a banner, a team member…) takes the whole
+    // sample list, as removing one does: a list of one would empty the section.
+    if (!list.length && sampleItem && Array.isArray(sample) && "key" in segs[0]! && segs[0].key === "site")
+      return sample.map((x: any) => (x === sampleItem ? write(structuredClone(x), x, i + 1) : structuredClone(x)));
     return sampleItem ? [...list, write(structuredClone(sampleItem), sampleItem, i + 1)] : list;
   };
   return write(data, shown, 0) as ResumeData;

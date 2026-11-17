@@ -18,10 +18,10 @@ export const ed = (path: string, kind: EditKind, label: string): Edit => ({ "dat
 export const item = (list: string, id: string) => `${list}[${id}]`;
 
 /** Shows its children when the value is filled; while editing an empty value becomes a "+ label" button. */
-export function Opt({ value, editing, edit, children }: { value: unknown; editing: boolean; edit: Edit; children?: ReactNode }) {
+export function Opt({ value, editing, edit, children }: { value: unknown; editing: boolean; edit?: Edit; children?: ReactNode }) {
   const filled = Array.isArray(value) ? value.some((v) => String(v).trim()) : Boolean(String(value ?? "").trim());
   if (filled) return <>{children}</>;
-  return editing ? (
+  return editing && edit ? (
     <span className="p-ghost" {...edit}>
       + {edit["data-edit-label"]}
     </span>

@@ -68,6 +68,10 @@ export type TemplateDefinition = {
   gold?: boolean;
   /** A pastry shop: custom cakes are bookings with a number of cakes a day (the schedule tab sets it). */
   cake?: boolean;
+  /** A gym: classes with weekly sessions booked one meeting at a time, membership plans and events. */
+  gym?: boolean;
+  /** A pet shop: which category holds the services and which the price packages. */
+  pet?: boolean;
   /**
    * Shop manager pieces this template shows on its pages; a manager tab for content the template has
    * no place for is left out. "extras" lists the sections of that tab, each with the heading it gets.

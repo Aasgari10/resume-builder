@@ -285,11 +285,13 @@ function Pic({ src, path, label, className }: { src?: string; path: string; labe
 }
 
 /** A centred heading with an optional line of text under it. */
-function Head({ view, title, titlePath, text, textPath, fallback }: { view: View; title?: string; titlePath: string; text?: string; textPath?: string; fallback?: string }) {
+function Head({ view, title, titlePath, text, textPath, fallback }: { view: View; title?: string; titlePath?: string; text?: string; textPath?: string; fallback?: string }) {
+  // A heading without a path is fixed text (nothing to edit on the page).
+  const edit = titlePath ? ed(titlePath, "text", "تیتر") : undefined;
   return (
     <div className="zr-head-c">
-      <Opt value={title || fallback} editing={view.editing} edit={ed(titlePath, "text", "تیتر")}>
-        <h2 {...ed(titlePath, "text", "تیتر")}>{title || fallback}</h2>
+      <Opt value={title || fallback} editing={view.editing} edit={edit}>
+        <h2 {...edit}>{title || fallback}</h2>
       </Opt>
       {textPath && (
         <Opt value={text} editing={view.editing} edit={ed(textPath, "text", "متن زیر تیتر")}>
@@ -1772,7 +1774,7 @@ function ProductPage(view: View & { id: string }) {
       </section>
       {related.length + more.length > 0 && (
         <section className="zr-wrap zr-sec">
-          <Head view={view} title="محصولات مرتبط" titlePath="site.shop.products" />
+          <Head view={view} title="محصولات مرتبط" />
           <div className="zr-slide-row">
             {[...related, ...more].map((x, i) => (
               <ProductCard key={x.id} view={view} p={x} i={i} />

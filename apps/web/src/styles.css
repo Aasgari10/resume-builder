@@ -1514,3 +1514,6 @@ select {
 .shm-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 6px 4px 12px; border: 1px solid var(--border); border-radius: 99px; background: var(--surface); font-size: .85rem; }
 .shm-chip button { border: 0; background: none; color: var(--muted); cursor: pointer; }
 .shm-past { opacity: .6; }
+
+/* A preview that failed to draw: a note and a way back instead of a white page. */
+.preview-guard { display: grid; justify-items: center; gap: 12px; padding: 60px 20px; text-align: center; color: #444; }

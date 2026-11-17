@@ -8,7 +8,7 @@
 // sign-ups): the preview saves them into a sample inbox that the manager's inbox and booking tabs
 // read, so every template can be tried end to end without touching the real site.
 
-import { addDay, allVariantKeys, withDeliveryDay, countTaken, defaultSchedule, freeFor, priceCart, spanOf, slotsOf, stayFree, stayNights, takenFor, todayTehran, type BookingView, type CartLine, type Product, type Shop, type ShopOrderStatus, type Visitor } from "@rb/schema";
+import { addDay, meetingsOf, weekdayOf, allVariantKeys, withDeliveryDay, countTaken, defaultSchedule, freeFor, priceCart, spanOf, slotsOf, stayFree, stayNights, takenFor, todayTehran, type BookingView, type CartLine, type Product, type Shop, type ShopOrderStatus, type Visitor } from "@rb/schema";
 import type { SiteMessage, SiteMessages, SiteMessageStatus } from "../../api";
 import type { ShopCustomer, ShopCustomerDetail, ShopOrder, ShopOrderQuery, ShopProductStat, ShopReview, ShopSummary, ShopTicket, ShopTrash, ShopTrashKind } from "../../api";
 
@@ -823,13 +823,17 @@ function makeMessages(shop: Shop, bookings = true): SampleMessage[] {
     [6, "NEW"],
   ];
   const list: SampleMessage[] = [];
+  const gym = shop.products.filter((p) => p.sessions?.length && !p.hidden && !p.trashed);
   // A site with no booking form only gets messages and sign-ups.
   if (bookings) plan.forEach(([offset, status], k) => {
     // The nearest working day from there (the sample keeps to the site's own hours).
     let day = addDay(today, offset);
-    for (let i = 0; i < 7 && !timesOf(shop, day).length; i++) day = addDay(day, offset < 0 ? -1 : 1);
+    // A gym: a meeting of one of its classes (its weekday and start time).
+    const cls = gym.length ? gym[k % gym.length]! : undefined;
+    if (cls) for (let i = 0; i < 7 && !cls.sessions!.some((x) => x.day === weekdayOf(day)); i++) day = addDay(day, offset < 0 ? -1 : 1);
+    else for (let i = 0; i < 7 && !timesOf(shop, day).length; i++) day = addDay(day, offset < 0 ? -1 : 1);
     const times = timesOf(shop, day);
-    const time = times[(k * 3) % Math.max(1, times.length)] ?? "10:00";
+    const time = cls ? (cls.sessions!.find((x) => x.day === weekdayOf(day))?.time ?? "18:00") : (times[(k * 3) % Math.max(1, times.length)] ?? "10:00");
     const [name, phone] = people[k]!;
     list.push({
       id: `sm-b${k}`,
@@ -841,11 +845,11 @@ function makeMessages(shop: Shop, bookings = true): SampleMessage[] {
       email: null,
       subject: null,
       text: k % 4 === 1 ? (seats ? "اگر امکانش هست میز کنار پنجره." : "لطفاً اگر زمان جابه‌جا شد خبر بدهید.") : null,
-      service: seats ? null : (names[k % Math.max(1, names.length)] ?? null),
+      service: cls ? cls.name : seats ? null : (names[k % Math.max(1, names.length)] ?? null),
       date: day,
       time,
       nights: shop.schedule?.nights ? [2, 3, 1, 2, 4, 2, 1, 3, 2, 2][k]! : null,
-      guests: seats ? [2, 4, 3, 6, 2, 5, 2, 8, 4, 3][k]! : shop.schedule?.nights ? [2, 2, 1, 3, 2, 4, 2, 2, 1, 2][k]! : shop.schedule?.span ? [2, 1, 3, 2, 1, 2, 3, 1, 2, 2][k]! : shop.schedule?.byService ? [4, 3, 5, 2, 6, 4, 3, 5, 2, 4][k]! : null,
+      guests: cls ? null : seats ? [2, 4, 3, 6, 2, 5, 2, 8, 4, 3][k]! : shop.schedule?.nights ? [2, 2, 1, 3, 2, 4, 2, 2, 1, 2][k]! : shop.schedule?.span ? [2, 1, 3, 2, 1, 2, 3, 1, 2, 2][k]! : shop.schedule?.byService ? [4, 3, 5, 2, 6, 4, 3, 5, 2, 4][k]! : null,
       page: "/",
       ownerNote: status === "CANCELED" ? "مراجع تماس گرفت و لغو کرد." : null,
       createdAt: new Date(new Date(`${day}T08:00:00Z`).getTime() - 3 * DAY).toISOString(),
@@ -1007,8 +1011,16 @@ export function sampleSiteForm(shop: Shop, fields: Record<string, string>, withA
     if (stayFree(s, takenFor({ byService: true }, sampleTaken(shop), base.service), base.date, base.nights ?? 1, room.stock ?? s.capacity) < 1) return { sent: "full" };
   } else if (s) {
     if (!base.date || !base.time || (s.byService && !base.service)) return { sent: "error" };
-    const need = s.seats ? Math.max(1, base.guests ?? 1) : 1;
-    if (freeFor(s, takenFor(s, sampleTaken(shop), base.service), base.date, base.time, spanOf(s, base.guests)) < need) return { sent: "full" };
+    // A gym's class: only one of its weekly meetings, and as many people as it has places (as the server does).
+    const cls = s.byService ? shop.products.find((p) => p.name === base.service && p.sessions?.length && !p.hidden && !p.trashed) : undefined;
+    if (cls) {
+      const meeting = meetingsOf(s, cls.sessions, cls.stock ?? s.capacity, takenFor(s, sampleTaken(shop), base.service)).find((m) => m.date === base.date && m.time === base.time);
+      if (!meeting) return { sent: "error" };
+      if (meeting.free < 1) return { sent: "full" };
+    } else {
+      const need = s.seats ? Math.max(1, base.guests ?? 1) : 1;
+      if (freeFor(s, takenFor(s, sampleTaken(shop), base.service), base.date, base.time, spanOf(s, base.guests)) < need) return { sent: "full" };
+    }
   }
   let code = "";
   do code = `B${100000 + Math.floor(Math.random() * 900000)}`;

@@ -11,7 +11,7 @@ import { prisma } from "../db";
 import { env } from "../env";
 import { asyncHandler } from "../lib/http";
 import { subdomainFromHost, validateSubdomain } from "../lib/subdomain";
-import { freeFor, resumeDataSchema, spanOf, stayFree, stayNights, takenFor } from "@rb/schema";
+import { freeFor, meetingsOf, resumeDataSchema, spanOf, stayFree, stayNights, takenFor } from "@rb/schema";
 import { signedInCustomer, takenSlots } from "./shop";
 
 export const siteFormsRouter = Router();
@@ -116,8 +116,16 @@ async function sendForm(req: Request, res: Response, rawSubdomain: string, base:
   } else if (kind === "BOOKING" && schedule) {
     if (!f.date || !f.time || (schedule.byService && !f.service)) return go({ sent: "error" });
     const taken = takenFor(schedule, await takenSlots(site.id, schedule), f.service);
-    const need = schedule.seats ? Math.max(1, f.guests ?? 1) : 1;
-    if (freeFor(schedule, taken, f.date, f.time, spanOf(schedule, f.guests)) < need) return go({ sent: "full" });
+    // A gym's class: only one of its weekly meetings, and as many people as it has places.
+    const gymClass = published.success && schedule.byService ? published.data.site?.shop?.products.find((p) => p.name === f.service && p.sessions?.length && !p.hidden && !p.trashed) : undefined;
+    if (gymClass) {
+      const meeting = meetingsOf(schedule, gymClass.sessions, gymClass.stock ?? schedule.capacity, taken).find((m) => m.date === f.date && m.time === f.time);
+      if (!meeting) return go({ sent: "error" });
+      if (meeting.free < 1) return go({ sent: "full" });
+    } else {
+      const need = schedule.seats ? Math.max(1, f.guests ?? 1) : 1;
+      if (freeFor(schedule, taken, f.date, f.time, spanOf(schedule, f.guests)) < need) return go({ sent: "full" });
+    }
   }
   if (kind === "CONTACT" && !message && !f.subject) return go({ sent: "error" });
 

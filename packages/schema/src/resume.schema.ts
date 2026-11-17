@@ -185,6 +185,8 @@ function buildResumeSchemas(strict: boolean) {
     title: z.string().max(100),
     image: url(),
     description: z.string().max(500).optional(),
+    // A team member's own links (a gym's trainer: Instagram, Telegram…), one per line or space.
+    links: z.string().max(400).optional(),
   });
 
   // What a client said about the work, and the logos of clients (shown by some templates).
@@ -246,6 +248,12 @@ function buildResumeSchemas(strict: boolean) {
         stone: price.optional(),
         saleWage: z.number().min(0).max(100).optional(),
       })
+      .optional(),
+    // A gym's class: when it meets every week (weekday as JavaScript counts it, 0 Sunday … 6 Saturday,
+    // and its start time). Visitors book one meeting from the timetable; its stock is the places in it.
+    sessions: z
+      .array(z.object({ day: z.number().int().min(0).max(6), time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/) }))
+      .max(28)
       .optional(),
   });
   const perk = z.object({ id, title: z.string().max(60), text: z.string().max(200).optional(), image: optionalUrl }); // image: an icon some templates show
@@ -309,6 +317,7 @@ function buildResumeSchemas(strict: boolean) {
     showcaseTitle: z.string().max(120).optional(), // a section for one chosen category
     showcaseText: z.string().max(200).optional(),
     showcaseCategoryId: z.string().max(40).optional(),
+    plansCategoryId: z.string().max(40).optional(), // a gym's membership plans (shown as price tables)
     // Comments of signed-in customers show at once instead of waiting for the owner's approval.
     reviewsAutoApprove: z.boolean().optional(),
     newsletterTitle: z.string().max(120).optional(),

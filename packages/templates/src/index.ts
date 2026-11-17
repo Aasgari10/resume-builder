@@ -23,6 +23,8 @@ import { SIMPLE_BLOCKS, SimplePortfolio, simplePages, simpleSample } from "./web
 import { SEPID_BLOCKS, SEPID_OPTIONAL_PAGES, SepidPortfolio, sepidPages, sepidSample } from "./web/sepid";
 import { BOUTIQUE_BLOCKS, BoutiqueShop, boutiquePages, boutiqueSample } from "./web/boutique";
 import { GOLSARA_BLOCKS, GOLSARA_OPTIONAL_PAGES, GolsaraShop, golsaraPages, golsaraSample } from "./web/golsara";
+import { PAPO_BLOCKS, PAPO_OPTIONAL_PAGES, PapoShop, papoPages, papoSample } from "./web/papo";
+import { PULAD_BLOCKS, PULAD_OPTIONAL_PAGES, PuladShop, puladPages, puladSample } from "./web/pulad";
 import { SHIRIN_BLOCKS, SHIRIN_OPTIONAL_PAGES, ShirinShop, shirinPages, shirinSample } from "./web/shirin";
 import { ZARIN_BLOCKS, ZARIN_OPTIONAL_PAGES, ZarinShop, zarinPages, zarinSample } from "./web/zarin";
 import { HOMEMART_BLOCKS, HomeMartShop, homemartPages, homemartSample } from "./web/homemart";
@@ -115,6 +117,8 @@ export const PORTFOLIO_TEMPLATES: readonly TemplateDefinition[] = [
   { ...web("homemart-shop", "هوم‌مارت (فروشگاه لوازم خانگی)", HomeMartShop), pages: homemartPages, sample: homemartSample, blocks: HOMEMART_BLOCKS, shop: true, panel: { extras: { perks: "✨ ویژگی‌های فروشگاه" } } },
   { ...web("zarin-shop", "زرین (طلا و جواهر)", ZarinShop), pages: zarinPages, sample: zarinSample, blocks: ZARIN_BLOCKS, optionalPages: ZARIN_OPTIONAL_PAGES, shop: true, gold: true, panel: { extras: { perks: "✨ ویژگی‌ها (صفحه‌ی محصول و درباره)", stats: "🎯 مأموریت و چشم‌انداز (صفحه‌ی درباره)", brands: "👥 اعضای تیم (صفحه‌ی درباره)", trust: "🏷 آرم برندها (صفحه‌ی اول)" } } },
   { ...web("shirin-shop", "شیرین (شیرینی‌پزی)", ShirinShop), pages: shirinPages, sample: shirinSample, blocks: SHIRIN_BLOCKS, optionalPages: SHIRIN_OPTIONAL_PAGES, shop: true, bookings: true, cake: true, panel: { extras: { perks: "✨ ویژگی‌ها (صفحه‌ی محصول و درباره)", stats: "🎯 مأموریت و چشم‌انداز (صفحه‌ی درباره)", brands: "👥 قنادهای ما (صفحه‌ی درباره)" } } },
+  { ...web("pulad-site", "پولاد (باشگاه ورزشی)", PuladShop), pages: puladPages, sample: puladSample, blocks: PULAD_BLOCKS, optionalPages: PULAD_OPTIONAL_PAGES, shop: true, bookings: true, gym: true, panel: { extras: { perks: "💪 «چرا ما» (۳ مورد اول) و دو ویژگی کنار عکس گرد (مورد ۴ و ۵)", stats: "🔢 اعداد صفحه‌ی درباره" } } },
+  { ...web("papo-shop", "پاپو (پت‌شاپ)", PapoShop), pages: papoPages, sample: papoSample, blocks: PAPO_BLOCKS, optionalPages: PAPO_OPTIONAL_PAGES, shop: true, services: true, bookings: true, pet: true, panel: { extras: { perks: "🐾 نوار قهوه‌ای ویژگی‌ها (۳ مورد)", stats: "📊 درصدهای «چرا ما»" } } },
   minimalPortfolio,
   web("studio-portfolio", "استودیو", StudioPortfolio),
   web("split-portfolio", "دوستونه", SplitPortfolio),

@@ -135,6 +135,11 @@ export function Footer({ data }: { data: ResumeData }) {
 /* Base screen styles for the shared section markup (k-*) and web pieces (w-*). */
 const webStyles = /* css */ `
 .w-shell { display: contents; }
+/* Rows that swipe sideways show no scrollbar on phones and tablets, in every template (the next card peeking out is the hint). */
+@container (max-width: 900px) {
+  .w-page *, .w-page { scrollbar-width: none !important; }
+  .w-page *::-webkit-scrollbar { display: none !important; }
+}
 .w-page {
   /* Anything a template places absolutely stays inside the page (in the editor too). */
   position: relative;

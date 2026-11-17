@@ -29,6 +29,8 @@ export const SITE_PALETTES: Record<string, PageColors> = {
   "grogin-shop": { background: "#FFFFFF", surface: "#F3F4F6", text: "#030712", mutedText: "#6B7280" },
   "homemart-shop": { background: "#FEFCF9", surface: "#FFFFFF", text: "#1F2937", mutedText: "#6B7280" },
   "zarin-shop": { background: "#FFFFFF", surface: "#F5F5F5", text: "#111111", mutedText: "#777777" },
+  "papo-shop": { background: "#FFFFFF", surface: "#FFF6EF", text: "#2B2B2B", mutedText: "#777777" },
+  "pulad-site": { background: "#FFFFFF", surface: "#F4F6FA", text: "#0B1B3B", mutedText: "#6B7280" },
   "shirin-shop": { background: "#FBFAF8", surface: "#FFFFFF", text: "#3E2620", mutedText: "#7A6A64" },
 };
 

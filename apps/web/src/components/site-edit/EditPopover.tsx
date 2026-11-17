@@ -148,6 +148,9 @@ export function EditPopover({ target, value, shown, canRemove, canClear, onSave,
       const url = normalizeLink("website", text);
       return url ? onSave(url) : setError("لینک کامل نیست؛ مثلاً https://example.com");
     }
+    // Fields the saved resume checks: a wrong one would stop every later change from saving.
+    if (target.path === "basics.email" && text.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text.trim())) return setError("ایمیل درست نیست؛ مثلاً name@example.com");
+    if (target.path === "basics.fullName" && text.trim().length < 2) return setError("نام دست‌کم دو حرف است.");
     onSave(text.trim());
   }
 
