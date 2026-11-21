@@ -49,6 +49,7 @@ const templates = [
   { id: "grogin-shop", name: "گروگین (سوپرمارکت)", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
   { id: "homemart-shop", name: "هوم‌مارت (فروشگاه لوازم خانگی)", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
   { id: "zarin-shop", name: "زرین (طلا و جواهر)", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
+  { id: "arka-site", name: "آرکا (معماری و دکوراسیون)", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
   { id: "papo-shop", name: "پاپو (پت‌شاپ)", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
   { id: "pulad-site", name: "پولاد (باشگاه ورزشی)", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },
   { id: "shirin-shop", name: "شیرین (شیرینی‌پزی)", kind: TemplateKind.PORTFOLIO, isPremium: false, price: 0, sortOrder: 0 },

@@ -72,6 +72,8 @@ export type TemplateDefinition = {
   gym?: boolean;
   /** A pet shop: which category holds the services and which the price packages. */
   pet?: boolean;
+  /** An architecture studio: projects, consultations, a services band. */
+  arch?: boolean;
   /**
    * Shop manager pieces this template shows on its pages; a manager tab for content the template has
    * no place for is left out. "extras" lists the sections of that tab, each with the heading it gets.

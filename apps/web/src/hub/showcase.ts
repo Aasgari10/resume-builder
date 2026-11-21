@@ -30,6 +30,7 @@ export const SHOWCASE_COLORS: Record<string, string> = {
   "shirin-shop": "#F2474B",
   "pulad-site": "#F5094B",
   "papo-shop": "#8B1BE8",
+  "arka-site": "#141414",
   "grogin-shop": "#634C9F",
   "juno-shop": "#12AEE0",
   "kafe-site": "#BE9C79",

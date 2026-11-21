@@ -68,6 +68,8 @@ type Props = {
   gym?: boolean;
   /** A pet shop: services and price packages are categories the owner picks. */
   pet?: boolean;
+  /** An architecture studio: projects, consultations by appointment, services band. */
+  arch?: boolean;
   /** What the template shows of the manager's content (unused tabs are left out). */
   panel?: { extras?: { perks?: string; stats?: string; brands?: string; trust?: string }; hide?: string[]; faqCategories?: boolean };
   onClose: () => void;
@@ -86,19 +88,20 @@ const CLINIC_TABS_ALL: Tab[] = ["studio", "inbox", "calendar", "schedule", "prod
 const ESCAPE_TABS: Tab[] = ["studio", "inbox", "calendar", "schedule", "products", "clients", "customers", "studio-reports", "quotes", "extras", "blog", "pages", "trash"];
 const STAY_TABS: Tab[] = ["studio", "inbox", "calendar", "products", "schedule", "clients", "customers", "studio-reports", "coupons", "categories", "banners", "quotes", "extras", "blog", "pages", "trash"];
 const RENTAL_TABS: Tab[] = ["studio", "inbox", "calendar", "schedule", "products", "categories", "clients", "customers", "studio-reports", "quotes", "extras", "blog", "pages", "trash"];
+const ARCH_TABS: Tab[] = ["studio", "inbox", "calendar", "schedule", "products", "categories", "clients", "customers", "studio-reports", "banners", "extras", "blog", "pages", "trash"];
 const STUDIO_TABS: Tab[] = ["studio", "inbox", "calendar", "products", "clients", "customers", "studio-reports", "categories", "banners", "extras", "quotes", "blog", "pages", "trash"];
 
 const EMPTY_SHOP: Shop = { categories: [], products: [] };
 
-export function ShopManager({ data, sample, onData, resumeId, focusProductId, hasBlog, menu: menuSite, sells: sellsMenu, services, bookings, studio: studioSite, clinic: clinicSite, escape, rental, stay, gold, cake, gym, pet, panel, onClose }: Props) {
+export function ShopManager({ data, sample, onData, resumeId, focusProductId, hasBlog, menu: menuSite, sells: sellsMenu, services, bookings, studio: studioSite, clinic: clinicSite, escape, rental, stay, gold, cake, gym, pet, arch, panel, onClose }: Props) {
   // A clinic is managed like a studio (bookings first), plus its working hours and events; an escape
   // room the same, with its rooms and no events.
-  const clinic = clinicSite || escape || rental || stay;
-  const CLINIC_TABS = stay ? STAY_TABS : rental ? RENTAL_TABS : escape ? ESCAPE_TABS : CLINIC_TABS_ALL;
+  const clinic = clinicSite || escape || rental || stay || arch;
+  const CLINIC_TABS = arch ? ARCH_TABS : stay ? STAY_TABS : rental ? RENTAL_TABS : escape ? ESCAPE_TABS : CLINIC_TABS_ALL;
   const studio = studioSite || clinic;
   const sells = sellsMenu || services;
   // Templates with a booking form get the bookings overview, calendar, clients and reports.
-  const bookingKind: BookingKind | undefined = gym ? "gym" : cake ? "cake" : stay ? "stay" : rental ? "space" : escape ? "room" : clinic ? "clinic" : studio ? "studio" : bookings ? (services ? "salon" : "table") : undefined;
+  const bookingKind: BookingKind | undefined = arch ? "consult" : gym ? "gym" : cake ? "cake" : stay ? "stay" : rental ? "space" : escape ? "room" : clinic ? "clinic" : studio ? "studio" : bookings ? (services ? "salon" : "table") : undefined;
   const BOOKING_LABELS: Record<BookingKind, [string, string, string, string]> = {
     studio: ["📊 داشبورد", "🗓 تقویم نوبت‌ها", "👥 مشتریان", "📈 گزارش‌ها"],
     salon: ["📅 داشبورد نوبت‌ها", "🗓 تقویم نوبت‌ها", "🙋 نوبت‌گیرندگان", "📈 گزارش نوبت‌ها"],
@@ -107,6 +110,7 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
     room: ["📊 داشبورد رزروها", "🗓 تقویم سانس‌ها", "🙋 مشتریان", "📈 گزارش‌ها"],
     space: ["📊 داشبورد رزروها", "🗓 تقویم رزروها", "🙋 مشتریان", "📈 گزارش‌ها"],
     stay: ["📊 داشبورد رزروها", "🗓 تقویم ورودها", "🙋 مهمان‌ها", "📈 گزارش‌ها"],
+    consult: ["🏛 داشبورد مشاوره‌ها", "🗓 تقویم جلسه‌ها", "🙋 کارفرماها", "📈 گزارش‌ها"],
     gym: ["🏋️ داشبورد رزروها", "🗓 تقویم کلاس‌ها", "🙋 ورزشکاران", "📈 گزارش رزروها"],
     cake: ["🎂 سفارش‌های کیک", "🗓 تقویم تحویل کیک", "🙋 سفارش‌دهندگان کیک", "📈 گزارش کیک‌ها"],
   };
@@ -199,18 +203,18 @@ export function ShopManager({ data, sample, onData, resumeId, focusProductId, ha
               ["calendar", bl[1]],
               ["clients", bl[2]],
               ["studio-reports", bl[3]],
-              ["products", stay ? "🛏 اتاق‌ها و خدمات اضافه" : rental ? "🎚 استودیوها" : escape ? "🚪 اتاق‌ها" : clinic ? "💳 تعرفه‌ی جلسات" : studio ? "📸 پکیج‌های عکاسی" : menu ? "☕ منو" : services ? "💇 خدمات و محصولات" : menuSite ? "☕ منو و محصولات" : "📦 محصولات", <i key="n" className="shm-count">{showNumber(live.length)}</i>],
+              ["products", arch ? "🏛 پروژه‌ها" : stay ? "🛏 اتاق‌ها و خدمات اضافه" : rental ? "🎚 استودیوها" : escape ? "🚪 اتاق‌ها" : clinic ? "💳 تعرفه‌ی جلسات" : studio ? "📸 پکیج‌های عکاسی" : menu ? "☕ منو" : services ? "💇 خدمات و محصولات" : menuSite ? "☕ منو و محصولات" : "📦 محصولات", <i key="n" className="shm-count">{showNumber(live.length)}</i>],
               ["qr", "▦ QR کد منو"],
-              ["categories", stay ? "🏷 نوع اتاق‌ها" : rental ? "🎧 خدمات" : clinic ? "🧩 حوزه‌های درمان" : "📂 دسته‌ها"],
+              ["categories", arch ? "📂 نوع پروژه‌ها" : stay ? "🏷 نوع اتاق‌ها" : rental ? "🎧 خدمات" : clinic ? "🧩 حوزه‌های درمان" : "📂 دسته‌ها"],
               ["orders", "📋 سفارش‌ها", badge(counts?.newOrders)],
               ["inbox", "📥 پیام‌ها و نوبت‌ها", badge(inboxNew)],
               ["customers", studio || menu ? "🔐 حساب‌های کاربری سایت" : "👥 مشتریان"],
               ["reviews", "💬 نظرات", badge(counts?.waitingReviews)],
               ["tickets", "🎫 تیکت‌ها", badge(counts?.openTickets)],
               ["coupons", "🏷 کدهای تخفیف"],
-              ["banners", studio ? "🖼 اسلایدها و اعضای تیم" : "🖼 بنرها و اسلایدها"],
+              ["banners", arch ? "🖼 خدمات (نوار چهارستونه)" : studio ? "🖼 اسلایدها و اعضای تیم" : "🖼 بنرها و اسلایدها"],
               ["quotes", "⭐ نظرات صفحه‌ی اول"],
-              ["extras", rental ? "✨ ویژگی‌ها، آمار و لوگوها" : escape ? "✨ «مناسب برای» و آمار" : clinic ? "📚 ویژگی‌های کتاب" : studio ? "🎯 خدمات و لوگوها" : "✨ ویژگی‌ها، برندها و آرم‌ها"],
+              ["extras", arch ? "✨ روند کار و افتخارات" : rental ? "✨ ویژگی‌ها، آمار و لوگوها" : escape ? "✨ «مناسب برای» و آمار" : clinic ? "📚 ویژگی‌های کتاب" : studio ? "🎯 خدمات و لوگوها" : "✨ ویژگی‌ها، برندها و آرم‌ها"],
               ["pages", "📄 صفحه‌ها و تماس"],
               ["blog", "📰 بلاگ", shop.posts?.length ? <i key="n" className="shm-count">{showNumber(shop.posts.length)}</i> : null],
               ["reports", "📈 گزارش‌ها"],

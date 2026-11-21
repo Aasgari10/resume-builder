@@ -113,7 +113,7 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
   // Some templates have their own color (HomeMart burgundy, Zarin gold): a site still on the starting
   // navy gets it (a color the user picked stays).
   useEffect(() => {
-    const own = ({ "homemart-shop": "#800E2F", "zarin-shop": "#B08D57", "shirin-shop": "#F2474B", "pulad-site": "#F5094B", "papo-shop": "#FF782D" } as Record<string, string>)[theme.templateId];
+    const own = ({ "homemart-shop": "#800E2F", "zarin-shop": "#B08D57", "shirin-shop": "#F2474B", "pulad-site": "#F5094B", "papo-shop": "#FF782D", "arka-site": "#141414" } as Record<string, string>)[theme.templateId];
     if (own && theme.colors.primary.toUpperCase() === "#1E3A5F") onThemeChange({ ...theme, colors: { ...theme.colors, primary: own } });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [theme.templateId, theme.colors.primary]);
@@ -427,7 +427,7 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
         )}
       {shopOpen &&
         createPortal(
-          <ShopManager data={raw} sample={templateSample} onData={onDataChange} resumeId={resumeId} focusProductId={shopFocus} menu={Boolean(site.menu)} sells={Boolean(site.sells)} services={Boolean(site.services)} bookings={Boolean(site.bookings)} studio={Boolean(site.studio)} clinic={Boolean(site.clinic)} escape={Boolean(site.escape)} rental={Boolean(site.rental)} stay={Boolean(site.stay)} gold={Boolean(site.gold)} cake={Boolean(site.cake)} gym={Boolean(site.gym)} pet={Boolean(site.pet)} panel={site.panel} hasBlog={Boolean(site.escape || site.rental || site.stay || site.optionalPages?.some((p) => p.path === "/blog"))} onClose={() => { setShopOpen(false); setShopFocus(undefined); }} />,
+          <ShopManager data={raw} sample={templateSample} onData={onDataChange} resumeId={resumeId} focusProductId={shopFocus} menu={Boolean(site.menu)} sells={Boolean(site.sells)} services={Boolean(site.services)} bookings={Boolean(site.bookings)} studio={Boolean(site.studio)} clinic={Boolean(site.clinic)} escape={Boolean(site.escape)} rental={Boolean(site.rental)} stay={Boolean(site.stay)} gold={Boolean(site.gold)} cake={Boolean(site.cake)} gym={Boolean(site.gym)} pet={Boolean(site.pet)} arch={Boolean(site.arch)} panel={site.panel} hasBlog={Boolean(site.escape || site.rental || site.stay || site.optionalPages?.some((p) => p.path === "/blog"))} onClose={() => { setShopOpen(false); setShopFocus(undefined); }} />,
           document.body,
         )}
       {target &&

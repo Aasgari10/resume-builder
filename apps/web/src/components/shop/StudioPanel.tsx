@@ -20,7 +20,7 @@ const toman = (n: number) => `${showNumber(Math.round(n))} تومان`;
 const live = (shop: Shop) => shop.products.filter((p) => !p.trashed);
 
 /** What is booked: a photo session (studio), an appointment (salon) or a table (restaurant). */
-export type BookingKind = "studio" | "salon" | "table" | "clinic" | "room" | "space" | "stay" | "cake" | "gym";
+export type BookingKind = "studio" | "salon" | "table" | "clinic" | "room" | "space" | "stay" | "cake" | "gym" | "consult";
 const WORDS: Record<BookingKind, { one: string; many: string; who: string; what: string }> = {
   studio: { one: "نوبت", many: "نوبت‌ها", who: "مشتری", what: "پکیج" },
   salon: { one: "نوبت", many: "نوبت‌ها", who: "مشتری", what: "خدمت" },
@@ -29,6 +29,7 @@ const WORDS: Record<BookingKind, { one: string; many: string; who: string; what:
   room: { one: "رزرو", many: "رزروها", who: "مشتری", what: "اتاق" },
   space: { one: "رزرو", many: "رزروها", who: "مشتری", what: "استودیو" },
   stay: { one: "رزرو", many: "رزروها", who: "مهمان", what: "اتاق" },
+  consult: { one: "جلسه‌ی مشاوره", many: "جلسه‌های مشاوره", who: "کارفرما", what: "جلسه" },
   gym: { one: "رزرو کلاس", many: "رزروهای کلاس", who: "ورزشکار", what: "کلاس" },
   cake: { one: "سفارش کیک", many: "سفارش‌های کیک", who: "مشتری", what: "طرح کیک" },
 };
