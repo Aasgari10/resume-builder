@@ -6,3 +6,10 @@ Served at `/_assets/samples/` by the API. File names are fixed; replace a pictur
 Before public launch, replace these demo pictures with free-to-use photos (for example from pexels.com),
 because their license is unknown: avatar, about, project-dashboard, project-dashboard-2, project-components,
 project-music, project-portfolio. The certificate pictures were drawn for this project and can stay.
+
+## Picture sets
+
+Each website template uses its own set of pictures, named with a short prefix.
+
+| Prefix | Template |
+|---|---|
