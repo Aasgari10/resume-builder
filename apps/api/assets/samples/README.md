@@ -23,7 +23,7 @@ Each website template uses its own set of pictures, named with a short prefix.
 | `jn-*` | toy shop | 48 |
 | `pa-*` | pet shop | 45 |
 | `pt-*` | restaurant | 43 |
-| `pl-*` | gym | |
+| `pl-*` | gym | 43 |
 | `nr-*` | guest house | |
 | `hm-*` | home appliances shop | |
 | `eg-*` | escape room | |
