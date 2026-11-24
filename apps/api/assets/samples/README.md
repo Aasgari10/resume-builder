@@ -26,7 +26,7 @@ Each website template uses its own set of pictures, named with a short prefix.
 | `pl-*` | gym | 43 |
 | `nr-*` | guest house | 34 |
 | `hm-*` | home appliances shop | 33 |
-| `eg-*` | escape room | |
+| `eg-*` | escape room | 33 |
 | `cb-*` | therapy practice | |
 | `ar-*` | architecture and interior design | |
 | `gs-*` | flower shop | |
