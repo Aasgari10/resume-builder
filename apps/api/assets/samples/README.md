@@ -32,4 +32,4 @@ Each website template uses its own set of pictures, named with a short prefix.
 | `gs-*` | flower shop | 20 |
 | `sepid-*` | personal site (Sepid) | 24 |
 | `grid-*` | personal site (Grid) | 9 |
-| `shop-*` | shared shop pictures (boutique and others) | |
+| `shop-*` | shared shop pictures (boutique and others) | 19 |
