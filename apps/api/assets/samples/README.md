@@ -15,7 +15,7 @@ Each website template uses its own set of pictures, named with a short prefix.
 |---|---|---|
 | `zr-*` | jewellery shop | 86 |
 | `rs-*` | music studio | 75 |
-| `sh-*` | bakery | |
+| `sh-*` | bakery | 62 |
 | `cr-*` | photo studio | |
 | `kf-*` | cafe | |
 | `gg-*` | supermarket | |
