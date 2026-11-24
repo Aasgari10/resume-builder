@@ -13,7 +13,7 @@ Each website template uses its own set of pictures, named with a short prefix.
 
 | Prefix | Template | Pictures |
 |---|---|---|
-| `zr-*` | jewellery shop | |
+| `zr-*` | jewellery shop | 86 |
 | `rs-*` | music studio | |
 | `sh-*` | bakery | |
 | `cr-*` | photo studio | |
