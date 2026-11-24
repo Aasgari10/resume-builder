@@ -18,3 +18,4 @@ Each website template uses its own set of pictures, named with a short prefix.
 | `sh-*` | bakery |
 | `cr-*` | photo studio |
 | `kf-*` | cafe |
+| `gg-*` | supermarket |
