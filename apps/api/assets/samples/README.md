@@ -33,3 +33,7 @@ Each website template uses its own set of pictures, named with a short prefix.
 | `sepid-*` | personal site (Sepid) | 24 |
 | `grid-*` | personal site (Grid) | 9 |
 | `shop-*` | shared shop pictures (boutique and others) | 19 |
+
+## Personal pictures
+
+Used by the resume and the personal site templates: `avatar`, `about`, `project-*` and `certificate-*`.
