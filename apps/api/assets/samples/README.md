@@ -45,3 +45,8 @@ Names are lowercase, words joined with `-`, and start with the prefix of their t
 ## Format
 
 Save pictures as `.jpg` (or `.png` for logos and drawings with transparency), at most about 1600 px wide.
+
+## Replacing a picture
+
+1. Save the new picture with exactly the same name.
+2. Raise `SAMPLE_ASSETS_VERSION` in `packages/schema/src/resume.schema.ts` so browsers load the new copy.
