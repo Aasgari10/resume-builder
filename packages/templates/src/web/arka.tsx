@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic @jsxImportSource react */
 // Pinned per file: this package is compiled by different tools (Vite, tsx, tsup).
-// "Arka": an architecture and interior design studio, after the Architecturer reference (home 12):
+// "Arka": an architecture and interior design studio:
 // white and quiet, thin type, big photos. The home opens on a slideshow of projects picked by their
 // year at the side, then a short text with two photos, the services band (hovering a column fades
 // in its photo), news and the contact strip; the footer is light grey in five columns. Projects are
@@ -1517,7 +1517,7 @@ export function arkaSample(locale: ResumeData["locale"]): ResumeData {
       ...base.basics,
       fullName: "آرکا",
       jobTitle: "دفتر معماری و طراحی داخلی",
-      // The reference's logo, for now (the designer's comes later).
+      // A placeholder logo, for now (the designer's comes later).
       avatarUrl: sampleImage("ar-logo-temp", "png"),
       email: "info@example.com",
       phone: "021 1234 5678",
@@ -2231,7 +2231,7 @@ ${[1, 2, 3, 4, 5].map((n) => `.ak-q-in:nth-of-type(${n}):checked ~ .ak-q-list > 
   .ak-main > *, .ak-card, .ak-drawer { animation: none !important; }
 }
 
-/* ───── Arka look (after Architecturer): white, quiet, thin type; every change is slow and soft ───── */
+/* ───── Arka look: white, quiet, thin type; every change is slow and soft ───── */
 .ak { --ak-ink: #141414; --ak-muted: #777; --ak-line: #E6E6E6; --ak-soft: #F5F5F5; --ak-ease: cubic-bezier(.25, .1, .25, 1); --ak-slow: .9s;
   --ak-wrap: min(1180px, 100% - 2 * clamp(18px, 4cqi, 48px)); --sk-accent: var(--ak-ink); color: var(--ak-ink); font-weight: 300; overflow-x: clip; }
 .ak-wrap { width: var(--ak-wrap); margin-inline: auto; }

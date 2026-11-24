@@ -126,7 +126,7 @@ function Act({ view, op, id, children, className, qty, size, label }: { view: Vi
   );
 }
 
-/** Section heading as in the reference: the last word in the brand colour, a line underneath. */
+/** Section heading as in the design: the last word in the brand colour, a line underneath. */
 function Title({ title, text, path, textPath }: { title?: string; text?: string; path?: string; textPath?: string }) {
   if (!title) return null;
   const words = title.trim().split(/\s+/);
@@ -366,7 +366,7 @@ function Footer({ ctx, link, editing, shop, page }: View) {
   );
 }
 
-/** The phone tab bar of the reference (only on narrow screens). */
+/** The phone tab bar of the design (only on narrow screens). */
 function BottomNav({ link, page, visitor, shop }: View) {
   const count = priceCart(shop, visitor.cart).count;
   const items: [string, string, string][] = [
@@ -1619,7 +1619,7 @@ ${[1, 2, 3, 4, 5, 6].map((n) => `.hm-gallery:has(.hm-thumb:nth-child(${n}) input
   .hm-kicker::after { display: none; }
   .hm-hero-sub { font-size: .92em; }
   .hm-hero-btns .hm-btn { padding: 10px 18px; }
-  /* Product rows scroll sideways on phones, as in the reference */
+  /* Product rows scroll sideways on phones, as in the design */
   .hm-grid.five, .hm-grid.four { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 8px; scrollbar-width: none; }
   .hm-grid.five > *, .hm-grid.four > * { flex: 0 0 46%; scroll-snap-align: start; }
   .hm-grid.three { grid-template-columns: repeat(2, minmax(0, 1fr)); }

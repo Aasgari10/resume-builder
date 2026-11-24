@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic @jsxImportSource react */
 // Pinned per file: this package is compiled by different tools (Vite, tsx, tsup).
-// "Narenj": a boutique guesthouse rebuilt from the Alloggio (B&B) reference, in Persian. A framed page:
+// "Narenj": a boutique guesthouse, in Persian. A framed page:
 // a big slider with the menu over it, then tiles (check availability, breakfast, about, the amenities
 // band, map, check-in, hosts, a guest's words) and a newsletter band. Pages: rooms (with an
 // availability search), each room (pictures, amenities, rules, a two-month calendar of free nights,
@@ -1479,7 +1479,7 @@ function Track(view: View) {
   );
 }
 
-/* ───────────── Example content (from the reference, in Persian) ───────────── */
+/* ───────────── Example content (in Persian) ───────────── */
 
 export function narenjSample(locale: ResumeData["locale"]): ResumeData {
   const base = sampleResume(locale);
@@ -1520,7 +1520,7 @@ export function narenjSample(locale: ResumeData["locale"]): ResumeData {
     basics: {
       ...base.basics,
       fullName: "نارنج",
-      // The reference's logo, for now (to be replaced by the designer's).
+      // A placeholder logo, for now (to be replaced by the designer's).
       avatarUrl: sampleImage("nr-logo-temp", "png"),
       jobTitle: "اقامتگاه بوتیک",
       email: "info@example.com",

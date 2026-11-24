@@ -703,7 +703,7 @@ function Credentials(view: View) {
 function Works(view: View) {
   const { ctx, editing, t } = view;
   const items = ctx.data.projects.filter((p) => p.title.trim());
-  // Like the reference: one column of alternating short and tall cards beside the title and a
+  // Like the design: one column of alternating short and tall cards beside the title and a
   // two-column grid; every column ends on the same line.
   const side = items.filter((_, k) => k % 3 === 0);
   const rest = items.filter((_, k) => k % 3 !== 0);
@@ -1042,7 +1042,7 @@ const css = /* css */ `
 .gx-together h2 { padding-top: 90px; }
 .gx-form h2 { padding-top: 100px; }
 .gx-fill > .gx-hang { top: calc(-1 * clamp(16px, 2.4cqi, 28px)); }
-/* Hanging star: from the top edge of the card, like the reference. */
+/* Hanging star: from the top edge of the card, like the design. */
 .gx-hang { position: absolute; top: 0; inset-inline-start: clamp(24px, 4cqi, 46px); width: 56px; height: 124px; pointer-events: none; transform-origin: 50% 0; animation: gx-sway 6s ease-in-out infinite; }
 .gx-hang svg { width: 100%; height: 100%; fill: none; stroke: var(--color-muted); stroke-width: 1.6; stroke-linejoin: round; }
 @keyframes gx-sway { 0%, 100% { rotate: -2deg; } 50% { rotate: 2deg; } }

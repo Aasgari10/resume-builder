@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic @jsxImportSource react */
 // Pinned per file: this package is compiled by different tools (Vite, tsx, tsup).
-// "Patio": a restaurant with online ordering, rebuilt from the PatioTime Bistro reference, in
+// "Patio": a restaurant with online ordering, in
 // Persian. Black and warm orange, serif headings. Home: hero, the pizza menu (round pizzas that spin
 // in and stop, a button per size), fresh pasta, the à la carte list, a photo row, about and a visit
 // block; pages: menu, about us with the chefs, order online (shop), product, cart, checkout, contact.
@@ -103,7 +103,7 @@ const SVG: Record<string, string> = {
   star: "M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z",
 };
 
-/** Solid social icons as in the reference header; other kinds fall back to the shared line icons. */
+/** Solid social icons as in the design header; other kinds fall back to the shared line icons. */
 const SOLID: Record<string, string> = {
   instagram: "M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5zm0 2a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3zm5 3.5a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9zm0 2a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zm5.3-4.1a1.3 1.3 0 1 1 0 2.6 1.3 1.3 0 0 1 0-2.6z",
   telegram: "M21.5 3.3 2.9 10.5c-1 .4-1 1.8.1 2.1l4.7 1.5 1.8 5.6c.3.8 1.3 1 1.9.4l2.6-2.5 4.9 3.6c.7.5 1.7.1 1.9-.7l3.3-15.5c.2-1-.8-1.8-1.7-1.4zM9.6 14l8.2-7.3-6.6 8.5-.4 3.4z",
@@ -112,7 +112,7 @@ const SOLID: Record<string, string> = {
 };
 const BAG_SOLID = "M7 7V6a5 5 0 0 1 10 0v1h3l-1 15H5L4 7zm2 0h6V6a3 3 0 0 0-6 0z";
 
-/** The owner's social links with the solid icons of the reference (editable like the shared ones). */
+/** The owner's social links with the solid icons of the design (editable like the shared ones). */
 function SocialIcons({ view, className }: { view: View; className: string }) {
   const links = view.ctx.data.basics.links.filter((l) => safeUrl(l.url));
   return (
@@ -243,7 +243,7 @@ function Logo({ view }: { view: View }) {
   );
 }
 
-/** The bag icon; hovering or focusing it opens the small cart of the reference. */
+/** The bag icon; hovering or focusing it opens the small cart of the design. */
 function MiniCart({ view }: { view: View }) {
   const cart = priceCart(view.shop, view.visitor.cart);
   return (
@@ -602,7 +602,7 @@ function sizeNames(list: Product[]): string[] | undefined {
 function Carte({ view, cats }: { view: View; cats: Shop["categories"] }) {
   const { shop, link } = view;
   const products = visible(shop);
-  // Two columns as in the reference: the lists with one price stacked, the ones with a price per size beside them.
+  // Two columns as in the design: the lists with one price stacked, the ones with a price per size beside them.
   const sized = cats.filter((c) => sizeNames(products.filter((p) => p.categoryId === c.id)));
   const plain = cats.filter((c) => !sized.includes(c));
   const half = Math.ceil(cats.length / 2);
@@ -652,8 +652,8 @@ function Carte({ view, cats }: { view: View; cats: Shop["categories"] }) {
 
 type Photo = NonNullable<ResumeData["site"]>["gallery"][number];
 
-/** Two photos, one above the other (as in the reference), each opens large. */
-/** Two photos: overlapping (stack) or side by side (side), as on the home page of the reference. */
+/** Two photos, one above the other (as in the design), each opens large. */
+/** Two photos: overlapping (stack) or side by side (side), as on the home page of the design. */
 function PhotoPair({ view, pics, mode }: { view: View; pics: Photo[]; mode: "stack" | "side" }) {
   return (
     <div className={`pt-pair pt-${mode}`}>
@@ -1274,7 +1274,7 @@ function ProductPage(view: View & { id: string }) {
   );
 }
 
-/* ───────────── Cart, checkout and the rest (shared shapes, PatioTime look) ───────────── */
+/* ───────────── Cart, checkout and the rest (shared shapes, Patio look) ───────────── */
 
 /** No page-name strip on any page (the owner's choice); kept for the shared shapes. */
 function PageHead(_: { title: string; view: View; trail?: { label: string; to?: string }[] }) {
@@ -1296,7 +1296,7 @@ function Act({ view, op, id, children, className, qty, size, label }: { view: Vi
   );
 }
 
-/** Section heading of the reference: bold title, a grey line beside it, "view all" on the other side. */
+/** Section heading of the design: bold title, a grey line beside it, "view all" on the other side. */
 
 /** Price filter of the side column: two boxes, two handles on one line (plain range inputs) and a button. */
 
@@ -1583,7 +1583,7 @@ function Thanks(view: View) {
 
 
 
-/* ───────────── Example content (from the PatioTime reference, in Persian) ───────────── */
+/* ───────────── Example content (in Persian) ───────────── */
 
 export function patioSample(locale: ResumeData["locale"]): ResumeData {
   const base = sampleResume(locale);
@@ -2164,7 +2164,7 @@ section[id^="pt-cat-"] { scroll-margin-top: 160px; }
   .pt-wrap { padding-inline: 18px; }
   .pt-sec { padding-block: 64px; }
   .pt-head-block { margin-bottom: 36px; }
-  /* Phone header as in the reference: menu button, logo in the middle, bag */
+  /* Phone header as in the design: menu button, logo in the middle, bag */
   .pt-header-in { min-height: 70px; grid-template-columns: 1fr auto 1fr; }
   .pt-home .pt-header { margin-bottom: -71px; }
   .pt-nav, .pt-order { display: none; }
@@ -2198,7 +2198,7 @@ section[id^="pt-cat-"] { scroll-margin-top: 160px; }
   .pt-hours { width: min(100%, 340px); margin-inline: auto; }
   .pt-hero-text .pt-btns { justify-content: center; }
   .pt-pasta { grid-template-columns: 1fr; }
-  /* As in the reference: the two photos first, the text under them. */
+  /* As in the design: the two photos first, the text under them. */
   .pt-split3, .pt-split3:not(.pt-flip) { grid-template-columns: 1fr; gap: 30px; }
   .pt-split3 .pt-split-text, .pt-flip.pt-split3 .pt-split-text { order: 2; }
   .pt-pizzas { gap: 64px; }

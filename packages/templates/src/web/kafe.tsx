@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic @jsxImportSource react */
 // Pinned per file: this package is compiled by different tools (Vite, tsx, tsup).
-// "Kafe": a cafe site rebuilt from the Corretto reference, in Persian. Dark hero slider with a round
+// "Kafe": a cafe site, in Persian. Dark hero slider with a round
 // badge, the cafe's offer, three stories, a badge band, numbers, favourites from the menu, a photo
 // gallery, partner logos, a call to contact and a dark footer; pages: menu (the page the printed QR
 // code opens), about us, what we offer, contact. The menu is for reading; the categories the owner
@@ -91,7 +91,7 @@ export function KafeSite(props: TemplateProps) {
 const money = (view: View, n: number) => formatToman(n, view.ctx.data.locale);
 const fa = (n: number) => new Intl.NumberFormat("fa-IR").format(n);
 
-/** The line – two beans – line ornament under every heading of the reference. */
+/** The line – two beans – line ornament under every heading of the design. */
 const Beans = () => (
   <span className="kf-beans" aria-hidden="true">
     <svg viewBox="0 0 24 18">
@@ -406,7 +406,7 @@ function Home(view: View) {
   const on = (k: string) => blockOn(data, k);
   const stories = (shop.banners ?? []).filter((x) => !x.hidden).slice(0, 3);
   const products = visible(shop);
-  // The reference's "online coffee shop": the products of one chosen category (packs of beans).
+  // The design's "online coffee shop": the products of one chosen category (packs of beans).
   const packCat = shop.categories.find((c) => c.id === shop.showcaseCategoryId);
   const favorites = (packCat ? products.filter((p) => p.categoryId === packCat.id) : products.filter((p) => p.featured)).slice(0, 4);
   const soldIds = new Set(soldProducts(shop).map((p) => p.id));
@@ -803,7 +803,7 @@ function Contact(view: View) {
   );
 }
 
-/* ───────────── Example content (from the Corretto reference, in Persian) ───────────── */
+/* ───────────── Example content (in Persian) ───────────── */
 
 export function kafeSample(locale: ResumeData["locale"]): ResumeData {
   const base = sampleResume(locale);
@@ -1018,7 +1018,7 @@ ${Array.from({ length: n }, (_, k) => `.kf-n${n} .kf-auto:checked ~ .kf-slides >
   })
   .join("\n")}
 .kf-hero:hover .kf-slide, .kf-hero:focus-within .kf-slide { animation-play-state: paused !important; }
-/* The picture keeps to the left (as in the reference) and fades into the dark wood on the right. */
+/* The picture keeps to the left (as in the design) and fades into the dark wood on the right. */
 .kf-slide-pic { position: absolute; inset-block: 0; left: 0; width: min(100%, max(50%, 760px)); overflow: hidden; -webkit-mask-image: linear-gradient(to right, #000 55%, transparent 98%); mask-image: linear-gradient(to right, #000 55%, transparent 98%); }
 .kf-slide-pic img { width: 100%; height: 100%; object-fit: cover; object-position: left center; transform-origin: 30% 50%; animation: kf-zoom 20s ease-in-out infinite alternate; }
 /* A very slow zoom (the "Ken Burns" look) so the picture feels alive. */
@@ -1238,7 +1238,7 @@ ${[1, 2, 3, 4, 5, 6].map((n) => `.kf-dot:nth-of-type(${n}):checked ~ .kf-qdots l
   .kf-wrap { padding-inline: 18px; }
   .kf-sec { padding-block: 64px; }
   .kf-title { margin-bottom: 40px; }
-  /* Phone header as in the reference: a white bar, the menu button then a dark logo, a white menu. */
+  /* Phone header as in the design: a white bar, the menu button then a dark logo, a white menu. */
   .kf-head, .kf-home .kf-head { --kf-head-bg: #fff; --kf-head-solid: #fff; margin-bottom: 0; border-bottom: 1px solid #EEE7DE; }
   .kf-head-in { flex-direction: row; justify-content: flex-end; gap: 18px; min-height: 76px; }
   .kf-head .kf-logo img { filter: brightness(0) invert(.18) sepia(.5); }

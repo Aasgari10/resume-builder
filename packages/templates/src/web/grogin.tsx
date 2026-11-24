@@ -1,7 +1,7 @@
 /** @jsxRuntime automatic @jsxImportSource react */
 // Pinned per file: this package is compiled by different tools (Vite, tsx, tsup).
-// "Grogin": a grocery store (supermarket) in violet, white and light grey, rebuilt from the Grogin
-// reference. Purple offer strip with a countdown, a three-row header (links, search, menu with
+// "Grogin": a grocery store (supermarket) in violet, white and light grey.
+// Purple offer strip with a countdown, a three-row header (links, search, menu with
 // category list and dropdowns), hero slider beside the category list, feature row, promo cards,
 // new arrivals, featured products with a countdown, best sellers with tall promo cards, popular
 // brands, newsletter and a five-column footer; shop page with a side column of filters, product
@@ -163,7 +163,7 @@ function Act({ view, op, id, children, className, qty, size, label }: { view: Vi
   );
 }
 
-/** Section heading of the reference: bold title, a grey line beside it, "view all" on the other side. */
+/** Section heading of the design: bold title, a grey line beside it, "view all" on the other side. */
 function Head({ view, title, text, titlePath, textPath, to, query }: { view: View; title?: string; text?: string; titlePath?: string; textPath?: string; to?: string; query?: Record<string, string> }) {
   return (
     <div className="gg-head-row">
@@ -215,7 +215,7 @@ function Chip({ text }: { text?: string }) {
   );
 }
 
-/** Days, hours and minutes left of a sale, in small boxes as in the reference. */
+/** Days, hours and minutes left of a sale, in small boxes as in the design. */
 function Countdown({ end, note = "تا پایان تخفیف" }: { end: string; note?: string }) {
   const { d, h, m } = timeLeft(end);
   return (
@@ -778,7 +778,7 @@ function Footer(view: View) {
   );
 }
 
-/** The phone tab bar of the reference (only on narrow screens). */
+/** The phone tab bar of the design (only on narrow screens). */
 function BottomNav({ link, page, visitor, shop }: View) {
   const wishes = visitor.wishlist.length;
   const items: [string, string, string][] = [
@@ -1891,7 +1891,7 @@ function Thanks(view: View) {
   );
 }
 
-/* ───────────── Example content (from the Grogin reference, in Persian) ───────────── */
+/* ───────────── Example content (in Persian) ───────────── */
 
 export function groginSample(locale: ResumeData["locale"]): ResumeData {
   const base = sampleResume(locale);
@@ -2240,7 +2240,7 @@ ${[1, 2, 3, 4, 5].map((n) => `.gg-dot:nth-of-type(${n}):checked ~ .gg-dots label
 .gg-all .gg-ico { width: 15px; height: 15px; }
 .gg-all:hover { border-color: var(--gg-violet); color: var(--gg-violet); }
 
-/* Product grids: cells share their borders, as in the reference */
+/* Product grids: cells share their borders, as in the design */
 .gg-boxed { display: grid; border: 1px solid var(--gg-line); border-radius: 8px; overflow: hidden; }
 .gg-boxed > * { box-shadow: -1px -1px 0 var(--gg-line) inset; margin: 0 -1px -1px 0; }
 .gg-row6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }

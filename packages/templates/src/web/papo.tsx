@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic @jsxImportSource react */
 // Pinned per file: this package is compiled by different tools (Vite, tsx, tsup).
-// "Papo": a pet shop with services, after the Jinx reference: a purple header with a wavy edge, an
+// "Papo": a pet shop with services: a purple header with a wavy edge, an
 // orange hero with a dog, coloured sale cards, products in tabs per animal, a brown band of perks, a
 // blue newsletter band and a green wavy footer. Goods carry the animals they are for in their
 // "مناسب برای" spec (the shop filters by it); services (grooming, hotel, walking, training) are the
@@ -2496,7 +2496,7 @@ export function papoSample(locale: ResumeData["locale"]): ResumeData {
       ...base.basics,
       fullName: "پاپو",
       jobTitle: "پت‌شاپ و خدمات حیوانات خانگی",
-      // The reference's logo, for now (the designer's comes later).
+      // A placeholder logo, for now (the designer's comes later).
       avatarUrl: sampleImage("pa-logo-temp", "svg"),
       email: "info@example.com",
       phone: "021 1234 5678",
@@ -3219,7 +3219,7 @@ ${[1, 2, 3, 4, 5].map((n) => `.pp-q-in:nth-of-type(${n}):checked ~ .pp-q-list > 
   .pp-main > *, .pp-card, .pp-drawer { animation: none !important; }
 }
 
-/* ───── Papo look (after Jinx): purple header with a wave, orange, yellow, a green wavy footer ───── */
+/* ───── Papo look: purple header with a wave, orange, yellow, a green wavy footer ───── */
 .pp { --pp-purple: #8B1BE8; --pp-orange: #FF782D; --pp-yellow: #FFD200; --pp-green: #A6C20A; --pp-brown: #7A5643; --pp-blue: #50D5F5; --pp-acc: var(--pp-orange);
   --pp-wrap: min(1260px, 100% - 2 * clamp(16px, 3.4cqi, 40px)); --pp-line: #EDEDED; --pp-soft: #FFF6EF; --pp-muted: #777; --sk-accent: var(--pp-orange); overflow-x: clip; }
 .pp h1, .pp h2, .pp-title h2 { font-weight: 800; letter-spacing: 0; }

@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic @jsxImportSource react */
 // Pinned per file: this package is compiled by different tools (Vite, tsx, tsup).
-// "Pulad": a gym, after the Fitner reference (home 02): a black top strip and a white logo corner,
+// "Pulad": a gym: a black top strip and a white logo corner,
 // a dark hero with an athlete and red slanted bars, navy sections with thin diagonal stripes, red
 // hexagon icons, class cards whose white box slides up on hover, price tables, a round photo with
 // arcs (the outer red one swings slowly), the week's timetable, BMI, and a faded footer picture.
@@ -368,7 +368,7 @@ const gymSchedule = (shop: Shop): Schedule => ({ ...gymDefaults(), ...shop.sched
 const faTime = (t: string) => t.replace(/\d/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[Number(d)]!);
 const dayLabel = (d: string) => faDate(d, { weekday: "long", day: "numeric", month: "long" });
 
-/** Text with *starred words* in the accent colour (titles of the reference: "Why join *Fitner*"). */
+/** Text with *starred words* in the accent colour (titles such as "Why join *us*"). */
 function Accent({ text }: { text?: string }) {
   return (
     <>
@@ -509,7 +509,7 @@ function Icons({ view }: { view: View }) {
   );
 }
 
-/** The phone menu, as in the reference: the logo, a round grey close button, items that fold open. */
+/** The phone menu, as in the design: the logo, a round grey close button, items that fold open. */
 function Drawer({ view }: { view: View }) {
   const { link } = view;
   return (
@@ -604,7 +604,7 @@ function Header(view: View) {
   );
 }
 
-/** The navy "special offer" band above the footer (as "Spring membership offer" in the reference). */
+/** The navy "special offer" band above the footer (as "Spring membership offer" in the design). */
 function OfferBand({ view }: { view: View }) {
   const { shop, editing, link } = view;
   if (!shop.newsletterTitle && !editing) return null;
@@ -2828,7 +2828,7 @@ export function puladSample(locale: ResumeData["locale"]): ResumeData {
       ...base.basics,
       fullName: "پولاد",
       jobTitle: "باشگاه ورزشی",
-      // The reference's logo, for now (to be replaced by the designer's).
+      // A placeholder logo, for now (to be replaced by the designer's).
       avatarUrl: png("logo-temp"),
       email: "info@example.com",
       phone: "021 1234 5678",
@@ -3576,7 +3576,7 @@ ${[1, 2, 3, 4, 5].map((n) => `.pl-q-in:nth-of-type(${n}):checked ~ .pl-q-list > 
   .pl-main > *, .pl-card, .pl-drawer { animation: none !important; }
 }
 
-/* ───── Pulad look (after Fitner): red #F5094B, navy, black strips, a heavy display font ───── */
+/* ───── Pulad look: red #F5094B, navy, black strips, a heavy display font ───── */
 @font-face { font-family: "Pulad Lalezar"; src: url("/_assets/fonts/escape-lalezar.woff") format("woff"); font-display: swap; }
 .pl { --pl-red: #F5094B; --pl-navy: #0B1D3F; --pl-black: #05070C; --pl-acc: var(--pl-red); --pl-font: "Pulad Lalezar", var(--font-heading); --pl-wrap: min(1320px, 100% - 2 * clamp(16px, 3.4cqi, 48px));
   --pl-line: #E6E8EE; --pl-soft: #F3F5F9; --pl-muted: #6B7280; --sk-accent: var(--pl-red); font-weight: 400; overflow-x: clip; }

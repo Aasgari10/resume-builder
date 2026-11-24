@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic @jsxImportSource react */
 // Pinned per file: this package is compiled by different tools (Vite, tsx, tsup).
-// "Escape": an escape-room site rebuilt from the Exit Game reference, in Persian. A thin dark bar with
+// "Escape": an escape-room site, in Persian. A thin dark bar with
 // the phone, email and socials over a transparent menu on a full-screen hero; welcome with three
 // numbered points, the rooms, a corporate band, "our games are perfect for", a video band, the
 // players' reviews, FAQ and a gift-card band. Pages: events, about (gallery, numbers, reviews, blog),
@@ -1105,7 +1105,7 @@ function Track(view: View) {
   );
 }
 
-/* ───────────── Example content (from the reference, in Persian) ───────────── */
+/* ───────────── Example content (in Persian) ───────────── */
 
 export function escapeSample(locale: ResumeData["locale"]): ResumeData {
   const base = sampleResume(locale);
