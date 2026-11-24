@@ -22,3 +22,4 @@ Each website template uses its own set of pictures, named with a short prefix.
 | `ld-*` | beauty salon |
 | `jn-*` | toy shop |
 | `pa-*` | pet shop |
+| `pt-*` | restaurant |
