@@ -73,8 +73,30 @@ document.querySelectorAll(".tn-tab-list label[for]").forEach(function (label) {
 });
 `;
 
+/** Barg (bookshop): the arrows beside a sideways row (authors, reviews) move it by about one view. */
+export const BARG_SCRIPT = `
+document.querySelectorAll("[data-brg-car]").forEach(function (car) {
+  if (car.getAttribute("data-on")) return;
+  car.setAttribute("data-on", "1");
+  var row = car.querySelector("[data-brg-row]");
+  if (!row) return;
+  var rtl = getComputedStyle(row).direction === "rtl";
+  var move = function (dir) {
+    var step = Math.max(160, row.clientWidth * 0.8) * dir;
+    row.scrollBy({ left: rtl ? -step : step, behavior: "smooth" });
+  };
+  // Arrows are hidden while the whole row fits.
+  var fit = function () { car.classList.toggle("fits", row.scrollWidth <= row.clientWidth + 2); };
+  fit();
+  window.addEventListener("resize", fit);
+  var prev = car.querySelector("[data-brg-prev]"), next = car.querySelector("[data-brg-next]");
+  if (prev) prev.addEventListener("click", function (e) { e.preventDefault(); move(-1); });
+  if (next) next.addEventListener("click", function (e) { e.preventDefault(); move(1); });
+});
+`;
+
 /** Every script a published page may run, for the page's Content-Security-Policy. */
-export const SITE_SCRIPTS: string[] = [TANIN_SCRIPT];
+export const SITE_SCRIPTS: string[] = [TANIN_SCRIPT, BARG_SCRIPT];
 
 /** The inline script element text of a page script: its body, run on the page's document. */
 export const inlineScript = (body: string) => `(function (document) {${body}})(document);`;

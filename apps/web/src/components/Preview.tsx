@@ -467,6 +467,13 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
                   setTarget(null);
                   return;
                 }
+                if (target.path === "site.gallery.store") {
+                  // A new store of the contact page (bookshop): its name and lines are written on the page.
+                  const list = raw.site?.gallery?.length ? raw.site.gallery : (shown.site?.gallery ?? []);
+                  onDataChange({ ...raw, site: { ...site, gallery: [...structuredClone(list), { id: newId(), title: "شعبه‌ی تازه", image, description: "نشانی\nتلفن\nساعت کاری" }] } });
+                  setTarget(null);
+                  return;
+                }
                 onDataChange({
                   ...raw,
                   site:
