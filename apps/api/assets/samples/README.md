@@ -37,3 +37,7 @@ Each website template uses its own set of pictures, named with a short prefix.
 ## Personal pictures
 
 Used by the resume and the personal site templates: `avatar`, `about`, `project-*` and `certificate-*`.
+
+## Naming
+
+Names are lowercase, words joined with `-`, and start with the prefix of their template.
