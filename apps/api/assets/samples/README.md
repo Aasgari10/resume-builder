@@ -21,3 +21,4 @@ Each website template uses its own set of pictures, named with a short prefix.
 | `gg-*` | supermarket |
 | `ld-*` | beauty salon |
 | `jn-*` | toy shop |
+| `pa-*` | pet shop |
