@@ -24,3 +24,4 @@ Each website template uses its own set of pictures, named with a short prefix.
 | `pa-*` | pet shop |
 | `pt-*` | restaurant |
 | `pl-*` | gym |
+| `nr-*` | guest house |
