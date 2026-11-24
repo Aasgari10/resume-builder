@@ -30,7 +30,7 @@ import { SHIRIN_BLOCKS, SHIRIN_OPTIONAL_PAGES, ShirinShop, shirinPages, shirinSa
 import { ZARIN_BLOCKS, ZARIN_OPTIONAL_PAGES, ZarinShop, zarinPages, zarinSample } from "./web/zarin";
 import { HOMEMART_BLOCKS, HomeMartShop, homemartPages, homemartSample } from "./web/homemart";
 import { PATIO_BLOCKS, PATIO_OPTIONAL_PAGES, PatioShop, patioPages, patioSample } from "./web/patio";
-import { TANIN_SCRIPT } from "./web/scripts";
+import { BARG_SCRIPT, TANIN_SCRIPT } from "./web/scripts";
 import { TANIN_BLOCKS, TANIN_OPTIONAL_PAGES, TaninSite, taninPages, taninSample } from "./web/tanin";
 import { ESCAPE_BLOCKS, ESCAPE_OPTIONAL_PAGES, EscapeSite, escapePages, escapeSample } from "./web/escape";
 import { NARENJ_BLOCKS, NARENJ_OPTIONAL_PAGES, NarenjSite, narenjPages, narenjSample } from "./web/narenj";
@@ -39,6 +39,7 @@ import { CROPIT_BLOCKS, CROPIT_OPTIONAL_PAGES, CropitSite, cropitPages, cropitSa
 import { LADIVA_BLOCKS, LADIVA_OPTIONAL_PAGES, LadivaSite, ladivaPages, ladivaSample } from "./web/ladiva";
 import { KAFE_BLOCKS, KAFE_OPTIONAL_PAGES, KafeSite, kafePages, kafeSample } from "./web/kafe";
 import { JUNO_BLOCKS, JUNO_OPTIONAL_PAGES, JunoShop, junoPages, junoSample } from "./web/juno";
+import { BARG_BLOCKS, BARG_OPTIONAL_PAGES, BargShop, bargPages, bargSample } from "./web/barg";
 import { GROGIN_BLOCKS, GROGIN_OPTIONAL_PAGES, GroginShop, groginPages, groginSample } from "./web/grogin";
 import type { ResumeData } from "@rb/schema";
 import type { TemplateDefinition, TemplateTag } from "./types";
@@ -115,6 +116,7 @@ export const PORTFOLIO_TEMPLATES: readonly TemplateDefinition[] = [
   { ...web("therapy-site", "مهرپویا (مطب روان‌شناسی)", TherapySite), pages: therapyPages, sample: therapySample, blocks: THERAPY_BLOCKS, optionalPages: THERAPY_OPTIONAL_PAGES, shop: true, clinic: true, bookings: true, panel: { extras: { perks: "📚 ویژگی‌های کنار کتاب (۴ ویژگی)" }, hide: ["banners", "quotes", "text-pages"] } },
   { ...web("juno-shop", "جونو (اسباب‌بازی)", JunoShop), pages: junoPages, sample: junoSample, blocks: JUNO_BLOCKS, optionalPages: JUNO_OPTIONAL_PAGES, shop: true, panel: { extras: { perks: "✨ ویژگی‌های فروشگاه", brands: "🏷 آرم مشتری‌ها", trust: "💳 آرم‌های پایین صفحه" } } },
   { ...web("grogin-shop", "گروگین (سوپرمارکت)", GroginShop), pages: groginPages, sample: groginSample, blocks: GROGIN_BLOCKS, optionalPages: GROGIN_OPTIONAL_PAGES, shop: true, panel: { extras: { perks: "✨ ویژگی‌های فروشگاه", brands: "🏷 برندهای محبوب", trust: "💳 آرم‌های پایین صفحه" }, hide: ["quotes"] } },
+  { ...web("barg-shop", "برگ (کتاب‌فروشی)", BargShop), pages: bargPages, sample: bargSample, blocks: BARG_BLOCKS, optionalPages: BARG_OPTIONAL_PAGES, script: BARG_SCRIPT, shop: true, panel: { extras: { perks: "✨ چهار ویژگی فروشگاه", stats: "🔢 نوار متحرک اعداد", brands: "✍️ نویسندگان محبوب", trust: "💳 آرم‌های پایین صفحه" } } },
   { ...web("homemart-shop", "هوم‌مارت (فروشگاه لوازم خانگی)", HomeMartShop), pages: homemartPages, sample: homemartSample, blocks: HOMEMART_BLOCKS, shop: true, panel: { extras: { perks: "✨ ویژگی‌های فروشگاه" } } },
   { ...web("zarin-shop", "زرین (طلا و جواهر)", ZarinShop), pages: zarinPages, sample: zarinSample, blocks: ZARIN_BLOCKS, optionalPages: ZARIN_OPTIONAL_PAGES, shop: true, gold: true, panel: { extras: { perks: "✨ ویژگی‌ها (صفحه‌ی محصول و درباره)", stats: "🎯 مأموریت و چشم‌انداز (صفحه‌ی درباره)", brands: "👥 اعضای تیم (صفحه‌ی درباره)", trust: "🏷 آرم برندها (صفحه‌ی اول)" } } },
   { ...web("shirin-shop", "شیرین (شیرینی‌پزی)", ShirinShop), pages: shirinPages, sample: shirinSample, blocks: SHIRIN_BLOCKS, optionalPages: SHIRIN_OPTIONAL_PAGES, shop: true, bookings: true, cake: true, panel: { extras: { perks: "✨ ویژگی‌ها (صفحه‌ی محصول و درباره)", stats: "🎯 مأموریت و چشم‌انداز (صفحه‌ی درباره)", brands: "👥 قنادهای ما (صفحه‌ی درباره)" } } },

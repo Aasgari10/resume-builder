@@ -49,7 +49,9 @@ export function setAt(data: ResumeData, shown: ResumeData, path: string, value: 
     }
     const list: any[] = Array.isArray(node) ? node : [];
     if ("index" in seg) {
-      const next = [...list];
+      // A sample list of plain values (the site's announcements) is taken whole, like a list of items.
+      const fromSample = !list.length && Array.isArray(sample) && "key" in segs[0]! && segs[0].key === "site";
+      const next = fromSample ? structuredClone(sample) : [...list];
       next[seg.index] = write(list[seg.index], sample?.[seg.index], i + 1);
       return next.filter((x) => x !== undefined);
     }
