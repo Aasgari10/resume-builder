@@ -29,7 +29,7 @@ Each website template uses its own set of pictures, named with a short prefix.
 | `eg-*` | escape room | 33 |
 | `cb-*` | therapy practice | 25 |
 | `ar-*` | architecture and interior design | 22 |
-| `gs-*` | flower shop | |
+| `gs-*` | flower shop | 20 |
 | `sepid-*` | personal site (Sepid) | |
 | `grid-*` | personal site (Grid) | |
 | `shop-*` | shared shop pictures (boutique and others) | |
