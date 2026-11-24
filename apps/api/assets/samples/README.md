@@ -28,3 +28,4 @@ Each website template uses its own set of pictures, named with a short prefix.
 | `hm-*` | home appliances shop |
 | `eg-*` | escape room |
 | `cb-*` | therapy practice |
+| `ar-*` | architecture and interior design |
