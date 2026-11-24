@@ -11,25 +11,25 @@ project-music, project-portfolio. The certificate pictures were drawn for this p
 
 Each website template uses its own set of pictures, named with a short prefix.
 
-| Prefix | Template |
-|---|---|
-| `zr-*` | jewellery shop |
-| `rs-*` | music studio |
-| `sh-*` | bakery |
-| `cr-*` | photo studio |
-| `kf-*` | cafe |
-| `gg-*` | supermarket |
-| `ld-*` | beauty salon |
-| `jn-*` | toy shop |
-| `pa-*` | pet shop |
-| `pt-*` | restaurant |
-| `pl-*` | gym |
-| `nr-*` | guest house |
-| `hm-*` | home appliances shop |
-| `eg-*` | escape room |
-| `cb-*` | therapy practice |
-| `ar-*` | architecture and interior design |
-| `gs-*` | flower shop |
-| `sepid-*` | personal site (Sepid) |
-| `grid-*` | personal site (Grid) |
-| `shop-*` | shared shop pictures (boutique and others) |
+| Prefix | Template | Pictures |
+|---|---|---|
+| `zr-*` | jewellery shop | |
+| `rs-*` | music studio | |
+| `sh-*` | bakery | |
+| `cr-*` | photo studio | |
+| `kf-*` | cafe | |
+| `gg-*` | supermarket | |
+| `ld-*` | beauty salon | |
+| `jn-*` | toy shop | |
+| `pa-*` | pet shop | |
+| `pt-*` | restaurant | |
+| `pl-*` | gym | |
+| `nr-*` | guest house | |
+| `hm-*` | home appliances shop | |
+| `eg-*` | escape room | |
+| `cb-*` | therapy practice | |
+| `ar-*` | architecture and interior design | |
+| `gs-*` | flower shop | |
+| `sepid-*` | personal site (Sepid) | |
+| `grid-*` | personal site (Grid) | |
+| `shop-*` | shared shop pictures (boutique and others) | |
