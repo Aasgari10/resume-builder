@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic @jsxImportSource react */
 // Pinned per file: this package is compiled by different tools (Vite, tsx, tsup).
-// "Tanin": a recording studio rebuilt from the Resonate reference, in Persian. A transparent menu over
+// "Tanin": a recording studio, in Persian. A transparent menu over
 // a full-screen hero with the latest song; records, client logos, a studio band cut in bars, features,
 // a strip of services whose picture follows the hovered one, studio tabs, artists, a booking band,
 // reviews and news. Pages: about, services, studios, booking (each studio rented by the hour, from the
@@ -527,7 +527,7 @@ function Home(view: View) {
       {on("features") && <Features view={view} />}
       {on("services") && <ServiceStrip view={view} />}
       {on("studios") && <StudioTabs view={view} />}
-      {/* As in the reference, the guitar picture of the booking band reaches up behind the artists. */}
+      {/* As in the design, the guitar picture of the booking band reaches up behind the artists. */}
       <div className="tn-guitar">
         {on("artists") && <Artists view={view} />}
         {on("booking") && <BookingBand view={view} tall={on("artists") && (data.site?.gallery ?? []).length > 0} />}
@@ -551,7 +551,7 @@ function Player({ view, song }: { view: View; song: ResumeData["projects"][numbe
   return (
     <div className="tn-player-box tn-in-up d4">
       <small>آخرین آهنگی که این‌جا ضبط شد…</small>
-      {/* The page script turns this into the player of the reference; without it the browser's own player shows. */}
+      {/* The page script turns this into the player of the design; without it the browser's own player shows. */}
       <div className="tn-player" data-tn-player>
         <span className="tn-disc">{cover && <img src={cover} alt="" />}</span>
         <span className="tn-song">
@@ -1645,7 +1645,7 @@ function Contact(view: View) {
   );
 }
 
-/* ───────────── Example content (from the reference, in Persian) ───────────── */
+/* ───────────── Example content (in Persian) ───────────── */
 
 export function taninSample(locale: ResumeData["locale"]): ResumeData {
   const base = sampleResume(locale);
@@ -1846,7 +1846,7 @@ const css = /* css */ `
 .tn-radio { position: absolute; opacity: 0; pointer-events: none; }
 
 /* A word on a painted brush stroke. */
-/* As in the reference: a wide, rough stroke of paint behind the middle of the word, past both its ends. */
+/* As in the design: a wide, rough stroke of paint behind the middle of the word, past both its ends. */
 .tn-brush { position: relative; z-index: 0; white-space: nowrap; }
 .tn-brush::before { content: ""; position: absolute; z-index: -1; inset: 30% -14% 2% -12%; background: url("${sampleImage("rs-brush5", "png")}") center / 100% 100% no-repeat; opacity: .9; transform: scaleX(0); transform-origin: right; animation: tn-paint .9s .5s cubic-bezier(.2, .7, .2, 1) forwards; }
 .tn-headline.center .tn-brush::before { inset: 34% -18% 0 -16%; background-image: url("${sampleImage("rs-brush2", "png")}"); }
@@ -2018,7 +2018,7 @@ const css = /* css */ `
 .tn-tab-list label:hover { color: #fff; background: rgb(214 166 112 / .18); }
 .tn-tab-panes { display: grid; grid-column: 1 / -1; grid-row: 1; }
 .tn-tab-pane { grid-area: 1 / 1; display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 30px; align-items: center; opacity: 0; visibility: hidden; transform: translateY(14px); transition: opacity .5s, transform .5s, visibility .5s; }
-/* Only a small part of the picture sits under the frosted list, as in the reference. */
+/* Only a small part of the picture sits under the frosted list, as in the design. */
 .tn-tab-pic { display: block; aspect-ratio: 1.3; margin-inline-start: calc(max(240px, 24cqi) - clamp(50px, 5cqi, 100px)); overflow: hidden; }
 .tn-tab-pic img { width: 100%; height: 100%; object-fit: cover; }
 .tn-tab-pane h3 { font-size: clamp(20px, 2cqi, 38px); }

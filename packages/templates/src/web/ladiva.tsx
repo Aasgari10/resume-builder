@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic @jsxImportSource react */
 // Pinned per file: this package is compiled by different tools (Vite, tsx, tsup).
-// "La Diva": a women's beauty salon rebuilt from the La Diva reference, in Persian. Two-photo hero with
+// "La Diva": a women's beauty salon, in Persian. Two-photo hero with
 // a round "services" badge, a quick booking strip, the salon's story, services (each a category of the
 // shop whose items are its price list), numbers, a price guide, reviews, gallery, questions, products
 // sold online, two banners, blog and an Instagram strip; pages: services and one page per service,
@@ -114,7 +114,7 @@ const day = (iso?: string) => {
   return d && !Number.isNaN(d.getTime()) ? new Intl.DateTimeFormat("fa-IR", { dateStyle: "long" }).format(d) : undefined;
 };
 
-/** A title whose words between *stars* are written in the flowing script, as in the reference. */
+/** A title whose words between *stars* are written in the flowing script, as in the design. */
 function Fancy({ text }: { text?: string }) {
   return (
     <>
@@ -473,7 +473,7 @@ function Footer(view: View) {
   const { ctx, link, editing, shop } = view;
   const b = ctx.data.basics;
   const site = ctx.data.site;
-  // Photos without a caption make the strip above the footer (the reference's Instagram row).
+  // Photos without a caption make the strip above the footer (the design's Instagram row).
   const strip = (site?.gallery ?? []).filter((g) => safeUrl(g.image) && !g.title.trim()).slice(0, 6);
   const pages = (shop.pages ?? []).filter((p) => !p.hidden);
   return (
@@ -1489,7 +1489,7 @@ function Post(view: View & { id: string }) {
   );
 }
 
-/* ───────────── Example content (from the La Diva reference, in Persian) ───────────── */
+/* ───────────── Example content (in Persian) ───────────── */
 
 export function ladivaSample(locale: ResumeData["locale"]): ResumeData {
   const base = sampleResume(locale);

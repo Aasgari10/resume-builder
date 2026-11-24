@@ -1,8 +1,31 @@
 # Resume Builder
 
-Online resume and portfolio builder. Users write their resume once, then export it as a PDF or publish it as a personal portfolio website. Persian (RTL) first, with English support.
+Persian (RTL) first resume and website builder, with English support. Users write their details once, then export a printable PDF resume or publish a website: a personal portfolio, or a site for a small business with a shop, online booking and a management panel.
 
 **Stack:** TypeScript · React · Vite · Node.js · Express · Prisma · PostgreSQL · Zod
+
+<p align="center">
+  <img src="docs/screenshots/tanin.jpg" width="49%" alt="Music studio template">
+  <img src="docs/screenshots/escape.jpg" width="49%" alt="Escape room template">
+</p>
+<p align="center">
+  <img src="docs/screenshots/editor.jpg" width="49%" alt="Editor with the AI appearance assistant">
+  <img src="docs/screenshots/panel.jpg" width="49%" alt="Management panel">
+</p>
+
+## Features
+
+- **10 printable resume layouts** and **29 website templates**, 18 of them for businesses (shops, cafe, restaurant, salon, clinic, gym, studio, guest house and more), all right-to-left and responsive.
+- **Click-to-edit sites:** texts and pictures are edited directly on the page; every page, section and optional field can be switched off.
+- **AI appearance assistant:** users restyle their site with a Persian sentence; the model returns a JSON theme patch that is validated with Zod and corrected for WCAG contrast (see [AI appearance assistant](#ai-appearance-assistant)).
+- **Business tools:** shop with cart, checkout, coupons and orders; online booking with capacity (per service, room, hour or night); visitor accounts; a management panel with inbox, calendar and reports; a demo mode with reset.
+- **Publishing:** server-rendered pages with a strict Content Security Policy, SEO metadata, subdomains, and payments for premium templates.
+- **Quality:** shared Zod schemas between API and web, draft and strict validation, unit tests and CI.
+
+<p align="center">
+  <img src="docs/screenshots/therapy.jpg" width="66%" alt="Psychologist practice template">
+  <img src="docs/screenshots/tanin-phone.jpg" width="24%" alt="Music studio template on a phone">
+</p>
 
 ## Project structure
 
@@ -15,7 +38,7 @@ apps/api            REST API — Express + Prisma (PostgreSQL)
 apps/web            Web app — React + Vite (editor with live preview)
 ```
 
-Printable resumes come in seven layouts (colored or tinted sidebar, banner, card, photo column, minimal, classic) built from a shared kit of sections. Users pick only a **main color**; text on it, light tints and darker shades are derived automatically, so backgrounds stay white and text stays readable.
+Printable resumes come in ten layouts (colored or tinted sidebar, banner, card, photo column, timeline, diagonal, night, line, classic) built from a shared kit of sections. Users pick only a **main color**; text on it, light tints and darker shades are derived automatically, so backgrounds stay white and text stays readable.
 
 Templates are pure components driven by a theme (colors, typography, spacing, section order) exposed as CSS variables. Layout adapts to the container width, so the editor preview can emulate mobile, and the same components can later render published sites on the server.
 
@@ -110,7 +133,7 @@ One site per resume. Publishing stores a snapshot of the resume and theme; the p
 | `GET /s/:subdomain` | Published site, server-rendered HTML |
 | `GET /` on `<subdomain>.<ROOT_DOMAIN>` | Same page on its own subdomain |
 
-Pages ship no JavaScript and are served with a strict Content Security Policy. Metadata is generated from the resume: title, description, Open Graph tags and schema.org `Person` JSON-LD, with optional user overrides and a `noindex` switch.
+Pages ship no JavaScript except a few small template scripts, which a strict Content Security Policy allows by their hash. Metadata is generated from the resume: title, description, Open Graph tags and schema.org `Person` JSON-LD, with optional user overrides and a `noindex` switch.
 
 In development, set `ROOT_DOMAIN="localhost"` and open `http://<subdomain>.localhost:4000`, or use `http://localhost:5173/s/<subdomain>`.
 
@@ -205,3 +228,11 @@ GitHub Actions runs on every push to `main` and on pull requests: install, Prism
   pages (`optionalPages`) and sections (`blocks`), and the editor's "پاک کردن" empties a field for good.
 - Shared pieces for website templates live in `web/parts.tsx` (edit markers, icons, social links,
   certificates), so a project-wide rule is written once.
+
+## Contributing
+
+Issues and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+[MIT](LICENSE)

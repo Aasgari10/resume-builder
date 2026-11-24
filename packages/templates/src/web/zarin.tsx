@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic @jsxImportSource react */
 // Pinned per file: this package is compiled by different tools (Vite, tsx, tsup).
-// "Zarin": a gold and jewellery shop, after the Alukas reference: white pages, light geometric
+// "Zarin": a gold and jewellery shop: white pages, light geometric
 // headings, square product pictures on pale grey, a three-picture banner, a pink strip to find the
 // shop, a pale-blue "fine craft" card and a pale-pink "since" band. Gold pieces are priced from the
 // day's gold rate (weight, karat, wage; see goldQuote in @rb/schema), which the top strip shows and
@@ -844,7 +844,7 @@ function Footer(view: View) {
   );
 }
 
-/** The bar at the bottom of phone screens, as in the reference: home, search, wishlist, account. */
+/** The bar at the bottom of phone screens, as in the design: home, search, wishlist, account. */
 function PhoneBar(view: View) {
   const { link, visitor } = view;
   return (
@@ -2741,7 +2741,7 @@ const css = /* css */ `
 .zr-edit .zr-under { margin-top: 8px; }
 
 /* Home: two pictures side by side and the pale-blue card over the edge of the second one, a third of
-   the way down and running below them (sizes measured on the reference at 1920px). */
+   the way down and running below them (sizes measured on the design at 1920px). */
 .zr-craft { display: grid; grid-template-columns: 32.5% 32.5% minmax(0, 1fr); column-gap: .85%; align-items: start; width: min(1880px, 100% - 2 * clamp(14px, 1.2cqi, 22px)); }
 .zr-craft-1, .zr-craft-2 { aspect-ratio: 610 / 636; }
 .zr-craft-card { position: relative; z-index: 1; display: grid; place-content: center; justify-items: center; gap: clamp(10px, 1.2cqi, 22px); aspect-ratio: 638 / 618; margin-inline-start: -12.6%; margin-top: 34.2%; margin-inline-end: 13.2%; padding: clamp(18px, 3cqi, 56px); background: var(--zr-blue); text-align: center; }

@@ -88,7 +88,7 @@ export function GolsaraShop(props: TemplateProps) {
 /* ───────────── Small pieces ───────────── */
 
 const SVG: Record<string, string> = {
-  // Header icons, drawn like the reference: a shopping bag, a thick magnifier, heart, person.
+  // Header icons, drawn like the design: a shopping bag, a thick magnifier, heart, person.
   bag: "M6.2 7.5h11.6l1.2 13.5H5z M9 10.5V6.8a3 3 0 0 1 6 0v3.7",
   search: "M10.6 3.6a7 7 0 1 0 0 14 7 7 0 0 0 0-14z M15.8 15.8 20.6 20.6 M7.4 9.6a3.4 3.4 0 0 1 3.2-2.9",
   heart: "M12 20.2s-8-4.9-8-10.6A4.4 4.4 0 0 1 12 7a4.4 4.4 0 0 1 8 2.6c0 5.7-8 10.6-8 10.6z",
@@ -119,7 +119,7 @@ function Svg({ name, className = "gs-ico" }: { name: string; className?: string 
   );
 }
 
-/** The wide three-line menu icon of the reference. */
+/** The wide three-line menu icon of the design. */
 const MenuLines = () => (
   <svg viewBox="0 0 44 24" className="gs-ico gs-burger-ico" aria-hidden="true">
     <path d="M1 5h42M1 12h42M1 19h42" />
@@ -1674,7 +1674,7 @@ ${[1, 2, 3, 4].map((n) => `.gs-look:has(.gs-spot:nth-of-type(${n}) input:not(:ch
   .gs-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 14px; }
   .gs-card-acts { opacity: 1; transform: none; }
 }
-/* Phones, as in the reference: the slide picture sits behind centred text, only the bag and menu stay in the header */
+/* Phones, as in the design: the slide picture sits behind centred text, only the bag and menu stay in the header */
 @container (max-width: 820px) {
   .gs-filter-form { grid-template-columns: 1fr 1fr; }
   .gs-sale-row { grid-auto-columns: minmax(200px, 44%); }
@@ -1706,7 +1706,7 @@ ${[1, 2, 3, 4].map((n) => `.gs-look:has(.gs-spot:nth-of-type(${n}) input:not(:ch
   .gs-slide, .gs-slide > *, .gs-look-card { transition: none !important; }
 }
 
-/* ───── Golsara look: soft pink and gold, Nastaliq headings, narrow centred content (as in the reference) ───── */
+/* ───── Golsara look: soft pink and gold, Nastaliq headings, narrow centred content (as in the design) ───── */
 @font-face { font-family: "Golsara Nastaliq"; src: url("/_assets/fonts/golsara-nastaliq.woff") format("woff"); font-display: swap; }
 .gs { --gs-red: var(--color-primary); --gs-dark: var(--color-text); --gs-soft: #FDF6F3; --gs-script: "Golsara Nastaliq", var(--font-heading); --sk-accent: var(--color-text);
   --gs-wrap: min(1140px, 100% - 2 * clamp(20px, 7cqi, 120px)); font-size: 14px; font-weight: 300; }
@@ -1935,7 +1935,7 @@ ${[1, 2, 3, 4].map((n) => `.gs-look:has(.gs-spot:nth-of-type(${n}) input:not(:ch
   .gs-menu { display: block; }
   .gs-nav { display: none; }
 }
-/* Phones and tablets, as in the reference: logo on top, the icons under it, the menu drops down below the header */
+/* Phones and tablets, as in the design: logo on top, the icons under it, the menu drops down below the header */
 @container (max-width: 820px) {
   .gs-head-in { display: grid; justify-items: center; gap: 4px; padding: 10px 0 8px; }
   .gs-icons { margin: 0; gap: 18px; }

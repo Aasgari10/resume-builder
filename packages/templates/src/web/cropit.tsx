@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic @jsxImportSource react */
 // Pinned per file: this package is compiled by different tools (Vite, tsx, tsup).
-// "Crop It": a photographer's studio site rebuilt from the Crop It reference, in Persian. Hero slider,
+// "Crop It": a photographer's studio site, in Persian. Hero slider,
 // the photographer, eight photo categories, an Instagram row, work experience and skills, a "work with
 // me" band, reviews and partner logos; pages: our services (specialities, services, price plans),
 // about us (mission tabs, team), gallery (filtered by category), blog with posts, contact.
@@ -86,7 +86,7 @@ const day = (iso?: string) => {
   return d && !Number.isNaN(d.getTime()) ? new Intl.DateTimeFormat("fa-IR", { dateStyle: "long" }).format(d) : undefined;
 };
 
-/** The three short dashes of the reference, under titles and before small headings. */
+/** The three short dashes of the design, under titles and before small headings. */
 const Dash = ({ className = "" }: { className?: string }) => <i className={`cr-dash ${className}`} aria-hidden="true" />;
 
 function Title({ children, sub, light }: { children: ReactNode; sub?: ReactNode; light?: boolean }) {
@@ -1140,7 +1140,7 @@ function Contact(view: View) {
   );
 }
 
-/* ───────────── Example content (from the Crop It reference, in Persian) ───────────── */
+/* ───────────── Example content (in Persian) ───────────── */
 
 export function cropitSample(locale: ResumeData["locale"]): ResumeData {
   const base = sampleResume(locale);

@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic @jsxImportSource react */
 // Pinned per file: this package is compiled by different tools (Vite, tsx, tsup).
-// "Therapy": a psychologist's practice rebuilt from the Dr. Cloe Brooks reference, in Persian. A dark
+// "Therapy": a psychologist's practice, in Persian. A dark
 // bar with the name, address, hours and phone over a thin cream menu; hero slider, books, a booking
 // call, education, events, prices and a "new book" band. Pages: about me, online booking (a Persian
 // calendar of the free days and times, from the owner's working hours and the bookings already
@@ -1108,7 +1108,7 @@ function Post(view: View & { id: string }) {
   );
 }
 
-/* ───────────── Example content (from the reference, in Persian) ───────────── */
+/* ───────────── Example content (in Persian) ───────────── */
 
 export function therapySample(locale: ResumeData["locale"]): ResumeData {
   const base = sampleResume(locale);

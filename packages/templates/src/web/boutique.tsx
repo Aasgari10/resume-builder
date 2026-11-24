@@ -80,7 +80,7 @@ export function BoutiqueShop(props: TemplateProps) {
 /* ───────────── Small pieces ───────────── */
 
 const SVG: Record<string, string> = {
-  // Header icons, drawn like the reference: a shopping bag, a thick magnifier, heart, person.
+  // Header icons, drawn like the design: a shopping bag, a thick magnifier, heart, person.
   bag: "M6.2 7.5h11.6l1.2 13.5H5z M9 10.5V6.8a3 3 0 0 1 6 0v3.7",
   search: "M10.6 3.6a7 7 0 1 0 0 14 7 7 0 0 0 0-14z M15.8 15.8 20.6 20.6 M7.4 9.6a3.4 3.4 0 0 1 3.2-2.9",
   heart: "M12 20.2s-8-4.9-8-10.6A4.4 4.4 0 0 1 12 7a4.4 4.4 0 0 1 8 2.6c0 5.7-8 10.6-8 10.6z",
@@ -110,7 +110,7 @@ function Svg({ name, className = "bq-ico" }: { name: string; className?: string 
   );
 }
 
-/** The wide three-line menu icon of the reference. */
+/** The wide three-line menu icon of the design. */
 const MenuLines = () => (
   <svg viewBox="0 0 44 24" className="bq-ico bq-burger-ico" aria-hidden="true">
     <path d="M1 5h42M1 12h42M1 19h42" />
@@ -1448,7 +1448,7 @@ ${[1, 2, 3, 4, 5].map((n) => `.bq-dot:nth-of-type(${n}):checked ~ .bq-slides > .
 .bq-arrows .bq-ico { width: 34px; height: 34px; stroke-width: 1.3; }
 .bq-dot:focus-visible ~ .bq-slides .bq-arrows label { outline: 1px dashed currentColor; }
 
-/* Collections: a tall card beside three stacked ones, as in the reference */
+/* Collections: a tall card beside three stacked ones, as in the design */
 .bq-cats { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(12px, 1.3cqi, 20px); padding-block: clamp(40px, 5cqi, 70px) 0; }
 .bq-cover { position: absolute; inset: 0; overflow: hidden; }
 .bq-cover img { width: 100%; height: 100%; object-fit: cover; transition: transform 1s cubic-bezier(.2, 1, .3, 1); }
@@ -1528,7 +1528,7 @@ ${[1, 2, 3, 4, 5].map((n) => `.bq-dot:nth-of-type(${n}):checked ~ .bq-slides > .
 .bq-look-card b { margin-top: 8px; font-size: 1.1em; font-weight: 500; }
 ${[1, 2, 3, 4].map((n) => `.bq-look:has(.bq-spot:nth-of-type(${n}) input:not(:checked)) .bq-look-card:nth-child(${n})`).join(", ")} { opacity: 0; visibility: hidden; transform: translateY(14px); }
 .bq-look-card { transition: opacity .5s, visibility .5s, transform .6s cubic-bezier(.2, 1, .3, 1); }
-/* The picture sits towards the card (as in the reference) and is never stretched past its size. */
+/* The picture sits towards the card (as in the design) and is never stretched past its size. */
 .bq-look-pic { position: relative; min-height: 0; }
 /* Pinned to the side next to the card, at the full height of the section. */
 .bq-look-frame { position: absolute; inset-block: 0; right: 3%; display: block; max-width: 97%; }
@@ -1752,7 +1752,7 @@ ${[1, 2, 3, 4].map((n) => `.bq-look:has(.bq-spot:nth-of-type(${n}) input:not(:ch
   .bq-info-col, .bq-sum { position: static; }
   .bq-card-acts { opacity: 1; transform: none; }
 }
-/* Phones, as in the reference: the slide picture sits behind centred text, only the bag and menu stay in the header */
+/* Phones, as in the design: the slide picture sits behind centred text, only the bag and menu stay in the header */
 @container (max-width: 820px) {
   .bq-filter-form { grid-template-columns: 1fr 1fr; }
   .bq-sale-row { grid-auto-columns: minmax(200px, 44%); }

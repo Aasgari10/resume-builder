@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic @jsxImportSource react */
 // Pinned per file: this package is compiled by different tools (Vite, tsx, tsup).
-// "Shirin": a pastry shop, after the Sweet Mielo reference: a chocolate header that drips onto a
+// "Shirin": a pastry shop: a chocolate header that drips onto a
 // cream page, the logo in a red bowl, and the home page made of big round pastries (donuts) that
 // slide in from the sides as they come into view, each with a red price badge and an "order"
 // button. Besides the shop pages (all products, a category, a product with weights, cart, checkout
@@ -623,7 +623,7 @@ function Footer(view: View) {
   );
 }
 
-/** The bar at the bottom of phone screens, as in the reference: home, search, wishlist, account. */
+/** The bar at the bottom of phone screens, as in the design: home, search, wishlist, account. */
 function PhoneBar(view: View) {
   const { link, visitor } = view;
   return (
@@ -790,7 +790,7 @@ function MiniCart({ view }: { view: View }) {
 
 /* ───────────── Home ───────────── */
 
-/** A product name on two lines, as in the reference ("Sweet donut / with nuts"): the first half red. */
+/** A product name on two lines, as in the design ("Sweet donut / with nuts"): the first half red. */
 function twoLines(name: string): [string, string] {
   const w = name.trim().split(/\s+/);
   if (w.length < 2) return [name, ""];
@@ -2219,7 +2219,7 @@ export function shirinSample(locale: ResumeData["locale"]): ResumeData {
       ...base.basics,
       fullName: "شیرین",
       jobTitle: "شیرینی‌پزی",
-      // The reference's logo, for now (to be replaced by the designer's).
+      // A placeholder logo, for now (to be replaced by the designer's).
       avatarUrl: png("logo-temp"),
       email: "info@example.com",
       phone: "021 1234 5678",

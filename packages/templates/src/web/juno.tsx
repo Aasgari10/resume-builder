@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic @jsxImportSource react */
 // Pinned per file: this package is compiled by different tools (Vite, tsx, tsup).
-// "Juno": a toy shop in navy, sky blue and green, rebuilt from the Juno reference. Centred logo
+// "Juno": a toy shop in navy, sky blue and green. Centred logo
 // with phone and a "let's talk" button on the home page; hero slider with a speech bubble and a
 // waving bear; featured and popular toys; "what we do"; a photo band; clients; testimonials beside
 // a photo; latest news; a newsletter with large faded lettering; navy footer. Pages: about us,
@@ -146,7 +146,7 @@ function Svg({ name, className = "jn-ico" }: { name: string; className?: string 
   );
 }
 
-/** The nine-dot menu icon of the reference. */
+/** The nine-dot menu icon of the design. */
 const Dots = () => (
   <svg viewBox="0 0 24 24" className="jn-ico jn-dots-ico" aria-hidden="true">
     {[5, 12, 19].flatMap((y) => [5, 12, 19].map((x) => <circle key={`${x}-${y}`} cx={x} cy={y} r="1.9" />))}
@@ -301,7 +301,7 @@ function CartIcon({ view }: { view: View }) {
   );
 }
 
-/** The full-height navy menu of the reference; it opens without scripts (a details element). */
+/** The full-height navy menu of the design; it opens without scripts (a details element). */
 function Drawer({ view }: { view: View }) {
   const { items } = menu(view);
   return (
@@ -1090,7 +1090,7 @@ function Contact(view: View) {
   );
 }
 
-/** The contact page ends with one quiet row instead of the newsletter and the navy footer (as in the reference). */
+/** The contact page ends with one quiet row instead of the newsletter and the navy footer (as in the design). */
 function ContactFoot({ view }: { view: View }) {
   const { ctx, editing } = view;
   const b = ctx.data.basics;
@@ -1375,7 +1375,7 @@ function Act({ view, op, id, children, className, qty, size, label }: { view: Vi
   );
 }
 
-/** Section heading of the reference: bold title, a grey line beside it, "view all" on the other side. */
+/** Section heading of the design: bold title, a grey line beside it, "view all" on the other side. */
 
 /** Price filter of the side column: two boxes, two handles on one line (plain range inputs) and a button. */
 
@@ -1764,7 +1764,7 @@ function Pic({ src, path, label, className }: { src?: string; path: string; labe
 }
 
 
-/* ───────────── Example content (from the Juno reference, in Persian) ───────────── */
+/* ───────────── Example content (in Persian) ───────────── */
 
 export function junoSample(locale: ResumeData["locale"]): ResumeData {
   const base = sampleResume(locale);
