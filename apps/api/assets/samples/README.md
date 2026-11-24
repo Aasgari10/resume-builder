@@ -20,3 +20,4 @@ Each website template uses its own set of pictures, named with a short prefix.
 | `kf-*` | cafe |
 | `gg-*` | supermarket |
 | `ld-*` | beauty salon |
+| `jn-*` | toy shop |
