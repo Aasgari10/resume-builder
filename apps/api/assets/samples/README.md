@@ -41,3 +41,7 @@ Used by the resume and the personal site templates: `avatar`, `about`, `project-
 ## Naming
 
 Names are lowercase, words joined with `-`, and start with the prefix of their template.
+
+## Format
+
+Save pictures as `.jpg` (or `.png` for logos and drawings with transparency), at most about 1600 px wide.
