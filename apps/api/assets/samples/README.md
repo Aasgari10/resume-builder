@@ -30,3 +30,4 @@ Each website template uses its own set of pictures, named with a short prefix.
 | `cb-*` | therapy practice |
 | `ar-*` | architecture and interior design |
 | `gs-*` | flower shop |
+| `sepid-*` | personal site (Sepid) |
