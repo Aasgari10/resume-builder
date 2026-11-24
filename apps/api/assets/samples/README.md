@@ -50,3 +50,7 @@ Save pictures as `.jpg` (or `.png` for logos and drawings with transparency), at
 
 1. Save the new picture with exactly the same name.
 2. Raise `SAMPLE_ASSETS_VERSION` in `packages/schema/src/resume.schema.ts` so browsers load the new copy.
+
+## Adding a template
+
+Pick a new two-letter prefix that is not in the table above and add a row for it.
