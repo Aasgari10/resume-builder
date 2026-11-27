@@ -167,6 +167,3 @@
 .soon p { margin: 0 0 18px; color: var(--soft); line-height: 2; }
 .soon .acts { display: grid; gap: 10px; }
 @media (min-width: 600px) { .soon .acts { grid-template-columns: 1fr 1fr; } }
-
-/* very wide screens: four frames a row */
-@media (min-width: 1600px) { .tp-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }

@@ -62,7 +62,7 @@
 }
 
 /* ── page frame ── */
-.s4-room { max-width: 1480px; margin: 0 auto; padding: 0 16px 50px; }
+.s4-room { max-width: 1240px; margin: 0 auto; padding: 0 16px 50px; }
 @media (min-width: 1000px) { .s4-room { padding: 0 40px 70px; } }
 
 .s4-head { position: relative; text-align: center; }
@@ -100,7 +100,7 @@
 /* ── sidewalk and footer ── */
 .s4-street { height: 34px; background: repeating-linear-gradient(90deg, transparent 0 88px, rgb(0 0 0 / 0.25) 88px 90px), linear-gradient(#4a4560, #3b3750); border-top: 7px solid #6a6480; }
 .s4-foot { background: #14111f; color: var(--soft); }
-.s4-foot-in { display: grid; gap: 26px; max-width: 1400px; margin: 0 auto; padding: 30px 20px; }
+.s4-foot-in { display: grid; gap: 26px; max-width: 1160px; margin: 0 auto; padding: 30px 20px; }
 .s4-foot-brand p { margin: 8px 0 14px; max-width: 320px; color: var(--muted); font-size: 13.5px; line-height: 1.9; }
 .s4-soc { display: flex; gap: 10px; }
 .s4-soc a { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line-soft); }

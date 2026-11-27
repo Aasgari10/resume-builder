@@ -6,7 +6,6 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from "re
 import { Link, useNavigate } from "react-router-dom";
 import { SITE_TEMPLATES } from "@rb/templates";
 import deskArt from "./art/building-desk.svg?raw";
-import deskWideArt from "./art/building-desk-wide.svg?raw";
 import phoneArt from "./art/building-phone.svg?raw";
 import { Icon, UNITS, unitByKey, type UnitKey } from "./units";
 import "./site4site.css";
@@ -121,12 +120,12 @@ const SLIDES = [
   },
   {
     kicker: "اول امتحان کن، بعد سفارش بده",
-    title: ["قالب را ", "با پنل مدیریت", " امتحان کن"],
+    title: ["هر قالب را ", "با پنل مدیریتش", " امتحان کن"],
     text: "محصول اضافه کن، سفارش و نوبت ببین، ظاهر را عوض کن؛ وقتی پسندیدی، همان را سفارش بده.",
   },
   {
     kicker: `${fa(SITE_TEMPLATES.length)} قالب آماده`,
-    title: ["از ", "فروشگاه و کافه", " تا رزرو آنلاین نوبت"],
+    title: ["از ", "فروشگاه", " تا رزرو آنلاین"],
     text: "کافه، آرایشگاه، کتاب‌فروشی، اتاق فرار، مطب و…؛ قالب کسب‌وکارت احتمالاً همین‌جاست.",
   },
 ];
@@ -143,15 +142,11 @@ function DeskHome() {
   const navigate = useNavigate();
   const [slide, setSlide] = useState(0);
   const [pressed, setPressed] = useState<string | null>(null);
-  const [{ k, w }, setFit] = useState({ k: 1, w: 1440 });
+  const [k, setK] = useState(1);
 
   // The scene is drawn for 1440 × 900 and scaled to the window.
   useEffect(() => {
-    // Scaled by whichever side is tighter; a wider window gets a wider stage (not empty bands at the sides).
-    const fit = () => {
-      const k = Math.min(window.innerWidth / 1440, window.innerHeight / 900);
-      setFit({ k, w: Math.max(1440, window.innerWidth / k) });
-    };
+    const fit = () => setK(Math.min(window.innerWidth / 1440, window.innerHeight / 900));
     fit();
     window.addEventListener("resize", fit);
     return () => window.removeEventListener("resize", fit);
@@ -179,23 +174,8 @@ function DeskHome() {
     return { u, state };
   };
 
-  // On a wide stage the parts grow with it: a wider drawing of the building (more room per window)
-  // and a wider intercom and slogan; f is how much wider than the 1440 design, capped.
-  const f = Math.min(1.3, w / 1440);
-  const wideBld = f >= 1.06; // a 16:9 screen gives a 1600-wide stage
-  // the two drawings' viewBox sizes; the building is drawn 885 tall on the 900-tall stage
-  const [vw, vh] = wideBld ? [666, 1041] : [510, 942];
-  const bh = 885;
-  const bw = (bh * vw) / vh;
-  // The building and the intercom wall stand side by side (the wall leans on the building's side,
-  // past its 12-unit margin) and the pair is centred on the stage.
-  const gw = 560 * f;
-  const edge = (12 * bw) / vw;
-  const bl = (w - (bw - edge + gw)) / 2;
-  const gl = bl + bw - edge;
-
   return (
-    <div className="s4 s4-home-desk" dir="rtl" style={{ "--k": k, "--w": `${w}px`, "--f": f, "--bw": `${bw}px`, "--bh": `${bh}px`, "--bl": `${bl}px`, "--gl": `${gl}px` } as CSSProperties}>
+    <div className="s4 s4-home-desk" dir="rtl" style={{ "--k": k } as CSSProperties}>
       <h1 className="s4-sr">site4site؛ سایت آماده با پنل مدیریت برای کسب‌وکار شما</h1>
       <SkipLinks />
       <div className="s4-stage">
@@ -234,7 +214,7 @@ function DeskHome() {
           </g>
         </svg>
 
-        <div ref={root} className="s4-bld" dangerouslySetInnerHTML={{ __html: wideBld ? deskWideArt : deskArt }} />
+        <div ref={root} className="s4-bld" dangerouslySetInnerHTML={{ __html: deskArt }} />
 
         <div className="s4-say" aria-live="polite">
           <small>{s.kicker}</small>
