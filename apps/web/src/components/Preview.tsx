@@ -1,5 +1,5 @@
 // Site workspace: the live website with click-to-edit, page and device switches, and the side panel
-// (settings, assistant, publishing). "Show" turns the same workspace into a full-screen view.
+// (settings and the assistant). "Show" turns the same workspace into a full-screen view.
 // Empty content is filled with sample text and pictures; publishing uses only the user's own content.
 
 import { useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent, type ReactNode } from "react";
@@ -41,14 +41,13 @@ type Props = {
   onThemeChange: (theme: Theme) => void;
   onDataChange: (data: ResumeData) => void;
   /** Publishing controls for the panel's last tab. */
-  publish: ReactNode;
   /** Shown at the start of the workspace bar (title, save state, …). */
   bar?: ReactNode;
   /** Saved resume id (absent for an unsaved draft); the shop panel needs it to list orders. */
   resumeId?: string;
 };
 
-export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish, bar, resumeId }: Props) {
+export function Preview({ data: raw, theme, onThemeChange, onDataChange, bar, resumeId }: Props) {
   const site = getTemplate(theme.templateId);
   const [inboxOpen, setInboxOpen] = useState(false);
   const [formNote, setFormNote] = useState<string | null>(null);
@@ -349,7 +348,7 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
           type="button"
           className="ws-chip"
           aria-pressed={panel}
-          title={panel ? "بستن کشوی دستیار هوشمند و انتشار" : "باز کردن کشوی دستیار هوشمند و انتشار"}
+          title={panel ? "بستن کشوی دستیار هوشمند" : "باز کردن کشوی دستیار هوشمند"}
           onClick={() => (panel ? setPanel(false) : openPanel("assistant"))}
         >
           {icon("M4 4.5h16v15H4z M9.5 4.5v15 M6 8h1.5 M6 11h1.5")}
@@ -397,7 +396,6 @@ export function Preview({ data: raw, theme, onThemeChange, onDataChange, publish
             onData={onDataChange}
             onTheme={changeTheme}
             onClose={() => setPanel(false)}
-            publish={publish}
           />
         )}
       </div>

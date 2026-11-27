@@ -1029,8 +1029,8 @@ select {
 .sp-tabs { display: flex; flex: 1; gap: 2px; padding: 3px; border-radius: 10px; background: var(--bg); }
 .sp-tabs button { flex: 1; padding: 6px 4px; border: none; border-radius: 8px; background: none; font: inherit; font-size: 0.82rem; cursor: pointer; white-space: nowrap; }
 .sp-tabs button[aria-selected="true"] { background: #fff; font-weight: 700; box-shadow: 0 1px 3px rgb(0 0 0 / 0.08); }
-.sp-body, .sp-assistant, .sp-publish { flex: 1; overflow-y: auto; padding: 14px; display: grid; align-content: start; gap: 18px; }
-.sp-assistant .card, .sp-publish .card { box-shadow: none; border: none; padding: 0; }
+.sp-body, .sp-assistant { flex: 1; overflow-y: auto; padding: 14px; display: grid; align-content: start; gap: 18px; }
+.sp-assistant .card { box-shadow: none; border: none; padding: 0; }
 .sp section { display: grid; gap: 10px; }
 .sp h3 { margin: 0; font-size: 0.9rem; color: var(--muted, #6b7280); }
 .sp-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 0.9rem; }
@@ -1437,8 +1437,8 @@ select {
 .editor-main .ws { height: 100vh; height: 100dvh; min-height: 0; border: none; border-radius: 0; }
 
 /* Vertical scrollbars of the editor on the right: the scrolling box runs left-to-right, its content right-to-left */
-.ws-view, .sp-assistant, .sp-publish, .assistant-messages { direction: ltr; }
-.ws-view > *, .sp-assistant > *, .sp-publish > *, .assistant-messages > * { direction: rtl; }
+.ws-view, .sp-assistant, .assistant-messages { direction: ltr; }
+.ws-view > *, .sp-assistant > *, .assistant-messages > * { direction: rtl; }
 
 /* Site inbox: bookings, contact messages and newsletter sign-ups */
 .ws-form-note { position: fixed; bottom: 20px; inset-inline-start: 20px; z-index: 1200; max-width: 380px; padding: 14px 16px; border-radius: 10px; background: #1f2937; color: #fff; font-size: .9rem; line-height: 1.8; box-shadow: 0 16px 40px -16px rgb(0 0 0 / .5); }

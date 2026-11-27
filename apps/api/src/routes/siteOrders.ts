@@ -12,6 +12,7 @@ import { getTemplate } from "@rb/templates";
 import { prisma } from "../db";
 import { HttpError, asyncHandler, parseBody } from "../lib/http";
 import { normalizeIranPhone, toLatinDigits } from "../lib/phone";
+import { sendNoticeSms } from "../lib/sms";
 import { requireAdmin } from "../middleware/admin";
 import { currentUserId, requireAuth } from "../middleware/auth";
 
@@ -19,6 +20,8 @@ import { currentUserId, requireAuth } from "../middleware/auth";
 export type ThreadLine = { from: "customer" | "admin" | "system"; text: string; at: string; status?: SiteOrderStatus };
 
 const STATUSES = ["NEW", "REVIEWING", "BUILDING", "DELIVERED", "CANCELED"] as const;
+/** Status names in the customer's SMS (the same words as the site shows). */
+const STATUS_LABEL: Record<SiteOrderStatus, string> = { NEW: "ثبت شد", REVIEWING: "در حال بررسی", BUILDING: "در حال ساخت", DELIVERED: "تحویل شد", CANCELED: "لغو شد" };
 /** Orders that are still being worked on; a customer may have only a few of these at once. */
 const OPEN: SiteOrderStatus[] = ["NEW", "REVIEWING", "BUILDING"];
 const MAX_OPEN_PER_USER = 5;
@@ -226,6 +229,7 @@ adminSiteOrdersRouter.patch(
       data: { status, unreadByUser: true, messages: append(order.messages, { from: "system", text: "", status, at: new Date().toISOString() }) },
       include: { user: { select: { phone: true, name: true } } },
     });
+    void sendNoticeSms(order.phone, `site4site: وضعیت سفارش ${order.code} شد «${STATUS_LABEL[status]}». جزئیات در «سفارش‌های من».`);
     res.json({ order: forAdmin(updated) });
   }),
 );
@@ -241,6 +245,7 @@ adminSiteOrdersRouter.post(
       data: { messages: append(order.messages, { from: "admin", text, at: new Date().toISOString() }), unreadByUser: true },
       include: { user: { select: { phone: true, name: true } } },
     });
+    void sendNoticeSms(order.phone, `site4site: پیام تازه برای سفارش ${order.code}. پاسخ را در «سفارش‌های من» ببینید.`);
     res.json({ order: forAdmin(updated) });
   }),
 );

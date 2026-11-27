@@ -23,7 +23,7 @@ type Tab = "overview" | "siteOrders" | "orders" | "users" | "templates" | "sites
 const TABS: { id: Tab; label: string }[] = [
   { id: "overview", label: "نمای کلی" },
   { id: "siteOrders", label: "سفارش سایت" },
-  { id: "orders", label: "سفارش‌ها" },
+  { id: "orders", label: "پرداخت‌ها" },
   { id: "users", label: "کاربران" },
   { id: "templates", label: "قالب‌ها" },
   { id: "sites", label: "سایت‌ها" },
