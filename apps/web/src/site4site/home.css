@@ -94,3 +94,6 @@
 /* the slogan board stands on the roof on two short legs */
 .s4-say::before, .s4-say::after { content: ""; position: absolute; top: 100%; width: 8px; height: 22px; margin-top: 4px; background: #2c2546; }
 .s4-say::before { left: 70px; } .s4-say::after { right: 70px; }
+/* every slide takes the same room, so the board never changes size: two lines of headline, two of text */
+.s4-say-title { height: 108px; overflow: hidden; }
+.s4-say > p:not(.s4-say-title) { height: 67px; overflow: hidden; }
