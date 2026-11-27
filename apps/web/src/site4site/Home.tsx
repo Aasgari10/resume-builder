@@ -22,7 +22,8 @@ const STAGE = 1800;
 /**
  * Left edges on the stage: the building (three floors over the entrance, 840 tall, 712 wide), then the
  * wall right against its side: the programmer and the neon stand on it, and it carries the intercom right
- * by the building, under the programmer's feet; the slogan stands right of the neon. Matches home.css.
+ * by the building, under the programmer's feet; the slogan hangs on the same wall, on a
+ * board right of the intercom. Matches home.css.
  */
 const LAYOUT = { bld: 22, gate: 22 + 712 - 14 };
 
@@ -255,6 +256,7 @@ function DeskHome() {
 
         <div className="s4-gate">
           <span className="s4-lamp" aria-hidden="true" />
+          <span className="s4-lamp two" aria-hidden="true" />
           <div className="s4-ip" role="group" aria-label="آیفون ساختمان">
             <span className="screw s1" />
             <span className="screw s2" />
