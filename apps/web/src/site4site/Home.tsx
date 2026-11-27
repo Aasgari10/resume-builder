@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { SITE_TEMPLATES } from "@rb/templates";
-import deskArt from "./art/building-desk-body.svg?raw";
+import deskArt from "./art/building-desk-floors.svg?raw";
 import groundArt from "./art/ground.svg?raw";
 import roofArt from "./art/roof-desk.svg?raw";
 import phoneArt from "./art/building-phone.svg?raw";
@@ -21,11 +21,12 @@ const OPEN_DELAY = 650;
 /** Design width of the wide-screen scene (the height is 900). */
 const STAGE = 1800;
 /**
- * Left edges on the stage: the building (three tall floors over the entrance and its small engine rooms,
- * 880 tall, 565 wide), then the wall right against its side: the programmer, the neon and the slogan stand
- * on it; low on it the intercom and, beside it and as big, the engine room's wide window. Matches home.css.
+ * Left edges on the stage: the building (its three floors, 840 tall, 677 wide), then the wall right against
+ * its side: the programmer, the neon and the slogan board stand on it; low on it the intercom, and beside
+ * the intercom the entrance door and one tall engine-room window, their tops level with the intercom's.
+ * Matches home.css.
  */
-const LAYOUT = { bld: 22, gate: 22 + 565 - 9 };
+const LAYOUT = { bld: 22, gate: 22 + 677 - 13 };
 
 function useWide() {
   const [wide, setWide] = useState(() => window.matchMedia(WIDE).matches);
@@ -233,14 +234,15 @@ function DeskHome() {
           </svg>
         </span>
         <div ref={root} className="s4-bld" dangerouslySetInnerHTML={{ __html: deskArt }} />
-        {/* the entrance door of the building drawing (its plate says ورود) */}
-        <Link to="/login" className="s4-bld-door" aria-label="ورود / ثبت‌نام" />
-        {/* beside the intercom, as big as it: the engine room behind one wide window of five panes */}
-        <div className="s4-engine" aria-hidden="true">
-          {["44 704 45 108", "250 704 45 108", "94 704 46 108", "300 704 46 108", "44 704 45 108"].map((vb, i) => (
-            <span key={i} className={i === 4 ? "flip" : ""} dangerouslySetInnerHTML={{ __html: part(groundArt, vb, true) }} />
-          ))}
+        <div className="s4-entry">
+          <Link to="/login" className="s4-entry-door" aria-label="ورود / ثبت‌نام" dangerouslySetInnerHTML={{ __html: part(groundArt, "146 692 98 134") }} />
+          {/* one tall window of the engine room, holding what both ground-floor windows held */}
+          <div className="s4-entry-glass" aria-hidden="true">
+            <span dangerouslySetInnerHTML={{ __html: part(groundArt, "44 704 96 108", true) }} />
+            <span dangerouslySetInnerHTML={{ __html: part(groundArt, "250 704 96 108", true) }} />
+          </div>
         </div>
+        {/* the programmer and the neon sign, on top of the intercom's wall */}
         {/* the programmer and the neon sign together on the wall's cornice */}
         <div className="s4-roof" aria-hidden="true" dangerouslySetInnerHTML={{ __html: roofArt }} />
 

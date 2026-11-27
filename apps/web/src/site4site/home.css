@@ -32,10 +32,10 @@
 .s4-moon { position: absolute; top: 30px; left: 1250px; width: 44px; height: 44px; }
 .s4-moon svg { display: block; border-radius: 50%; filter: drop-shadow(0 0 22px rgb(255 233 194 / 0.35)); }
 .s4-star { position: absolute; width: 2px; height: 2px; border-radius: 50%; background: #fff1dc; opacity: 0.8; }
-.s4-bld { position: absolute; bottom: 0; left: 22px; width: 565px; height: 880px; }
+.s4-bld { position: absolute; bottom: 0; left: 22px; width: 677px; height: 840px; }
 .s4-bld svg { display: block; width: 100%; height: 100%; }
 
-.s4-say { position: absolute; bottom: 488px; left: 1214px; z-index: 1; width: 560px; }
+.s4-say { position: absolute; bottom: 492px; left: 1330px; z-index: 1; width: 446px; padding: 22px 28px 20px; border-radius: 3px; background: linear-gradient(115deg, rgb(255 255 255 / 0.07), transparent 40%), linear-gradient(#34374a, #2a2c39); box-shadow: 0 0 0 4px #7d6a48, 0 12px 28px rgb(0 0 0 / 0.5); }
 .s4-say small { display: block; margin-bottom: 14px; color: var(--teal); font-size: 16px; }
 .s4-say-title { margin: 0; min-height: 0; font-size: 36px; font-weight: 800; line-height: 1.5; color: #f6eedf; text-wrap: balance; animation: s4-type 0.6s ease-out; }
 .s4-say-title .mark { color: var(--pink); white-space: nowrap; }
@@ -50,10 +50,10 @@
 .s4-say-dots button[aria-selected="true"] { background: var(--pink); box-shadow: 0 0 8px var(--pink); }
 
 /* the gate wall with the intercom */
-.s4-gate { position: absolute; bottom: 0; left: 578px; width: 1222px; height: 470px; background-image: repeating-linear-gradient(0deg, rgb(0 0 0 / 0.14) 0 1px, transparent 1px 12px), repeating-linear-gradient(90deg, rgb(0 0 0 / 0.1) 0 1px, transparent 1px 24px), linear-gradient(90deg, #3b3850, #4a4662); }
+.s4-gate { position: absolute; bottom: 0; left: 686px; width: 1114px; height: 470px; background-image: repeating-linear-gradient(0deg, rgb(0 0 0 / 0.14) 0 1px, transparent 1px 12px), repeating-linear-gradient(90deg, rgb(0 0 0 / 0.1) 0 1px, transparent 1px 24px), linear-gradient(90deg, #3b3850, #4a4662); }
 .s4-gate::before { content: ""; position: absolute; top: -12px; left: -6px; right: -6px; height: 14px; background: #e6d9c3; box-shadow: 0 3px 0 #cdbfa7; }
-.s4-lamp { position: absolute; top: -4px; left: 322px; display: none; width: 16px; height: 22px; translate: -50% 0; border-radius: 5px; background: #ffd99a; box-shadow: 0 0 30px 14px rgb(255 217 154 / 0.3); }
-.s4-ip { position: absolute; bottom: 24px; left: 322px; translate: -50% 0; scale: 1.12; transform-origin: bottom center; width: 540px; padding: 30px 26px 28px; border-radius: 3px; background: linear-gradient(115deg, rgb(255 255 255 / 0.08), transparent 38%), linear-gradient(#3a3d4b, #2e303c); box-shadow: 0 0 0 4px #7d6a48, 0 12px 28px rgb(0 0 0 / 0.5); }
+.s4-lamp { position: absolute; top: 14px; left: 290px; width: 16px; height: 22px; translate: -50% 0; border-radius: 5px; background: #ffd99a; box-shadow: 0 0 30px 14px rgb(255 217 154 / 0.3); }
+.s4-ip { position: absolute; bottom: 24px; left: 290px; translate: -50% 0; width: 540px; padding: 30px 26px 28px; border-radius: 3px; background: linear-gradient(115deg, rgb(255 255 255 / 0.08), transparent 38%), linear-gradient(#3a3d4b, #2e303c); box-shadow: 0 0 0 4px #7d6a48, 0 12px 28px rgb(0 0 0 / 0.5); }
 .s4-ip .screw { position: absolute; width: 9px; height: 9px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #b49a68, #6e5a38 70%); box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.4); }
 .s4-ip .screw::after { content: ""; position: absolute; left: 2px; right: 2px; top: 4px; height: 1.4px; background: #26282c; rotate: 35deg; }
 .s4-ip .s1 { top: 9px; left: 9px; } .s4-ip .s2 { top: 9px; right: 9px; } .s4-ip .s3 { bottom: 9px; left: 9px; } .s4-ip .s4s { bottom: 9px; right: 9px; }
@@ -81,19 +81,22 @@
 .s4-wall::before { content: ""; position: absolute; top: -12px; left: 0; right: 0; height: 14px; background: #e6d9c3; box-shadow: 0 3px 0 #cdbfa7; }
 .s4-wall-lamp { position: absolute; top: 12px; width: 16px; height: 22px; border-radius: 5px; background: #ffd99a; box-shadow: 0 0 30px 14px rgb(255 217 154 / 0.22); }
 /* the programmer and the neon sign stand on the wall's cornice, left of the slogan */
-.s4-roof { position: absolute; left: 592px; bottom: 470px; width: 614px; height: 400px; }
+.s4-roof { position: absolute; left: 700px; bottom: 470px; width: 614px; height: 400px; }
 .s4-roof svg { display: block; width: 100%; height: 100%; }
 /* the slogan's board on the wall: a lamp above it, like the intercom's */
-.s4-say > p:not(.s4-say-title) { font-size: 17px !important; }
-.s4-say small { margin-bottom: 6px !important; font-size: 16px !important; }
-.s4-say-chips li { font-size: 14px !important; padding: 6px 14px !important; }
+.s4-say > p:not(.s4-say-title) { font-size: 15px !important; }
+.s4-say small { margin-bottom: 6px !important; font-size: 14.5px !important; }
+.s4-say-chips li { font-size: 13px !important; padding: 5px 12px !important; }
+/* the slogan board stands on the roof on two short legs */
+.s4-say::before, .s4-say::after { content: ""; position: absolute; top: 100%; width: 8px; height: 22px; margin-top: 4px; background: #2c2546; }
+.s4-say::before { left: 70px; } .s4-say::after { right: 70px; }
 /* every slide takes the same room, so the board never changes size: two lines of headline, two of text */
-.s4-say-title { height: 132px; overflow: hidden; font-size: 44px !important; }
-.s4-say > p:not(.s4-say-title) { height: 75px; overflow: hidden; }
-/* the entrance door of the building drawing */
-.s4-bld-door { position: absolute; bottom: 0; left: calc(22px + 565px * 0.408); width: calc(565px * 0.183); height: calc(880px * 0.196); border-radius: 4px; }
-.s4-bld-door:hover { box-shadow: inset 0 0 0 2px rgb(244 190 106 / 0.5); }
-/* the engine room's wide window beside the intercom: five panes, as tall as the intercom */
-.s4-engine { position: absolute; left: 1226px; bottom: 24px; z-index: 1; display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; width: 548px; height: 419px; padding: 6px; border-radius: 4px; background: #5a5276; box-shadow: inset 0 0 0 1.5px #7a7298, 0 12px 28px rgb(0 0 0 / 0.45); }
-.s4-engine span, .s4-engine svg { display: block; width: 100%; height: 100%; overflow: hidden; border-radius: 2px; }
-.s4-engine .flip { transform: scaleX(-1); }
+.s4-say-title { height: 108px; overflow: hidden; }
+.s4-say > p:not(.s4-say-title) { height: 67px; overflow: hidden; }
+/* beside the intercom: the entrance (its plate says ورود) and one tall engine-room window, tops level with the intercom */
+.s4-entry { position: absolute; left: 1262px; bottom: 0; z-index: 1; display: flex; align-items: flex-end; gap: 16px; height: 398px; }
+.s4-entry-door { display: block; width: 291px; height: 100%; border-radius: 4px; }
+.s4-entry-door svg { display: block; width: 100%; height: 100%; }
+.s4-entry-door:hover { filter: brightness(1.12); }
+.s4-entry-glass { display: grid; grid-template-rows: 1fr 1fr; gap: 5px; width: 196px; height: calc(100% - 22px); margin-bottom: 22px; padding: 5px; border-radius: 4px; background: #5a5276; box-shadow: inset 0 0 0 1.5px #7a7298, 0 10px 24px rgb(0 0 0 / 0.4); }
+.s4-entry-glass span, .s4-entry-glass svg { display: block; width: 100%; height: 100%; overflow: hidden; border-radius: 2px; }
