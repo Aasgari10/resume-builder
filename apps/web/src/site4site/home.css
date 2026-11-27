@@ -33,10 +33,10 @@
 .s4-moon svg { display: block; border-radius: 50%; filter: drop-shadow(0 0 22px rgb(255 233 194 / 0.35)); }
 .s4-star { position: absolute; width: 2px; height: 2px; border-radius: 50%; background: #fff1dc; opacity: 0.8; }
 .s4-city { position: absolute; bottom: 0; right: 0; width: 270px; height: 200px; transform: scaleX(-1); }
-.s4-bld { position: absolute; bottom: 0; left: calc(var(--w, 1440px) * 0.3035 - var(--bw, 482px) / 2 - (var(--f, 1) - 1) * 300px); width: var(--bw, 482px); height: 870px; }
+.s4-bld { position: absolute; bottom: 0; left: var(--bl, 196px); width: var(--bw, 482px); height: 870px; }
 .s4-bld svg { display: block; width: 100%; height: 100%; }
 
-.s4-say { position: absolute; top: 70px; left: calc(var(--w, 1440px) * 0.6694 - 280px * var(--f, 1) + (var(--f, 1) - 1) * 100px); width: calc(560px * var(--f, 1)); }
+.s4-say { position: absolute; top: 70px; left: var(--gl, 684px); width: calc(560px * var(--f, 1)); }
 .s4-say small { display: block; margin-bottom: 14px; color: var(--teal); font-size: 16px; }
 .s4-say-title { margin: 0; min-height: 138px; font-size: 46px; font-weight: 800; line-height: 1.5; color: #f6eedf; animation: s4-type 0.6s ease-out; }
 .s4-say-title .mark { color: var(--pink); white-space: nowrap; }
@@ -51,7 +51,7 @@
 .s4-say-dots button[aria-selected="true"] { background: var(--pink); box-shadow: 0 0 8px var(--pink); }
 
 /* the gate wall with the intercom */
-.s4-gate { position: absolute; bottom: 0; left: calc(var(--w, 1440px) * 0.6694 - 280px * var(--f, 1) + (var(--f, 1) - 1) * 100px); width: calc(560px * var(--f, 1)); height: 470px; background-image: repeating-linear-gradient(0deg, rgb(0 0 0 / 0.14) 0 1px, transparent 1px 12px), repeating-linear-gradient(90deg, rgb(0 0 0 / 0.1) 0 1px, transparent 1px 24px), linear-gradient(90deg, #3b3850, #4a4662); }
+.s4-gate { position: absolute; bottom: 0; left: var(--gl, 684px); width: calc(560px * var(--f, 1)); height: 470px; background-image: repeating-linear-gradient(0deg, rgb(0 0 0 / 0.14) 0 1px, transparent 1px 12px), repeating-linear-gradient(90deg, rgb(0 0 0 / 0.1) 0 1px, transparent 1px 24px), linear-gradient(90deg, #3b3850, #4a4662); }
 .s4-gate::before { content: ""; position: absolute; top: -12px; left: -6px; right: -6px; height: 14px; background: #e6d9c3; box-shadow: 0 3px 0 #cdbfa7; }
 .s4-lamp { position: absolute; top: 12px; left: 50%; width: 16px; height: 22px; translate: -50% 0; border-radius: 5px; background: #ffd99a; box-shadow: 0 0 30px 14px rgb(255 217 154 / 0.3); }
 .s4-ip { position: absolute; top: 52px; left: 50%; translate: -50% 0; width: calc(540px * var(--f, 1)); padding: 30px 26px 28px; border-radius: 3px; background: linear-gradient(115deg, rgb(255 255 255 / 0.08), transparent 38%), linear-gradient(#3a3d4b, #2e303c); box-shadow: 0 0 0 4px #7d6a48, 0 12px 28px rgb(0 0 0 / 0.5); }
