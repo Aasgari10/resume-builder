@@ -18,12 +18,12 @@ const WIDE = "(min-width: 1000px)";
 /** How long the light shows before the unit opens. */
 const OPEN_DELAY = 650;
 /** Design width of the wide-screen scene (the height is 900). */
-const STAGE = 1600;
+const STAGE = 1720;
 /**
- * Left edges on the stage: the building (its 3 floors and roof, 880 tall), the intercom wall right against
- * its side, and the entrance and engine room (420 wide) beside the intercom. Matches home.css.
+ * Left edges on the stage: the building (its 3 floors and roof, 880 tall), then one wall right against its
+ * side carrying the entrance with the engine room (560 × 400) and the intercom (560 wide). Matches home.css.
  */
-const LAYOUT = { bld: 22, gate: 22 + 581 - 14, ground: 22 + 581 - 14 + 560 };
+const LAYOUT = { bld: 22, ground: 589, gate: 589 + 560 };
 
 function useWide() {
   const [wide, setWide] = useState(() => window.matchMedia(WIDE).matches);
@@ -162,7 +162,7 @@ function DeskHome() {
   const [pressed, setPressed] = useState<string | null>(null);
   const [{ k, w }, setFit] = useState({ k: 1, w: STAGE });
 
-  // The scene is drawn for 1600 × 900 and scaled to fit the window, so it never scrolls. A window wider
+  // The scene is drawn for 1720 × 900 and scaled to fit the window, so it never scrolls. A window wider
   // than that shape gets a wider stage: the building and the intercom keep their size in the middle and
   // the street continues to both sides (neighbouring buildings on the left, the intercom's wall on the right).
   useEffect(() => {
@@ -227,9 +227,9 @@ function DeskHome() {
           </svg>
         </span>
         <div ref={root} className="s4-bld" dangerouslySetInnerHTML={{ __html: deskArt }} />
-        {/* the entrance and the engine room stand at street level beside the intercom; the door opens the login */}
+        {/* the entrance and the engine room, as big as the intercom beside them; the door opens the login */}
         <div className="s4-ground">
-          <span dangerouslySetInnerHTML={{ __html: groundArt }} />
+          <span dangerouslySetInnerHTML={{ __html: groundArt.replace("<svg ", '<svg preserveAspectRatio="none" ') }} />
           <Link to="/login" className="s4-ground-door" aria-label="ورود / ثبت‌نام" />
         </div>
 
