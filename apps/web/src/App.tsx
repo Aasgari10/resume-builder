@@ -3,6 +3,7 @@ import { RequireAuth, useAuth } from "./auth";
 import { ComingSoon } from "./landing/ComingSoon";
 import { Landing } from "./landing/Landing";
 import { Gallery } from "./hub/Gallery";
+import { MyOrders } from "./hub/MyOrders";
 import { NewResume } from "./hub/NewResume";
 import { ResumeHub } from "./hub/ResumeHub";
 import { SiteGallery } from "./hub/SiteGallery";
@@ -73,6 +74,14 @@ export function App() {
             element={
               <RequireAuth>
                 <Dashboard />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/resume/orders"
+            element={
+              <RequireAuth>
+                <MyOrders />
               </RequireAuth>
             }
           />

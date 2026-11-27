@@ -15,12 +15,14 @@ import {
   type Paged,
 } from "../api";
 import { useAuth } from "../auth";
+import { SiteOrdersAdmin } from "../components/SiteOrdersAdmin";
 import { formatToman } from "../format";
 
-type Tab = "overview" | "orders" | "users" | "templates" | "sites" | "ai" | "waitlist";
+type Tab = "overview" | "siteOrders" | "orders" | "users" | "templates" | "sites" | "ai" | "waitlist";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "overview", label: "نمای کلی" },
+  { id: "siteOrders", label: "سفارش سایت" },
   { id: "orders", label: "سفارش‌ها" },
   { id: "users", label: "کاربران" },
   { id: "templates", label: "قالب‌ها" },
@@ -51,6 +53,7 @@ export function Admin() {
         ))}
       </div>
       {tab === "overview" && <Overview />}
+      {tab === "siteOrders" && <SiteOrdersAdmin />}
       {tab === "orders" && <Orders />}
       {tab === "users" && <Users />}
       {tab === "templates" && <Templates />}

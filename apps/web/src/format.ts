@@ -24,3 +24,10 @@ export function readReturnPath(): string {
   }
   return "/dashboard";
 }
+
+const dateFormatter = new Intl.DateTimeFormat("fa-IR", { year: "numeric", month: "long", day: "numeric" });
+
+/** A date in the Persian calendar, e.g. «۶ آذر ۱۴۰۵»; "—" when there is none. */
+export function formatDate(iso: string | null): string {
+  return iso ? dateFormatter.format(new Date(iso)) : "—";
+}

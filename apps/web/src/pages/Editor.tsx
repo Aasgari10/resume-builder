@@ -2,12 +2,13 @@
 // the side panel holds settings, the AI assistant and publishing. Changes are saved automatically.
 
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { DEFAULT_PORTFOLIO_TEMPLATE_ID, getTemplate } from "@rb/templates";
 import type { FieldIssue } from "../api";
 import { Preview } from "../components/Preview";
 import { PublishPanel } from "../components/PublishPanel";
 import { SAVE_LABELS, useResumeDoc } from "../components/editor/useResumeDoc";
+import { OrderDialog } from "../components/siteOrders";
 import { toast } from "../lib/toast";
 
 export function Editor() {
@@ -15,6 +16,8 @@ export function Editor() {
   const doc = useResumeDoc(id, (savedId) => `/resumes/${savedId}`);
   const { isDraft, title, setTitle, data, setData, theme, setTheme, loadError, saveState, saveError, savedVersion, save } = doc;
   const [issues, setIssues] = useState<FieldIssue[] | null>(null);
+  const [ordering, setOrdering] = useState(false);
+  const navigate = useNavigate();
 
   // A previous check result is stale after an edit.
   useEffect(() => setIssues(null), [data]);
@@ -51,6 +54,9 @@ export function Editor() {
           PDF
         </Link>
       )}
+      <button className="btn small so-order-btn" onClick={() => setOrdering(true)}>
+        ثبت سفارش
+      </button>
     </>
   );
 
@@ -81,6 +87,18 @@ export function Editor() {
     <div className="site-editor" dir={data.locale === "fa" ? "rtl" : "ltr"}>
       {saveError && <p className="error">ذخیره نشد: {saveError}</p>}
       <Preview data={data} theme={theme} onThemeChange={setTheme} onDataChange={setData} publish={publish} bar={bar} resumeId={isDraft ? undefined : id} />
+      {ordering && (
+        <OrderDialog
+          title={title}
+          save={save}
+          onClose={() => setOrdering(false)}
+          onDone={(order) => {
+            setOrdering(false);
+            toast(`✓ سفارش ثبت شد؛ کد پیگیری ${order.code}`);
+            navigate(`/resume/orders?open=${order.id}`);
+          }}
+        />
+      )}
     </div>
   );
 }

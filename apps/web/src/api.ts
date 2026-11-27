@@ -271,6 +271,33 @@ export type ShopOrder = {
   createdAt: string;
 };
 
+/* ───────────── Site build orders ───────────── */
+
+export type SiteOrderStatus = "NEW" | "REVIEWING" | "BUILDING" | "DELIVERED" | "CANCELED";
+export type SiteOrderLine = { from: "customer" | "admin" | "system"; text: string; at: string; status?: SiteOrderStatus };
+export type SiteOrderSummary = {
+  id: string;
+  code: string;
+  resumeId: string | null;
+  templateId: string;
+  title: string;
+  name: string;
+  phone: string;
+  business: string | null;
+  note: string | null;
+  status: SiteOrderStatus;
+  unreadByUser: boolean;
+  unreadByAdmin: boolean;
+  createdAt: string;
+  updatedAt: string;
+  lastLine: SiteOrderLine | null;
+  lines: number;
+  user?: { phone: string };
+};
+export type SiteOrder = Omit<SiteOrderSummary, "lastLine" | "lines"> & { messages: SiteOrderLine[] };
+export type AdminSiteOrder = SiteOrder & { design: { data: ResumeData; theme: Theme }; templateName: string; user: { phone: string; name: string | null } };
+export type SiteOrderInput = { resumeId: string; name: string; phone: string; business?: string; note?: string };
+
 export const api = {
   requestOtp: (phone: string) =>
     request<{ ok: true; expiresInSeconds: number; devCode?: string }>("POST", "/auth/request-otp", { phone }),
@@ -346,6 +373,13 @@ export const api = {
     updateSettings: (patch: { aiDailyTokenLimit?: number }) =>
       request<{ settings: { aiDailyTokenLimit: number } }>("PATCH", "/admin/settings", patch),
     unpublishSite: (id: string) => request<{ ok: true }>("POST", `/admin/sites/${encodeURIComponent(id)}/unpublish`),
+    siteOrders: (page: number, status?: string, q?: string) =>
+      request<Paged<SiteOrderSummary> & { unread: number }>("GET", `/admin/site-orders${qs({ page, status, q })}`),
+    siteOrder: (id: string) => request<{ order: AdminSiteOrder }>("GET", `/admin/site-orders/${encodeURIComponent(id)}`),
+    setSiteOrderStatus: (id: string, status: SiteOrderStatus) =>
+      request<{ order: AdminSiteOrder }>("PATCH", `/admin/site-orders/${encodeURIComponent(id)}`, { status }),
+    sendSiteOrder: (id: string, text: string) =>
+      request<{ order: AdminSiteOrder }>("POST", `/admin/site-orders/${encodeURIComponent(id)}/messages`, { text }),
   },
   joinWaitlist: (product: WaitlistProduct, phone: string) =>
     request<{ ok: true }>("POST", "/waitlist", { product, phone }),
@@ -363,4 +397,11 @@ export const api = {
   askAssistant: (body: { message: string; history: AssistantTurn[]; theme: Theme; locale: "fa" | "en"; capabilities?: Capabilities }) =>
     request<AssistantResponse>("POST", "/assistant/theme", body),
   getOrder: (id: string) => request<{ order: Order }>("GET", `/orders/${encodeURIComponent(id)}`),
+
+  siteOrders: {
+    create: (body: SiteOrderInput) => request<{ order: SiteOrderSummary }>("POST", "/site-orders", body),
+    list: () => request<{ orders: SiteOrderSummary[]; unread: number }>("GET", "/site-orders"),
+    get: (id: string) => request<{ order: SiteOrder }>("GET", `/site-orders/${encodeURIComponent(id)}`),
+    send: (id: string, text: string) => request<{ order: SiteOrder }>("POST", `/site-orders/${encodeURIComponent(id)}/messages`, { text }),
+  },
 };

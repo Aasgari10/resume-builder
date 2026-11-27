@@ -4,6 +4,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, NavLink, useLocation, useSearchParams } from "react-router-dom";
 import { PDF_TEMPLATES, SITE_TEMPLATES } from "@rb/templates";
+import { api } from "../api";
 import { useAuth } from "../auth";
 import "./hub.css";
 import { Icon, type IconName } from "./Icons";
@@ -33,6 +34,13 @@ export function ResumeHub({ children }: { children: ReactNode }) {
 
   // Close the mobile menu after navigating.
   useEffect(() => setOpen(false), [pathname, style]);
+
+  // Orders with news from the team (a reply or a status change), refreshed on every page change.
+  const [unread, setUnread] = useState(0);
+  useEffect(() => {
+    if (!user) return setUnread(0);
+    api.siteOrders.list().then((r) => setUnread(r.unread), () => {});
+  }, [user, pathname, params]);
 
   const count = (tag?: string) => (tag ? PDF_TEMPLATES.filter((t) => t.tags?.includes(tag as never)).length : PDF_TEMPLATES.length);
   const onGallery = pathname === "/resume";
@@ -70,6 +78,13 @@ export function ResumeHub({ children }: { children: ReactNode }) {
             <Icon name="home" />
             سایت‌های منتشرشده
           </NavLink>
+          {user && (
+            <NavLink to="/resume/orders">
+              <Icon name="mail" />
+              سفارش‌های من
+              {unread > 0 && <span className="hub-count so-badge">{fa(unread)}</span>}
+            </NavLink>
+          )}
         </nav>
 
         <p className="hub-label">سبک رزومه</p>

@@ -69,6 +69,7 @@ model User {
   downloadTokens  DownloadToken[]
   aiUsages        AiUsage[]
   uploads         Upload[]
+  siteOrders      SiteOrder[]
 }
 
 // One-time login code. Keyed by phone rather than User, since first-time users do not exist yet.
@@ -97,8 +98,9 @@ model Resume {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  site Site?
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  site       Site?
+  siteOrders SiteOrder[]
 
   @@index([userId])
 }
@@ -454,4 +456,43 @@ model WaitlistEntry {
 
   @@unique([product, phone])
   @@index([product, createdAt])
+}
+
+// ───────────── Site build orders ─────────────
+
+// A customer asks the platform to build the site they shaped in the editor (catalog mode: customers do
+// not publish themselves). The order keeps a copy of the design as it was when ordered, so later edits
+// in the editor do not change what was ordered. Both sides talk in the order's thread.
+model SiteOrder {
+  id            String          @id @default(cuid())
+  code          String          @unique // tracking code shown to the customer, e.g. S482913
+  userId        String
+  resumeId      String? // the editor document it was ordered from; kept if that document is deleted
+  templateId    String
+  title         String // the document's title at order time
+  name          String
+  phone         String
+  business      String?
+  note          String?
+  design        Json // { data, theme } at order time
+  status        SiteOrderStatus @default(NEW)
+  messages      Json            @default("[]") // [{ from: "customer" | "admin", text, at }]
+  unreadByUser  Boolean         @default(false) // the admin wrote or changed the status since the customer last looked
+  unreadByAdmin Boolean         @default(true) // new, or the customer wrote since the admin last looked
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resume Resume? @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+}
+
+enum SiteOrderStatus {
+  NEW // just placed
+  REVIEWING // the team is looking at it
+  BUILDING
+  DELIVERED
+  CANCELED
 }
