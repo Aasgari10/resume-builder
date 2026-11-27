@@ -15,8 +15,6 @@ const fa = (n: number) => n.toLocaleString("fa-IR");
 const WIDE = "(min-width: 1000px)";
 /** How long the light shows before the unit opens. */
 const OPEN_DELAY = 650;
-/** Design pixels of empty sky above the roof that wide screens do not show. */
-const SKY_TRIM = 30;
 
 function useWide() {
   const [wide, setWide] = useState(() => window.matchMedia(WIDE).matches);
@@ -144,26 +142,14 @@ function DeskHome() {
   const navigate = useNavigate();
   const [slide, setSlide] = useState(0);
   const [pressed, setPressed] = useState<string | null>(null);
-  const [{ k, h }, setFit] = useState({ k: 1, h: 900 });
-  const [scrolled, setScrolled] = useState(false);
+  const [k, setK] = useState(1);
 
   // The scene is drawn for 1440 × 900 and scaled to the window.
   useEffect(() => {
-    // The scene fills the window's width; the empty sky above the roof is trimmed and the rest of the
-    // scene is reached by scrolling a little (a small arrow says so until the page is scrolled).
-    const fit = () => {
-      const k = window.innerWidth / 1440;
-      setFit({ k, h: Math.max(window.innerHeight, (900 - SKY_TRIM + 20) * k) });
-    };
+    const fit = () => setK(Math.min(window.innerWidth / 1440, window.innerHeight / 900));
     fit();
     window.addEventListener("resize", fit);
     return () => window.removeEventListener("resize", fit);
-  }, []);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 40);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   useEffect(() => {
@@ -189,7 +175,7 @@ function DeskHome() {
   };
 
   return (
-    <div className="s4 s4-home-desk" dir="rtl" style={{ "--k": k, height: h } as CSSProperties}>
+    <div className="s4 s4-home-desk" dir="rtl" style={{ "--k": k } as CSSProperties}>
       <h1 className="s4-sr">site4site؛ سایت آماده با پنل مدیریت برای کسب‌وکار شما</h1>
       <SkipLinks />
       <div className="s4-stage">
@@ -333,11 +319,6 @@ function DeskHome() {
         </div>
       </div>
       <div className="s4-walk" aria-hidden="true" />
-      {h > window.innerHeight + 4 && !scrolled && (
-        <button type="button" className="s4-more" aria-label="ادامه‌ی صفحه" onClick={() => window.scrollTo({ top: h, behavior: "smooth" })}>
-          <Icon name="prev" />
-        </button>
-      )}
     </div>
   );
 }
