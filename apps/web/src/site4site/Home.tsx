@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from "re
 import { Link, useNavigate } from "react-router-dom";
 import { SITE_TEMPLATES } from "@rb/templates";
 import deskArt from "./art/building-desk.svg?raw";
+import deskWideArt from "./art/building-desk-wide.svg?raw";
 import phoneArt from "./art/building-phone.svg?raw";
 import { Icon, UNITS, unitByKey, type UnitKey } from "./units";
 import "./site4site.css";
@@ -178,8 +179,14 @@ function DeskHome() {
     return { u, state };
   };
 
+  // On a wide stage the parts grow with it: a wider drawing of the building (more room per window)
+  // and a wider intercom and slogan; f is how much wider than the 1440 design, capped.
+  const f = Math.min(1.3, w / 1440);
+  const wideBld = f >= 1.06; // a 16:9 screen gives a 1600-wide stage
+  const bw = wideBld ? (870 * 666) / 986 : 482;
+
   return (
-    <div className="s4 s4-home-desk" dir="rtl" style={{ "--k": k, "--w": `${w}px` } as CSSProperties}>
+    <div className="s4 s4-home-desk" dir="rtl" style={{ "--k": k, "--w": `${w}px`, "--f": f, "--bw": `${bw}px` } as CSSProperties}>
       <h1 className="s4-sr">site4site؛ سایت آماده با پنل مدیریت برای کسب‌وکار شما</h1>
       <SkipLinks />
       <div className="s4-stage">
@@ -218,7 +225,7 @@ function DeskHome() {
           </g>
         </svg>
 
-        <div ref={root} className="s4-bld" dangerouslySetInnerHTML={{ __html: deskArt }} />
+        <div ref={root} className="s4-bld" dangerouslySetInnerHTML={{ __html: wideBld ? deskWideArt : deskArt }} />
 
         <div className="s4-say" aria-live="polite">
           <small>{s.kicker}</small>
