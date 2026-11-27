@@ -155,6 +155,43 @@ function stars(width: number): [number, number][] {
 const part = (svg: string, viewBox: string, fill = false) =>
   svg.replace(/viewBox="[^"]*"/, `viewBox="${viewBox}" preserveAspectRatio="${fill ? "none" : "xMidYMax meet"}"`);
 
+/** The entrance built into the wall: a stone surround, a canopy, the brass plate, two wall lamps and a double door. */
+function EntryDoor() {
+  return (
+    <svg viewBox="0 0 290 398" aria-hidden="true">
+      <circle cx="14" cy="168" r="34" fill="#FFD99A" opacity=".16" />
+      <circle cx="276" cy="168" r="34" fill="#FFD99A" opacity=".16" />
+      <rect x="28" y="52" width="234" height="346" rx="4" fill="#4e4868" />
+      <rect x="28" y="52" width="234" height="346" rx="4" fill="none" stroke="#6a6480" strokeWidth="2" />
+      <rect x="44" y="68" width="202" height="330" fill="#1e1a30" />
+      <path d="M12 30 H278 L262 56 H28 Z" fill="#3a3350" />
+      <path d="M12 30 H278" stroke="#7a7298" strokeWidth="3" />
+      <rect x="28" y="56" width="234" height="3" fill="#FFD99A" opacity=".35" />
+      <rect x="98" y="80" width="94" height="32" rx="5" fill="#1a1530" stroke="#F4BE6A" strokeWidth="1.6" />
+      <text x="145" y="102" textAnchor="middle" fontSize="18" fontWeight="700" fill="#F4BE6A">
+        ورود
+      </text>
+      {[58, 147].map((x) => (
+        <g key={x}>
+          <rect x={x} y="124" width="85" height="262" rx="2" fill="#3a2f52" />
+          <rect x={x + 10} y="136" width="65" height="112" rx="2" fill="#F2C27E" opacity=".2" />
+          <path d={`M${x + 42.5} 136 V248 M${x + 10} 192 H${x + 75}`} stroke="#3a2f52" strokeWidth="3" />
+          <rect x={x + 10} y="266" width="65" height="104" rx="2" fill="none" stroke="#4d4170" strokeWidth="2" />
+        </g>
+      ))}
+      <circle cx="137" cy="258" r="3.5" fill="#F4BE6A" />
+      <circle cx="153" cy="258" r="3.5" fill="#F4BE6A" />
+      <rect x="32" y="386" width="226" height="12" fill="#5a5470" />
+      {[14, 276].map((x) => (
+        <g key={x}>
+          <rect x={x - 5} y="150" width="10" height="6" rx="1" fill="#2c2546" />
+          <rect x={x - 6} y="156" width="12" height="22" rx="4" fill="#FFD99A" />
+        </g>
+      ))}
+    </svg>
+  );
+}
+
 const ROWS: [UnitKey, UnitKey][] = [
   ["support", "contact"],
   ["about", "pricing"],
@@ -235,7 +272,9 @@ function DeskHome() {
         </span>
         <div ref={root} className="s4-bld" dangerouslySetInnerHTML={{ __html: deskArt }} />
         <div className="s4-entry">
-          <Link to="/login" className="s4-entry-door" aria-label="ورود / ثبت‌نام" dangerouslySetInnerHTML={{ __html: part(groundArt, "146 692 98 134") }} />
+          <Link to="/login" className="s4-entry-door" aria-label="ورود / ثبت‌نام">
+            <EntryDoor />
+          </Link>
           {/* one tall window of the engine room, holding what both ground-floor windows held */}
           <div className="s4-entry-glass" aria-hidden="true">
             <span dangerouslySetInnerHTML={{ __html: part(groundArt, "44 704 96 108", true) }} />
