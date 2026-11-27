@@ -9,7 +9,6 @@ import deskArt from "./art/building-desk-floors.svg?raw";
 import groundArt from "./art/ground.svg?raw";
 import roofArt from "./art/roof-desk.svg?raw";
 import phoneArt from "./art/building-phone.svg?raw";
-import { Neighbors } from "./Neighbors";
 import { Icon, UNITS, unitByKey, type UnitKey } from "./units";
 import "./site4site.css";
 import "./home.css";
@@ -19,14 +18,14 @@ const WIDE = "(min-width: 1000px)";
 /** How long the light shows before the unit opens. */
 const OPEN_DELAY = 650;
 /** Design width of the wide-screen scene (the height is 900). */
-const STAGE = 1800;
+const STAGE = 1840;
 /**
  * Left edges on the stage: the building (its three floors, 840 tall, 677 wide), then the wall right against
  * its side: the slogan board, the programmer and the neon stand on it; low on it, from the building, one tall
  * engine-room window, the entrance door and the intercom, their tops level.
  * Matches home.css.
  */
-const LAYOUT = { bld: 22, gate: 22 + 677 - 13 };
+const LAYOUT = { bld: 0, gate: 677 - 13 };
 
 function useWide() {
   const [wide, setWide] = useState(() => window.matchMedia(WIDE).matches);
@@ -206,7 +205,7 @@ function DeskHome() {
   const [pressed, setPressed] = useState<string | null>(null);
   const [{ k, w }, setFit] = useState({ k: 1, w: STAGE });
 
-  // The scene is drawn for 1800 × 900 and scaled to fit the window, so it never scrolls. A window wider
+  // The scene is drawn for 1840 × 900 and scaled to fit the window, so it never scrolls. A window wider
   // than that shape gets a wider stage: the building and the intercom keep their size in the middle and
   // the street continues to both sides (neighbouring buildings on the left, the intercom's wall on the right).
   useEffect(() => {
@@ -242,19 +241,13 @@ function DeskHome() {
   };
 
   return (
-    <div className="s4 s4-home-desk" dir="rtl" style={{ "--k": k, "--w": `${w}px`, "--off": `${(w - STAGE) / 2}px` } as CSSProperties}>
+    <div className="s4 s4-home-desk" dir="rtl" style={{ "--k": k, "--w": `${w}px`, "--off": "0px" } as CSSProperties}>
       <h1 className="s4-sr">site4site؛ سایت آماده با پنل مدیریت برای کسب‌وکار شما</h1>
       <SkipLinks />
       <div className="s4-stage">
         {stars(w).map(([top, left], i) => (
           <span key={i} className="s4-star" style={{ top, left }} />
         ))}
-        <Neighbors width={Math.round((w - STAGE) / 2 + LAYOUT.bld + 14)} height={900} />
-        <div className="s4-wall" aria-hidden="true">
-          {Array.from({ length: Math.ceil((w - STAGE) / 2 / 280) }, (_, i) => (
-            <span key={i} className="s4-wall-lamp" style={{ right: 140 + i * 280 }} />
-          ))}
-        </div>
         <div className="s4-core">
         <span className="s4-moon" aria-hidden="true">
           <svg viewBox="-22 -22 44 44" width="44" height="44">
