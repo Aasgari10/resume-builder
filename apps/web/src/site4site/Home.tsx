@@ -21,8 +21,8 @@ const OPEN_DELAY = 650;
 const STAGE = 1800;
 /**
  * Left edges on the stage: the building (three floors over the entrance, 840 tall, 712 wide), then the
- * wall right against its side: the programmer and the neon stand on it, and it carries the intercom in its
- * middle, under the roof scene and the slogan. Matches home.css.
+ * wall right against its side: the programmer and the neon stand on it, and it carries the intercom right
+ * by the building, under the programmer's feet; the slogan stands right of the neon. Matches home.css.
  */
 const LAYOUT = { bld: 22, gate: 22 + 712 - 14 };
 
