@@ -121,12 +121,12 @@ const SLIDES = [
   },
   {
     kicker: "اول امتحان کن، بعد سفارش بده",
-    title: ["هر قالب را ", "با پنل مدیریتش", " امتحان کن"],
+    title: ["قالب را ", "با پنل مدیریت", " امتحان کن"],
     text: "محصول اضافه کن، سفارش و نوبت ببین، ظاهر را عوض کن؛ وقتی پسندیدی، همان را سفارش بده.",
   },
   {
     kicker: `${fa(SITE_TEMPLATES.length)} قالب آماده`,
-    title: ["از ", "فروشگاه", " تا رزرو آنلاین"],
+    title: ["از ", "فروشگاه و کافه", " تا رزرو آنلاین نوبت"],
     text: "کافه، آرایشگاه، کتاب‌فروشی، اتاق فرار، مطب و…؛ قالب کسب‌وکارت احتمالاً همین‌جاست.",
   },
 ];
@@ -183,16 +183,19 @@ function DeskHome() {
   // and a wider intercom and slogan; f is how much wider than the 1440 design, capped.
   const f = Math.min(1.3, w / 1440);
   const wideBld = f >= 1.06; // a 16:9 screen gives a 1600-wide stage
-  const bw = wideBld ? (870 * 666) / 986 : 482;
+  // the two drawings' viewBox sizes; the building is drawn 885 tall on the 900-tall stage
+  const [vw, vh] = wideBld ? [666, 1041] : [510, 942];
+  const bh = 885;
+  const bw = (bh * vw) / vh;
   // The building and the intercom wall stand side by side (the wall leans on the building's side,
   // past its 12-unit margin) and the pair is centred on the stage.
   const gw = 560 * f;
-  const edge = (12 * bw) / (wideBld ? 666 : 510);
+  const edge = (12 * bw) / vw;
   const bl = (w - (bw - edge + gw)) / 2;
   const gl = bl + bw - edge;
 
   return (
-    <div className="s4 s4-home-desk" dir="rtl" style={{ "--k": k, "--w": `${w}px`, "--f": f, "--bw": `${bw}px`, "--bl": `${bl}px`, "--gl": `${gl}px` } as CSSProperties}>
+    <div className="s4 s4-home-desk" dir="rtl" style={{ "--k": k, "--w": `${w}px`, "--f": f, "--bw": `${bw}px`, "--bh": `${bh}px`, "--bl": `${bl}px`, "--gl": `${gl}px` } as CSSProperties}>
       <h1 className="s4-sr">site4site؛ سایت آماده با پنل مدیریت برای کسب‌وکار شما</h1>
       <SkipLinks />
       <div className="s4-stage">
