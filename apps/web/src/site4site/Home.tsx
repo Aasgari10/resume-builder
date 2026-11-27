@@ -22,8 +22,8 @@ const OPEN_DELAY = 650;
 const STAGE = 1800;
 /**
  * Left edges on the stage: the building (its three floors, 840 tall, 677 wide), then the wall right against
- * its side: the programmer, the neon and the slogan board stand on it; low on it the intercom, and beside
- * the intercom the entrance door and one tall engine-room window, their tops level with the intercom's.
+ * its side: the slogan board, the programmer and the neon stand on it; low on it, from the building, one tall
+ * engine-room window, the entrance door and the intercom, their tops level.
  * Matches home.css.
  */
 const LAYOUT = { bld: 22, gate: 22 + 677 - 13 };
@@ -158,7 +158,7 @@ const part = (svg: string, viewBox: string, fill = false) =>
 /** The entrance built into the wall: a stone surround, a canopy, the brass plate, two wall lamps and a double door. */
 function EntryDoor() {
   return (
-    <svg viewBox="0 0 290 398" aria-hidden="true">
+    <svg viewBox="0 28 290 370" preserveAspectRatio="none" aria-hidden="true">
       <circle cx="14" cy="168" r="34" fill="#FFD99A" opacity=".16" />
       <circle cx="276" cy="168" r="34" fill="#FFD99A" opacity=".16" />
       <rect x="28" y="52" width="234" height="346" rx="4" fill="#4e4868" />
