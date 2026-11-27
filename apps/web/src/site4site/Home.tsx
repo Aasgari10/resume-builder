@@ -142,11 +142,15 @@ function DeskHome() {
   const navigate = useNavigate();
   const [slide, setSlide] = useState(0);
   const [pressed, setPressed] = useState<string | null>(null);
-  const [k, setK] = useState(1);
+  const [{ k, w }, setFit] = useState({ k: 1, w: 1440 });
 
   // The scene is drawn for 1440 × 900 and scaled to the window.
   useEffect(() => {
-    const fit = () => setK(Math.min(window.innerWidth / 1440, window.innerHeight / 900));
+    // Scaled by whichever side is tighter; a wider window gets a wider stage (not empty bands at the sides).
+    const fit = () => {
+      const k = Math.min(window.innerWidth / 1440, window.innerHeight / 900);
+      setFit({ k, w: Math.max(1440, window.innerWidth / k) });
+    };
     fit();
     window.addEventListener("resize", fit);
     return () => window.removeEventListener("resize", fit);
@@ -175,7 +179,7 @@ function DeskHome() {
   };
 
   return (
-    <div className="s4 s4-home-desk" dir="rtl" style={{ "--k": k } as CSSProperties}>
+    <div className="s4 s4-home-desk" dir="rtl" style={{ "--k": k, "--w": `${w}px` } as CSSProperties}>
       <h1 className="s4-sr">site4site؛ سایت آماده با پنل مدیریت برای کسب‌وکار شما</h1>
       <SkipLinks />
       <div className="s4-stage">
