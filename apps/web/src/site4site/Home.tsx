@@ -5,7 +5,8 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { SITE_TEMPLATES } from "@rb/templates";
-import deskArt from "./art/building-desk.svg?raw";
+import deskArt from "./art/building-desk-tower.svg?raw";
+import groundArt from "./art/ground.svg?raw";
 import phoneArt from "./art/building-phone.svg?raw";
 import { Neighbors } from "./Neighbors";
 import { Icon, UNITS, unitByKey, type UnitKey } from "./units";
@@ -16,6 +17,13 @@ const fa = (n: number) => n.toLocaleString("fa-IR");
 const WIDE = "(min-width: 1000px)";
 /** How long the light shows before the unit opens. */
 const OPEN_DELAY = 650;
+/** Design width of the wide-screen scene (the height is 900). */
+const STAGE = 1600;
+/**
+ * Left edges on the stage: the building (its 3 floors and roof, 880 tall), the intercom wall right against
+ * its side, and the entrance and engine room (420 wide) beside the intercom. Matches home.css.
+ */
+const LAYOUT = { bld: 22, gate: 22 + 581 - 14, ground: 22 + 581 - 14 + 560 };
 
 function useWide() {
   const [wide, setWide] = useState(() => window.matchMedia(WIDE).matches);
@@ -152,15 +160,15 @@ function DeskHome() {
   const navigate = useNavigate();
   const [slide, setSlide] = useState(0);
   const [pressed, setPressed] = useState<string | null>(null);
-  const [{ k, w }, setFit] = useState({ k: 1, w: 1440 });
+  const [{ k, w }, setFit] = useState({ k: 1, w: STAGE });
 
-  // The scene is drawn for 1440 × 900 and scaled to fit the window, so it never scrolls. A window wider
+  // The scene is drawn for 1600 × 900 and scaled to fit the window, so it never scrolls. A window wider
   // than that shape gets a wider stage: the building and the intercom keep their size in the middle and
   // the street continues to both sides (neighbouring buildings on the left, the intercom's wall on the right).
   useEffect(() => {
     const fit = () => {
-      const k = Math.min(window.innerWidth / 1440, window.innerHeight / 900);
-      setFit({ k, w: Math.max(1440, window.innerWidth / k) });
+      const k = Math.min(window.innerWidth / STAGE, window.innerHeight / 900);
+      setFit({ k, w: Math.max(STAGE, window.innerWidth / k) });
     };
     fit();
     window.addEventListener("resize", fit);
@@ -190,16 +198,16 @@ function DeskHome() {
   };
 
   return (
-    <div className="s4 s4-home-desk" dir="rtl" style={{ "--k": k, "--w": `${w}px`, "--off": `${(w - 1440) / 2}px` } as CSSProperties}>
+    <div className="s4 s4-home-desk" dir="rtl" style={{ "--k": k, "--w": `${w}px`, "--off": `${(w - STAGE) / 2}px` } as CSSProperties}>
       <h1 className="s4-sr">site4site؛ سایت آماده با پنل مدیریت برای کسب‌وکار شما</h1>
       <SkipLinks />
       <div className="s4-stage">
         {stars(w).map(([top, left], i) => (
           <span key={i} className="s4-star" style={{ top, left }} />
         ))}
-        <Neighbors width={Math.round((w - 1440) / 2 + 210)} height={900} />
+        <Neighbors width={Math.round((w - STAGE) / 2 + LAYOUT.bld + 14)} height={900} />
         <div className="s4-wall" aria-hidden="true">
-          {Array.from({ length: Math.ceil((w - 1440) / 2 / 280) }, (_, i) => (
+          {Array.from({ length: Math.ceil(((w - STAGE) / 2 + STAGE - LAYOUT.gate - 560) / 280) }, (_, i) => (
             <span key={i} className="s4-wall-lamp" style={{ right: 140 + i * 280 }} />
           ))}
         </div>
@@ -219,6 +227,11 @@ function DeskHome() {
           </svg>
         </span>
         <div ref={root} className="s4-bld" dangerouslySetInnerHTML={{ __html: deskArt }} />
+        {/* the entrance and the engine room stand at street level beside the intercom; the door opens the login */}
+        <div className="s4-ground">
+          <span dangerouslySetInnerHTML={{ __html: groundArt }} />
+          <Link to="/login" className="s4-ground-door" aria-label="ورود / ثبت‌نام" />
+        </div>
 
         <div className="s4-say" aria-live="polite">
           <small>{s.kicker}</small>
