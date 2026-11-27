@@ -29,13 +29,13 @@
 .s4-home-desk { position: relative; height: 100vh; min-height: 0; overflow: hidden; background: linear-gradient(#121633, #2a2348 55%, #4a2e4e); }
 .s4-stage { position: absolute; left: 50%; bottom: calc(20px * var(--k)); width: var(--w, 1440px); height: 900px; transform-origin: bottom center; transform: translateX(-50%) scale(var(--k)); }
 .s4-walk { position: absolute; left: 0; right: 0; bottom: 0; height: calc(20px * var(--k)); background: #3b2d4f; border-top: 2px solid #4a3c60; }
-.s4-moon { position: absolute; top: 40px; left: 1330px; width: 44px; height: 44px; }
+.s4-moon { position: absolute; top: 30px; left: 1250px; width: 44px; height: 44px; }
 .s4-moon svg { display: block; border-radius: 50%; filter: drop-shadow(0 0 22px rgb(255 233 194 / 0.35)); }
 .s4-star { position: absolute; width: 2px; height: 2px; border-radius: 50%; background: #fff1dc; opacity: 0.8; }
 .s4-bld { position: absolute; bottom: 0; left: 22px; width: 712px; height: 840px; }
 .s4-bld svg { display: block; width: 100%; height: 100%; }
 
-.s4-say { position: absolute; top: 482px; left: 1302px; z-index: 1; width: 476px; padding: 22px 28px 20px; border-radius: 3px; background: linear-gradient(115deg, rgb(255 255 255 / 0.07), transparent 40%), linear-gradient(#34374a, #2a2c39); box-shadow: 0 0 0 4px #7d6a48, 0 12px 28px rgb(0 0 0 / 0.5); }
+.s4-say { position: absolute; bottom: 492px; left: 1330px; z-index: 1; width: 446px; padding: 22px 28px 20px; border-radius: 3px; background: linear-gradient(115deg, rgb(255 255 255 / 0.07), transparent 40%), linear-gradient(#34374a, #2a2c39); box-shadow: 0 0 0 4px #7d6a48, 0 12px 28px rgb(0 0 0 / 0.5); }
 .s4-say small { display: block; margin-bottom: 14px; color: var(--teal); font-size: 16px; }
 .s4-say-title { margin: 0; min-height: 0; font-size: 36px; font-weight: 800; line-height: 1.5; color: #f6eedf; text-wrap: balance; animation: s4-type 0.6s ease-out; }
 .s4-say-title .mark { color: var(--pink); white-space: nowrap; }
@@ -81,10 +81,7 @@
 .s4-wall::before { content: ""; position: absolute; top: -12px; left: 0; right: 0; height: 14px; background: #e6d9c3; box-shadow: 0 3px 0 #cdbfa7; }
 .s4-wall-lamp { position: absolute; top: 12px; width: 16px; height: 22px; border-radius: 5px; background: #ffd99a; box-shadow: 0 0 30px 14px rgb(255 217 154 / 0.22); }
 /* the programmer and the neon sign stand on the wall's cornice, left of the slogan */
-.s4-roof { position: absolute; bottom: 470px; height: 440px; }
-.s4-roof.prog { left: 726px; width: 406px; }
-.s4-roof.neon { left: 1500px; width: 284px; }
-.s4-roofline { position: absolute; left: 1100px; bottom: 470px; width: 420px; height: 322px; }
+.s4-roof { position: absolute; left: 716px; bottom: 470px; width: 614px; height: 400px; }
 .s4-roof svg { display: block; width: 100%; height: 100%; }
 /* the entrance door of the building drawing (its plate says ورود) */
 .s4-bld-door { position: absolute; bottom: 0; left: calc(22px + 712px * 0.408); width: calc(712px * 0.183); height: 200px; border-radius: 4px; }
@@ -94,3 +91,6 @@
 .s4-say > p:not(.s4-say-title) { font-size: 15px !important; }
 .s4-say small { margin-bottom: 6px !important; font-size: 14.5px !important; }
 .s4-say-chips li { font-size: 13px !important; padding: 5px 12px !important; }
+/* the slogan board stands on the roof on two short legs */
+.s4-say::before, .s4-say::after { content: ""; position: absolute; top: 100%; width: 8px; height: 22px; margin-top: 4px; background: #2c2546; }
+.s4-say::before { left: 70px; } .s4-say::after { right: 70px; }

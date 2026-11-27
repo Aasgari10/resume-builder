@@ -22,8 +22,8 @@ const STAGE = 1800;
 /**
  * Left edges on the stage: the building (three floors over the entrance, 840 tall, 712 wide), then the
  * wall right against its side: the programmer and the neon stand on it, and it carries the intercom right
- * by the building, under the programmer's feet; the slogan hangs on the same wall, on a
- * board right of the intercom. Matches home.css.
+ * by the building, under the programmer's feet; the slogan stands on the roof beside the
+ * neon, on a board with legs. Matches home.css.
  */
 const LAYOUT = { bld: 22, gate: 22 + 712 - 14 };
 
@@ -150,9 +150,6 @@ function stars(width: number): [number, number][] {
   return out;
 }
 
-/** A part of a drawing: the same SVG with another viewBox. */
-const crop = (svg: string, viewBox: string) => svg.replace(/viewBox="[^"]*"/, `viewBox="${viewBox}" preserveAspectRatio="xMidYMax meet"`);
-
 const ROWS: [UnitKey, UnitKey][] = [
   ["support", "contact"],
   ["about", "pricing"],
@@ -234,36 +231,8 @@ function DeskHome() {
         <div ref={root} className="s4-bld" dangerouslySetInnerHTML={{ __html: deskArt }} />
         <Link to="/login" className="s4-bld-door" aria-label="ورود / ثبت‌نام" />
         {/* the programmer and the neon sign, on top of the intercom's wall */}
-        {/* the roof scene spread along the wall's top: the programmer on the left, the neon on the right, and
-            between them a water tank and a string of bulbs from the programmer's desk to the sign */}
-        <div className="s4-roof prog" aria-hidden="true" dangerouslySetInnerHTML={{ __html: crop(roofArt, "0 -92 306 332") }} />
-        <div className="s4-roof neon" aria-hidden="true" dangerouslySetInnerHTML={{ __html: crop(roofArt, "316 -92 214 332") }} />
-        <svg className="s4-roofline" viewBox="0 0 560 430" aria-hidden="true">
-          <g fill="#3a3260">
-            <rect x="214" y="250" width="96" height="120" rx="10" />
-            <rect x="206" y="244" width="112" height="12" rx="4" fill="#463d6e" />
-            <rect x="222" y="370" width="8" height="60" />
-            <rect x="294" y="370" width="8" height="60" />
-            <rect x="222" y="398" width="80" height="6" />
-          </g>
-          <g stroke="#4c4376" strokeWidth="2">
-            <line x1="240" y1="262" x2="240" y2="362" />
-            <line x1="262" y1="262" x2="262" y2="362" />
-            <line x1="284" y1="262" x2="284" y2="362" />
-          </g>
-          <path d="M0 150 Q280 270 560 120" fill="none" stroke="#1a1626" strokeWidth="1.6" />
-          {Array.from({ length: 11 }, (_, i) => {
-            const t = (i + 0.5) / 11;
-            const x = 560 * t;
-            const y = (1 - t) * (1 - t) * 150 + 2 * (1 - t) * t * 270 + t * t * 120;
-            return (
-              <g key={i}>
-                <circle cx={x} cy={y + 7} r="9" fill="#FFD27A" opacity=".18" />
-                <circle cx={x} cy={y + 7} r="4" fill={i % 3 === 1 ? "#FF9EC4" : i % 3 === 2 ? "#7FE7E1" : "#FFD99A"} />
-              </g>
-            );
-          })}
-        </svg>
+        {/* the programmer and the neon sign together on the wall's cornice */}
+        <div className="s4-roof" aria-hidden="true" dangerouslySetInnerHTML={{ __html: roofArt }} />
 
         <div className="s4-say" aria-live="polite">
           <small>{s.kicker}</small>
