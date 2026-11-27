@@ -5,7 +5,8 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { SITE_TEMPLATES } from "@rb/templates";
-import deskArt from "./art/building-desk-body.svg?raw";
+import deskArt from "./art/building-desk-floors.svg?raw";
+import groundArt from "./art/ground.svg?raw";
 import roofArt from "./art/roof-desk.svg?raw";
 import phoneArt from "./art/building-phone.svg?raw";
 import { Neighbors } from "./Neighbors";
@@ -20,12 +21,12 @@ const OPEN_DELAY = 650;
 /** Design width of the wide-screen scene (the height is 900). */
 const STAGE = 1800;
 /**
- * Left edges on the stage: the building (three floors over the entrance, 840 tall, 712 wide), then the
- * wall right against its side: the programmer and the neon stand on it, and it carries the intercom right
- * by the building, under the programmer's feet; the slogan stands on the roof beside the
- * neon, on a board with legs. Matches home.css.
+ * Left edges on the stage: the building (its three floors, 840 tall, 677 wide), then the wall right against
+ * its side: the programmer, the neon and the slogan board stand on it; low on it the intercom, and beside
+ * the intercom the entrance door and one tall engine-room window, their tops level with the intercom's.
+ * Matches home.css.
  */
-const LAYOUT = { bld: 22, gate: 22 + 712 - 14 };
+const LAYOUT = { bld: 22, gate: 22 + 677 - 13 };
 
 function useWide() {
   const [wide, setWide] = useState(() => window.matchMedia(WIDE).matches);
@@ -150,6 +151,10 @@ function stars(width: number): [number, number][] {
   return out;
 }
 
+/** A part of a drawing: the same SVG shown through another viewBox (stretched to its box when `fill`). */
+const part = (svg: string, viewBox: string, fill = false) =>
+  svg.replace(/viewBox="[^"]*"/, `viewBox="${viewBox}" preserveAspectRatio="${fill ? "none" : "xMidYMax meet"}"`);
+
 const ROWS: [UnitKey, UnitKey][] = [
   ["support", "contact"],
   ["about", "pricing"],
@@ -229,7 +234,14 @@ function DeskHome() {
           </svg>
         </span>
         <div ref={root} className="s4-bld" dangerouslySetInnerHTML={{ __html: deskArt }} />
-        <Link to="/login" className="s4-bld-door" aria-label="ورود / ثبت‌نام" />
+        <div className="s4-entry">
+          <Link to="/login" className="s4-entry-door" aria-label="ورود / ثبت‌نام" dangerouslySetInnerHTML={{ __html: part(groundArt, "146 692 98 134") }} />
+          {/* one tall window of the engine room, holding what both ground-floor windows held */}
+          <div className="s4-entry-glass" aria-hidden="true">
+            <span dangerouslySetInnerHTML={{ __html: part(groundArt, "44 704 96 108", true) }} />
+            <span dangerouslySetInnerHTML={{ __html: part(groundArt, "250 704 96 108", true) }} />
+          </div>
+        </div>
         {/* the programmer and the neon sign, on top of the intercom's wall */}
         {/* the programmer and the neon sign together on the wall's cornice */}
         <div className="s4-roof" aria-hidden="true" dangerouslySetInnerHTML={{ __html: roofArt }} />
@@ -257,7 +269,6 @@ function DeskHome() {
 
         <div className="s4-gate">
           <span className="s4-lamp" aria-hidden="true" />
-          <span className="s4-lamp two" aria-hidden="true" />
           <div className="s4-ip" role="group" aria-label="آیفون ساختمان">
             <span className="screw s1" />
             <span className="screw s2" />
