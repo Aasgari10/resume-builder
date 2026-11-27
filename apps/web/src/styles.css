@@ -1563,3 +1563,25 @@ select {
   .so-layout, .so-admin-grid { grid-template-columns: 1fr; }
   .so-msg { max-width: 92%; }
 }
+
+/* ───────────── Editor bar in the site4site night palette (the customer's site below is untouched) ───────────── */
+.ws { border-color: #2a2348; background: #14111f; }
+.ws-bar { background: #1a1630; border-bottom: 1px solid rgb(244 190 106 / 0.2); color: #efe4d0; box-shadow: 0 4px 14px rgb(0 0 0 / 0.35); }
+.ws-logo { font-weight: 300; font-size: 19px; direction: ltr; color: #ff9ec4; text-shadow: 0 0 8px #ff9ec4; text-decoration: none; white-space: nowrap; }
+.ws-logo b { font-weight: 300; color: #7fe7e1; text-shadow: 0 0 8px #7fe7e1; }
+.ws-bar .ws-title { color: #efe4d0; background: #221d38; border-color: #3c3556; }
+.ws-bar .ws-title:hover, .ws-bar .ws-title:focus { background: #2a2348; border-color: #4a4366; }
+.ws-bar .save-badge { background: transparent; color: #9bd9b0; }
+.ws-bar .save-badge.error { color: #ff9e9e; }
+.ws-bar .ws-icon, .ws-bar .ws-chip, .ws-bar .ws-seg button, .ws-bar .ws-edit, .ws-bar .ws-select { background: #221d38; border-color: #4a4366; color: #e9dff2; }
+.ws-bar .ws-icon:hover, .ws-bar .ws-chip:hover, .ws-bar .ws-seg button:hover { background: #2a2348; color: #fff; }
+.ws-bar .ws-icon[aria-pressed="true"], .ws-bar .ws-chip[aria-pressed="true"], .ws-bar .ws-edit.on { border-color: #f4be6a; background: rgb(244 190 106 / 0.14); color: #ffe2a6; }
+.ws-bar .ws-edit i { background: #3c3556; }
+.ws-bar .ws-edit.on i { background: #f4be6a; }
+.ws-bar .ws-seg { background: #14111f; border-color: #4a4366; }
+.ws-bar .ws-seg button { border: none; background: transparent; }
+.ws-bar .ws-seg button[aria-pressed="true"] { background: #f4be6a; color: #2b1e0e; box-shadow: none; }
+.ws-bar .btn.small { background: #2e2a28; color: #f4be6a; box-shadow: inset 0 0 0 1px rgb(244 190 106 / 0.35); border: none; }
+.ws-bar .btn.small.so-order-btn { background: linear-gradient(#ffe2a6, #f4be6a); color: #2b1e0e; font-weight: 800; box-shadow: 0 0 14px rgb(244 190 106 / 0.3); }
+.ws-back span { margin-inline-start: 2px; }
+@media (max-width: 700px) { .ws-logo, .ws-back span { display: none; } }

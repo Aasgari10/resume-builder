@@ -2,6 +2,10 @@ import { Link, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { RequireAuth, useAuth } from "./auth";
 import { ComingSoon } from "./landing/ComingSoon";
 import { Landing } from "./landing/Landing";
+import { About } from "./site4site/About";
+import { Home } from "./site4site/Home";
+import { Soon } from "./site4site/Soon";
+import { Templates } from "./site4site/Templates";
 import { Gallery } from "./hub/Gallery";
 import { MyOrders } from "./hub/MyOrders";
 import { NewResume } from "./hub/NewResume";
@@ -52,11 +56,26 @@ export function App() {
     );
   }
 
-  // Public marketing pages have their own header and full-width layout.
-  if (pathname === "/" || pathname.startsWith("/soon/")) {
+  // The site4site building: the home page and its units have their own frame.
+  if (/^\/(templates|about|pricing|support|contact|blog)?\/?$/.test(pathname)) {
     return (
       <Routes>
-        <Route path="/" element={<Landing />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/templates" element={<Templates />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/pricing" element={<Soon unit="pricing" />} />
+        <Route path="/support" element={<Soon unit="support" />} />
+        <Route path="/contact" element={<Soon unit="contact" />} />
+        <Route path="/blog" element={<Soon unit="blog" />} />
+      </Routes>
+    );
+  }
+
+  // The earlier products page and its "coming soon" pages.
+  if (pathname === "/products" || pathname.startsWith("/soon/")) {
+    return (
+      <Routes>
+        <Route path="/products" element={<Landing />} />
         <Route path="/soon/:product" element={<ComingSoon />} />
       </Routes>
     );
