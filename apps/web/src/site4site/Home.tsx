@@ -7,6 +7,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { SITE_TEMPLATES } from "@rb/templates";
 import deskArt from "./art/building-desk.svg?raw";
 import phoneArt from "./art/building-phone.svg?raw";
+import { Neighbors } from "./Neighbors";
 import { Icon, UNITS, unitByKey, type UnitKey } from "./units";
 import "./site4site.css";
 import "./home.css";
@@ -130,6 +131,15 @@ const SLIDES = [
   },
 ];
 
+/** Stars spread over the whole stage, the same on every visit. */
+function stars(width: number): [number, number][] {
+  const out: [number, number][] = [];
+  let a = 9;
+  const next = () => ((a = (a * 16807) % 2147483647) / 2147483647);
+  for (let i = 0; i < Math.round(width / 150); i++) out.push([Math.round(next() * 330), Math.round(next() * width)]);
+  return out;
+}
+
 const ROWS: [UnitKey, UnitKey][] = [
   ["support", "contact"],
   ["about", "pricing"],
@@ -142,11 +152,16 @@ function DeskHome() {
   const navigate = useNavigate();
   const [slide, setSlide] = useState(0);
   const [pressed, setPressed] = useState<string | null>(null);
-  const [k, setK] = useState(1);
+  const [{ k, w }, setFit] = useState({ k: 1, w: 1440 });
 
-  // The scene is drawn for 1440 × 900 and scaled to the window.
+  // The scene is drawn for 1440 × 900 and scaled to fit the window, so it never scrolls. A window wider
+  // than that shape gets a wider stage: the building and the intercom keep their size in the middle and
+  // the street continues to both sides (neighbouring buildings on the left, the intercom's wall on the right).
   useEffect(() => {
-    const fit = () => setK(Math.min(window.innerWidth / 1440, window.innerHeight / 900));
+    const fit = () => {
+      const k = Math.min(window.innerWidth / 1440, window.innerHeight / 900);
+      setFit({ k, w: Math.max(1440, window.innerWidth / k) });
+    };
     fit();
     window.addEventListener("resize", fit);
     return () => window.removeEventListener("resize", fit);
@@ -175,10 +190,20 @@ function DeskHome() {
   };
 
   return (
-    <div className="s4 s4-home-desk" dir="rtl" style={{ "--k": k } as CSSProperties}>
+    <div className="s4 s4-home-desk" dir="rtl" style={{ "--k": k, "--w": `${w}px`, "--off": `${(w - 1440) / 2}px` } as CSSProperties}>
       <h1 className="s4-sr">site4site؛ سایت آماده با پنل مدیریت برای کسب‌وکار شما</h1>
       <SkipLinks />
       <div className="s4-stage">
+        {stars(w).map(([top, left], i) => (
+          <span key={i} className="s4-star" style={{ top, left }} />
+        ))}
+        <Neighbors width={Math.round((w - 1440) / 2 + 210)} height={900} />
+        <div className="s4-wall" aria-hidden="true">
+          {Array.from({ length: Math.ceil((w - 1440) / 2 / 280) }, (_, i) => (
+            <span key={i} className="s4-wall-lamp" style={{ right: 140 + i * 280 }} />
+          ))}
+        </div>
+        <div className="s4-core">
         <span className="s4-moon" aria-hidden="true">
           <svg viewBox="-22 -22 44 44" width="44" height="44">
             <circle r="22" fill="#FBE6C0" />
@@ -193,27 +218,6 @@ function DeskHome() {
             <circle cx="8" cy="9" r="1.8" fill="#E8CFA2" opacity=".5" />
           </svg>
         </span>
-        {[
-          [40, 300],
-          [110, 560],
-          [30, 700],
-          [70, 860],
-          [170, 700],
-          [20, 1000],
-          [220, 1360],
-          [300, 620],
-        ].map(([top, left], i) => (
-          <span key={i} className="s4-star" style={{ top, left }} />
-        ))}
-        <svg className="s4-city" viewBox="0 0 320 200" preserveAspectRatio="none" aria-hidden="true">
-          <path d="M0 200V90h50V50h40v60h40V30h60v80h40V70h50v130z" fill="#2B2547" opacity=".85" />
-          <g fill="#F2C27E" opacity=".35">
-            <rect x="64" y="70" width="6" height="8" />
-            <rect x="152" y="50" width="6" height="8" />
-            <rect x="250" y="96" width="6" height="8" />
-          </g>
-        </svg>
-
         <div ref={root} className="s4-bld" dangerouslySetInnerHTML={{ __html: deskArt }} />
 
         <div className="s4-say" aria-live="polite">
@@ -316,6 +320,7 @@ function DeskHome() {
               </button>
             </div>
           </div>
+        </div>
         </div>
       </div>
       <div className="s4-walk" aria-hidden="true" />

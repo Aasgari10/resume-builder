@@ -27,12 +27,11 @@
 
 /* ── wide screens: the scene ── */
 .s4-home-desk { position: relative; height: 100vh; min-height: 0; overflow: hidden; background: linear-gradient(#121633, #2a2348 55%, #4a2e4e); }
-.s4-stage { position: absolute; left: 50%; bottom: calc(20px * var(--k)); width: 1440px; height: 900px; transform-origin: bottom center; transform: translateX(-50%) scale(var(--k)); }
+.s4-stage { position: absolute; left: 50%; bottom: calc(20px * var(--k)); width: var(--w, 1440px); height: 900px; transform-origin: bottom center; transform: translateX(-50%) scale(var(--k)); }
 .s4-walk { position: absolute; left: 0; right: 0; bottom: 0; height: calc(20px * var(--k)); background: #3b2d4f; border-top: 2px solid #4a3c60; }
 .s4-moon { position: absolute; top: 60px; right: 110px; width: 44px; height: 44px; }
 .s4-moon svg { display: block; border-radius: 50%; filter: drop-shadow(0 0 22px rgb(255 233 194 / 0.35)); }
 .s4-star { position: absolute; width: 2px; height: 2px; border-radius: 50%; background: #fff1dc; opacity: 0.8; }
-.s4-city { position: absolute; bottom: 0; right: 0; width: 270px; height: 200px; transform: scaleX(-1); }
 .s4-bld { position: absolute; bottom: 0; left: 196px; width: 482px; height: 870px; }
 .s4-bld svg { display: block; width: 100%; height: 100%; }
 
@@ -74,3 +73,10 @@
 .s4-ip .key { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; background: #1a1b22; box-shadow: 0 0 0 2px #7d6a48; }
 .s4-ip .key i { width: 30px; height: 30px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #f2efe8, #bdb7aa 75%); box-shadow: inset 0 -2px 2px rgb(0 0 0 / 0.25); transition: background 0.2s, box-shadow 0.2s; }
 .s4-ip .key.live i, .s4-ip .key.on i { background: radial-gradient(circle at 45% 40%, #fff1d2, #f7cb7c 60%, #dda14e 95%); box-shadow: 0 0 6px 1px rgb(255 200 110 / 0.45), inset 0 -2px 2px rgb(150 90 20 / 0.3); }
+
+/* wide windows: the 1440 scene stays in the middle; the street continues on both sides */
+.s4-core { position: absolute; top: 0; bottom: 0; left: var(--off, 0px); width: 1440px; }
+.s4-hood { position: absolute; left: 0; bottom: 0; }
+.s4-wall { position: absolute; right: 0; bottom: 0; width: calc(var(--off, 0px) + 200px); height: 470px; background-image: repeating-linear-gradient(0deg, rgb(0 0 0 / 0.14) 0 1px, transparent 1px 12px), repeating-linear-gradient(90deg, rgb(0 0 0 / 0.1) 0 1px, transparent 1px 24px), linear-gradient(90deg, #4a4662, #3b3850); }
+.s4-wall::before { content: ""; position: absolute; top: -12px; left: 0; right: 0; height: 14px; background: #e6d9c3; box-shadow: 0 3px 0 #cdbfa7; }
+.s4-wall-lamp { position: absolute; top: 12px; width: 16px; height: 22px; border-radius: 5px; background: #ffd99a; box-shadow: 0 0 30px 14px rgb(255 217 154 / 0.22); }
