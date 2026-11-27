@@ -1,23 +1,21 @@
 // Website editor: the live site fills the screen and is edited by clicking its texts and pictures;
-// the side panel holds settings, the AI assistant and publishing. Changes are saved automatically.
+// the side panel holds the AI assistant. Changes are saved automatically. Customers do not publish:
+// "ثبت سفارش" sends the design to the team (see components/siteOrders).
 
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { DEFAULT_PORTFOLIO_TEMPLATE_ID, getTemplate } from "@rb/templates";
-import type { FieldIssue } from "../api";
 import { Preview } from "../components/Preview";
-import { PublishPanel } from "../components/PublishPanel";
 import { SAVE_LABELS, useResumeDoc } from "../components/editor/useResumeDoc";
+import { OrderDialog } from "../components/siteOrders";
 import { toast } from "../lib/toast";
 
 export function Editor() {
   const { id } = useParams<{ id: string }>();
   const doc = useResumeDoc(id, (savedId) => `/resumes/${savedId}`);
-  const { isDraft, title, setTitle, data, setData, theme, setTheme, loadError, saveState, saveError, savedVersion, save } = doc;
-  const [issues, setIssues] = useState<FieldIssue[] | null>(null);
-
-  // A previous check result is stale after an edit.
-  useEffect(() => setIssues(null), [data]);
+  const { isDraft, title, setTitle, data, setData, theme, setTheme, loadError, saveState, saveError, save } = doc;
+  const [ordering, setOrdering] = useState(false);
+  const navigate = useNavigate();
 
   // Older single-page templates have no click-to-edit; such sites move to the default editable template.
   useEffect(() => {
@@ -51,101 +49,28 @@ export function Editor() {
           PDF
         </Link>
       )}
+      <button className="btn small so-order-btn" onClick={() => setOrdering(true)}>
+        ثبت سفارش
+      </button>
     </>
-  );
-
-  const publish = isDraft ? (
-    <p className="muted">برای انتشار، اول سایت را با دکمه‌ی «ذخیره» بالای صفحه ذخیره کنید.</p>
-  ) : (
-    <div className="stack">
-      {issues !== null &&
-        (issues.length === 0 ? (
-          <div className="notice success">✅ سایت آماده‌ی انتشار است.</div>
-        ) : (
-          <div className="notice warn">
-            <strong>برای انتشار، این موارد را کامل کنید:</strong>
-            <ul>
-              {issues.map((i) => (
-                <li key={i.path + i.message}>
-                  {pathLabel(i.path)}: {i.message}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      <PublishPanel resumeId={id!} templateId={theme.templateId} data={data} version={savedVersion} saveNow={async () => Boolean(await save())} onIssues={setIssues} />
-    </div>
   );
 
   return (
     <div className="site-editor" dir={data.locale === "fa" ? "rtl" : "ltr"}>
       {saveError && <p className="error">ذخیره نشد: {saveError}</p>}
-      <Preview data={data} theme={theme} onThemeChange={setTheme} onDataChange={setData} publish={publish} bar={bar} resumeId={isDraft ? undefined : id} />
+      <Preview data={data} theme={theme} onThemeChange={setTheme} onDataChange={setData} bar={bar} resumeId={isDraft ? undefined : id} />
+      {ordering && (
+        <OrderDialog
+          title={title}
+          save={save}
+          onClose={() => setOrdering(false)}
+          onDone={(order) => {
+            setOrdering(false);
+            toast(`✓ سفارش ثبت شد؛ کد پیگیری ${order.code}`);
+            navigate(`/resume/orders?open=${order.id}`);
+          }}
+        />
+      )}
     </div>
   );
-}
-
-/* ───────────── Field path labels ───────────── */
-
-const SECTION_LABELS: Record<string, string> = {
-  basics: "اطلاعات پایه",
-  experience: "سابقه‌ی کاری",
-  education: "تحصیلات",
-  skills: "مهارت",
-  projects: "پروژه",
-  languages: "زبان",
-  certificates: "گواهینامه",
-  customSections: "بخش آزاد",
-  site: "محتوای سایت",
-};
-
-const FIELD_LABELS: Record<string, string> = {
-  fullName: "نام و نام خانوادگی",
-  jobTitle: "عنوان شغلی",
-  email: "ایمیل",
-  phone: "تلفن",
-  location: "محل",
-  avatarUrl: "لینک عکس",
-  summary: "درباره‌ی من",
-  links: "لینک",
-  label: "عنوان لینک",
-  company: "شرکت",
-  position: "سمت",
-  start: "تاریخ شروع",
-  end: "تاریخ پایان",
-  description: "توضیحات",
-  highlights: "دستاورد",
-  institution: "مؤسسه",
-  degree: "مقطع",
-  field: "رشته",
-  grade: "معدل",
-  name: "نام",
-  category: "دسته",
-  level: "سطح",
-  title: "عنوان",
-  role: "نقش",
-  technologies: "تکنولوژی",
-  images: "تصویر",
-  repoUrl: "لینک سورس کد",
-  issuer: "صادرکننده",
-  date: "تاریخ",
-  subtitle: "زیرعنوان",
-  items: "آیتم",
-  url: "لینک",
-  gallery: "گالری",
-  image: "تصویر",
-  aboutImage: "عکس درباره‌ی من",
-};
-
-function pathLabel(path: string): string {
-  return path
-    .split(".")
-    .map((part, i) => {
-      if (i === 0) return SECTION_LABELS[part] ?? part;
-      if (/^\d+$/.test(part)) return String(Number(part) + 1);
-      if (part === "period") return null;
-      return FIELD_LABELS[part] ?? part;
-    })
-    .filter(Boolean)
-    .join(" › ");
 }
