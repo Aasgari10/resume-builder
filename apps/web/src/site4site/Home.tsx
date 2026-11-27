@@ -5,8 +5,8 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { SITE_TEMPLATES } from "@rb/templates";
-import deskArt from "./art/building-desk-tower.svg?raw";
-import groundArt from "./art/ground.svg?raw";
+import deskArt from "./art/building-desk-body.svg?raw";
+import roofArt from "./art/roof-desk.svg?raw";
 import phoneArt from "./art/building-phone.svg?raw";
 import { Neighbors } from "./Neighbors";
 import { Icon, UNITS, unitByKey, type UnitKey } from "./units";
@@ -18,12 +18,13 @@ const WIDE = "(min-width: 1000px)";
 /** How long the light shows before the unit opens. */
 const OPEN_DELAY = 650;
 /** Design width of the wide-screen scene (the height is 900). */
-const STAGE = 1720;
+const STAGE = 1800;
 /**
- * Left edges on the stage: the building (its 3 floors and roof, 880 tall), then one wall right against its
- * side carrying the entrance with the engine room (560 × 400) and the intercom (560 wide). Matches home.css.
+ * Left edges on the stage: the building (three floors over the entrance, 840 tall, 712 wide), then the
+ * wall right against its side: the programmer and the neon stand on it, and it carries the intercom in its
+ * middle, under the roof scene and the slogan. Matches home.css.
  */
-const LAYOUT = { bld: 22, ground: 589, gate: 589 + 560 };
+const LAYOUT = { bld: 22, gate: 22 + 712 - 14 };
 
 function useWide() {
   const [wide, setWide] = useState(() => window.matchMedia(WIDE).matches);
@@ -162,7 +163,7 @@ function DeskHome() {
   const [pressed, setPressed] = useState<string | null>(null);
   const [{ k, w }, setFit] = useState({ k: 1, w: STAGE });
 
-  // The scene is drawn for 1720 × 900 and scaled to fit the window, so it never scrolls. A window wider
+  // The scene is drawn for 1800 × 900 and scaled to fit the window, so it never scrolls. A window wider
   // than that shape gets a wider stage: the building and the intercom keep their size in the middle and
   // the street continues to both sides (neighbouring buildings on the left, the intercom's wall on the right).
   useEffect(() => {
@@ -207,7 +208,7 @@ function DeskHome() {
         ))}
         <Neighbors width={Math.round((w - STAGE) / 2 + LAYOUT.bld + 14)} height={900} />
         <div className="s4-wall" aria-hidden="true">
-          {Array.from({ length: Math.ceil(((w - STAGE) / 2 + STAGE - LAYOUT.gate - 560) / 280) }, (_, i) => (
+          {Array.from({ length: Math.ceil((w - STAGE) / 2 / 280) }, (_, i) => (
             <span key={i} className="s4-wall-lamp" style={{ right: 140 + i * 280 }} />
           ))}
         </div>
@@ -227,11 +228,9 @@ function DeskHome() {
           </svg>
         </span>
         <div ref={root} className="s4-bld" dangerouslySetInnerHTML={{ __html: deskArt }} />
-        {/* the entrance and the engine room, as big as the intercom beside them; the door opens the login */}
-        <div className="s4-ground">
-          <span dangerouslySetInnerHTML={{ __html: groundArt.replace("<svg ", '<svg preserveAspectRatio="none" ') }} />
-          <Link to="/login" className="s4-ground-door" aria-label="ورود / ثبت‌نام" />
-        </div>
+        <Link to="/login" className="s4-bld-door" aria-label="ورود / ثبت‌نام" />
+        {/* the programmer and the neon sign, on top of the intercom's wall */}
+        <div className="s4-roof" aria-hidden="true" dangerouslySetInnerHTML={{ __html: roofArt }} />
 
         <div className="s4-say" aria-live="polite">
           <small>{s.kicker}</small>

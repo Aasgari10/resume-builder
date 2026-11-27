@@ -1,4 +1,4 @@
-/* Home: the building drawing and, on wide screens, the 1720 × 900 scene with the intercom. */
+/* Home: the building drawing and, on wide screens, the 1800 × 900 scene with the intercom. */
 
 .s4-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .s4-skip { position: absolute; top: 8px; right: 8px; z-index: 40; display: flex; flex-wrap: wrap; gap: 6px; }
@@ -29,13 +29,13 @@
 .s4-home-desk { position: relative; height: 100vh; min-height: 0; overflow: hidden; background: linear-gradient(#121633, #2a2348 55%, #4a2e4e); }
 .s4-stage { position: absolute; left: 50%; bottom: calc(20px * var(--k)); width: var(--w, 1440px); height: 900px; transform-origin: bottom center; transform: translateX(-50%) scale(var(--k)); }
 .s4-walk { position: absolute; left: 0; right: 0; bottom: 0; height: calc(20px * var(--k)); background: #3b2d4f; border-top: 2px solid #4a3c60; }
-.s4-moon { position: absolute; top: 60px; right: 110px; width: 44px; height: 44px; }
+.s4-moon { position: absolute; top: 46px; left: 790px; width: 44px; height: 44px; }
 .s4-moon svg { display: block; border-radius: 50%; filter: drop-shadow(0 0 22px rgb(255 233 194 / 0.35)); }
 .s4-star { position: absolute; width: 2px; height: 2px; border-radius: 50%; background: #fff1dc; opacity: 0.8; }
-.s4-bld { position: absolute; bottom: 0; left: 22px; width: 581px; height: 880px; }
+.s4-bld { position: absolute; bottom: 0; left: 22px; width: 712px; height: 840px; }
 .s4-bld svg { display: block; width: 100%; height: 100%; }
 
-.s4-say { position: absolute; top: 60px; left: 900px; width: 620px; }
+.s4-say { position: absolute; top: 46px; left: 1206px; width: 560px; }
 .s4-say small { display: block; margin-bottom: 14px; color: var(--teal); font-size: 16px; }
 .s4-say-title { margin: 0; min-height: 138px; font-size: 46px; font-weight: 800; line-height: 1.5; color: #f6eedf; text-wrap: balance; animation: s4-type 0.6s ease-out; }
 .s4-say-title .mark { color: var(--pink); white-space: nowrap; }
@@ -50,10 +50,10 @@
 .s4-say-dots button[aria-selected="true"] { background: var(--pink); box-shadow: 0 0 8px var(--pink); }
 
 /* the gate wall with the intercom */
-.s4-gate { position: absolute; bottom: 0; left: 589px; width: 1120px; height: 470px; background-image: repeating-linear-gradient(0deg, rgb(0 0 0 / 0.14) 0 1px, transparent 1px 12px), repeating-linear-gradient(90deg, rgb(0 0 0 / 0.1) 0 1px, transparent 1px 24px), linear-gradient(90deg, #3b3850, #4a4662); }
+.s4-gate { position: absolute; bottom: 0; left: 720px; width: 1080px; height: 470px; background-image: repeating-linear-gradient(0deg, rgb(0 0 0 / 0.14) 0 1px, transparent 1px 12px), repeating-linear-gradient(90deg, rgb(0 0 0 / 0.1) 0 1px, transparent 1px 24px), linear-gradient(90deg, #3b3850, #4a4662); }
 .s4-gate::before { content: ""; position: absolute; top: -12px; left: -6px; right: -6px; height: 14px; background: #e6d9c3; box-shadow: 0 3px 0 #cdbfa7; }
-.s4-lamp { position: absolute; top: 12px; left: 75%; width: 16px; height: 22px; translate: -50% 0; border-radius: 5px; background: #ffd99a; box-shadow: 0 0 30px 14px rgb(255 217 154 / 0.3); }
-.s4-ip { position: absolute; top: 52px; left: 75%; translate: -50% 0; width: 540px; padding: 30px 26px 28px; border-radius: 3px; background: linear-gradient(115deg, rgb(255 255 255 / 0.08), transparent 38%), linear-gradient(#3a3d4b, #2e303c); box-shadow: 0 0 0 4px #7d6a48, 0 12px 28px rgb(0 0 0 / 0.5); }
+.s4-lamp { position: absolute; top: 12px; left: 50%; width: 16px; height: 22px; translate: -50% 0; border-radius: 5px; background: #ffd99a; box-shadow: 0 0 30px 14px rgb(255 217 154 / 0.3); }
+.s4-ip { position: absolute; top: 52px; left: 50%; translate: -50% 0; width: 540px; padding: 30px 26px 28px; border-radius: 3px; background: linear-gradient(115deg, rgb(255 255 255 / 0.08), transparent 38%), linear-gradient(#3a3d4b, #2e303c); box-shadow: 0 0 0 4px #7d6a48, 0 12px 28px rgb(0 0 0 / 0.5); }
 .s4-ip .screw { position: absolute; width: 9px; height: 9px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #b49a68, #6e5a38 70%); box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.4); }
 .s4-ip .screw::after { content: ""; position: absolute; left: 2px; right: 2px; top: 4px; height: 1.4px; background: #26282c; rotate: 35deg; }
 .s4-ip .s1 { top: 9px; left: 9px; } .s4-ip .s2 { top: 9px; right: 9px; } .s4-ip .s3 { bottom: 9px; left: 9px; } .s4-ip .s4s { bottom: 9px; right: 9px; }
@@ -74,14 +74,15 @@
 .s4-ip .key i { width: 30px; height: 30px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #f2efe8, #bdb7aa 75%); box-shadow: inset 0 -2px 2px rgb(0 0 0 / 0.25); transition: background 0.2s, box-shadow 0.2s; }
 .s4-ip .key.live i, .s4-ip .key.on i { background: radial-gradient(circle at 45% 40%, #fff1d2, #f7cb7c 60%, #dda14e 95%); box-shadow: 0 0 6px 1px rgb(255 200 110 / 0.45), inset 0 -2px 2px rgb(150 90 20 / 0.3); }
 
-/* wide windows: the 1720 scene stays in the middle; the street continues on both sides */
-.s4-core { position: absolute; top: 0; bottom: 0; left: var(--off, 0px); width: 1720px; }
+/* wide windows: the 1800 scene stays in the middle; the street continues on both sides */
+.s4-core { position: absolute; top: 0; bottom: 0; left: var(--off, 0px); width: 1800px; }
 .s4-hood { position: absolute; left: 0; bottom: 0; }
 .s4-wall { position: absolute; right: 0; bottom: 0; width: calc(var(--off, 0px) + 20px); height: 470px; background-image: repeating-linear-gradient(0deg, rgb(0 0 0 / 0.14) 0 1px, transparent 1px 12px), repeating-linear-gradient(90deg, rgb(0 0 0 / 0.1) 0 1px, transparent 1px 24px), linear-gradient(90deg, #4a4662, #3b3850); }
 .s4-wall::before { content: ""; position: absolute; top: -12px; left: 0; right: 0; height: 14px; background: #e6d9c3; box-shadow: 0 3px 0 #cdbfa7; }
 .s4-wall-lamp { position: absolute; top: 12px; width: 16px; height: 22px; border-radius: 5px; background: #ffd99a; box-shadow: 0 0 30px 14px rgb(255 217 154 / 0.22); }
-.s4-ground { position: absolute; bottom: 0; left: 589px; z-index: 1; width: 560px; height: 400px; }
-.s4-ground > span, .s4-ground svg { display: block; width: 100%; height: 100%; }
-/* the door in the drawing (its plate says ورود) */
-.s4-ground-door { position: absolute; left: 40.4%; top: 30%; width: 19.2%; height: 70%; border-radius: 4px; }
-.s4-ground-door:hover { box-shadow: inset 0 0 0 2px rgb(244 190 106 / 0.5); }
+/* the programmer and the neon sign stand on the wall's cornice, left of the slogan */
+.s4-roof { position: absolute; left: 730px; bottom: 470px; width: 472px; height: 307px; }
+.s4-roof svg { display: block; width: 100%; height: 100%; }
+/* the entrance door of the building drawing (its plate says ورود) */
+.s4-bld-door { position: absolute; bottom: 0; left: calc(22px + 712px * 0.408); width: calc(712px * 0.183); height: 200px; border-radius: 4px; }
+.s4-bld-door:hover { box-shadow: inset 0 0 0 2px rgb(244 190 106 / 0.5); }
