@@ -79,7 +79,8 @@
   .s4-head h1 { font-size: 42px; }
   .s4-sub { font-size: 16px; }
   .s4-head-prog, .s4-head-neon { position: absolute; bottom: -6px; display: block; pointer-events: none; }
-  .s4-head-prog { left: 0; height: 240px; } .s4-head-neon { right: 20px; height: 250px; }
+  /* close beside the title, not out at the page edges */
+  .s4-head-prog { right: calc(50% + 235px); height: 240px; } .s4-head-neon { left: calc(50% + 250px); height: 250px; }
   .s4-head-prog svg, .s4-head-neon svg { height: 100%; width: auto; }
 }
 .s4 .label { font-weight: 700; fill: #fbebd8; }

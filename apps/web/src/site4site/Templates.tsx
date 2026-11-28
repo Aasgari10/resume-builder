@@ -56,16 +56,73 @@ function metaOf(t: TemplateDefinition): Meta {
   };
 }
 
-/** Renders children only once they come near the screen (live templates are heavy). */
+/**
+ * Live templates are heavy (a whole site each), so they are built one at a time, only while the page is
+ * not scrolling (building one mid-scroll would make the scroll stutter), and the frames in view go first.
+ */
+const waiting: (() => void)[] = [];
+let lastScroll = 0;
+let pumping = false;
+const QUIET_MS = 180;
+
+function pump() {
+  if (pumping) return;
+  pumping = true;
+  const step = () => {
+    if (!waiting.length) {
+      pumping = false;
+      return;
+    }
+    const quiet = performance.now() - lastScroll;
+    if (quiet < QUIET_MS) {
+      window.setTimeout(step, QUIET_MS - quiet);
+      return;
+    }
+    // newest first: the frames the reader has just reached
+    waiting.pop()!();
+    // let the browser paint (and take a scroll) before the next one
+    window.setTimeout(step, 30);
+  };
+  step();
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("scroll", () => (lastScroll = performance.now()), { passive: true });
+  window.addEventListener("wheel", () => (lastScroll = performance.now()), { passive: true });
+}
+
+/** Renders children once they come near the screen, through the one-at-a-time queue above. */
 function Lazy({ children, className }: { children: ReactNode; className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const [shown, setShown] = useState(false);
   useEffect(() => {
     const el = ref.current;
     if (!el || shown) return;
-    const io = new IntersectionObserver(([e]) => e?.isIntersecting && setShown(true), { rootMargin: "400px" });
+    let queued: (() => void) | null = null;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (e?.isIntersecting) {
+          if (queued) return;
+          queued = () => setShown(true);
+          waiting.push(queued);
+          pump();
+        } else if (queued) {
+          // scrolled past before its turn: leave the queue to the frames now in view
+          const k = waiting.indexOf(queued);
+          if (k >= 0) waiting.splice(k, 1);
+          queued = null;
+        }
+      },
+      { rootMargin: "300px" },
+    );
     io.observe(el);
-    return () => io.disconnect();
+    return () => {
+      io.disconnect();
+      if (queued) {
+        const k = waiting.indexOf(queued);
+        if (k >= 0) waiting.splice(k, 1);
+      }
+    };
   }, [shown]);
   return (
     <div ref={ref} className={className}>
