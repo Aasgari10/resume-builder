@@ -5,7 +5,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../auth";
 import phoneArt from "./art/building-phone.svg?raw";
-import { Icon, UNITS, type UnitKey } from "./units";
+import { CONTACT_LINKS, Icon, UNITS, type UnitKey } from "./units";
 import "./site4site.css";
 
 function Logo() {
@@ -16,13 +16,13 @@ function Logo() {
   );
 }
 
-/** Where the account button leads: the login page, or the customer's orders once signed in. */
+/** Where the account button leads: the login page, or the customer's own dashboard once signed in. */
 function AccountLink({ className }: { className: string }) {
   const { user } = useAuth();
   return user ? (
-    <Link to="/resume/orders" className={className}>
+    <Link to="/account" className={className}>
       <Icon name="register" />
-      سفارش‌های من
+      حساب من
     </Link>
   ) : (
     <Link to="/login" className={className}>
@@ -143,14 +143,14 @@ export function Footer() {
             <Logo />
             <p>سایت آماده با پنل مدیریت، برای کسب‌وکارهای کوچک و بزرگ.</p>
             <div className="s4-soc">
-              <a href="#" aria-label="اینستاگرام">
+              <a href={CONTACT_LINKS.instagram} target="_blank" rel="noopener noreferrer" aria-label="اینستاگرام">
                 <Icon name="instagram" />
               </a>
-              <a href="#" aria-label="تلگرام">
+              <a href={CONTACT_LINKS.telegram} target="_blank" rel="noopener noreferrer" aria-label="تلگرام">
                 <Icon name="telegram" />
               </a>
-              <a href="#" aria-label="واتس‌اپ">
-                <Icon name="whatsapp" />
+              <a href={CONTACT_LINKS.phone} aria-label="تماس تلفنی">
+                <Icon name="contact" />
               </a>
             </div>
           </div>
@@ -169,7 +169,7 @@ export function Footer() {
                 {u.label}
               </Link>
             ))}
-            <Link to="/resume/orders">سفارش‌های من</Link>
+            <Link to="/account/orders">سفارش‌های من</Link>
           </div>
           <div className="s4-foot-col">
             <b>اعتماد</b>

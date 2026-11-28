@@ -52,7 +52,7 @@ export function Support() {
           <div>
             <b>سؤال درباره‌ی سفارش؟</b>
             <p>پیام‌های هر سفارش در «سفارش‌های من» هم هست.</p>
-            <Link to="/resume/orders" className="s4-btn ghost">
+            <Link to="/account/orders" className="s4-btn ghost">
               سفارش‌های من
             </Link>
           </div>
@@ -84,8 +84,8 @@ export function Support() {
   );
 }
 
-/** The signed-in customer's tickets, the new-ticket form and the open conversation. */
-function Desk({ info }: { info: SupportInfo }) {
+/** The signed-in customer's tickets, the new-ticket form and the open conversation (also in the dashboard). */
+export function Desk({ info }: { info: SupportInfo }) {
   const [tickets, setTickets] = useState<TicketSummary[] | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [open, setOpen] = useState<Ticket | null>(null);

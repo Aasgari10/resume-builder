@@ -71,7 +71,7 @@ export function Editor() {
           onDone={(order) => {
             setOrdering(false);
             toast(`✓ سفارش ثبت شد؛ کد پیگیری ${order.code}`);
-            navigate(`/resume/orders?open=${order.id}`);
+            navigate(`/account/orders?open=${order.id}`);
           }}
         />
       )}

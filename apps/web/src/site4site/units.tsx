@@ -44,6 +44,20 @@ export function Icon({ name }: { name: IconName }) {
   );
 }
 
+/** How to reach site4site: shown on the contact page and as the footer icons. */
+export const CONTACT = {
+  phone: "09185612083",
+  tel: "+989185612083",
+  telegram: "Aasgari10",
+  instagram: "ali_asgari2083",
+};
+
+export const CONTACT_LINKS = {
+  phone: `tel:${CONTACT.tel}`,
+  telegram: `https://t.me/${CONTACT.telegram}`,
+  instagram: `https://instagram.com/${CONTACT.instagram}`,
+};
+
 /** Menu order: what a visitor looks for first comes first. */
 export const UNITS: readonly Unit[] = [
   {

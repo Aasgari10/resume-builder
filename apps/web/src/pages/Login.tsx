@@ -2,12 +2,14 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { ApiError, api } from "../api";
 import { useAuth } from "../auth";
+import { PageHead, UnitPage } from "../site4site/Shell";
+import "../site4site/pages.css";
 
 export function Login() {
   const { user, setUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const redirectTo = (location.state as { from?: string } | null)?.from ?? "/resume/mine";
+  const redirectTo = (location.state as { from?: string } | null)?.from ?? "/account";
 
   const [step, setStep] = useState<"phone" | "code">("phone");
   const [phone, setPhone] = useState("");
@@ -63,12 +65,13 @@ export function Login() {
   }
 
   return (
-    <div className="card narrow">
-      <h1>ورود / ثبت‌نام</h1>
+    <UnitPage>
+      <PageHead plate="در ورودی" title="ورود / ثبت‌نام" sub="با شماره‌ی موبایل و کد پیامکی؛ بدون رمز. اگر حساب ندارید، همین‌جا ساخته می‌شود." sides={false} />
+      <div className="lg-card">
 
       {step === "phone" ? (
-        <form onSubmit={sendCode} className="stack">
-          <label className="field">
+        <form onSubmit={sendCode} className="sp-form">
+          <label>
             <span>شماره موبایل</span>
             <input
               className="ltr"
@@ -81,26 +84,26 @@ export function Login() {
               required
             />
           </label>
-          <button className="btn" disabled={busy}>
+          <button className="s4-btn main" disabled={busy}>
             {busy ? "در حال ارسال…" : "دریافت کد"}
           </button>
         </form>
       ) : (
-        <form onSubmit={verify} className="stack">
-          <p className="muted">
+        <form onSubmit={verify} className="sp-form">
+          <p className="lg-sent">
             کد به <span className="ltr">{phone}</span> فرستاده شد.{" "}
-            <button type="button" className="link" onClick={() => setStep("phone")}>
+            <button type="button" className="lg-link" onClick={() => setStep("phone")}>
               تغییر شماره
             </button>
           </p>
 
           {devCode && (
-            <div className="notice">
+            <div className="sp-off">
               حالت توسعه: کد ورود <strong className="ltr">{devCode}</strong> است (در ترمینال API هم چاپ شده).
             </div>
           )}
 
-          <label className="field">
+          <label>
             <span>کد ورود</span>
             <input
               className="ltr code-input"
@@ -113,16 +116,17 @@ export function Login() {
               required
             />
           </label>
-          <button className="btn" disabled={busy}>
+          <button className="s4-btn main" disabled={busy}>
             {busy ? "در حال بررسی…" : "ورود"}
           </button>
-          <button type="button" className="btn ghost" disabled={busy || resendIn > 0} onClick={() => sendCode()}>
+          <button type="button" className="s4-btn ghost" disabled={busy || resendIn > 0} onClick={() => sendCode()}>
             {resendIn > 0 ? `ارسال دوباره تا ${resendIn} ثانیه` : "ارسال دوباره‌ی کد"}
           </button>
         </form>
       )}
 
-      {error && <p className="error">{error}</p>}
-    </div>
+      {error && <p className="sp-error">{error}</p>}
+      </div>
+    </UnitPage>
   );
 }

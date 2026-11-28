@@ -41,7 +41,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 
 /* ───────────── Response types ───────────── */
 
-export type User = { id: string; phone: string; name: string | null; role: string };
+export type User = { id: string; phone: string; name: string | null; email: string | null; role: string };
 
 export type ResumeSummary = {
   id: string;
@@ -326,6 +326,7 @@ export const api = {
     request<{ user: User }>("POST", "/auth/verify-otp", { phone, code }),
   logout: () => request<{ ok: true }>("POST", "/auth/logout"),
   me: () => request<{ user: User }>("GET", "/auth/me"),
+  updateMe: (patch: { name?: string; email?: string }) => request<{ user: User }>("PATCH", "/auth/me", patch),
 
   listResumes: () => request<{ resumes: ResumeSummary[] }>("GET", "/resumes"),
   createResume: (title: string, locale: "fa" | "en") =>

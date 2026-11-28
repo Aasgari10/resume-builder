@@ -26,7 +26,7 @@ export function Soon({ unit }: { unit: UnitKey }) {
           <Link to="/templates" className="s4-btn main">
             دیدن قالب‌ها
           </Link>
-          <Link to="/resume/orders" className="s4-btn ghost">
+          <Link to="/account/orders" className="s4-btn ghost">
             سفارش‌های من
           </Link>
         </div>
