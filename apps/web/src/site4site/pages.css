@@ -19,6 +19,7 @@
 .tp-phone::before, .tp-mini::before { content: ""; position: absolute; top: 15px; left: 50%; z-index: 2; width: 52px; height: 12px; translate: -50% 0; border-radius: 6px; background: #0e0c14; }
 .tp-phone .scr, .tp-mini .scr { height: 100%; border-radius: 22px; overflow: hidden; background: #fff; }
 .roll { --h: 388px; }
+.tp-shot { display: block; width: 100%; height: auto; user-select: none; }
 .tp-phone .roll, .tp-lap .roll { animation: tp-roll 30s ease-in-out infinite alternate; }
 @keyframes tp-roll { 0%, 8% { translate: 0 0; } 100% { translate: 0 calc(-100% + var(--h)); } }
 .tp-lap { position: relative; }

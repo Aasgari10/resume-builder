@@ -5,7 +5,7 @@ import { Landing } from "./landing/Landing";
 import { About } from "./site4site/About";
 import { Home } from "./site4site/Home";
 import { Soon } from "./site4site/Soon";
-import { Templates } from "./site4site/Templates";
+import { SnapPage, Templates } from "./site4site/Templates";
 import { Gallery } from "./hub/Gallery";
 import { MyOrders } from "./hub/MyOrders";
 import { NewResume } from "./hub/NewResume";
@@ -55,6 +55,9 @@ export function App() {
       </Routes>
     );
   }
+
+  // Development only: one template at full size, for the template pictures (scripts/snap-templates.mjs).
+  if (import.meta.env.DEV && pathname === "/__snap") return <SnapPage />;
 
   // The site4site building: the home page and its units have their own frame.
   if (/^\/(templates|about|pricing|support|contact|blog)?\/?$/.test(pathname)) {

@@ -141,6 +141,32 @@ const Live = memo(function Live({ t, base }: { t: TemplateDefinition; base: numb
   );
 });
 
+/** Pictures of each template (desktop and phone), taken by `scripts/snap-templates.mjs`. */
+const SNAPS = import.meta.glob("./snaps/*.jpg", { eager: true, query: "?url", import: "default" }) as Record<string, string>;
+const snapOf = (t: TemplateDefinition, base: number) => SNAPS[`./snaps/${t.id}.${base === 390 ? "phone" : "desk"}.jpg`];
+
+/**
+ * A template as shown in frames and phones: its picture (light, so the page scrolls smoothly), or the live
+ * template when it has not been pictured yet.
+ */
+function Shot({ t, base }: { t: TemplateDefinition; base: number }) {
+  const src = snapOf(t, base);
+  return src ? <img className="tp-shot" src={src} alt="" loading="lazy" decoding="async" draggable={false} /> : <Live t={t} base={base} />;
+}
+
+/** Development only: one template at full size for `scripts/snap-templates.mjs`; with no id, the list of ids. */
+export function SnapPage() {
+  const q = new URLSearchParams(window.location.search);
+  const t = SITE_TEMPLATES.find((x) => x.id === q.get("id"));
+  if (!t) return <pre id="snap-ids">{JSON.stringify(SITE_TEMPLATES.map((x) => x.id))}</pre>;
+  const w = Number(q.get("w")) || 1280;
+  return (
+    <div id="snap" style={{ width: w }}>
+      <Live t={t} base={w} />
+    </div>
+  );
+}
+
 function useWide() {
   const q = "(min-width: 1000px)";
   const [wide, setWide] = useState(() => window.matchMedia(q).matches);
@@ -262,7 +288,7 @@ function Showcase({ items, wide, onOrder, onPreview }: { items: Meta[]; wide: bo
             <div className="tp-side prev" aria-hidden="true">
               <div className="tp-lap sm">
                 <div className="scr">
-                  <Live t={at(i - 1).t} base={1280} />
+                  <Shot t={at(i - 1).t} base={1280} />
                 </div>
                 <div className="base" />
               </div>
@@ -271,7 +297,7 @@ function Showcase({ items, wide, onOrder, onPreview }: { items: Meta[]; wide: bo
             <div className="tp-side next" aria-hidden="true">
               <div className="tp-lap sm">
                 <div className="scr">
-                  <Live t={at(i + 1).t} base={1280} />
+                  <Shot t={at(i + 1).t} base={1280} />
                 </div>
                 <div className="base" />
               </div>
@@ -285,7 +311,7 @@ function Showcase({ items, wide, onOrder, onPreview }: { items: Meta[]; wide: bo
             <div className="tp-lap">
               <div className="scr">
                 <div className="roll">
-                  <Live t={m.t} base={1280} />
+                  <Shot t={m.t} base={1280} />
                 </div>
               </div>
               <div className="base" />
@@ -294,7 +320,7 @@ function Showcase({ items, wide, onOrder, onPreview }: { items: Meta[]; wide: bo
           <div className="tp-phone">
             <div className="scr">
               <div className="roll">
-                <Live t={m.t} base={390} />
+                <Shot t={m.t} base={390} />
               </div>
             </div>
           </div>
@@ -361,11 +387,19 @@ function Frame({
     <article className="tp-art">
       <div className={`tp-frame ${phone ? "ph" : ""}`}>
         {isNew && <span className="tp-new">تازه</span>}
-        <Lazy className="tp-mat">
-          <div className="roll">
-            <Live t={m.t} base={1280} />
+        {snapOf(m.t, 1280) ? (
+          <div className="tp-mat">
+            <div className="roll">
+              <Shot t={m.t} base={1280} />
+            </div>
           </div>
-        </Lazy>
+        ) : (
+          <Lazy className="tp-mat">
+            <div className="roll">
+              <Live t={m.t} base={1280} />
+            </div>
+          </Lazy>
+        )}
         {wide && (
           <>
             <button type="button" className="tp-phb" aria-pressed={phone} aria-label={`نسخه‌ی گوشی ${m.title}`} onClick={onPhone}>
@@ -375,7 +409,7 @@ function Frame({
               <div className="tp-mini">
                 <div className="scr">
                   <div className="roll">
-                    <Live t={m.t} base={390} />
+                    <Shot t={m.t} base={390} />
                   </div>
                 </div>
               </div>
