@@ -79,7 +79,7 @@ export function ResumeHub({ children }: { children: ReactNode }) {
             سایت‌های منتشرشده
           </NavLink>
           {user && (
-            <NavLink to="/resume/orders">
+            <NavLink to="/account/orders">
               <Icon name="mail" />
               سفارش‌های من
               {unread > 0 && <span className="hub-count so-badge">{fa(unread)}</span>}
@@ -110,7 +110,7 @@ export function ResumeHub({ children }: { children: ReactNode }) {
         </nav>
 
         <nav className="hub-nav hub-bottom">
-          <Link to="/soon/consult">
+          <Link to="/support">
             <Icon name="help" />
             راهنما و پشتیبانی
           </Link>

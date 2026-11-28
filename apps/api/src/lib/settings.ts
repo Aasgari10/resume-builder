@@ -7,21 +7,23 @@ import { prisma } from "../db";
 export const settingsSchema = z.object({
   /** Tokens each user may spend on the AI assistant per day (Tehran time). */
   aiDailyTokenLimit: z.number().int().min(0).max(10_000_000),
+  /** Whether customers may open new support tickets (tickets already open carry on either way). */
+  ticketsEnabled: z.boolean(),
 });
 
 export type Settings = z.infer<typeof settingsSchema>;
 
-export const DEFAULT_SETTINGS: Settings = { aiDailyTokenLimit: 20_000 };
+export const DEFAULT_SETTINGS: Settings = { aiDailyTokenLimit: 20_000, ticketsEnabled: true };
 
 export async function getSettings(): Promise<Settings> {
   const rows = await prisma.setting.findMany();
   const stored = Object.fromEntries(rows.map((r) => [r.key, r.value]));
-  const merged = { ...DEFAULT_SETTINGS };
+  const merged: Record<string, unknown> = { ...DEFAULT_SETTINGS };
   for (const key of Object.keys(DEFAULT_SETTINGS) as (keyof Settings)[]) {
     const parsed = settingsSchema.shape[key].safeParse(stored[key]);
     if (parsed.success) merged[key] = parsed.data;
   }
-  return merged;
+  return merged as Settings;
 }
 
 export async function updateSettings(patch: Partial<Settings>): Promise<Settings> {

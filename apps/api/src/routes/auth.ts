@@ -27,10 +27,11 @@ function requirePhone(raw: string): string {
   return phone;
 }
 
-const publicUser = (u: { id: string; phone: string; name: string | null; role: string }) => ({
+const publicUser = (u: { id: string; phone: string; name: string | null; email: string | null; role: string }) => ({
   id: u.id,
   phone: u.phone,
   name: u.name,
+  email: u.email,
   role: u.role,
 });
 
@@ -126,6 +127,28 @@ authRouter.get(
   asyncHandler(async (req, res) => {
     const user = await prisma.user.findUnique({ where: { id: currentUserId(req) } });
     if (!user) throw new HttpError(401, "UNAUTHORIZED", "کاربر پیدا نشد");
+    res.json({ user: publicUser(user) });
+  })
+);
+
+const profileBody = z.object({
+  name: z.string().trim().max(80).optional(),
+  email: z.union([z.string().trim().email("ایمیل درست نیست").max(120), z.literal("")]).optional(),
+});
+
+/** PATCH /api/auth/me { name?, email? } — the user's own details (the phone is the login and stays). */
+authRouter.patch(
+  "/me",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const body = parseBody(profileBody, req.body);
+    const user = await prisma.user.update({
+      where: { id: currentUserId(req) },
+      data: {
+        ...(body.name !== undefined ? { name: body.name || null } : {}),
+        ...(body.email !== undefined ? { email: body.email || null } : {}),
+      },
+    });
     res.json({ user: publicUser(user) });
   })
 );

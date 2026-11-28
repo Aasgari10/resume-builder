@@ -291,7 +291,7 @@ adminRouter.get(
   })
 );
 
-/** PATCH /api/admin/settings  { aiDailyTokenLimit? } */
+/** PATCH /api/admin/settings  { aiDailyTokenLimit?, ticketsEnabled? } */
 adminRouter.patch(
   "/settings",
   asyncHandler(async (req, res) => {

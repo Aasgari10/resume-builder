@@ -1,0 +1,36 @@
+// A unit of the building that is still being built (contact, blog): its header
+// and a short note with the ways a visitor can already get help.
+
+import { useEffect } from "react";
+import { Link } from "react-router-dom";
+import { PageHead, UnitPage } from "./Shell";
+import { unitByKey, type UnitKey } from "./units";
+import "./pages.css";
+
+const NOTE: Partial<Record<UnitKey, string>> = {
+  contact: "راه‌های تماس به‌زودی این‌جا می‌آید. فعلاً می‌توانید از «سفارش‌های من» برایمان پیام بفرستید.",
+  blog: "بلاگ به‌زودی با مطالبی درباره‌ی ساختن و رشد سایت کسب‌وکار باز می‌شود.",
+};
+
+export function Soon({ unit }: { unit: UnitKey }) {
+  const u = unitByKey(unit);
+  useEffect(() => {
+    document.title = `${u.label} | site4site`;
+  }, [u.label]);
+  return (
+    <UnitPage current={unit}>
+      <PageHead plate={u.plate} title={u.label} sub="این واحد در حال آماده شدن است." />
+      <div className="soon">
+        <p>{NOTE[unit]}</p>
+        <div className="acts">
+          <Link to="/templates" className="s4-btn main">
+            دیدن قالب‌ها
+          </Link>
+          <Link to="/account/orders" className="s4-btn ghost">
+            سفارش‌های من
+          </Link>
+        </div>
+      </div>
+    </UnitPage>
+  );
+}

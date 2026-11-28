@@ -70,6 +70,9 @@ model User {
   aiUsages        AiUsage[]
   uploads         Upload[]
   siteOrders      SiteOrder[]
+  supportTickets  SupportTicket[]
+  templateComments TemplateComment[]
+  commentVotes     TemplateCommentVote[]
 }
 
 // One-time login code. Keyed by phone rather than User, since first-time users do not exist yet.
@@ -495,4 +498,76 @@ enum SiteOrderStatus {
   BUILDING
   DELIVERED
   CANCELED
+}
+
+// ───────────── Support tickets ─────────────
+
+// A support conversation between a signed-in customer and the site4site team, opened from the support
+// page. The admin can switch new tickets off (setting "ticketsEnabled"); open tickets carry on.
+model SupportTicket {
+  id            String              @id @default(cuid())
+  code          String              @unique // shown to the customer, e.g. T482913
+  userId        String
+  topic         SupportTopic
+  subject       String
+  orderCode     String? // the site order it is about, when there is one
+  status        SupportTicketStatus @default(OPEN)
+  messages      Json                @default("[]") // [{ from: "customer" | "admin", text, at }]
+  unreadByUser  Boolean             @default(false) // the team answered since the customer last looked
+  unreadByAdmin Boolean             @default(true) // new, or the customer wrote since the admin last looked
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
+  @@index([status, updatedAt])
+}
+
+enum SupportTopic {
+  ORDER // a site order
+  TECHNICAL // a problem with a site or the panel
+  BILLING // payments and invoices
+  OTHER
+}
+
+enum SupportTicketStatus {
+  OPEN // waiting for the team
+  ANSWERED // the team replied
+  CLOSED
+}
+
+// ───────────── Template comments ─────────────
+
+// What visitors say about a site template on the templates page. Signed-in users write and vote (like or
+// dislike); only an admin answers, and an admin can remove a comment.
+model TemplateComment {
+  id         String    @id @default(cuid())
+  templateId String // a site template id from @rb/templates
+  userId     String
+  text       String
+  reply      String? // the admin's answer
+  repliedAt  DateTime?
+  likes      Int       @default(0)
+  dislikes   Int       @default(0)
+  createdAt  DateTime  @default(now())
+  deletedAt  DateTime? // removed by an admin (hidden everywhere)
+
+  user  User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  votes TemplateCommentVote[]
+
+  @@index([templateId, createdAt])
+  @@index([reply, createdAt])
+}
+
+// One user's like (1) or dislike (-1) on a comment.
+model TemplateCommentVote {
+  commentId String
+  userId    String
+  value     Int
+
+  comment TemplateComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([commentId, userId])
 }

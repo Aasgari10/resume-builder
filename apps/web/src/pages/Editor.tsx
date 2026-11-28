@@ -27,10 +27,14 @@ export function Editor() {
 
   const bar = (
     <>
-      <Link to="/resume/mine" className="ws-icon" title="رزومه‌های من" aria-label="رزومه‌های من">
+      <Link to="/templates" className="ws-chip ws-back" title="بازگشت به قالب‌ها">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M9 6l6 6-6 6" />
         </svg>
+        <span>قالب‌ها</span>
+      </Link>
+      <Link to="/" className="ws-logo" aria-label="site4site، صفحه‌ی اصلی">
+        site<b>4</b>site
       </Link>
       <input className="ws-title" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={80} aria-label="نام سایت" />
       {SAVE_LABELS[saveState] && <span className={`save-badge ${saveState}`}>{SAVE_LABELS[saveState]}</span>}
@@ -67,7 +71,7 @@ export function Editor() {
           onDone={(order) => {
             setOrdering(false);
             toast(`✓ سفارش ثبت شد؛ کد پیگیری ${order.code}`);
-            navigate(`/resume/orders?open=${order.id}`);
+            navigate(`/account/orders?open=${order.id}`);
           }}
         />
       )}
