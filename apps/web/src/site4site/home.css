@@ -100,3 +100,6 @@
 .s4-say-dots { display: flex; gap: 8px; margin-top: 16px; }
 .s4-say-dots button { width: 26px; height: 4px; padding: 0; border: 0; border-radius: 2px; background: var(--line); cursor: pointer; }
 .s4-say-dots button[aria-selected="true"] { background: var(--pink); box-shadow: 0 0 8px var(--pink); }
+/* trial: the words alone on the night sky, without the board, its frame or its legs */
+.s4-say { background: none; box-shadow: none; }
+.s4-say::before, .s4-say::after { display: none; }
