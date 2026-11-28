@@ -127,19 +127,60 @@ const SLIDES = [
   {
     kicker: "سایتی برای ساختن سایت شما",
     title: ["سایت کسب‌وکارت را ", "در چند روز", " تحویل بگیر"],
-    text: "قالب را انتخاب کن، بقیه با ما؛ از شخصی‌سازی تا تحویل. فروشگاه، رزرو آنلاین، سایت شخصی و رزومه، همه با پنل مدیریت فارسی.",
+    line: "قالب را انتخاب کن، بقیه با ما؛ با پنل مدیریت فارسی.",
   },
   {
     kicker: "اول امتحان کن، بعد سفارش بده",
     title: ["هر قالب را ", "با پنل مدیریتش", " امتحان کن"],
-    text: "محصول اضافه کن، سفارش و نوبت ببین، ظاهر را عوض کن؛ وقتی پسندیدی، همان را سفارش بده.",
+    line: "محصول بگذار، سفارش و نوبت ببین؛ پسندیدی، سفارش بده.",
   },
   {
     kicker: `${fa(SITE_TEMPLATES.length)} قالب آماده`,
     title: ["از ", "فروشگاه", " تا رزرو آنلاین"],
-    text: "کافه، آرایشگاه، کتاب‌فروشی، اتاق فرار، مطب و…؛ قالب کسب‌وکارت احتمالاً همین‌جاست.",
+    line: "کافه، آرایشگاه، کتاب‌فروشی، اتاق فرار، مطب و…",
   },
 ];
+
+/** Milliseconds per letter while the programmer types a headline. */
+const TYPE_MS = 55;
+
+/**
+ * A headline typed out letter by letter, the middle part in pink. The letters still to come keep their
+ * place (hidden), so the lines never jump while it types. Shown whole when motion is reduced.
+ */
+function Typed({ parts }: { parts: string[] }) {
+  const total = parts.join("").length;
+  const [n, setN] = useState(() => (reduced() ? total : 0));
+  useEffect(() => {
+    if (n >= total) return;
+    const t = window.setTimeout(() => setN(n + 1), TYPE_MS);
+    return () => window.clearTimeout(t);
+  }, [n, total]);
+  let at = 0;
+  return (
+    <>
+      {parts.map((text, i) => {
+        const done = Math.max(0, Math.min(text.length, n - at));
+        const caretHere = n - at < text.length ? n >= at : i === parts.length - 1;
+        at += text.length;
+        const body = (
+          <>
+            {text.slice(0, done)}
+            {caretHere && <span className="caret" />}
+            <span className="todo">{text.slice(done)}</span>
+          </>
+        );
+        return i === 1 ? (
+          <span key={i} className="mark">
+            {body}
+          </span>
+        ) : (
+          <span key={i}>{body}</span>
+        );
+      })}
+    </>
+  );
+}
 
 /** Stars spread over the whole stage, the same on every visit. */
 function stars(width: number): [number, number][] {
@@ -276,18 +317,11 @@ function DeskHome() {
 
         <div className="s4-say" aria-live="polite">
           <small>{s.kicker}</small>
-          <p className="s4-say-title" key={slide}>
-            {s.title[0]}
-            <span className="mark">{s.title[1]}</span>
-            {s.title[2]}
-            <span className="caret" aria-hidden="true" />
+          <p className="s4-sr">{s.title.join("")}</p>
+          <p className="s4-say-title" aria-hidden="true">
+            <Typed key={slide} parts={s.title} />
           </p>
-          <p>{s.text}</p>
-          <ul className="s4-say-chips">
-            <li>{fa(SITE_TEMPLATES.length)}+ قالب آماده</li>
-            <li>تحویل در چند روز</li>
-            <li>امتحان رایگان با پنل</li>
-          </ul>
+          <p className="s4-say-line">{s.line}</p>
           <div className="s4-say-dots" role="tablist" aria-label="جمله‌ها">
             {SLIDES.map((_, i) => (
               <button key={i} type="button" role="tab" aria-selected={i === slide} aria-label={`جمله‌ی ${fa(i + 1)}`} onClick={() => setSlide(i)} />
