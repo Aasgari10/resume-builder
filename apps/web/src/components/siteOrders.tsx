@@ -1,5 +1,5 @@
 // Shared pieces of site build orders: status labels, the order form (opened from the editor) and the
-// message thread used by both the customer's "my orders" page and the admin's orders tab.
+// message thread used by the customer's "my orders" page, the admin's orders tab and support tickets.
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { ApiError, api, type SiteOrderLine, type SiteOrderStatus, type SiteOrderSummary } from "../api";
@@ -22,7 +22,20 @@ export function StatusPill({ status }: { status: SiteOrderStatus }) {
 const time = (at: string) => new Date(at).toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" });
 
 /** The order's conversation: messages from both sides and the status changes, oldest first, with a box to write. */
-export function OrderThread({ lines, me, onSend }: { lines: SiteOrderLine[]; me: "customer" | "admin"; onSend: (text: string) => Promise<void> }) {
+export function OrderThread({
+  lines,
+  me,
+  onSend,
+  closed,
+  minLength = 1,
+}: {
+  lines: SiteOrderLine[];
+  me: "customer" | "admin";
+  onSend: (text: string) => Promise<void>;
+  /** When set, the conversation is closed: this note shows instead of the box to write. */
+  closed?: string;
+  minLength?: number;
+}) {
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -67,12 +80,16 @@ export function OrderThread({ lines, me, onSend }: { lines: SiteOrderLine[]; me:
         )}
         <div ref={end} />
       </div>
-      <form className="so-write" onSubmit={submit}>
-        <textarea value={text} onChange={(e) => setText(e.target.value)} rows={2} maxLength={2000} placeholder="پیامتان را بنویسید…" aria-label="پیام" />
-        <button className="btn" disabled={busy || !text.trim()}>
-          {busy ? "…" : "فرستادن"}
-        </button>
-      </form>
+      {closed ? (
+        <p className="so-closed muted small center">{closed}</p>
+      ) : (
+        <form className="so-write" onSubmit={submit}>
+          <textarea value={text} onChange={(e) => setText(e.target.value)} rows={2} minLength={minLength} maxLength={2000} placeholder="پیامتان را بنویسید…" aria-label="پیام" />
+          <button className="btn" disabled={busy || text.trim().length < minLength}>
+            {busy ? "…" : "فرستادن"}
+          </button>
+        </form>
+      )}
       {error && <p className="error small">{error}</p>}
     </div>
   );

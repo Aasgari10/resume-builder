@@ -296,6 +296,27 @@ export type SiteOrderSummary = {
 };
 export type SiteOrder = Omit<SiteOrderSummary, "lastLine" | "lines"> & { messages: SiteOrderLine[] };
 export type AdminSiteOrder = SiteOrder & { design: { data: ResumeData; theme: Theme }; templateName: string; user: { phone: string; name: string | null } };
+export type TicketTopic = "ORDER" | "TECHNICAL" | "BILLING" | "OTHER";
+export type TicketStatus = "OPEN" | "ANSWERED" | "CLOSED";
+export type TicketLine = { from: "customer" | "admin"; text: string; at: string };
+export type TicketSummary = {
+  id: string;
+  code: string;
+  topic: TicketTopic;
+  subject: string;
+  orderCode: string | null;
+  status: TicketStatus;
+  unreadByUser: boolean;
+  unreadByAdmin: boolean;
+  createdAt: string;
+  updatedAt: string;
+  lastLine: TicketLine | null;
+  lines: number;
+  user?: { phone: string; name: string | null };
+};
+export type Ticket = Omit<TicketSummary, "lastLine" | "lines"> & { messages: TicketLine[] };
+export type TicketInput = { topic: TicketTopic; subject: string; orderCode?: string; text: string };
+export type SupportInfo = { ticketsEnabled: boolean; rules: { maxOpen: number; minText: number; maxText: number } };
 export type SiteOrderInput = { resumeId: string; name: string; phone: string; business?: string; note?: string };
 
 export const api = {
@@ -370,8 +391,8 @@ export const api = {
     sites: (page: number, q?: string) => request<Paged<AdminSite>>("GET", `/admin/sites${qs({ page, q })}`),
     ai: () => request<AdminAiUsage>("GET", "/admin/ai"),
     waitlist: () => request<AdminWaitlist>("GET", "/admin/waitlist"),
-    updateSettings: (patch: { aiDailyTokenLimit?: number }) =>
-      request<{ settings: { aiDailyTokenLimit: number } }>("PATCH", "/admin/settings", patch),
+    updateSettings: (patch: { aiDailyTokenLimit?: number; ticketsEnabled?: boolean }) =>
+      request<{ settings: { aiDailyTokenLimit: number; ticketsEnabled: boolean } }>("PATCH", "/admin/settings", patch),
     unpublishSite: (id: string) => request<{ ok: true }>("POST", `/admin/sites/${encodeURIComponent(id)}/unpublish`),
     siteOrders: (page: number, status?: string, q?: string) =>
       request<Paged<SiteOrderSummary> & { unread: number }>("GET", `/admin/site-orders${qs({ page, status, q })}`),
@@ -380,6 +401,11 @@ export const api = {
       request<{ order: AdminSiteOrder }>("PATCH", `/admin/site-orders/${encodeURIComponent(id)}`, { status }),
     sendSiteOrder: (id: string, text: string) =>
       request<{ order: AdminSiteOrder }>("POST", `/admin/site-orders/${encodeURIComponent(id)}/messages`, { text }),
+    tickets: (page: number, status?: string, q?: string) =>
+      request<Paged<TicketSummary> & { unread: number; ticketsEnabled: boolean }>("GET", `/admin/support/tickets${qs({ page, status, q })}`),
+    ticket: (id: string) => request<{ ticket: Ticket }>("GET", `/admin/support/tickets/${encodeURIComponent(id)}`),
+    answerTicket: (id: string, text: string) => request<{ ticket: Ticket }>("POST", `/admin/support/tickets/${encodeURIComponent(id)}/messages`, { text }),
+    setTicketStatus: (id: string, status: TicketStatus) => request<{ ticket: Ticket }>("PATCH", `/admin/support/tickets/${encodeURIComponent(id)}`, { status }),
   },
   joinWaitlist: (product: WaitlistProduct, phone: string) =>
     request<{ ok: true }>("POST", "/waitlist", { product, phone }),
@@ -403,5 +429,14 @@ export const api = {
     list: () => request<{ orders: SiteOrderSummary[]; unread: number }>("GET", "/site-orders"),
     get: (id: string) => request<{ order: SiteOrder }>("GET", `/site-orders/${encodeURIComponent(id)}`),
     send: (id: string, text: string) => request<{ order: SiteOrder }>("POST", `/site-orders/${encodeURIComponent(id)}/messages`, { text }),
+  },
+
+  support: {
+    info: () => request<SupportInfo>("GET", "/support"),
+    list: () => request<{ tickets: TicketSummary[]; unread: number }>("GET", "/support/tickets"),
+    create: (body: TicketInput) => request<{ ticket: Ticket }>("POST", "/support/tickets", body),
+    get: (id: string) => request<{ ticket: Ticket }>("GET", `/support/tickets/${encodeURIComponent(id)}`),
+    send: (id: string, text: string) => request<{ ticket: Ticket }>("POST", `/support/tickets/${encodeURIComponent(id)}/messages`, { text }),
+    close: (id: string) => request<{ ticket: Ticket }>("POST", `/support/tickets/${encodeURIComponent(id)}/close`),
   },
 };

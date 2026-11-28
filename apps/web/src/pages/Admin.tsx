@@ -16,13 +16,15 @@ import {
 } from "../api";
 import { useAuth } from "../auth";
 import { SiteOrdersAdmin } from "../components/SiteOrdersAdmin";
+import { TicketsAdmin } from "../components/TicketsAdmin";
 import { formatToman } from "../format";
 
-type Tab = "overview" | "siteOrders" | "orders" | "users" | "templates" | "sites" | "ai" | "waitlist";
+type Tab = "overview" | "siteOrders" | "tickets" | "orders" | "users" | "templates" | "sites" | "ai" | "waitlist";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "overview", label: "نمای کلی" },
   { id: "siteOrders", label: "سفارش سایت" },
+  { id: "tickets", label: "تیکت‌ها" },
   { id: "orders", label: "پرداخت‌ها" },
   { id: "users", label: "کاربران" },
   { id: "templates", label: "قالب‌ها" },
@@ -54,6 +56,7 @@ export function Admin() {
       </div>
       {tab === "overview" && <Overview />}
       {tab === "siteOrders" && <SiteOrdersAdmin />}
+      {tab === "tickets" && <TicketsAdmin />}
       {tab === "orders" && <Orders />}
       {tab === "users" && <Users />}
       {tab === "templates" && <Templates />}

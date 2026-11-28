@@ -1585,3 +1585,14 @@ select {
 .ws-bar .btn.small.so-order-btn { background: linear-gradient(#ffe2a6, #f4be6a); color: #2b1e0e; font-weight: 800; box-shadow: 0 0 14px rgb(244 190 106 / 0.3); }
 .ws-back span { margin-inline-start: 2px; }
 @media (max-width: 700px) { .ws-logo, .ws-back span { display: none; } }
+
+/* Admin: support tickets — the switch for new tickets */
+.tk-switch { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.tk-switch p { margin: 4px 0 0; }
+.tk-toggle { display: inline-flex; align-items: center; gap: 10px; padding: 0; border: 0; background: none; font: inherit; font-weight: 700; cursor: pointer; }
+.tk-toggle i { position: relative; width: 46px; height: 26px; border-radius: 13px; background: #c9ced6; transition: background .2s; }
+.tk-toggle i::after { content: ""; position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / .25); transition: right .2s; }
+.tk-toggle.on i { background: #2f9e5b; }
+.tk-toggle.on i::after { right: 23px; }
+.tk-toggle:disabled { opacity: .6; cursor: wait; }
+.status-pill.tk-closed { background: #eef0f3; color: var(--muted); }

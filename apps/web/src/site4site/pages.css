@@ -219,3 +219,62 @@
   .pr-faq { max-width: 860px; margin: 0 auto; }
   .pr-faq summary { font-size: 16px; padding: 18px 22px; } .pr-faq p { font-size: 15px; padding: 0 22px 18px; }
 }
+
+/* ───────────── Support ───────────── */
+.sp-top { display: grid; gap: 22px; margin-top: 26px; }
+.sp-rules { rotate: -0.6deg; }
+.sp-rules h2 { margin: 0 0 8px; font-size: 18px; color: #3a2f3f; }
+.sp-rules ol { margin: 0; padding-inline-start: 20px; list-style: persian; }
+.sp-rules li { margin: 4px 0; }
+.sp-rules li::marker { color: #7a3e5e; font-weight: 800; }
+.sp-side { display: grid; gap: 12px; }
+.sp-side > div { display: grid; gap: 6px; padding: 18px; border-radius: 14px; background: rgb(255 255 255 / 0.04); border: 1px solid rgb(255 255 255 / 0.08); }
+.sp-side b { font-size: 15px; } .sp-side p { margin: 0 0 6px; color: var(--muted); font-size: 13.5px; }
+.sp-empty { display: grid; justify-items: center; gap: 8px; max-width: 520px; margin: 0 auto; padding: 28px 22px; border-radius: 16px; text-align: center; background: rgb(255 255 255 / 0.04); border: 1px dashed var(--line); }
+.sp-empty b { font-size: 17px; } .sp-empty p { margin: 0 0 8px; color: var(--muted); font-size: 14px; }
+.sp-off { margin: 0 0 14px; padding: 12px 16px; border-radius: 12px; background: rgb(244 190 106 / 0.1); border: 1px solid rgb(244 190 106 / 0.35); color: var(--amber-hi); font-size: 14px; }
+.sp-error { margin: 8px 0; color: #ff9b94; font-size: 13.5px; }
+.sp-hint { display: block; color: var(--muted); font-size: 13px; }
+.sp-hint.center { padding: 40px 0; text-align: center; }
+.sp-layout { display: grid; gap: 16px; }
+.sp-list { display: grid; align-content: start; gap: 10px; }
+.sp-list .s4-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.sp-list ul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.sp-item { display: grid; gap: 8px; width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid rgb(255 255 255 / 0.08); background: rgb(255 255 255 / 0.04); color: inherit; font: inherit; text-align: start; cursor: pointer; }
+.sp-item:hover { background: rgb(255 255 255 / 0.07); }
+.sp-item.active { border-color: var(--amber); box-shadow: inset 0 0 0 1px var(--amber); }
+.sp-item .top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.sp-item .top b { font-size: 14.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sp-item .meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.sp-item small { color: var(--muted); font-size: 12px; }
+.sp-detail { min-width: 0; padding: 18px; border-radius: 16px; background: rgb(255 255 255 / 0.035); border: 1px solid rgb(255 255 255 / 0.08); }
+.sp-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.sp-head h3 { margin: 0 0 4px; font-size: 18px; } .sp-head small { color: var(--muted); font-size: 12.5px; }
+.sp-close { margin-top: 12px; width: 100%; }
+.sp-form { display: grid; gap: 14px; }
+.sp-form h3 { margin: 0; font-size: 18px; }
+.sp-form label { display: grid; gap: 6px; }
+.sp-form label > span { font-size: 13.5px; font-weight: 700; color: var(--soft); }
+.sp-form label > small { justify-self: end; color: var(--muted); font-size: 11.5px; }
+.sp-form input, .sp-form select, .sp-form textarea, .sp-desk .so-write textarea { width: 100%; padding: 11px 13px; border-radius: 10px; border: 1px solid var(--line); background: #1b1730; color: #f3ecf9; font: inherit; font-size: 14.5px; }
+.sp-form textarea, .sp-desk .so-write textarea { resize: vertical; line-height: 1.9; }
+.sp-form input:focus, .sp-form select:focus, .sp-form textarea:focus, .sp-desk .so-write textarea:focus { outline: none; border-color: var(--amber); }
+/* the conversation, in the night colours */
+.sp-desk .so-lines { background: rgb(0 0 0 / 0.22); border-radius: 12px; }
+.sp-desk .so-msg { background: #2c2546; border-color: rgb(255 255 255 / 0.08); color: #efe7f6; }
+.sp-desk .so-msg.mine { background: #3b3058; border-color: rgb(244 190 106 / 0.3); }
+.sp-desk .so-msg b, .sp-desk .so-msg small { color: var(--muted); }
+.sp-desk .so-write .btn { padding: 11px 18px; border: 0; border-radius: 10px; font: inherit; font-weight: 800; color: #2b1e0e; background: linear-gradient(var(--amber-hi), var(--amber)); cursor: pointer; }
+.sp-desk .so-write .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.sp-desk .so-closed { padding: 10px; color: var(--muted); }
+.sp-desk .status-pill { padding: 2px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 700; white-space: nowrap; }
+.sp-desk .tk-open { background: rgb(244 190 106 / 0.15); color: var(--amber-hi); }
+.sp-desk .tk-answered { background: rgb(127 231 225 / 0.14); color: #bff3ee; }
+.sp-desk .tk-closed { background: rgb(255 255 255 / 0.07); color: var(--muted); }
+@media (min-width: 1000px) {
+  .sp-top { grid-template-columns: 1.6fr 1fr; gap: 34px; align-items: center; margin-top: 56px; }
+  .sp-rules { padding: 34px 40px 28px; font-size: 15.5px; }
+  .sp-rules h2 { font-size: 22px; }
+  .sp-layout { grid-template-columns: 320px 1fr; gap: 24px; align-items: start; }
+  .sp-detail { padding: 26px 30px; }
+}

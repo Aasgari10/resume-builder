@@ -1,4 +1,4 @@
-// A unit of the building that is still being built (support, contact, blog): its header
+// A unit of the building that is still being built (contact, blog): its header
 // and a short note with the ways a visitor can already get help.
 
 import { useEffect } from "react";
@@ -8,7 +8,6 @@ import { unitByKey, type UnitKey } from "./units";
 import "./pages.css";
 
 const NOTE: Partial<Record<UnitKey, string>> = {
-  support: "صفحه‌ی پشتیبانی در حال آماده شدن است. اگر سفارشی ثبت کرده‌اید، پیام‌هایتان را در «سفارش‌های من» بفرستید؛ همان‌جا جواب می‌دهیم.",
   contact: "راه‌های تماس به‌زودی این‌جا می‌آید. فعلاً می‌توانید از «سفارش‌های من» برایمان پیام بفرستید.",
   blog: "بلاگ به‌زودی با مطالبی درباره‌ی ساختن و رشد سایت کسب‌وکار باز می‌شود.",
 };
