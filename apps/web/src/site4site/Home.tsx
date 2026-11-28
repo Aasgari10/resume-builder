@@ -25,7 +25,7 @@ const STAGE = 1840;
  * engine-room window, the entrance door and the intercom, their tops level.
  * Matches home.css.
  */
-const LAYOUT = { bld: 0, gate: 677 - 13 };
+const LAYOUT = { bld: 0, gate: 640 };
 
 function useWide() {
   const [wide, setWide] = useState(() => window.matchMedia(WIDE).matches);
@@ -154,18 +154,15 @@ function stars(width: number): [number, number][] {
 const part = (svg: string, viewBox: string, fill = false) =>
   svg.replace(/viewBox="[^"]*"/, `viewBox="${viewBox}" preserveAspectRatio="${fill ? "none" : "xMidYMax meet"}"`);
 
-/** The entrance built into the wall: a stone surround, a canopy, the brass plate, two wall lamps and a double door. */
+/** The entrance built into the wall: a flat stone surround (no canopy), the brass plate, two wall lamps and a double door. */
 function EntryDoor() {
   return (
-    <svg viewBox="0 28 290 370" preserveAspectRatio="none" aria-hidden="true">
+    <svg viewBox="0 52 290 346" preserveAspectRatio="none" aria-hidden="true">
       <circle cx="14" cy="168" r="34" fill="#FFD99A" opacity=".16" />
       <circle cx="276" cy="168" r="34" fill="#FFD99A" opacity=".16" />
       <rect x="28" y="52" width="234" height="346" rx="4" fill="#4e4868" />
       <rect x="28" y="52" width="234" height="346" rx="4" fill="none" stroke="#6a6480" strokeWidth="2" />
       <rect x="44" y="68" width="202" height="330" fill="#1e1a30" />
-      <path d="M12 30 H278 L262 56 H28 Z" fill="#3a3350" />
-      <path d="M12 30 H278" stroke="#7a7298" strokeWidth="3" />
-      <rect x="28" y="56" width="234" height="3" fill="#FFD99A" opacity=".35" />
       <rect x="98" y="80" width="94" height="32" rx="5" fill="#1a1530" stroke="#F4BE6A" strokeWidth="1.6" />
       <text x="145" y="102" textAnchor="middle" fontSize="18" fontWeight="700" fill="#F4BE6A">
         ورود
@@ -274,7 +271,6 @@ function DeskHome() {
             <span dangerouslySetInnerHTML={{ __html: part(groundArt, "250 704 96 108", true) }} />
           </div>
         </div>
-        {/* the programmer and the neon sign, on top of the intercom's wall */}
         {/* the programmer and the neon sign together on the wall's cornice */}
         <div className="s4-roof" aria-hidden="true" dangerouslySetInnerHTML={{ __html: roofArt }} />
 
