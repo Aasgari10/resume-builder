@@ -4,6 +4,7 @@ import { ComingSoon } from "./landing/ComingSoon";
 import { Landing } from "./landing/Landing";
 import { About } from "./site4site/About";
 import { Home } from "./site4site/Home";
+import { Pricing } from "./site4site/Pricing";
 import { Soon } from "./site4site/Soon";
 import { SnapPage, Templates } from "./site4site/Templates";
 import { Gallery } from "./hub/Gallery";
@@ -66,7 +67,7 @@ export function App() {
         <Route path="/" element={<Home />} />
         <Route path="/templates" element={<Templates />} />
         <Route path="/about" element={<About />} />
-        <Route path="/pricing" element={<Soon unit="pricing" />} />
+        <Route path="/pricing" element={<Pricing />} />
         <Route path="/support" element={<Soon unit="support" />} />
         <Route path="/contact" element={<Soon unit="contact" />} />
         <Route path="/blog" element={<Soon unit="blog" />} />
