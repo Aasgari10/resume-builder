@@ -317,6 +317,19 @@ export type TicketSummary = {
 export type Ticket = Omit<TicketSummary, "lastLine" | "lines"> & { messages: TicketLine[] };
 export type TicketInput = { topic: TicketTopic; subject: string; orderCode?: string; text: string };
 export type SupportInfo = { ticketsEnabled: boolean; rules: { maxOpen: number; minText: number; maxText: number } };
+export type TemplateComment = {
+  id: string;
+  templateId: string;
+  text: string;
+  author: string;
+  createdAt: string;
+  reply: string | null;
+  repliedAt: string | null;
+  likes: number;
+  dislikes: number;
+  myVote: number;
+};
+export type AdminTemplateComment = TemplateComment & { phone: string };
 export type SiteOrderInput = { resumeId: string; name: string; phone: string; business?: string; note?: string };
 
 export const api = {
@@ -430,6 +443,17 @@ export const api = {
     list: () => request<{ orders: SiteOrderSummary[]; unread: number }>("GET", "/site-orders"),
     get: (id: string) => request<{ order: SiteOrder }>("GET", `/site-orders/${encodeURIComponent(id)}`),
     send: (id: string, text: string) => request<{ order: SiteOrder }>("POST", `/site-orders/${encodeURIComponent(id)}/messages`, { text }),
+  },
+
+  comments: {
+    counts: () => request<{ counts: Record<string, number> }>("GET", "/template-comments/counts"),
+    list: (templateId: string) => request<{ comments: TemplateComment[] }>("GET", `/template-comments/${encodeURIComponent(templateId)}`),
+    write: (templateId: string, text: string) => request<{ comment: TemplateComment }>("POST", `/template-comments/${encodeURIComponent(templateId)}`, { text }),
+    vote: (id: string, value: 1 | -1 | 0) => request<{ comment: TemplateComment }>("POST", `/template-comments/c/${encodeURIComponent(id)}/vote`, { value }),
+    reply: (id: string, text: string) => request<{ comment: TemplateComment }>("PUT", `/admin/template-comments/${encodeURIComponent(id)}/reply`, { text }),
+    remove: (id: string) => request<{ ok: true }>("DELETE", `/admin/template-comments/${encodeURIComponent(id)}`),
+    adminList: (page: number, unanswered?: boolean) =>
+      request<Paged<AdminTemplateComment> & { unanswered: number }>("GET", `/admin/template-comments${qs({ page, unanswered: unanswered ? 1 : undefined })}`),
   },
 
   support: {

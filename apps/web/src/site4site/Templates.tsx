@@ -5,10 +5,12 @@
 
 import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
+import { api } from "../api";
 import { SITE_TEMPLATES, sampleResume, type TemplateDefinition } from "@rb/templates";
 import { Scaled } from "../components/Scaled";
 import { themeFor } from "../hub/Gallery";
 import { showcaseColor } from "../hub/showcase";
+import { Comments } from "./Comments";
 import { PageHead, UnitPage } from "./Shell";
 import { Icon } from "./units";
 import "./pages.css";
@@ -187,10 +189,12 @@ export function Templates() {
   const [cat, setCat] = useState<Category | "all">("all");
   const [q, setQ] = useState("");
   const [phones, setPhones] = useState<Record<string, boolean>>({});
-  const [preview, setPreview] = useState<Meta | null>(null);
+  const [preview, setPreview] = useState<{ m: Meta; view: View } | null>(null);
+  const [counts, setCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     document.title = "قالب‌ها | site4site";
+    api.comments.counts().then((r) => setCounts(r.counts), () => {});
   }, []);
 
   const order = (m: Meta) => navigate(`/resume/new?site=${m.t.id}&color=${encodeURIComponent(showcaseColor(m.t.id))}`);
@@ -203,7 +207,7 @@ export function Templates() {
     <UnitPage current="templates">
       <PageHead plate="واحد ۱۲" title="قالب‌ها" sub="هر قالب یک سایت کامل است؛ با پنل مدیریت، آماده برای کسب‌وکار شما." />
 
-      <Showcase items={featured} wide={wide} onOrder={order} onPreview={setPreview} />
+      <Showcase items={featured} wide={wide} onOrder={order} onPreview={(m) => setPreview({ m, view: "desktop" })} />
 
       <h2 className="tp-all">
         همه‌ی قالب‌ها <small>{fa(all.length)} قالب</small>
@@ -252,7 +256,9 @@ export function Templates() {
               isNew={m.t.id === FEATURED[0]}
               onPhone={() => setPhones((p) => ({ ...p, [m.t.id]: !p[m.t.id] }))}
               onOrder={() => order(m)}
-              onPreview={() => setPreview(m)}
+              onPreview={() => setPreview({ m, view: "desktop" })}
+              comments={counts[m.t.id] ?? 0}
+              onComments={() => setPreview({ m, view: "comments" })}
             />
           ))}
         </div>
@@ -268,7 +274,16 @@ export function Templates() {
         </a>
       </div>
 
-      {preview && <PreviewModal m={preview} onClose={() => setPreview(null)} onOrder={() => order(preview)} />}
+      {preview && (
+        <PreviewModal
+          m={preview.m}
+          start={preview.view}
+          comments={counts[preview.m.t.id] ?? 0}
+          onCount={(n) => setCounts((c) => ({ ...c, [preview.m.t.id]: n }))}
+          onClose={() => setPreview(null)}
+          onOrder={() => order(preview.m)}
+        />
+      )}
     </UnitPage>
   );
 }
@@ -374,6 +389,8 @@ function Frame({
   onPhone,
   onOrder,
   onPreview,
+  comments,
+  onComments,
 }: {
   m: Meta;
   wide: boolean;
@@ -382,6 +399,8 @@ function Frame({
   onPhone: () => void;
   onOrder: () => void;
   onPreview: () => void;
+  comments: number;
+  onComments: () => void;
 }) {
   return (
     <article className="tp-art">
@@ -428,6 +447,12 @@ function Frame({
         {m.features.map((f) => (
           <span key={f}>{f}</span>
         ))}
+        <button type="button" className="tp-cm" onClick={onComments}>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 5h16v11H9l-5 4z" />
+          </svg>
+          {comments ? `${comments.toLocaleString("fa-IR")} نظر` : "نظر بدهید"}
+        </button>
       </div>
       <div className="tp-acts">
         <button type="button" className="s4-btn ghost" onClick={onPreview}>
@@ -441,8 +466,24 @@ function Frame({
   );
 }
 
-function PreviewModal({ m, onClose, onOrder }: { m: Meta; onClose: () => void; onOrder: () => void }) {
-  const [device, setDevice] = useState<"desktop" | "phone">(window.innerWidth < 760 ? "phone" : "desktop");
+type View = "desktop" | "phone" | "comments";
+
+function PreviewModal({
+  m,
+  start,
+  comments,
+  onCount,
+  onClose,
+  onOrder,
+}: {
+  m: Meta;
+  start: View;
+  comments: number;
+  onCount: (n: number) => void;
+  onClose: () => void;
+  onOrder: () => void;
+}) {
+  const [device, setDevice] = useState<View>(start === "desktop" && window.innerWidth < 760 ? "phone" : start);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -468,6 +509,12 @@ function PreviewModal({ m, onClose, onOrder }: { m: Meta; onClose: () => void; o
               <Icon name="phone" />
               گوشی
             </button>
+            <button type="button" aria-pressed={device === "comments"} onClick={() => setDevice("comments")}>
+              <svg className="s4-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 5h16v11H9l-5 4z" />
+              </svg>
+              نظرها{comments > 0 && ` (${comments.toLocaleString("fa-IR")})`}
+            </button>
           </div>
           <button type="button" className="s4-btn main" onClick={onOrder}>
             امتحان و سفارش
@@ -477,9 +524,15 @@ function PreviewModal({ m, onClose, onOrder }: { m: Meta; onClose: () => void; o
           </button>
         </div>
         <div className={`tp-modal-view ${device}`}>
-          <div className="tp-modal-site">
-            <Live t={m.t} base={device === "phone" ? 390 : 1280} />
-          </div>
+          {device === "comments" ? (
+            <div className="tp-modal-comments">
+              <Comments templateId={m.t.id} onCount={onCount} />
+            </div>
+          ) : (
+            <div className="tp-modal-site">
+              <Live t={m.t} base={device === "phone" ? 390 : 1280} />
+            </div>
+          )}
         </div>
       </div>
     </div>

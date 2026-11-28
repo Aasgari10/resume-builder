@@ -71,6 +71,8 @@ model User {
   uploads         Upload[]
   siteOrders      SiteOrder[]
   supportTickets  SupportTicket[]
+  templateComments TemplateComment[]
+  commentVotes     TemplateCommentVote[]
 }
 
 // One-time login code. Keyed by phone rather than User, since first-time users do not exist yet.
@@ -533,4 +535,39 @@ enum SupportTicketStatus {
   OPEN // waiting for the team
   ANSWERED // the team replied
   CLOSED
+}
+
+// ───────────── Template comments ─────────────
+
+// What visitors say about a site template on the templates page. Signed-in users write and vote (like or
+// dislike); only an admin answers, and an admin can remove a comment.
+model TemplateComment {
+  id         String    @id @default(cuid())
+  templateId String // a site template id from @rb/templates
+  userId     String
+  text       String
+  reply      String? // the admin's answer
+  repliedAt  DateTime?
+  likes      Int       @default(0)
+  dislikes   Int       @default(0)
+  createdAt  DateTime  @default(now())
+  deletedAt  DateTime? // removed by an admin (hidden everywhere)
+
+  user  User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  votes TemplateCommentVote[]
+
+  @@index([templateId, createdAt])
+  @@index([reply, createdAt])
+}
+
+// One user's like (1) or dislike (-1) on a comment.
+model TemplateCommentVote {
+  commentId String
+  userId    String
+  value     Int
+
+  comment TemplateComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([commentId, userId])
 }

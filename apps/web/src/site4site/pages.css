@@ -350,3 +350,37 @@
   .ct-way { padding: 40px 24px; }
   .ct-more { max-width: 1000px; margin: 56px auto 0; }
 }
+
+/* ───────────── Template comments ───────────── */
+.tp-cm { display: inline-flex; align-items: center; gap: 5px; margin-inline-start: auto; padding: 3px 9px; border: 1px solid rgb(127 231 225 / 0.3); border-radius: 6px; background: none; color: #bff3ee; font: inherit; font-size: 11.5px; font-weight: 700; cursor: pointer; }
+.tp-cm svg, .tp-view svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; }
+.tp-cm:hover { background: rgb(127 231 225 / 0.08); }
+.tp-modal-view.comments { background: var(--panel, #221d38); }
+.tp-modal-comments { max-width: 760px; margin: 0 auto; padding: 22px 18px 40px; }
+.cm { display: grid; gap: 14px; }
+.cm-write { display: grid; gap: 10px; }
+.cm-write textarea, .cm-admin textarea { width: 100%; padding: 11px 13px; border-radius: 10px; border: 1px solid var(--line); background: #1b1730; color: #f3ecf9; font: inherit; font-size: 14.5px; line-height: 1.9; resize: vertical; }
+.cm-write textarea:focus, .cm-admin textarea:focus { outline: none; border-color: var(--amber); }
+.cm-write .s4-btn { justify-self: end; }
+.cm-write .s4-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.cm-login { margin: 0; padding: 14px 16px; border-radius: 12px; background: rgb(255 255 255 / 0.04); color: var(--soft); font-size: 14px; }
+.cm-login a { color: var(--amber); font-weight: 700; }
+.cm-list { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.cm-list > li { display: grid; gap: 8px; padding: 16px; border-radius: 14px; background: rgb(255 255 255 / 0.04); border: 1px solid rgb(255 255 255 / 0.08); }
+.cm-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.cm-top b { font-size: 14.5px; } .cm-top small { color: var(--muted); font-size: 12px; }
+.cm-text { margin: 0; color: #efe7f6; font-size: 14.5px; line-height: 2; white-space: pre-wrap; overflow-wrap: anywhere; }
+.cm-votes { display: flex; gap: 8px; }
+.cm-votes button { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); background: none; color: var(--soft); font: inherit; font-size: 13px; cursor: pointer; }
+.cm-votes button:disabled { cursor: default; opacity: 0.7; }
+.cm-votes svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
+.cm-votes button[aria-pressed="true"]:first-child { border-color: var(--teal); color: var(--teal); background: rgb(127 231 225 / 0.08); }
+.cm-votes button[aria-pressed="true"]:last-child { border-color: var(--pink); color: var(--pink); background: rgb(255 158 196 / 0.08); }
+.cm-reply { margin-inline-start: 18px; padding: 10px 14px; border-radius: 10px; border-inline-start: 3px solid var(--amber); background: rgb(244 190 106 / 0.07); }
+.cm-reply b { color: var(--amber); font-size: 13px; }
+.cm-reply p { margin: 4px 0 0; color: var(--soft); font-size: 14px; line-height: 1.9; white-space: pre-wrap; }
+.cm-admin { padding-top: 6px; border-top: 1px dashed rgb(255 255 255 / 0.1); }
+.cm-admin form { display: grid; gap: 8px; }
+.cm-admin form div, .cm-admin > div { display: flex; gap: 8px; }
+.cm-link { padding: 0; border: 0; background: none; color: var(--teal); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.cm-link.danger { color: #ff9b94; }
