@@ -2,7 +2,7 @@
 // the unit opens. Phones see the building alone (the door is the way in); wide screens see it beside
 // a smoked-glass intercom and the slogans the programmer on the roof is typing.
 
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { SITE_TEMPLATES } from "@rb/templates";
 import deskArt from "./art/building-desk-floors.svg?raw";
@@ -126,20 +126,36 @@ function PhoneHome() {
 const SLIDES = [
   {
     kicker: "سایتی برای ساختن سایت شما",
-    title: ["سایت کسب‌وکارت را ", "در چند روز", " تحویل بگیر"],
+    title: ["سایت کسب‌وکارت را\n", "در چند روز", " تحویل بگیر"],
     line: "قالب را انتخاب کن، بقیه با ما؛ با پنل مدیریت فارسی.",
   },
   {
     kicker: "اول امتحان کن، بعد سفارش بده",
-    title: ["هر قالب را ", "با پنل مدیریتش", " امتحان کن"],
+    title: ["هر قالب را\n", "با پنل مدیریتش", " امتحان کن"],
     line: "محصول بگذار، سفارش و نوبت ببین؛ پسندیدی، سفارش بده.",
   },
   {
     kicker: `${fa(SITE_TEMPLATES.length)} قالب آماده`,
-    title: ["از ", "فروشگاه", " تا رزرو آنلاین"],
+    title: ["از ", "فروشگاه", "\nتا رزرو آنلاین"],
     line: "کافه، آرایشگاه، کتاب‌فروشی، اتاق فرار، مطب و…",
   },
 ];
+
+/** Largest headline size (px) and its line height. */
+const TITLE_MAX = 60;
+const TITLE_LH = 1.45;
+
+/**
+ * Every headline is two set lines (its parts hold the break); the font is sized so the longer line fills the
+ * width, so all three headlines take the same room whatever their length.
+ */
+function fitTitle(el: HTMLElement) {
+  const probe = 100;
+  el.style.fontSize = `${probe}px`;
+  const size = Math.min(TITLE_MAX, Math.floor((0.97 * probe * el.clientWidth) / el.scrollWidth));
+  el.style.fontSize = `${size}px`;
+  el.style.height = `${Math.ceil(size * TITLE_LH * 2) + 2}px`;
+}
 
 /** Milliseconds per letter while the programmer types a headline. */
 const TYPE_MS = 55;
@@ -242,6 +258,21 @@ function DeskHome() {
   const [slide, setSlide] = useState(0);
   const [pressed, setPressed] = useState<string | null>(null);
   const [{ k, w }, setFit] = useState({ k: 1, w: STAGE });
+  const title = useRef<HTMLParagraphElement>(null);
+
+  // Size each headline when it comes up (and again once the web font has loaded).
+  useLayoutEffect(() => {
+    const el = title.current;
+    if (!el) return;
+    fitTitle(el);
+    let live = true;
+    document.fonts.ready.then(() => {
+      if (live) fitTitle(el);
+    });
+    return () => {
+      live = false;
+    };
+  }, [slide]);
 
   // The scene is drawn for 1840 × 900 and scaled to fit the window, so it never scrolls. A window wider
   // than that shape gets a wider stage: the building and the intercom keep their size in the middle and
@@ -317,8 +348,8 @@ function DeskHome() {
 
         <div className="s4-say" aria-live="polite">
           <small>{s.kicker}</small>
-          <p className="s4-sr">{s.title.join("")}</p>
-          <p className="s4-say-title" aria-hidden="true">
+          <p className="s4-sr">{s.title.join("").replace("\n", " ")}</p>
+          <p ref={title} className="s4-say-title" aria-hidden="true">
             <Typed key={slide} parts={s.title} />
           </p>
           <p className="s4-say-line">{s.line}</p>

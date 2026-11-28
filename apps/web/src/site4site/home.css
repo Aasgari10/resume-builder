@@ -29,7 +29,7 @@
 .s4-home-desk { position: relative; height: 100vh; min-height: 0; overflow: hidden; background: linear-gradient(#121633, #2a2348 55%, #4a2e4e); }
 .s4-stage { position: absolute; left: 50%; bottom: calc(20px * var(--k)); width: var(--w, 1440px); height: 900px; transform-origin: bottom center; transform: translateX(-50%) scale(var(--k)); }
 .s4-walk { position: absolute; left: 0; right: 0; bottom: 0; height: calc(20px * var(--k)); background: #3b2d4f; border-top: 2px solid #4a3c60; }
-.s4-moon { position: absolute; top: 34px; left: 1270px; width: 44px; height: 44px; }
+.s4-moon { position: absolute; top: 34px; left: 1238px; width: 44px; height: 44px; }
 .s4-moon svg { display: block; border-radius: 50%; filter: drop-shadow(0 0 22px rgb(255 233 194 / 0.35)); }
 .s4-star { position: absolute; width: 2px; height: 2px; border-radius: 50%; background: #fff1dc; opacity: 0.8; }
 .s4-bld { position: absolute; bottom: 0; left: -21px; width: 677px; height: 840px; }
@@ -67,12 +67,10 @@
 .s4-core { position: absolute; top: 0; bottom: 0; left: calc((100% - 1810px) / 2); width: 1840px; }
 .s4-hood { position: absolute; left: 0; bottom: 0; }
 /* the programmer and the neon sign stand on the wall's cornice, left of the slogan */
-.s4-roof { position: absolute; left: 1192px; bottom: 470px; width: 614px; height: 400px; }
+.s4-roof { position: absolute; left: 1160px; bottom: 470px; width: 614px; height: 400px; }
 .s4-roof svg { display: block; width: 100%; height: 100%; }
 /* the slogan's board on the wall: a lamp above it, like the intercom's */
 /* the slogan board stands on the roof on two short legs */
-.s4-say::before, .s4-say::after { content: ""; position: absolute; top: 100%; width: 8px; height: 22px; margin-top: 4px; background: #2c2546; }
-.s4-say::before { left: 70px; } .s4-say::after { right: 70px; }
 /* every slide takes the same room, so the board never changes size: two lines of headline, two of text */
 /* beside the intercom: the entrance (its plate says ورود) and one tall engine-room window, tops level with the intercom */
 .s4-entry { position: absolute; left: 654px; bottom: 0; z-index: 1; display: flex; flex-direction: row; align-items: flex-end; gap: 16px; height: 442px; direction: ltr; }
@@ -87,19 +85,18 @@
 .s4-ip .key { background: #211b34; }
 .s4-ip .slot.acc .card { background: #221c34; }
 
-/* the slogan board: one big headline the programmer types out, a short dim line under it */
-.s4-say { position: absolute; bottom: 492px; left: 666px; z-index: 1; width: 560px; padding: 22px 30px 20px; border-radius: 3px; background: linear-gradient(115deg, rgb(255 255 255 / 0.05), transparent 40%), linear-gradient(#1d1b36, #151329); box-shadow: 0 0 0 4px #8a7448, 0 0 40px rgb(255 158 196 / 0.12), 0 12px 28px rgb(0 0 0 / 0.55); }
+/* the slogan on the night sky: one big headline the programmer types out, a short dim line under it.
+   Every headline is two set lines sized so the longer one fills the width (Home.tsx), so all three take
+   the same room. */
+.s4-say { position: absolute; bottom: 492px; left: 652px; z-index: 1; width: 520px; padding: 22px 20px 20px; text-align: center; }
 .s4-say small { display: block; margin-bottom: 10px; color: var(--teal); font-size: 15px; letter-spacing: 0.01em; }
-.s4-say-title { height: 140px; margin: 0; overflow: hidden; font-size: 46px; font-weight: 900; line-height: 1.45; color: #fbf3e3; text-wrap: balance; }
+.s4-say-title { height: 140px; margin: 0; overflow: hidden; font-size: 46px; font-weight: 900; line-height: 1.45; color: #fbf3e3; white-space: pre; }
 .s4-say-title .mark { color: #ff9ec4; white-space: nowrap; }
 /* letters not typed yet keep their place, so the lines never jump */
 .s4-say-title .todo { visibility: hidden; }
 .s4-say .caret { display: inline-block; width: 4px; height: 0.95em; margin-inline: 4px; vertical-align: -0.15em; background: var(--teal); box-shadow: 0 0 12px var(--teal); animation: s4-blink 1s steps(1) infinite; }
 @keyframes s4-blink { 50% { opacity: 0; } }
 .s4-say-line { height: 30px; margin: 10px 0 0; overflow: hidden; color: #a9a3c4; font-size: 17px; line-height: 30px; white-space: nowrap; text-overflow: ellipsis; }
-.s4-say-dots { display: flex; gap: 8px; margin-top: 16px; }
+.s4-say-dots { display: flex; justify-content: center; gap: 8px; margin-top: 16px; }
 .s4-say-dots button { width: 26px; height: 4px; padding: 0; border: 0; border-radius: 2px; background: var(--line); cursor: pointer; }
 .s4-say-dots button[aria-selected="true"] { background: var(--pink); box-shadow: 0 0 8px var(--pink); }
-/* trial: the words alone on the night sky, without the board, its frame or its legs */
-.s4-say { background: none; box-shadow: none; }
-.s4-say::before, .s4-say::after { display: none; }
